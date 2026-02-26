@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
-import { useAuth } from '../../lib/auth';
-import { authAPI } from '../../lib/api';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
-import { Input } from '../ui/input';
-import { Label } from '../ui/label';
+import { useAuth } from '../lib/auth';
+import { authAPI } from '../lib/api';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from './ui/dialog';
+import { Input } from './ui/input';
+import { Label } from './ui/label';
 import { LogIn, Mail, Lock, Loader2 } from 'lucide-react';
 
 export default function LoginModal({ open, onClose }) {
