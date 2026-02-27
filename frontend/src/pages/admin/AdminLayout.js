@@ -3,11 +3,13 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
-  MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users
+  MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
+  BarChart3, Globe, Layers
 } from 'lucide-react';
 
 const sidebarItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
+  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
   { label: 'Hero', icon: Image, href: '/admin/hero' },
   { label: 'About Us', icon: Info, href: '/admin/about' },
   { label: 'Services', icon: Package, href: '/admin/services' },
@@ -21,6 +23,8 @@ const sidebarItems = [
   { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
+  { label: 'Sections', icon: Layers, href: '/admin/section-order' },
+  { label: 'SEO', icon: Globe, href: '/admin/seo' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];
 
