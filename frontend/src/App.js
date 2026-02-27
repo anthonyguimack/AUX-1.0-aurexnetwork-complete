@@ -1,7 +1,7 @@
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
-import { authAPI } from './lib/api';
+import { authAPI, publicAPI } from './lib/api';
 import { Toaster } from 'sonner';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
@@ -14,6 +14,7 @@ import MapDetailPage from './pages/MapDetailPage';
 import TermsPage from './pages/TermsPage';
 import PrivacyPage from './pages/PrivacyPage';
 import CheckoutSuccess from './pages/CheckoutSuccess';
+import DynamicPage from './pages/DynamicPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import HeroManager from './pages/admin/HeroManager';
@@ -28,12 +29,44 @@ import TestimonialsManager from './pages/admin/TestimonialsManager';
 import ContactsManager from './pages/admin/ContactsManager';
 import PurchasesManager from './pages/admin/PurchasesManager';
 import SettingsManager from './pages/admin/SettingsManager';
+import PagesManager from './pages/admin/PagesManager';
+import UsersManager from './pages/admin/UsersManager';
+
+// Global settings context for colors
+export const SettingsContext = createContext({});
+export const useSettings = () => useContext(SettingsContext);
+
+function SettingsProvider({ children }) {
+  const [settings, setSettings] = useState({});
+  useEffect(() => {
+    publicAPI.getSettings().then(r => setSettings(r.data || {})).catch(() => {});
+  }, []);
+
+  // Apply CSS variables from settings colors
+  useEffect(() => {
+    const colors = settings.colors || {};
+    const root = document.documentElement;
+    if (colors.primary) root.style.setProperty('--color-primary', colors.primary);
+    if (colors.accent) root.style.setProperty('--color-accent', colors.accent);
+    if (colors.button_bg) root.style.setProperty('--color-button-bg', colors.button_bg);
+    if (colors.button_text) root.style.setProperty('--color-button-text', colors.button_text);
+    if (colors.link_color) root.style.setProperty('--color-link', colors.link_color);
+    if (colors.tab_active_bg) root.style.setProperty('--color-tab-active-bg', colors.tab_active_bg);
+    if (colors.tab_active_text) root.style.setProperty('--color-tab-active-text', colors.tab_active_text);
+    if (colors.icon_color) root.style.setProperty('--color-icon', colors.icon_color);
+    if (colors.heading_color) root.style.setProperty('--color-heading', colors.heading_color);
+    if (colors.body_text) root.style.setProperty('--color-body-text', colors.body_text);
+    if (colors.footer_bg) root.style.setProperty('--color-footer-bg', colors.footer_bg);
+    if (colors.footer_text) root.style.setProperty('--color-footer-text', colors.footer_text);
+  }, [settings.colors]);
+
+  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
+}
 
 function AuthCallback() {
   const hasProcessed = useRef(false);
   const navigate = useNavigate();
   const { setUserData } = useAuth();
-
   useEffect(() => {
     if (hasProcessed.current) return;
     hasProcessed.current = true;
@@ -45,28 +78,22 @@ function AuthCallback() {
         const res = await authAPI.exchangeSession(sessionId);
         setUserData(res.data);
         navigate('/', { replace: true });
-      } catch {
-        navigate('/', { replace: true });
-      }
+      } catch { navigate('/', { replace: true }); }
     })();
   }, [navigate, setUserData]);
-
-  return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[#0D9488] border-t-transparent rounded-full"></div></div>;
+  return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
 }
 
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
-  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[#0D9488] border-t-transparent rounded-full"></div></div>;
+  if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
   if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
   return children;
 }
 
 function AppRouter() {
   const location = useLocation();
-  // Check URL fragment for session_id synchronously before routes render
-  if (location.hash?.includes('session_id=')) {
-    return <AuthCallback />;
-  }
+  if (location.hash?.includes('session_id=')) return <AuthCallback />;
   return (
     <>
       <Navbar />
@@ -80,6 +107,7 @@ function AppRouter() {
         <Route path="/terms" element={<TermsPage />} />
         <Route path="/privacy" element={<PrivacyPage />} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/page/:pageId" element={<DynamicPage />} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="hero" element={<HeroManager />} />
@@ -94,6 +122,8 @@ function AppRouter() {
           <Route path="contacts" element={<ContactsManager />} />
           <Route path="purchases" element={<PurchasesManager />} />
           <Route path="settings" element={<SettingsManager />} />
+          <Route path="pages" element={<PagesManager />} />
+          <Route path="users" element={<UsersManager />} />
         </Route>
       </Routes>
       <Footer />
@@ -105,8 +135,10 @@ function App() {
   return (
     <BrowserRouter>
       <AuthProvider>
-        <AppRouter />
-        <Toaster position="top-right" richColors />
+        <SettingsProvider>
+          <AppRouter />
+          <Toaster position="top-right" richColors />
+        </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>
   );
