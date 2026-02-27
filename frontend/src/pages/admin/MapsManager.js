@@ -108,6 +108,7 @@ export default function MapsManager() {
             </div>
             <div><Label>Description</Label><textarea value={editLoc.description} onChange={e => setEditLoc({...editLoc, description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
             <div><Label>Category</Label><Input value={editLoc.category} onChange={e => setEditLoc({...editLoc, category: e.target.value})} className="mt-1" /></div>
+            <div><Label>Link (optional URL)</Label><Input value={editLoc.link || ''} onChange={e => setEditLoc({...editLoc, link: e.target.value})} className="mt-1" placeholder="https://..." /></div>
             <button onClick={saveLoc} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50">Save</button>
           </div>}
         </DialogContent>
