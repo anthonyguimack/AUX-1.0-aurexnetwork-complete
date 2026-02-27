@@ -1091,6 +1091,10 @@ async def seed_data():
                 "email_from": "", "name_from": "", "email_to": "",
                 "name_to": "", "email_cc": "",
             }})
+        # Add section_order if missing
+        settings_check = await db.settings.find_one({}, {"_id": 0})
+        if settings_check and "section_order" not in settings_check:
+            await db.settings.update_one({}, {"$set": {"section_order": ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]}})
         # Add nav_pages for terms/privacy if missing
         nav_pages_count = await db.nav_pages.count_documents({})
         if nav_pages_count == 0:
