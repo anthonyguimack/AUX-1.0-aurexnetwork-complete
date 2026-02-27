@@ -24,6 +24,11 @@ export const publicAPI = {
   getSections: () => api.get('/public/sections'),
   getPage: (type) => api.get(`/public/page/${type}`),
   getNavPages: () => api.get('/public/nav-pages'),
+  getSeo: (path) => api.get(`/public/seo/${path}`),
+};
+
+export const searchAPI = {
+  search: (q) => api.get(`/search?q=${encodeURIComponent(q)}`),
 };
 
 export const blogExternalAPI = {
