@@ -31,6 +31,9 @@ import PurchasesManager from './pages/admin/PurchasesManager';
 import SettingsManager from './pages/admin/SettingsManager';
 import PagesManager from './pages/admin/PagesManager';
 import UsersManager from './pages/admin/UsersManager';
+import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
+import SeoManager from './pages/admin/SeoManager';
+import SectionOrderManager from './pages/admin/SectionOrderManager';
 
 // Global settings context for colors
 export const SettingsContext = createContext({});
