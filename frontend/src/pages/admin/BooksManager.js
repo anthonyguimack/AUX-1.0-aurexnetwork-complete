@@ -70,7 +70,10 @@ export default function BooksManager() {
             <div className="space-y-4">
               <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" /></div>
               <div><Label>Author</Label><Input value={editing.author} onChange={e => setEditing({...editing, author: e.target.value})} className="mt-1" /></div>
-              <div><Label>Description</Label><textarea value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+              <div><Label>Description</Label><textarea value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+              <div><Label>Synopsis</Label><textarea value={editing.synopsis || ''} onChange={e => setEditing({...editing, synopsis: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="What is the book about?" /></div>
+              <div><Label>Who Is It For?</Label><textarea value={editing.who_is_it_for || ''} onChange={e => setEditing({...editing, who_is_it_for: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+              <div><Label>About the Author</Label><textarea value={editing.about_author || ''} onChange={e => setEditing({...editing, about_author: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
               <div><Label>Cover Image URL</Label><Input value={editing.image} onChange={e => setEditing({...editing, image: e.target.value})} className="mt-1" /></div>
               <div><Label>Amazon Link</Label><Input value={editing.amazon_link} onChange={e => setEditing({...editing, amazon_link: e.target.value})} className="mt-1" /></div>
               <div className="flex items-center gap-2">
