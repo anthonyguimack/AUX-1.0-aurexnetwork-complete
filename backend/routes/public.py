@@ -1,0 +1,167 @@
+from fastapi import APIRouter, HTTPException, Request, Query
+from models.database import db, send_email_smtp, logger
+from datetime import datetime, timezone
+import uuid
+import httpx
+
+router = APIRouter()
+
+@router.get("/public/settings")
+async def get_public_settings():
+    settings = await db.settings.find_one({}, {"_id": 0})
+    if not settings:
+        return {}
+    return {k: v for k, v in settings.items() if k not in ("smtp_password", "smtp_user")}
+
+@router.get("/public/hero")
+async def get_public_hero():
+    return await db.hero.find_one({}, {"_id": 0}) or {}
+
+@router.get("/public/about")
+async def get_public_about():
+    return await db.about.find_one({}, {"_id": 0}) or {}
+
+@router.get("/public/services")
+async def get_public_services():
+    return await db.services.find({}, {"_id": 0}).to_list(100)
+
+@router.get("/public/blog")
+async def get_public_blog(page: int = 1, limit: int = 9, category: str = ""):
+    query = {"published": True}
+    if category:
+        query["category"] = category
+    total = await db.blog_posts.count_documents(query)
+    posts = await db.blog_posts.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
+    return {"posts": posts, "total": total, "page": page, "pages": (total + limit - 1) // limit}
+
+@router.get("/public/blog/{slug}")
+async def get_public_blog_detail(slug: str):
+    post = await db.blog_posts.find_one({"slug": slug, "published": True}, {"_id": 0})
+    if not post:
+        raise HTTPException(status_code=404, detail="Post not found")
+    return post
+
+@router.get("/public/books")
+async def get_public_books():
+    return await db.books.find({}, {"_id": 0}).to_list(100)
+
+@router.get("/public/maps")
+async def get_public_maps():
+    return await db.maps.find({"published": True}, {"_id": 0}).to_list(100)
+
+@router.get("/public/maps/{slug}")
+async def get_public_map_detail(slug: str):
+    m = await db.maps.find_one({"slug": slug}, {"_id": 0})
+    if not m:
+        raise HTTPException(status_code=404, detail="Map not found")
+    return m
+
+@router.get("/public/map-locations")
+async def get_public_map_locations():
+    return await db.map_locations.find({}, {"_id": 0}).to_list(500)
+
+@router.get("/public/gallery")
+async def get_public_gallery(category: str = ""):
+    query = {}
+    if category:
+        query["category"] = category
+    return await db.gallery.find(query, {"_id": 0}).to_list(100)
+
+@router.get("/public/portfolio")
+async def get_public_portfolio():
+    return await db.portfolio.find({}, {"_id": 0}).to_list(100)
+
+@router.get("/public/testimonials")
+async def get_public_testimonials():
+    return await db.testimonials.find({}, {"_id": 0}).to_list(100)
+
+@router.get("/public/sections")
+async def get_public_sections():
+    settings = await db.settings.find_one({}, {"_id": 0})
+    if not settings:
+        return {}
+    sections = settings.get("sections", {})
+    section_order = settings.get("section_order", ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"])
+    return {"sections": sections, "section_order": section_order}
+
+@router.get("/public/page/{page_type}")
+async def get_public_page(page_type: str):
+    page = await db.pages.find_one({"page_type": page_type}, {"_id": 0})
+    return page or {"page_type": page_type, "title": page_type.replace("_", " ").title(), "content": ""}
+
+@router.get("/public/nav-pages")
+async def get_public_nav_pages():
+    return await db.nav_pages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+@router.get("/public/seo/{page_path:path}")
+async def get_public_seo(page_path: str):
+    seo = await db.seo_meta.find_one({"page_path": page_path}, {"_id": 0})
+    return seo or {}
+
+# External Blog API
+@router.get("/blog/latest")
+async def get_blog_latest():
+    settings = await db.settings.find_one({}, {"_id": 0})
+    blog_api_url = settings.get("blog_api_url", "") if settings else ""
+    if not blog_api_url:
+        return {"posts": [], "error": "Blog API URL not configured"}
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as http_client:
+            resp = await http_client.get(blog_api_url)
+            if resp.status_code != 200:
+                return {"posts": [], "error": "Blog API unavailable"}
+            data = resp.json()
+            posts = data.get("posts", [])[:3]
+            normalized = [{"title": p.get("title", ""), "image": p.get("image", ""),
+                          "url": p.get("url", p.get("link", "")), "summary": (p.get("summary", "") or "")[:150]} for p in posts]
+            return {"posts": normalized}
+    except Exception as e:
+        logger.warning(f"Blog API error: {e}")
+        return {"posts": [], "error": "Blog API unavailable"}
+
+# Contact Form
+@router.post("/contact")
+async def submit_contact(request: Request):
+    body = await request.json()
+    contact = {
+        "id": str(uuid.uuid4()), "name": body.get("name", ""), "email": body.get("email", ""),
+        "phone": body.get("phone", ""), "subject": body.get("subject", ""),
+        "message": body.get("message", ""), "read": False,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.contacts.insert_one(contact)
+    settings = await db.settings.find_one({}, {"_id": 0})
+    if settings and settings.get("smtp_host") and settings.get("email_to"):
+        try:
+            html = f"<h2>New Contact Form Submission</h2><p><strong>Name:</strong> {contact['name']}</p><p><strong>Email:</strong> {contact['email']}</p><p><strong>Phone:</strong> {contact['phone']}</p><p><strong>Subject:</strong> {contact['subject']}</p><p><strong>Message:</strong></p><p>{contact['message']}</p>"
+            cc_list = [c.strip() for c in settings.get("email_cc", "").split(",") if c.strip()]
+            await send_email_smtp(settings, settings["email_to"], settings.get("name_to", "Admin"),
+                                f"Contact: {contact['subject']}", html, settings.get("email_from", ""), contact["name"], cc_list)
+        except Exception as e:
+            logger.warning(f"Failed to send contact email: {e}")
+    return {"message": "Contact form submitted successfully", "id": contact["id"]}
+
+# Search
+@router.get("/search")
+async def search_content(q: str = Query("", min_length=0)):
+    query = q.strip()
+    if not query:
+        return {"results": [], "total": 0}
+    regex = {"$regex": query, "$options": "i"}
+    results = []
+    blogs = await db.blog_posts.find({"$or": [{"title": regex}, {"summary": regex}, {"content": regex}], "published": True}, {"_id": 0}).limit(10).to_list(10)
+    for b in blogs:
+        results.append({"type": "blog", "title": b["title"], "summary": b.get("summary", "")[:150], "url": f"/news/{b['slug']}", "image": b.get("image", "")})
+    services = await db.services.find({"$or": [{"title": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for s in services:
+        results.append({"type": "service", "title": s["title"], "summary": s.get("description", "")[:150], "url": "/#services"})
+    portfolios = await db.portfolio.find({"$or": [{"title": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for p in portfolios:
+        results.append({"type": "portfolio", "title": p["title"], "summary": p.get("description", "")[:150], "url": "/#portfolio"})
+    books = await db.books.find({"$or": [{"title": regex}, {"author": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for b in books:
+        results.append({"type": "book", "title": b["title"], "summary": f"by {b.get('author', '')}", "url": "/reading-list"})
+    pages = await db.nav_pages.find({"$or": [{"title": regex}, {"content": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for p in pages:
+        results.append({"type": "page", "title": p["title"], "summary": p.get("summary", "")[:150], "url": p.get("url", "/")})
+    return {"results": results, "total": len(results)}
