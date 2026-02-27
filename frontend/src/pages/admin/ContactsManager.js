@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Mail, MailOpen, Trash2, Eye } from 'lucide-react';
+import { Mail, MailOpen, Trash2, Eye, Download, Loader2 } from 'lucide-react';
+import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 
 export default function ContactsManager() {
   const [items, setItems] = useState([]);
   const [viewing, setViewing] = useState(null);
+  const [selected, setSelected] = useState([]);
+  const [exporting, setExporting] = useState(false);
 
   const load = () => adminAPI.getContacts().then(r => setItems(r.data)).catch(console.error);
   useEffect(() => { load(); }, []);
@@ -17,16 +20,63 @@ export default function ContactsManager() {
     load();
   };
 
+  const handleBulkDelete = async () => {
+    if (!selected.length || !window.confirm(`Delete ${selected.length} contacts?`)) return;
+    try { await adminAPI.bulkDelete('contacts', selected); toast.success(`${selected.length} deleted`); setSelected([]); load(); }
+    catch { toast.error('Error'); }
+  };
+
+  const handleBulkRead = async () => {
+    if (!selected.length) return;
+    try { await adminAPI.bulkUpdate('contacts', selected, { read: true }); toast.success('Marked as read'); setSelected([]); load(); }
+    catch { toast.error('Error'); }
+  };
+
+  const handleExport = async () => {
+    setExporting(true);
+    try {
+      const res = await adminAPI.exportContacts();
+      const url = window.URL.createObjectURL(new Blob([res.data]));
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'contacts.csv';
+      a.click();
+      window.URL.revokeObjectURL(url);
+      toast.success('CSV downloaded!');
+    } catch { toast.error('Export failed'); }
+    finally { setExporting(false); }
+  };
+
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAll = () => setSelected(prev => prev.length === items.length ? [] : items.map(i => i.id));
+
   return (
     <div data-testid="contacts-manager">
-      <h1 className="text-2xl font-bold text-[#1a2332] mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Contact Submissions</h1>
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Contact Submissions</h1>
+        <div className="flex items-center gap-2">
+          {selected.length > 0 && (
+            <>
+              <button onClick={handleBulkRead} className="bg-[#0D9488] text-white px-3 py-2 rounded-sm text-sm font-medium" data-testid="bulk-read-btn">Mark Read ({selected.length})</button>
+              <button onClick={handleBulkDelete} className="bg-red-500 text-white px-3 py-2 rounded-sm text-sm font-medium flex items-center gap-1" data-testid="bulk-delete-contacts-btn">
+                <Trash2 className="w-3 h-3" /> Delete ({selected.length})
+              </button>
+            </>
+          )}
+          <button onClick={handleExport} disabled={exporting} className="border border-slate-200 text-slate-600 px-3 py-2 rounded-sm text-sm font-medium flex items-center gap-1 hover:bg-slate-50 disabled:opacity-50" data-testid="export-csv-btn">
+            {exporting ? <Loader2 className="w-3 h-3 animate-spin" /> : <Download className="w-3 h-3" />} Export CSV
+          </button>
+        </div>
+      </div>
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50">
+            <th className="p-3 w-8"><Checkbox checked={selected.length === items.length && items.length > 0} onCheckedChange={toggleAll} /></th>
             <th className="text-left p-3">Status</th><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3">Subject</th><th className="text-left p-3">Date</th><th className="text-right p-3">Actions</th>
           </tr></thead>
           <tbody>{items.map(item => (
             <tr key={item.id} className={`border-b border-slate-50 ${!item.read ? 'bg-blue-50/30' : ''}`}>
+              <td className="p-3"><Checkbox checked={selected.includes(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></td>
               <td className="p-3">{item.read ? <MailOpen className="w-4 h-4 text-slate-400" /> : <Mail className="w-4 h-4 text-[#0D9488]" />}</td>
               <td className="p-3 font-medium">{item.name}</td>
               <td className="p-3 text-slate-500">{item.email}</td>
