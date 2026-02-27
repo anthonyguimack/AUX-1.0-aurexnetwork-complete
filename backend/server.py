@@ -339,9 +339,11 @@ async def get_public_testimonials():
 @api_router.get("/public/sections")
 async def get_public_sections():
     settings = await db.settings.find_one({}, {"_id": 0})
-    if settings and "sections" in settings:
-        return settings["sections"]
-    return {}
+    if not settings:
+        return {}
+    sections = settings.get("sections", {})
+    section_order = settings.get("section_order", ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"])
+    return {"sections": sections, "section_order": section_order}
 
 @api_router.get("/public/page/{page_type}")
 async def get_public_page(page_type: str):
