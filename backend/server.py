@@ -455,6 +455,191 @@ async def test_smtp_email(request: Request, user: dict = Depends(require_admin))
     except Exception as e:
         return {"success": False, "message": f"Failed to send: {str(e)}"}
 
+# ==================== IMAGE UPLOAD ====================
+
+@api_router.post("/upload")
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(require_admin)):
+    allowed = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, GIF, WebP, SVG) allowed")
+    max_size = 10 * 1024 * 1024  # 10MB
+    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = UPLOAD_DIR / filename
+    total = 0
+    async with aiofiles.open(filepath, "wb") as f:
+        while chunk := await file.read(1024 * 64):
+            total += len(chunk)
+            if total > max_size:
+                await f.close()
+                filepath.unlink(missing_ok=True)
+                raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+            await f.write(chunk)
+    url = f"/api/uploads/{filename}"
+    return {"url": url, "filename": filename}
+
+# ==================== SEARCH ====================
+
+@api_router.get("/search")
+async def search_content(q: str = Query("", min_length=1)):
+    query = q.strip()
+    if not query:
+        return {"results": []}
+    regex = {"$regex": query, "$options": "i"}
+    results = []
+    # Blog posts
+    blogs = await db.blog_posts.find({"$or": [{"title": regex}, {"summary": regex}, {"content": regex}], "published": True}, {"_id": 0}).limit(10).to_list(10)
+    for b in blogs:
+        results.append({"type": "blog", "title": b["title"], "summary": b.get("summary", "")[:150], "url": f"/news/{b['slug']}", "image": b.get("image", "")})
+    # Services
+    services = await db.services.find({"$or": [{"title": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for s in services:
+        results.append({"type": "service", "title": s["title"], "summary": s.get("description", "")[:150], "url": "/#services"})
+    # Portfolio
+    portfolios = await db.portfolio.find({"$or": [{"title": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for p in portfolios:
+        results.append({"type": "portfolio", "title": p["title"], "summary": p.get("description", "")[:150], "url": "/#portfolio"})
+    # Books
+    books = await db.books.find({"$or": [{"title": regex}, {"author": regex}, {"description": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for b in books:
+        results.append({"type": "book", "title": b["title"], "summary": f"by {b.get('author', '')}", "url": "/reading-list"})
+    # Nav pages
+    pages = await db.nav_pages.find({"$or": [{"title": regex}, {"content": regex}]}, {"_id": 0}).limit(5).to_list(5)
+    for p in pages:
+        results.append({"type": "page", "title": p["title"], "summary": p.get("summary", "")[:150], "url": p.get("url", "/")})
+    return {"results": results, "total": len(results)}
+
+# ==================== CSV EXPORT ====================
+
+@api_router.get("/admin/contacts/export")
+async def export_contacts_csv(user: dict = Depends(require_admin)):
+    contacts = await db.contacts.find({}, {"_id": 0}).sort("created_at", -1).to_list(10000)
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["Name", "Email", "Phone", "Subject", "Message", "Read", "Date"])
+    for c in contacts:
+        writer.writerow([c.get("name",""), c.get("email",""), c.get("phone",""), c.get("subject",""), c.get("message",""), "Yes" if c.get("read") else "No", c.get("created_at","")])
+    output.seek(0)
+    return StreamingResponse(io.BytesIO(output.getvalue().encode("utf-8")), media_type="text/csv", headers={"Content-Disposition": "attachment; filename=contacts.csv"})
+
+# ==================== BULK OPERATIONS ====================
+
+@api_router.post("/admin/bulk-delete")
+async def bulk_delete(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    collection = body.get("collection", "")
+    ids = body.get("ids", [])
+    allowed = {"blog_posts", "gallery", "portfolio", "testimonials", "contacts", "books", "nav_pages", "map_locations"}
+    if collection not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid collection")
+    if not ids:
+        raise HTTPException(status_code=400, detail="No IDs provided")
+    result = await db[collection].delete_many({"id": {"$in": ids}})
+    return {"deleted": result.deleted_count}
+
+@api_router.post("/admin/bulk-update")
+async def bulk_update(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    collection = body.get("collection", "")
+    ids = body.get("ids", [])
+    update = body.get("update", {})
+    allowed = {"blog_posts", "contacts", "gallery"}
+    if collection not in allowed:
+        raise HTTPException(status_code=400, detail="Invalid collection")
+    if not ids or not update:
+        raise HTTPException(status_code=400, detail="IDs and update data required")
+    update.pop("_id", None)
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db[collection].update_many({"id": {"$in": ids}}, {"$set": update})
+    return {"modified": result.modified_count}
+
+# ==================== SECTION ORDERING ====================
+
+@api_router.get("/admin/section-order")
+async def get_section_order(user: dict = Depends(require_admin)):
+    settings = await db.settings.find_one({}, {"_id": 0})
+    default_order = ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]
+    return settings.get("section_order", default_order) if settings else default_order
+
+@api_router.put("/admin/section-order")
+async def update_section_order(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    order = body.get("order", [])
+    await db.settings.update_one({}, {"$set": {"section_order": order, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return {"order": order}
+
+# ==================== SEO META ====================
+
+@api_router.get("/admin/seo")
+async def admin_get_seo(user: dict = Depends(require_admin)):
+    seo = await db.seo_meta.find({}, {"_id": 0}).to_list(100)
+    return seo
+
+@api_router.put("/admin/seo/{page_path}")
+async def admin_update_seo(page_path: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body["page_path"] = page_path
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.seo_meta.update_one({"page_path": page_path}, {"$set": body}, upsert=True)
+    return await db.seo_meta.find_one({"page_path": page_path}, {"_id": 0})
+
+@api_router.get("/public/seo/{page_path:path}")
+async def get_public_seo(page_path: str):
+    seo = await db.seo_meta.find_one({"page_path": page_path}, {"_id": 0})
+    return seo or {}
+
+# ==================== ADMIN: Analytics ====================
+
+@api_router.get("/admin/analytics")
+async def admin_analytics(user: dict = Depends(require_admin)):
+    now = datetime.now(timezone.utc)
+    # Monthly contacts (last 6 months)
+    monthly_contacts = []
+    for i in range(5, -1, -1):
+        month_start = now.replace(day=1) - timedelta(days=i * 30)
+        month_end = month_start + timedelta(days=30)
+        count = await db.contacts.count_documents({
+            "created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}
+        })
+        monthly_contacts.append({"month": month_start.strftime("%b"), "contacts": count})
+    # Monthly revenue (last 6 months)
+    monthly_revenue = []
+    for i in range(5, -1, -1):
+        month_start = now.replace(day=1) - timedelta(days=i * 30)
+        month_end = month_start + timedelta(days=30)
+        pipeline = [
+            {"$match": {"payment_status": "paid", "created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}}},
+            {"$group": {"_id": None, "total": {"$sum": "$amount"}}}
+        ]
+        result = await db.payment_transactions.aggregate(pipeline).to_list(1)
+        monthly_revenue.append({"month": month_start.strftime("%b"), "revenue": result[0]["total"] if result else 0})
+    # Top services
+    top_services = await db.payment_transactions.aggregate([
+        {"$match": {"payment_status": "paid"}},
+        {"$group": {"_id": "$service_name", "count": {"$sum": 1}, "revenue": {"$sum": "$amount"}}},
+        {"$sort": {"count": -1}}, {"$limit": 5}
+    ]).to_list(5)
+    # Content stats
+    content_stats = {
+        "blog_posts": await db.blog_posts.count_documents({}),
+        "published_posts": await db.blog_posts.count_documents({"published": True}),
+        "gallery_items": await db.gallery.count_documents({}),
+        "portfolio_items": await db.portfolio.count_documents({}),
+        "books": await db.books.count_documents({}),
+        "map_locations": await db.map_locations.count_documents({}),
+        "testimonials": await db.testimonials.count_documents({}),
+        "total_contacts": await db.contacts.count_documents({}),
+        "unread_contacts": await db.contacts.count_documents({"read": False}),
+        "total_users": await db.users.count_documents({"role": {"$ne": "admin"}}),
+        "total_pages": await db.nav_pages.count_documents({}),
+    }
+    return {
+        "monthly_contacts": monthly_contacts,
+        "monthly_revenue": monthly_revenue,
+        "top_services": [{"name": s["_id"] or "Unknown", "count": s["count"], "revenue": s["revenue"]} for s in top_services],
+        "content_stats": content_stats,
+    }
+
 # ==================== STRIPE ROUTES ====================
 
 @api_router.post("/checkout")
