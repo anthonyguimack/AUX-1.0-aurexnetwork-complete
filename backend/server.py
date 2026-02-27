@@ -901,6 +901,16 @@ async def seed_data():
                 {"id": str(uuid.uuid4()), "title": "Terms of Service", "url": "/terms", "show_in_header": False, "show_in_footer": True, "open_in_new_tab": False, "login_required": False, "order": 1, "banner_image": "", "summary": "Our terms and conditions", "content": "", "page_type": "terms", "created_at": datetime.now(timezone.utc).isoformat()},
                 {"id": str(uuid.uuid4()), "title": "Privacy Policy", "url": "/privacy", "show_in_header": False, "show_in_footer": True, "open_in_new_tab": False, "login_required": False, "order": 2, "banner_image": "", "summary": "Our privacy policy", "content": "", "page_type": "privacy", "created_at": datetime.now(timezone.utc).isoformat()},
             ])
+        # Migrate books with Phase 2 extended fields
+        book_migration_data = {
+            "Good to Great": {"synopsis": "A landmark study revealing what it takes to transform a good company into one that produces sustained great results.", "who_is_it_for": "Business leaders, managers, and entrepreneurs seeking to understand what separates great companies from good ones.", "about_author": "Jim Collins is a student and teacher of what makes great companies tick, and a Socratic advisor to leaders in the business and social sectors."},
+            "The Lean Startup": {"synopsis": "Eric Ries presents a scientific approach to creating and managing successful startups in an age when companies need to innovate more than ever.", "who_is_it_for": "Startup founders, product managers, and anyone building something new under conditions of extreme uncertainty.", "about_author": "Eric Ries is an entrepreneur and author. He is the creator of the Lean Startup methodology."},
+            "Thinking, Fast and Slow": {"synopsis": "Nobel laureate Daniel Kahneman takes us on a tour of the mind explaining the two systems that drive the way we think and how they shape our decisions.", "who_is_it_for": "Decision-makers, psychologists, economists, and anyone curious about how the mind works.", "about_author": "Daniel Kahneman is a psychologist and economist notable for his work on the psychology of judgment and decision-making."},
+        }
+        for title, fields in book_migration_data.items():
+            book = await db.books.find_one({"title": title, "synopsis": {"$exists": False}})
+            if book:
+                await db.books.update_one({"title": title}, {"$set": fields})
         # Ensure sample user exists
         sample_user = await db.users.find_one({"email": "user@example.com"})
         if not sample_user:
