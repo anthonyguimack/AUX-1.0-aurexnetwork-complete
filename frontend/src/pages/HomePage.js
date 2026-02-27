@@ -254,14 +254,16 @@ function MapSection({ maps, locations }) {
         <div className="h-[450px] rounded-sm overflow-hidden border border-slate-200" data-testid="map-container">
           <MapContainer center={[30, 0]} zoom={2} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
             <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; OpenStreetMap' />
-            {locations.map(loc => (
-              <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-                <Popup>
-                  <strong>{loc.name}</strong><br />{loc.description}
-                  {loc.link && <><br /><a href={loc.link} target="_blank" rel="noreferrer" style={{ color: '#0D9488' }}>More info</a></>}
-                </Popup>
-              </Marker>
-            ))}
+            <MarkerClusterGroup chunkedLoading>
+              {locations.map(loc => (
+                <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+                  <Popup>
+                    <strong>{loc.name}</strong><br />{loc.description}
+                    {loc.link && <><br /><a href={loc.link} target="_blank" rel="noreferrer" style={{ color: '#0D9488' }}>More info</a></>}
+                  </Popup>
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
           </MapContainer>
         </div>
         {maps?.length > 0 && (
