@@ -111,6 +111,21 @@ export const adminAPI = {
   // SMTP
   testSmtpConnection: (data) => api.post('/admin/smtp/test-connection', data),
   testSmtpEmail: (data) => api.post('/admin/smtp/test-email', data),
+  // Upload
+  uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
+  // Bulk Operations
+  bulkDelete: (collection, ids) => api.post('/admin/bulk-delete', { collection, ids }),
+  bulkUpdate: (collection, ids, update) => api.post('/admin/bulk-update', { collection, ids, update }),
+  // Section Order
+  getSectionOrder: () => api.get('/admin/section-order'),
+  updateSectionOrder: (order) => api.put('/admin/section-order', { order }),
+  // SEO
+  getSeo: () => api.get('/admin/seo'),
+  updateSeo: (pagePath, data) => api.put(`/admin/seo/${pagePath}`, data),
+  // Analytics
+  getAnalytics: () => api.get('/admin/analytics'),
+  // CSV Export
+  exportContacts: () => api.get('/admin/contacts/export', { responseType: 'blob' }),
 };
 
 export default api;
