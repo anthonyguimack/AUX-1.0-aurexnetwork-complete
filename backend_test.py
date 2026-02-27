@@ -4,7 +4,7 @@ from datetime import datetime
 import json
 
 class ConsultantWebsiteAPITester:
-    def __init__(self, base_url="https://access-portal-83.preview.emergentagent.com"):
+    def __init__(self, base_url="https://consultant-cms.preview.emergentagent.com"):
         self.base_url = base_url
         self.api_url = f"{base_url}/api"
         self.token = None
@@ -185,7 +185,7 @@ class ConsultantWebsiteAPITester:
             if service_id:
                 checkout_data = {
                     "service_id": service_id,
-                    "origin_url": "https://access-portal-83.preview.emergentagent.com"
+                    "origin_url": "https://consultant-cms.preview.emergentagent.com"
                 }
                 self.run_test("Create Checkout Session", "POST", "checkout", 200, checkout_data)
         else:
