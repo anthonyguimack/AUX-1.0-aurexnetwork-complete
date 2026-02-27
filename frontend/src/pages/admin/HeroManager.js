@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Save, Loader2 } from 'lucide-react';
+import ImageUpload from '../../components/ImageUpload';
 
 export default function HeroManager() {
   const [data, setData] = useState({ subtitle: '', title: '', description: '', button_text: '', button_link: '', background_image: '' });
@@ -43,9 +44,8 @@ export default function HeroManager() {
           <div><Label>Button Link</Label><Input value={data.button_link} onChange={e => setData({ ...data, button_link: e.target.value })} className="mt-1" data-testid="hero-btn-link-input" /></div>
         </div>
         <div>
-          <Label>Background Image URL</Label>
-          <Input value={data.background_image} onChange={e => setData({ ...data, background_image: e.target.value })} className="mt-1" data-testid="hero-bg-input" />
-          {data.background_image && <img src={data.background_image} alt="Preview" className="mt-2 h-40 w-full object-cover rounded-sm" />}
+          <Label>Background Image</Label>
+          <ImageUpload value={data.background_image} onChange={val => setData({ ...data, background_image: val })} className="mt-1" />
         </div>
       </div>
     </div>
