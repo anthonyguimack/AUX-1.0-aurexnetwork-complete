@@ -3,8 +3,9 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import { publicAPI } from '../../lib/api';
 import { useSettings } from '../../App';
-import { Menu, X, LogIn, LogOut, Facebook, Twitter, Instagram, Linkedin, Github, Youtube } from 'lucide-react';
+import { Menu, X, LogIn, LogOut, Facebook, Twitter, Instagram, Linkedin, Github, Youtube, Search } from 'lucide-react';
 import LoginModal from '../LoginModal';
+import SearchBar from '../SearchBar';
 
 const socialIconMap = { facebook: Facebook, twitter: Twitter, instagram: Instagram, linkedin: Linkedin, github: Github, youtube: Youtube };
 
