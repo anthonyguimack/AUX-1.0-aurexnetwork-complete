@@ -901,6 +901,16 @@ async def seed_data():
                 {"id": str(uuid.uuid4()), "title": "Terms of Service", "url": "/terms", "show_in_header": False, "show_in_footer": True, "open_in_new_tab": False, "login_required": False, "order": 1, "banner_image": "", "summary": "Our terms and conditions", "content": "", "page_type": "terms", "created_at": datetime.now(timezone.utc).isoformat()},
                 {"id": str(uuid.uuid4()), "title": "Privacy Policy", "url": "/privacy", "show_in_header": False, "show_in_footer": True, "open_in_new_tab": False, "login_required": False, "order": 2, "banner_image": "", "summary": "Our privacy policy", "content": "", "page_type": "privacy", "created_at": datetime.now(timezone.utc).isoformat()},
             ])
+        # Ensure sample user exists
+        sample_user = await db.users.find_one({"email": "user@example.com"})
+        if not sample_user:
+            await db.users.insert_one({
+                "user_id": f"user_{uuid.uuid4().hex[:12]}", "email": "user@example.com",
+                "name": "John Doe", "first_name": "John", "last_name": "Doe",
+                "password_hash": hash_password("User123!"), "role": "user",
+                "picture": "", "phone": "+1 555-0100",
+                "created_at": datetime.now(timezone.utc).isoformat()
+            })
         return
     logger.info("Seeding initial data...")
     admin_id = f"user_{uuid.uuid4().hex[:12]}"
