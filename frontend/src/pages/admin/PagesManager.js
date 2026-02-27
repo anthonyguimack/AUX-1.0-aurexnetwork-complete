@@ -98,9 +98,9 @@ export default function PagesManager() {
                 <p className="text-xs text-slate-400 mt-1">Internal path (/terms), anchor (#contact), or external URL (https://...)</p>
               </div>
               <div><Label>Page Type (optional, e.g. "terms", "privacy")</Label><Input value={editing.page_type || ''} onChange={e => setEditing({...editing, page_type: e.target.value})} className="mt-1" placeholder="terms, privacy, etc." /></div>
-              <div><Label>Banner Image URL</Label><Input value={editing.banner_image || ''} onChange={e => setEditing({...editing, banner_image: e.target.value})} className="mt-1" /></div>
+              <div><Label>Banner Image</Label><ImageUpload value={editing.banner_image || ''} onChange={val => setEditing({...editing, banner_image: val})} className="mt-1" /></div>
               <div><Label>Summary</Label><textarea value={editing.summary || ''} onChange={e => setEditing({...editing, summary: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-              <div><Label>Content (HTML)</Label><textarea value={editing.content || ''} onChange={e => setEditing({...editing, content: e.target.value})} rows={5} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1 font-mono text-xs" /></div>
+              <div><Label>Content</Label><div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({...editing, content: val})} /></div></div>
               <div><Label>Display Order</Label><Input type="number" value={editing.order || 0} onChange={e => setEditing({...editing, order: parseInt(e.target.value) || 0})} className="mt-1 w-24" /></div>
               <div className="grid grid-cols-2 gap-4">
                 <div className="flex items-center gap-2 p-3 bg-slate-50 rounded-sm">
