@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
-  MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X
+  MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -17,6 +17,8 @@ const sidebarItems = [
   { label: 'Gallery', icon: Images, href: '/admin/gallery' },
   { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
   { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
+  { label: 'Pages', icon: FileStack, href: '/admin/pages' },
+  { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
