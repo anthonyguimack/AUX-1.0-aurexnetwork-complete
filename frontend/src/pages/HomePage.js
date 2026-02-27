@@ -428,6 +428,7 @@ export default function HomePage() {
   const [portfolio, setPortfolio] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
   const [sections, setSections] = useState({});
+  const [sectionOrder, setSectionOrder] = useState([]);
 
   useEffect(() => {
     Promise.all([
@@ -439,25 +440,34 @@ export default function HomePage() {
       setHero(h.data); setAbout(a.data); setServices(s.data);
       setPosts(b.data.posts || []); setBooks(bk.data); setMaps(m.data);
       setLocations(l.data); setGallery(g.data); setPortfolio(p.data);
-      setTestimonials(t.data); setSections(sec.data);
+      setTestimonials(t.data);
+      setSections(sec.data?.sections || sec.data || {});
+      setSectionOrder(sec.data?.section_order || ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]);
     }).catch(console.error);
   }, []);
 
   const isOn = (key) => !sections[key] || sections[key].enabled !== false;
 
+  const sectionComponents = {
+    hero: () => isOn('hero') && <HeroSection data={hero} />,
+    about: () => isOn('about') && <AboutSection data={about} />,
+    services: () => isOn('services') && <ServicesSection services={services} />,
+    news: () => isOn('news') && <NewsSection posts={posts} />,
+    blog: () => isOn('blog') && <ExternalBlogSection />,
+    reading_list: () => isOn('reading_list') && <ReadingListSection books={books} />,
+    map: () => isOn('map') && <MapSection maps={maps} locations={locations} />,
+    portfolio: () => isOn('portfolio') && <PortfolioSection items={portfolio} />,
+    gallery: () => isOn('gallery') && <GallerySection items={gallery} />,
+    testimonials: () => isOn('testimonials') && <TestimonialsSection items={testimonials} />,
+    contact: () => isOn('contact') && <ContactSection />,
+  };
+
   return (
     <main data-testid="home-page">
-      {isOn('hero') && <HeroSection data={hero} />}
-      {isOn('about') && <AboutSection data={about} />}
-      {isOn('services') && <ServicesSection services={services} />}
-      {isOn('news') && <NewsSection posts={posts} />}
-      {isOn('blog') && <ExternalBlogSection />}
-      {isOn('reading_list') && <ReadingListSection books={books} />}
-      {isOn('map') && <MapSection maps={maps} locations={locations} />}
-      {isOn('portfolio') && <PortfolioSection items={portfolio} />}
-      {isOn('gallery') && <GallerySection items={gallery} />}
-      {isOn('testimonials') && <TestimonialsSection items={testimonials} />}
-      {isOn('contact') && <ContactSection />}
+      {sectionOrder.map(key => {
+        const render = sectionComponents[key];
+        return render ? <React.Fragment key={key}>{render()}</React.Fragment> : null;
+      })}
     </main>
   );
 }
