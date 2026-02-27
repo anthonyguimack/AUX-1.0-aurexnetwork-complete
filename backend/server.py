@@ -483,10 +483,10 @@ async def upload_file(file: UploadFile = File(...), user: dict = Depends(require
 # ==================== SEARCH ====================
 
 @api_router.get("/search")
-async def search_content(q: str = Query("", min_length=1)):
+async def search_content(q: str = Query("", min_length=0)):
     query = q.strip()
     if not query:
-        return {"results": []}
+        return {"results": [], "total": 0}
     regex = {"$regex": query, "$options": "i"}
     results = []
     # Blog posts
