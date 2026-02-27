@@ -127,6 +127,9 @@ function AppRouter() {
           <Route path="settings" element={<SettingsManager />} />
           <Route path="pages" element={<PagesManager />} />
           <Route path="users" element={<UsersManager />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route path="seo" element={<SeoManager />} />
+          <Route path="section-order" element={<SectionOrderManager />} />
         </Route>
       </Routes>
       <Footer />
