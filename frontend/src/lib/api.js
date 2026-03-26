@@ -126,6 +126,45 @@ export const adminAPI = {
   getAnalytics: () => api.get('/admin/analytics'),
   // CSV Export
   exportContacts: () => api.get('/admin/contacts/export', { responseType: 'blob' }),
+  // Members
+  getMembers: () => api.get('/admin/members'),
+  createMember: (data) => api.post('/admin/members', data),
+  getMember: (id) => api.get(`/admin/members/${id}`),
+  updateMember: (id, data) => api.put(`/admin/members/${id}`, data),
+  deleteMember: (id) => api.delete(`/admin/members/${id}`),
+  assignMentor: (id, data) => api.put(`/admin/members/${id}/mentor`, data),
+};
+
+// Member API (separate token)
+const memberApi = axios.create({ baseURL: API, withCredentials: true });
+memberApi.interceptors.request.use((config) => {
+  const token = localStorage.getItem('member_token');
+  if (token) config.headers.Authorization = `Bearer ${token}`;
+  return config;
+});
+
+export const memberAPI = {
+  login: (data) => memberApi.post('/member/login', data),
+  me: () => memberApi.get('/member/me'),
+  // Invite codes
+  generateCodes: (count) => memberApi.post('/member/invite-codes/generate', { count }),
+  listCodes: () => memberApi.get('/member/invite-codes'),
+  sendInvite: (codeId, data) => memberApi.post(`/member/invite-codes/${codeId}/send`, data),
+  // Public
+  validateCode: (code) => api.get(`/member/validate-code/${code}`),
+  register: (data) => api.post('/member/register', data),
+  // My Account
+  getSponsor: () => memberApi.get('/member/my-sponsor'),
+  getMentor: () => memberApi.get('/member/my-mentor'),
+  getCommunity: () => memberApi.get('/member/my-community'),
+  updateBiography: (data) => memberApi.put('/member/biography', data),
+  updateProfile: (data) => memberApi.put('/member/profile', data),
+  // Portfolios
+  getPortfolios: () => memberApi.get('/member/portfolios'),
+  createPortfolio: (data) => memberApi.post('/member/portfolios', data),
+  getPortfolio: (id) => memberApi.get(`/member/portfolios/${id}`),
+  updatePortfolio: (id, data) => memberApi.put(`/member/portfolios/${id}`, data),
+  deletePortfolio: (id) => memberApi.delete(`/member/portfolios/${id}`),
 };
 
 export default api;

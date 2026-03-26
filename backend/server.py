@@ -27,12 +27,14 @@ from routes.public import router as public_router
 from routes.admin_content import router as admin_content_router
 from routes.admin_tools import router as admin_tools_router
 from routes.payments import router as payments_router
+from routes.membership import router as membership_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
 api_router.include_router(admin_content_router)
 api_router.include_router(admin_tools_router)
 api_router.include_router(payments_router)
+api_router.include_router(membership_router)
 
 # Import shared config for seed data
 from models.database import db, hash_password, ADMIN_EMAIL, ADMIN_PASSWORD
@@ -65,6 +67,15 @@ async def seed_data():
         settings_check = await db.settings.find_one({}, {"_id": 0})
         if settings_check and "section_order" not in settings_check:
             await db.settings.update_one({}, {"$set": {"section_order": ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]}})
+        # Add membership settings if missing
+        if settings_check and "aux_prefix" not in settings_check:
+            await db.settings.update_one({}, {"$set": {
+                "aux_prefix": "AUX",
+                "membership_login_bg": "",
+                "membership_default_avatar": "",
+                "welcome_email_template": "",
+                "platform_domain": "legacy.com",
+            }})
         nav_pages_count = await db.nav_pages.count_documents({})
         if nav_pages_count == 0:
             await db.nav_pages.insert_many([

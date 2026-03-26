@@ -5,7 +5,9 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users } from 'lucide-react';
+import ImageUpload from '../../components/ImageUpload';
+import RichTextEditor from '../../components/RichTextEditor';
 
 export default function SettingsManager() {
   const [settings, setSettings] = useState({});
@@ -104,6 +106,7 @@ export default function SettingsManager() {
           <TabsTrigger value="social"><Globe className="w-3 h-3 mr-1" />Social Links</TabsTrigger>
           <TabsTrigger value="email"><Mail className="w-3 h-3 mr-1" />Email/SMTP</TabsTrigger>
           <TabsTrigger value="blogapi"><Rss className="w-3 h-3 mr-1" />Blog API</TabsTrigger>
+          <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -218,6 +221,25 @@ export default function SettingsManager() {
               <Label>Blog API URL</Label>
               <Input value={settings.blog_api_url || ''} onChange={e => setSettings({...settings, blog_api_url: e.target.value})} className="mt-1" placeholder="https://carlosartiles.com/api.php" data-testid="blog-api-url-input" />
               <p className="text-xs text-slate-400 mt-1">The API must return JSON with a "posts" array. Each post should have: title, image, url/link, summary.</p>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="membership">
+          <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
+            <h3 className="font-semibold text-[#1a2332]">Membership Settings</h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div><Label>AUX Prefix</Label><Input value={settings.aux_prefix || 'AUX'} onChange={e => setSettings({...settings, aux_prefix: e.target.value})} className="mt-1" placeholder="AUX" data-testid="aux-prefix-input" />
+                <p className="text-xs text-slate-400 mt-1">Prefix for membership IDs (e.g. AUX-1, AUX-2)</p></div>
+              <div><Label>Platform Domain</Label><Input value={settings.platform_domain || ''} onChange={e => setSettings({...settings, platform_domain: e.target.value})} className="mt-1" placeholder="legacy.com" /></div>
+            </div>
+            <div><Label>Login Background Image</Label>
+              <ImageUpload value={settings.membership_login_bg || ''} onChange={val => setSettings({...settings, membership_login_bg: val})} className="mt-1" /></div>
+            <div><Label>Default Member Avatar</Label>
+              <ImageUpload value={settings.membership_default_avatar || ''} onChange={val => setSettings({...settings, membership_default_avatar: val})} className="mt-1" /></div>
+            <div><Label>Welcome Email Template</Label>
+              <p className="text-xs text-slate-400 mb-1">Use placeholders: {'{{first_name}}'}, {'{{last_name}}'}, {'{{membership_id}}'}, {'{{username}}'}, {'{{platform_name}}'}</p>
+              <div className="mt-1"><RichTextEditor value={settings.welcome_email_template || ''} onChange={val => setSettings({...settings, welcome_email_template: val})} placeholder="Welcome email HTML template..." /></div>
             </div>
           </div>
         </TabsContent>
