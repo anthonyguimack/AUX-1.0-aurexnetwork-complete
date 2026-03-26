@@ -4,7 +4,7 @@ import { useAuth } from '../../lib/auth';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers
+  BarChart3, Globe, Layers, UserCheck
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -20,6 +20,7 @@ const sidebarItems = [
   { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
   { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
   { label: 'Pages', icon: FileStack, href: '/admin/pages' },
+  { label: 'Members', icon: UserCheck, href: '/admin/members' },
   { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },

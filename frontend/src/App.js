@@ -34,6 +34,20 @@ import UsersManager from './pages/admin/UsersManager';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import SeoManager from './pages/admin/SeoManager';
 import SectionOrderManager from './pages/admin/SectionOrderManager';
+import MembersManager from './pages/admin/MembersManager';
+// Membership / My Account
+import { MemberProvider, useMember } from './lib/memberAuth';
+import MemberLogin from './pages/myaccount/MemberLogin';
+import MemberRegister from './pages/myaccount/MemberRegister';
+import MyAccountLayout from './pages/myaccount/MyAccountLayout';
+import MentorshipProfile from './pages/myaccount/MentorshipProfile';
+import MySponsor from './pages/myaccount/MySponsor';
+import InviteCode from './pages/myaccount/InviteCode';
+import MyCommunity from './pages/myaccount/MyCommunity';
+import UpdateBiography from './pages/myaccount/UpdateBiography';
+import PortfolioList from './pages/myaccount/PortfolioList';
+import PortfolioDetail from './pages/myaccount/PortfolioDetail';
+import PortfolioForm from './pages/myaccount/PortfolioForm';
 
 // Global settings context for colors
 export const SettingsContext = createContext({});
@@ -94,9 +108,40 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function MemberRoute({ children }) {
+  const { member, loading } = useMember();
+  if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0d0f14]"><div className="animate-spin w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full" /></div>;
+  if (!member) return <Navigate to="/my-account/login" replace />;
+  return children;
+}
+
 function AppRouter() {
   const location = useLocation();
   if (location.hash?.includes('session_id=')) return <AuthCallback />;
+
+  const isMemberArea = location.pathname.startsWith('/my-account');
+
+  if (isMemberArea) {
+    return (
+      <Routes>
+        <Route path="/my-account/login" element={<MemberLogin />} />
+        <Route path="/my-account/register" element={<MemberRegister />} />
+        <Route path="/my-account" element={<MemberRoute><MyAccountLayout /></MemberRoute>}>
+          <Route index element={<Navigate to="/my-account/mentorship-profile" replace />} />
+          <Route path="mentorship-profile" element={<MentorshipProfile />} />
+          <Route path="my-sponsor" element={<MySponsor />} />
+          <Route path="invite-code" element={<InviteCode />} />
+          <Route path="my-community" element={<MyCommunity />} />
+          <Route path="update-biography" element={<UpdateBiography />} />
+          <Route path="portfolios" element={<PortfolioList />} />
+          <Route path="portfolios/new" element={<PortfolioForm />} />
+          <Route path="portfolios/:id" element={<PortfolioDetail />} />
+          <Route path="portfolios/:id/edit" element={<PortfolioForm />} />
+        </Route>
+      </Routes>
+    );
+  }
+
   return (
     <>
       <Navbar />
@@ -127,6 +172,7 @@ function AppRouter() {
           <Route path="settings" element={<SettingsManager />} />
           <Route path="pages" element={<PagesManager />} />
           <Route path="users" element={<UsersManager />} />
+          <Route path="members" element={<MembersManager />} />
           <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="seo" element={<SeoManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
@@ -142,8 +188,10 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <SettingsProvider>
-          <AppRouter />
-          <Toaster position="top-right" richColors />
+          <MemberProvider>
+            <AppRouter />
+            <Toaster position="top-right" richColors />
+          </MemberProvider>
         </SettingsProvider>
       </AuthProvider>
     </BrowserRouter>
