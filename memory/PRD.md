@@ -15,6 +15,7 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
     admin_content.py     # Admin CRUD for all collections + dashboard
     admin_tools.py       # Upload, bulk ops, analytics, SEO, section order, SMTP
     payments.py          # Stripe checkout, webhook, status
+    membership.py        # Member auth, invite codes, community tree, portfolios
 /app/frontend/
   src/
     components/
@@ -22,23 +23,41 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
       ImageUpload.js     # Drag-drop + URL image upload
       SearchBar.js       # Global search with debounce
       LoginModal.js      # User/Admin tab switcher
+      TreeNode.js        # Iterative community tree renderer
       layout/
         Navbar.js        # Social bar + nav + search
         Footer.js        # Dynamic pages + social links
+    lib/
+      api.js             # Axios clients for public, admin, member APIs
+      auth.js            # Admin/user auth context
+      memberAuth.js      # Member auth context (separate token)
     pages/
       admin/
-        AnalyticsDashboard.js  # Recharts charts
-        SectionOrderManager.js # @dnd-kit drag-and-drop
-        SeoManager.js          # Per-page meta tags
-        BlogManager.js         # WYSIWYG + image upload + bulk ops
-        ContactsManager.js     # CSV export + bulk ops
-        GalleryManager.js      # Image upload + bulk delete
+        MembersManager.js    # Admin CRUD for members + mentor assignment
+        AnalyticsDashboard.js
+        SectionOrderManager.js
+        SeoManager.js
+        BlogManager.js
+        ContactsManager.js
+        GalleryManager.js
+      myaccount/
+        MemberLogin.js       # Member login (70/30 split layout)
+        MemberRegister.js    # Invite code registration
+        MyAccountLayout.js   # Dark sidebar with nav
+        MentorshipProfile.js # View mentor profile
+        MySponsor.js         # View sponsor profile
+        InviteCode.js        # Generate & send invite codes
+        MyCommunity.js       # Sponsor tree visualization
+        UpdateBiography.js   # WYSIWYG biography editor
+        PortfolioList.js     # Portfolio grid with tabs
+        PortfolioDetail.js   # Holdings table, charts, balance
+        PortfolioForm.js     # Create/edit with holdings & activities
 ```
 
 ## Tech Stack
 - **Frontend**: React 19 + Tailwind CSS + Shadcn UI + Leaflet + Framer Motion + Recharts
 - **Backend**: FastAPI (Python) + MongoDB (Motor async driver)
-- **Auth**: JWT + Emergent Google OAuth
+- **Auth**: JWT + Emergent Google OAuth + Separate Member JWT
 - **Payments**: Stripe
 - **Editor**: React-Quill-New (React 19 compatible)
 - **Drag-Drop**: @dnd-kit/core + @dnd-kit/sortable
@@ -72,7 +91,6 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Image upload (drag-drop + URL fallback) in Blog, Gallery, Hero, Portfolio, Pages
 - Drag-and-drop homepage section reordering
 - Map marker clustering (react-leaflet-markercluster)
-- Blog pagination (already existed)
 - Global search bar (search across blog, services, portfolio, books, pages)
 - SEO Manager (per-page meta title, description, OG image)
 - Advanced Analytics Dashboard (monthly contacts/revenue charts, content stats)
@@ -83,17 +101,39 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 ### Batch 4: Refactoring (Feb 27, 2026) - COMPLETE
 - Backend split into modular FastAPI routers
 - Shared database/auth module extracted
-- 5 route modules: auth, public, admin_content, admin_tools, payments
+- 6 route modules: auth, public, admin_content, admin_tools, payments, membership
+
+### Phase 3: Membership System (Mar 26, 2026) - COMPLETE
+- Member Login/Register with invite codes (AUX-N IDs)
+- My Account portal with sidebar navigation
+- Mentorship Profile & My Sponsor pages
+- Invite Code generation, sending, and tracking
+- My Community sponsor tree visualization (iterative rendering)
+- Update Biography with WYSIWYG editor
+- Portfolio CRUD with holdings, charts (Pie: holdings, sector, industry), and activities
+- Admin Members Manager (CRUD + mentor assignment)
+- Separate member JWT authentication system
+- Protected member routes with MemberRoute guard
 
 ## Testing History
 - Phase 1: 35/35 backend (iteration_1.json)
 - Phase 2: 22/22 backend + 16/16 frontend (iteration_2.json)
 - Batch 1-3: 23/25 backend + 100% frontend (iteration_3.json)
 - Post-refactoring: 44/44 backend + 17/17 frontend (iteration_4.json)
+- Phase 3 Membership: 13/13 backend + 12/12 frontend (iteration_5.json)
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 - **User**: user@example.com / User123!
+- **Member**: Created via admin panel or invite code registration
+
+## DB Schema (Key Collections)
+- `users`: admin/user accounts with JWT auth
+- `members`: membership accounts (member_id, membership_id, sponsor_id, mentor_id, etc.)
+- `invite_codes`: invite code tracking (owner, status, invitee info)
+- `portfolios`: member portfolios with holdings and activities
+- `settings`: global site settings, SMTP, colors, membership config
 
 ## Remaining Backlog
-All tasks from the original plan have been completed. No remaining items.
+- **(P2)** Real S3/Cloud Image Storage (currently local uploads)
+- **(P2)** Production SMTP Configuration
