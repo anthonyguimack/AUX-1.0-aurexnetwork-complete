@@ -1,111 +1,90 @@
 # Legacy Consultant Website - PRD
 
 ## Original Problem Statement
-Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe payments, JWT + Google OAuth auth, interactive Leaflet maps, blog, gallery, reading list, portfolio, testimonials, contact form. Brand: "Legacy". Dark navy + white + teal color scheme.
+Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe payments, JWT + Google OAuth auth, interactive maps, blog, gallery, reading list, portfolio, testimonials, contact form. Membership system with invite codes, sponsor trees, portfolio management.
 
 ## Architecture
 ```
 /app/backend/
-  server.py              # App entry, seed data, router orchestration
-  models/
-    database.py          # MongoDB, auth helpers (unified members), JWT, SMTP
+  server.py              # App entry, seed data (incl. sectors/industries/companies)
+  models/database.py     # MongoDB, unified auth (members collection), JWT, SMTP
   routes/
-    auth.py              # Unified login (members table), logout, session, password
-    public.py            # Public content, search, external blog, contact form
-    admin_content.py     # Admin CRUD for all collections + dashboard
-    admin_tools.py       # Upload, bulk ops, analytics, SEO, section order, SMTP
-    payments.py          # Stripe checkout, webhook, status
-    membership.py        # Member CRUD, invite codes, community tree, portfolios
-/app/frontend/
-  src/
-    components/
-      LoginModal.js      # Unified login (no tabs), forgot password, Google OAuth
-      TreeNode.js        # Iterative community tree renderer
-      layout/
-        Navbar.js        # Shows My Account + Admin Panel when logged in
-        Footer.js        # Dynamic pages + social links
-    lib/
-      api.js             # Unified auth_token for all APIs
-      auth.js            # Main auth provider (AuthProvider/useAuth)
-      memberAuth.js      # Thin wrapper over useAuth (MemberProvider/useMember)
-    pages/
-      admin/
-        MembersManager.js    # CRUD + Mentor/Portfolio Dev radio buttons
-      myaccount/
-        MemberLogin.js       # Unified login + Register link
-        MemberRegister.js    # Editable invite code + auto-login after registration
+    auth.py              # Unified login (members table), session exchange, password
+    public.py            # Public content, search, external blog, contact
+    admin_content.py     # Admin CRUD, dashboard (counts from members)
+    admin_tools.py       # Upload, analytics, SEO, section order, SMTP
+    payments.py          # Stripe checkout, webhook
+    membership.py        # Member CRUD, invite codes, community tree, portfolios,
+                         # sectors/industries/companies endpoints, members-list
+/app/frontend/src/
+  components/
+    LoginModal.js        # Unified login (no tabs), Google OAuth, Register link
+    TreeNode.js          # Iterative community tree renderer
+  lib/
+    api.js               # Unified auth_token for all APIs (incl. memberAPI)
+    auth.js              # Main auth provider
+    memberAuth.js        # Thin wrapper over useAuth()
+  pages/
+    admin/
+      MembersManager.js  # SELECT: Sponsor, Mentor (mentors only), Member Type;
+                         # Radio: Mentor YES/NO, Portfolio Development YES/NO
+    myaccount/
+      MembershipProfile.js  # Tabs: General Info, Social Links, Activities + Biography modal
+      MentorshipProfile.js  # Assigned mentor info
+      MyCommunity.js        # Tree view + clickable search results list
+      PortfolioForm.js      # Cascading selects, Shared Members, Status
 ```
 
-## Tech Stack
-- **Frontend**: React 19 + Tailwind CSS + Shadcn UI + Leaflet + Framer Motion + Recharts
-- **Backend**: FastAPI (Python) + MongoDB (Motor async driver)
-- **Auth**: Unified JWT (single members table) + Emergent Google OAuth
-- **Payments**: Stripe
-
-## DB Schema (Unified)
-- `members`: ALL users (admin + regular members). Fields: member_id, membership_id, email, password_hash, role (admin|member), is_mentor, portfolio_development, sponsor_id, mentor_id, social_links, etc.
-- `invite_codes`: invite code tracking
-- `portfolios`: member portfolios with holdings
-- `settings`: global site settings, SMTP, colors, membership config
+## DB Schema
+- `members`: ALL users (admin/member). Fields: member_id, membership_id, email, password_hash, role, is_mentor, portfolio_development, sponsor_id, mentor_id, social_links, biography, cover_image
+- `sectors`: {id, name}
+- `industries`: {id, name, sector_id}
+- `companies`: {id, symbol, name, security, sector_id, industry_id, price}
+- `portfolios`: {id, owner_member_id, title, holdings[], status(active/inactive), shared_mode(all/select), shared_with[]}
+- `invite_codes`, `settings`, `nav_pages`, etc.
 
 ## Completed Features
 
-### Phase 1 (Initial Build) - COMPLETE
-- Full public website with 11 sections, admin panel with 13 managers, JWT + Google OAuth, Stripe
-
-### Phase 2 (CMS Enhancement) - COMPLETE
-- Dynamic Pages, WYSIWYG, image upload, drag-drop section ordering, map clustering, search, analytics, SEO
+### Phase 1-2 (Initial + CMS Enhancement) - COMPLETE
+- Full public website, admin panel, JWT + Google OAuth, WYSIWYG, image upload, drag-drop, maps, search, analytics, SEO
 
 ### Phase 3 (Membership System) - COMPLETE
-- Member portal (/my-account), invite codes, sponsor tree, portfolios, admin Members Manager
+- Member portal, invite codes, sponsor tree, portfolios, admin Members Manager
 
 ### Phase A (Auth Unification) - COMPLETE (Mar 27, 2026)
-- **Unified users/members**: Single `members` collection for all users including admin
-- **Single login**: Both Navbar LoginModal and /my-account/login use same `/api/auth/login` endpoint
-- **Navbar**: Shows "My Account" link for all logged-in users, "Admin Panel" for admins
-- **LoginModal**: Removed User/Admin tabs, single unified form with Google OAuth + Register link
-- **MemberLogin**: Added Register button linking to registration form
-- **MemberRegister**: Editable invite code field, email uniqueness validation, auto-login after registration
-- **MembersManager CMS**: Added Mentor (YES/NO) and Portfolio Development (YES/NO) radio buttons
-- **Admin sidebar**: Removed "Users" link, kept "Members" as unified manager
-- **Backend migration**: Admin auto-migrated from users to members collection
-- Testing: 13/13 backend + 14/14 frontend (iteration_6.json)
+- Unified users/members into single `members` collection
+- Single login system for both Navbar and /my-account
+- Navbar shows "My Account" + "Admin Panel" (for admins)
+- **Phase A Fixes**: Email=Username, CMS Sponsor/Mentor as SELECT dropdowns, Member Type SELECT
+
+### Phase B (Membership Profile Redesign) - COMPLETE (Mar 27, 2026)
+- Membership Profile page with 3 tabs: General Info (view/edit), Social Links, Activities
+- Update Biography moved to modal button (removed from sidebar)
+- Sidebar: Membership Profile, Mentorship Profile, My Sponsor, Invite Code, My Community, Portfolios
+
+### Phase D (Portfolio Overhaul) - COMPLETE (Mar 27, 2026)
+- Sectors/Industries/Companies DB tables with 6 sectors, 13 industries, 15 companies
+- Cascading selects in portfolio form (Sector → Industry → Symbol auto-populates security/price)
+- Shared Members: All Members / Select Members with member search picker
+- Status: Active/Inactive with visibility rules
+- Rich text description, cover image, date picker fix
+
+### Phase E (Community Polish) - COMPLETE (Mar 27, 2026)
+- My Community search shows clickable results list below search bar (CODE + Full Name)
 
 ## Testing History
 - Phase 1: 35/35 backend (iteration_1.json)
-- Phase 2: 22/22 backend + 16/16 frontend (iteration_2.json)
-- Batch 1-3: 23/25 backend + 100% frontend (iteration_3.json)
-- Post-refactoring: 44/44 backend + 17/17 frontend (iteration_4.json)
-- Phase 3 Membership: 13/13 backend + 12/12 frontend (iteration_5.json)
-- Phase A Auth Unification: 13/13 backend + 14/14 frontend (iteration_6.json)
+- Phase 2: 22/22 + 16/16 frontend (iteration_2.json)
+- Batch 1-3: 23/25 + frontend (iteration_3.json)
+- Post-refactoring: 44/44 + 17/17 (iteration_4.json)
+- Phase 3: 13/13 + 12/12 (iteration_5.json)
+- Phase A: 13/13 + 14/14 (iteration_6.json)
+- Phases A-E: 13/13 + 19/19 (iteration_7.json)
 
 ## Key Credentials
-- **Admin**: admin@consultant.com / Admin123! (now in `members` collection with role="admin")
-- **Members**: Created via admin panel or invite code registration
+- **Admin**: admin@consultant.com / Admin123!
 
 ## Remaining Backlog
-
-### Phase B — Membership Profile Redesign (P1)
-- Membership Profile with tabs: General Info (view/edit), Social Links (platform networks), Activities (log)
-- Move Update Biography into Membership Profile as a modal button; remove from sidebar
-- Mentorship Profile: Show assigned mentor info
-
-### Phase C — Levels & Permissions (P1)
-- User Levels CMS: Admin section to manage levels and sidebar permissions
-- Dynamic sidebar in My Account based on member's level
-- Portfolio visibility rules (Level 1 sees shared only, Portfolio Dev can create)
-
-### Phase D — Portfolio Overhaul (P1)
-- New DB tables: Sectors, Industries, Companies (with hierarchy and test data)
-- Symbol select with auto-populate sector/industry/price
-- Shared Members (All Members / Select Members) with member picker
-- Status (Active/Inactive) with visibility rules
-- Date picker fix, cover image auth fix, rich text description
-
-### Phase E — Community & Polish (P2)
-- My Community search: clickable results as list below search bar
-- Minor UI fixes
-
-### Future (P2)
-- Real S3/Cloud image storage
-- Production SMTP configuration
+- **(P1) Phase C — User Levels & Permissions**: CMS-managed levels controlling sidebar visibility, dynamic sidebar based on member's level, portfolio visibility rules
+- **(P2)** Real S3/Cloud image storage
+- **(P2)** Production SMTP configuration
