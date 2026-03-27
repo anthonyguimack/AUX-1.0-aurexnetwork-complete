@@ -1,18 +1,18 @@
 import React, { useState, useEffect } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
-import { publicAPI } from '../../lib/api';
+import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, BookOpen, Edit3, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck
 } from 'lucide-react';
 
-const navItems = [
-  { label: 'Membership Profile', icon: User, href: '/my-account/membership-profile' },
-  { label: 'Mentorship Profile', icon: Award, href: '/my-account/mentorship-profile' },
-  { label: 'My Sponsor', icon: UserCheck, href: '/my-account/my-sponsor' },
-  { label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
-  { label: 'My Community', icon: Users, href: '/my-account/my-community' },
-  { label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
+const ALL_NAV_ITEMS = [
+  { id: 'membership-profile', label: 'Membership Profile', icon: User, href: '/my-account/membership-profile' },
+  { id: 'mentorship-profile', label: 'Mentorship Profile', icon: Award, href: '/my-account/mentorship-profile' },
+  { id: 'my-sponsor', label: 'My Sponsor', icon: UserCheck, href: '/my-account/my-sponsor' },
+  { id: 'invite-code', label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
+  { id: 'my-community', label: 'My Community', icon: Users, href: '/my-account/my-community' },
+  { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
 ];
 
 export default function MyAccountLayout() {
@@ -21,13 +21,40 @@ export default function MyAccountLayout() {
   const navigate = useNavigate();
   const [sideOpen, setSideOpen] = useState(false);
   const [settings, setSettings] = useState({});
+  const [levelPerms, setLevelPerms] = useState(null); // null = loading, [] = no level
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
   }, []);
 
+  // Fetch member's level permissions
+  useEffect(() => {
+    if (member) {
+      if (member.role === 'admin') {
+        // Admins see everything
+        setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
+      } else if (member.level_id) {
+        memberAPI.getMyLevel().then(r => {
+          if (r.data && r.data.permissions) {
+            setLevelPerms(r.data.permissions);
+          } else {
+            setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)); // No restrictions if level has no permissions defined
+          }
+        }).catch(() => setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)));
+      } else {
+        // No level assigned — show all items by default
+        setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
+      }
+    }
+  }, [member]);
+
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
   const brandName = settings.brand_name || 'Legacy';
+
+  // Filter nav items based on level permissions
+  const navItems = levelPerms !== null
+    ? ALL_NAV_ITEMS.filter(item => levelPerms.includes(item.id))
+    : ALL_NAV_ITEMS; // Show all while loading to avoid flash
 
   return (
     <div className="min-h-screen flex" style={{ background: '#0d0f14', fontFamily: "'DM Sans', sans-serif" }} data-testid="myaccount-layout">

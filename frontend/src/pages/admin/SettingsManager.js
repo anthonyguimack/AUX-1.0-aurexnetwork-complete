@@ -107,6 +107,7 @@ export default function SettingsManager() {
           <TabsTrigger value="email"><Mail className="w-3 h-3 mr-1" />Email/SMTP</TabsTrigger>
           <TabsTrigger value="blogapi"><Rss className="w-3 h-3 mr-1" />Blog API</TabsTrigger>
           <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
+          <TabsTrigger value="apis"><Plug className="w-3 h-3 mr-1" />APIs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -240,6 +241,38 @@ export default function SettingsManager() {
             <div><Label>Welcome Email Template</Label>
               <p className="text-xs text-slate-400 mb-1">Use placeholders: {'{{first_name}}'}, {'{{last_name}}'}, {'{{membership_id}}'}, {'{{username}}'}, {'{{platform_name}}'}</p>
               <div className="mt-1"><RichTextEditor value={settings.welcome_email_template || ''} onChange={val => setSettings({...settings, welcome_email_template: val})} placeholder="Welcome email HTML template..." /></div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="apis">
+          <div className="bg-white rounded-sm border border-slate-100 p-6" data-testid="apis-tab">
+            <h3 className="font-semibold text-[#1a2332] mb-1">Third-Party API Integrations</h3>
+            <p className="text-sm text-slate-500 mb-5">Overview of all external services and APIs used in this project.</p>
+            <div className="space-y-3">
+              {[
+                { name: 'Stripe', desc: 'Payment processing for services checkout', status: settings.stripe_configured !== false, config: 'API key configured in backend environment', category: 'Payments' },
+                { name: 'Google OAuth', desc: 'Social login via Emergent-managed Google Auth', status: true, config: 'Managed by Emergent platform', category: 'Authentication' },
+                { name: 'SMTP (Email)', desc: 'Transactional emails — contact form, invitations, welcome emails', status: !!(settings.smtp_host && settings.smtp_user), config: settings.smtp_host ? `Host: ${settings.smtp_host}:${settings.smtp_port || 587}` : 'Not configured — set up in Email/SMTP tab', category: 'Email' },
+                { name: 'External Blog API', desc: 'Fetches blog posts from an external JSON endpoint', status: !!settings.blog_api_url, config: settings.blog_api_url || 'Not configured — set up in Blog API tab', category: 'Content' },
+                { name: 'Leaflet / OpenStreetMap', desc: 'Interactive maps for location display', status: true, config: 'Open-source — no API key needed', category: 'Maps' },
+                { name: 'MongoDB', desc: 'Primary database for all application data', status: true, config: 'Configured in backend environment', category: 'Database' },
+              ].map(api => (
+                <div key={api.name} className="flex items-start gap-4 p-4 border border-slate-100 rounded-sm" data-testid={`api-${api.name.toLowerCase().replace(/[\s/()]+/g, '-')}`}>
+                  <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${api.status ? 'bg-green-500' : 'bg-slate-300'}`} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2 mb-0.5">
+                      <span className="font-medium text-sm text-[#1a2332]">{api.name}</span>
+                      <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{api.category}</span>
+                    </div>
+                    <p className="text-xs text-slate-500">{api.desc}</p>
+                    <p className="text-xs text-slate-400 mt-1 font-mono">{api.config}</p>
+                  </div>
+                  <span className={`text-xs font-medium px-2 py-0.5 rounded flex-shrink-0 ${api.status ? 'bg-green-50 text-green-600' : 'bg-slate-50 text-slate-400'}`}>
+                    {api.status ? 'Active' : 'Inactive'}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </TabsContent>
