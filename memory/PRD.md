@@ -29,10 +29,11 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
     admin/
       MembersManager.js  # SELECT: Sponsor, Mentor, Member Type
       MemberLevelsManager.js # CRUD for member levels with permissions
+      SettingsManager.js # Tabs: General, Colors, Sections, Social, Email/SMTP, Blog API, Membership, APIs
     myaccount/
+      MyAccountLayout.js    # Dynamic sidebar filtered by member's level permissions
       MembershipProfile.js  # Cascading Country/State/City, tabs, Bio modal (no cover image)
       MentorshipProfile.js  # Mentor info display with empty state handling
-      MyCommunity.js        # Tree view + clickable search results list
       PortfolioForm.js      # Rank/Cost fields, single-row layout, delete confirmation, no Activities
       PortfolioDetail.js    # 10 columns, 3 pie charts, ownership-based edit button
       PortfolioList.js      # mm/dd/yyyy dates, $0.00 currencies, HTML-stripped descriptions
@@ -69,18 +70,25 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Sectors/Industries/Companies DB tables with 6 sectors, 13 industries, 15 companies
 - Cascading selects in portfolio form (Sector -> Industry -> Symbol auto-populates)
 - Shared Members: All Members / Select Members with member search picker
-- Status: Active/Inactive with visibility rules
 
 ### Phase E (Community Polish) - COMPLETE (Mar 27, 2026)
 - My Community search shows clickable results list below search bar
 
 ### Phase F (My Account UI/UX Updates) - COMPLETE (Mar 27, 2026)
-- **MembershipProfile**: Cascading Country/State/City selects in edit mode, Cover Image removed from Bio modal, City field in view, mm/dd/yyyy date formatting
-- **MentorshipProfile**: Fixed mentor info display, proper empty state for no mentor assigned
-- **PortfolioForm**: Added Rank (numeric) and Cost fields to holdings, single-row layout on desktop, Activities section hidden, Delete Portfolio button with confirmation dialog
-- **PortfolioDetail**: 10 table columns (Rank, % Portfolio, Current Value, Symbol, Security, Sector, Industry, Share Price, Cost, # Shares), 3 pie charts (Sector, Industry, Portfolio Balance), description rendered as HTML, Edit button hidden for non-owners
-- **PortfolioList**: mm/dd/yyyy date formatting, $0.00 currency formatting, HTML stripped from descriptions
-- **Global formatting**: Dates as mm/dd/yyyy, currencies as $0.00, percentages as 0.00%
+- MembershipProfile: Cascading Country/State/City, Cover Image removed from Bio modal
+- MentorshipProfile: Fixed mentor display with empty state
+- PortfolioForm: Rank/Cost, single-row layout, delete confirmation, no Activities
+- PortfolioDetail: 10 columns, 3 pie charts, ownership edit hide
+- Global formatting: mm/dd/yyyy, $0.00, 0.00%
+
+### Phase C (Member Levels & Permissions) - COMPLETE (Mar 27, 2026)
+- CMS Member Levels Manager with permission checkboxes for each sidebar section
+- Dynamic My Account sidebar: filters nav items based on member's assigned level
+- Admins see all items; members without level see all items; members with level see only permitted items
+
+### CMS Settings APIs Tab - COMPLETE (Mar 27, 2026)
+- New "APIs" tab in Settings listing all 6 third-party integrations (Stripe, Google OAuth, SMTP, Blog API, Leaflet, MongoDB)
+- Active/Inactive status indicators based on configuration
 
 ## Testing History
 - Phase 1: 35/35 backend (iteration_1.json)
@@ -90,13 +98,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Phase 3: 13/13 + 12/12 (iteration_5.json)
 - Phase A: 13/13 + 14/14 (iteration_6.json)
 - Phases A-E: 13/13 + 19/19 (iteration_7.json)
-- Phase F (UI/UX): 11/11 backend + 26/26 frontend (iteration_8.json)
+- Phase F (UI/UX): 11/11 + 26/26 (iteration_8.json)
+- Phase C + APIs Tab: 9/9 + 19/19 (iteration_9.json)
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
 ## Remaining Backlog
-- **(P1) CMS Settings "APIs" Tab**: Add tab in SettingsManager showing all third-party API integrations
-- **(P1) Phase C — User Levels & Permissions**: CMS-managed levels controlling sidebar visibility, dynamic sidebar based on member's level
-- **(P2)** Real S3/Cloud image storage
+- **(P2)** Real S3/Cloud image storage (currently local uploads)
 - **(P2)** Production SMTP configuration
