@@ -85,7 +85,7 @@ export default function MemberRegister() {
         if (res.data.member) setUserData(res.data.member);
       }
       toast.success(`Welcome! Your membership ID is ${res.data.membership_id}`);
-      navigate('/my-account/mentorship-profile', { replace: true });
+      navigate('/my-account/membership-profile', { replace: true });
     } catch (err) {
       const detail = err?.response?.data?.detail || 'Registration failed';
       if (detail.toLowerCase().includes('email already')) {

@@ -82,6 +82,53 @@ async def seed_data():
                 "welcome_email_template": "",
                 "platform_domain": "legacy.com",
             }})
+        # Seed sectors/industries/companies if missing
+        sectors_count = await db.sectors.count_documents({})
+        if sectors_count == 0:
+            sectors_data = [
+                {"id": "sect_tech", "name": "Technology"},
+                {"id": "sect_health", "name": "Healthcare"},
+                {"id": "sect_finance", "name": "Financial Services"},
+                {"id": "sect_energy", "name": "Energy"},
+                {"id": "sect_consumer", "name": "Consumer Discretionary"},
+                {"id": "sect_comm", "name": "Communication Services"},
+            ]
+            industries_data = [
+                {"id": "ind_software", "name": "Software", "sector_id": "sect_tech"},
+                {"id": "ind_semi", "name": "Semiconductors", "sector_id": "sect_tech"},
+                {"id": "ind_hardware", "name": "Hardware", "sector_id": "sect_tech"},
+                {"id": "ind_pharma", "name": "Pharmaceuticals", "sector_id": "sect_health"},
+                {"id": "ind_biotech", "name": "Biotechnology", "sector_id": "sect_health"},
+                {"id": "ind_bank", "name": "Banking", "sector_id": "sect_finance"},
+                {"id": "ind_fintech", "name": "Financial Technology", "sector_id": "sect_finance"},
+                {"id": "ind_oil", "name": "Oil & Gas", "sector_id": "sect_energy"},
+                {"id": "ind_renewable", "name": "Renewable Energy", "sector_id": "sect_energy"},
+                {"id": "ind_auto", "name": "Automobile", "sector_id": "sect_consumer"},
+                {"id": "ind_retail", "name": "Retail", "sector_id": "sect_consumer"},
+                {"id": "ind_media", "name": "Interactive Media", "sector_id": "sect_comm"},
+                {"id": "ind_telecom", "name": "Telecom", "sector_id": "sect_comm"},
+            ]
+            companies_data = [
+                {"id": "comp_aapl", "symbol": "AAPL", "name": "Apple Inc.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_hardware", "price": 227.48},
+                {"id": "comp_msft", "symbol": "MSFT", "name": "Microsoft Corp.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_software", "price": 454.27},
+                {"id": "comp_nvda", "symbol": "NVDA", "name": "NVIDIA Corp.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_semi", "price": 131.29},
+                {"id": "comp_meta", "symbol": "META", "name": "Meta Platforms", "security": "Class A Common Stock", "sector_id": "sect_tech", "industry_id": "ind_media", "price": 585.25},
+                {"id": "comp_goog", "symbol": "GOOGL", "name": "Alphabet Inc.", "security": "Class A Common Stock", "sector_id": "sect_comm", "industry_id": "ind_media", "price": 161.12},
+                {"id": "comp_amzn", "symbol": "AMZN", "name": "Amazon.com Inc.", "security": "Common Stock", "sector_id": "sect_consumer", "industry_id": "ind_retail", "price": 188.99},
+                {"id": "comp_tsla", "symbol": "TSLA", "name": "Tesla Inc.", "security": "Common Stock", "sector_id": "sect_consumer", "industry_id": "ind_auto", "price": 271.19},
+                {"id": "comp_jpm", "symbol": "JPM", "name": "JPMorgan Chase", "security": "Common Stock", "sector_id": "sect_finance", "industry_id": "ind_bank", "price": 256.73},
+                {"id": "comp_v", "symbol": "V", "name": "Visa Inc.", "security": "Class A Common Stock", "sector_id": "sect_finance", "industry_id": "ind_fintech", "price": 343.61},
+                {"id": "comp_jnj", "symbol": "JNJ", "name": "Johnson & Johnson", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_pharma", "price": 153.44},
+                {"id": "comp_pfe", "symbol": "PFE", "name": "Pfizer Inc.", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_pharma", "price": 25.12},
+                {"id": "comp_mrna", "symbol": "MRNA", "name": "Moderna Inc.", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_biotech", "price": 33.50},
+                {"id": "comp_xom", "symbol": "XOM", "name": "Exxon Mobil", "security": "Common Stock", "sector_id": "sect_energy", "industry_id": "ind_oil", "price": 108.52},
+                {"id": "comp_enph", "symbol": "ENPH", "name": "Enphase Energy", "security": "Common Stock", "sector_id": "sect_energy", "industry_id": "ind_renewable", "price": 61.78},
+                {"id": "comp_sq", "symbol": "SQ", "name": "Block Inc.", "security": "Common Stock", "sector_id": "sect_finance", "industry_id": "ind_fintech", "price": 72.45},
+            ]
+            await db.sectors.insert_many(sectors_data)
+            await db.industries.insert_many(industries_data)
+            await db.companies.insert_many(companies_data)
+            logger.info("Seeded sectors/industries/companies")
         nav_pages_count = await db.nav_pages.count_documents({})
         if nav_pages_count == 0:
             await db.nav_pages.insert_many([
@@ -278,6 +325,50 @@ async def seed_data():
         "picture": "", "phone": "+1 555-0100",
         "created_at": datetime.now(timezone.utc).isoformat()
     })
+    # Seed sectors, industries, companies
+    sectors_data = [
+        {"id": "sect_tech", "name": "Technology"},
+        {"id": "sect_health", "name": "Healthcare"},
+        {"id": "sect_finance", "name": "Financial Services"},
+        {"id": "sect_energy", "name": "Energy"},
+        {"id": "sect_consumer", "name": "Consumer Discretionary"},
+        {"id": "sect_comm", "name": "Communication Services"},
+    ]
+    industries_data = [
+        {"id": "ind_software", "name": "Software", "sector_id": "sect_tech"},
+        {"id": "ind_semi", "name": "Semiconductors", "sector_id": "sect_tech"},
+        {"id": "ind_hardware", "name": "Hardware", "sector_id": "sect_tech"},
+        {"id": "ind_pharma", "name": "Pharmaceuticals", "sector_id": "sect_health"},
+        {"id": "ind_biotech", "name": "Biotechnology", "sector_id": "sect_health"},
+        {"id": "ind_bank", "name": "Banking", "sector_id": "sect_finance"},
+        {"id": "ind_fintech", "name": "Financial Technology", "sector_id": "sect_finance"},
+        {"id": "ind_oil", "name": "Oil & Gas", "sector_id": "sect_energy"},
+        {"id": "ind_renewable", "name": "Renewable Energy", "sector_id": "sect_energy"},
+        {"id": "ind_auto", "name": "Automobile", "sector_id": "sect_consumer"},
+        {"id": "ind_retail", "name": "Retail", "sector_id": "sect_consumer"},
+        {"id": "ind_media", "name": "Interactive Media", "sector_id": "sect_comm"},
+        {"id": "ind_telecom", "name": "Telecom", "sector_id": "sect_comm"},
+    ]
+    companies_data = [
+        {"id": "comp_aapl", "symbol": "AAPL", "name": "Apple Inc.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_hardware", "price": 227.48},
+        {"id": "comp_msft", "symbol": "MSFT", "name": "Microsoft Corp.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_software", "price": 454.27},
+        {"id": "comp_nvda", "symbol": "NVDA", "name": "NVIDIA Corp.", "security": "Common Stock", "sector_id": "sect_tech", "industry_id": "ind_semi", "price": 131.29},
+        {"id": "comp_meta", "symbol": "META", "name": "Meta Platforms", "security": "Class A Common Stock", "sector_id": "sect_tech", "industry_id": "ind_media", "price": 585.25},
+        {"id": "comp_goog", "symbol": "GOOGL", "name": "Alphabet Inc.", "security": "Class A Common Stock", "sector_id": "sect_comm", "industry_id": "ind_media", "price": 161.12},
+        {"id": "comp_amzn", "symbol": "AMZN", "name": "Amazon.com Inc.", "security": "Common Stock", "sector_id": "sect_consumer", "industry_id": "ind_retail", "price": 188.99},
+        {"id": "comp_tsla", "symbol": "TSLA", "name": "Tesla Inc.", "security": "Common Stock", "sector_id": "sect_consumer", "industry_id": "ind_auto", "price": 271.19},
+        {"id": "comp_jpm", "symbol": "JPM", "name": "JPMorgan Chase", "security": "Common Stock", "sector_id": "sect_finance", "industry_id": "ind_bank", "price": 256.73},
+        {"id": "comp_v", "symbol": "V", "name": "Visa Inc.", "security": "Class A Common Stock", "sector_id": "sect_finance", "industry_id": "ind_fintech", "price": 343.61},
+        {"id": "comp_jnj", "symbol": "JNJ", "name": "Johnson & Johnson", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_pharma", "price": 153.44},
+        {"id": "comp_pfe", "symbol": "PFE", "name": "Pfizer Inc.", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_pharma", "price": 25.12},
+        {"id": "comp_mrna", "symbol": "MRNA", "name": "Moderna Inc.", "security": "Common Stock", "sector_id": "sect_health", "industry_id": "ind_biotech", "price": 33.50},
+        {"id": "comp_xom", "symbol": "XOM", "name": "Exxon Mobil", "security": "Common Stock", "sector_id": "sect_energy", "industry_id": "ind_oil", "price": 108.52},
+        {"id": "comp_enph", "symbol": "ENPH", "name": "Enphase Energy", "security": "Common Stock", "sector_id": "sect_energy", "industry_id": "ind_renewable", "price": 61.78},
+        {"id": "comp_sq", "symbol": "SQ", "name": "Block Inc.", "security": "Common Stock", "sector_id": "sect_finance", "industry_id": "ind_fintech", "price": 72.45},
+    ]
+    await db.sectors.insert_many(sectors_data)
+    await db.industries.insert_many(industries_data)
+    await db.companies.insert_many(companies_data)
     logger.info("Seed data created successfully!")
 
 @app.on_event("startup")

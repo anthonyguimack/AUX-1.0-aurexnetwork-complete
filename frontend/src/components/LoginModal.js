@@ -78,10 +78,10 @@ export default function LoginModal({ open, onClose }) {
               {error && <div className="bg-red-50 text-red-600 text-sm p-3 rounded-sm mb-4" data-testid="login-error">{error}</div>}
               <form onSubmit={handleLogin} className="space-y-4">
                 <div>
-                  <Label className="text-sm font-medium text-slate-700">Email or Username</Label>
+                  <Label className="text-sm font-medium text-slate-700">Email</Label>
                   <div className="relative mt-1">
                     <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                    <Input type="text" placeholder="Enter your email or username" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required data-testid="login-email-input" />
+                    <Input type="text" placeholder="Enter your email" value={email} onChange={(e) => setEmail(e.target.value)} className="pl-10" required data-testid="login-email-input" />
                   </div>
                 </div>
                 <div>

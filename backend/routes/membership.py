@@ -162,7 +162,7 @@ async def register_member(request: Request):
     member_id = f"member_{uuid.uuid4().hex[:12]}"
     first_name = body.get("first_name", "").strip()
     last_name = body.get("last_name", "").strip()
-    username = email.split("@")[0] + str(membership_number)
+    username = email
     new_member = {
         "member_id": member_id,
         "membership_number": membership_number,
@@ -278,6 +278,7 @@ async def update_biography(request: Request, member: dict = Depends(get_current_
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": {
         "summary": body.get("summary", ""),
         "biography": body.get("biography", ""),
+        "cover_image": body.get("cover_image", ""),
         "updated_at": datetime.now(timezone.utc).isoformat()
     }})
     return {"message": "Biography updated"}
@@ -299,7 +300,15 @@ async def update_profile(request: Request, member: dict = Depends(get_current_me
 @router.get("/member/portfolios")
 async def list_portfolios(member: dict = Depends(get_current_member)):
     own = await db.portfolios.find({"owner_member_id": member["member_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
-    shared = await db.portfolios.find({"shared_with": member["member_id"]}, {"_id": 0}).sort("created_at", -1).to_list(100)
+    # Shared portfolios: active only, either shared_mode=all or member is in shared_with
+    shared = await db.portfolios.find({
+        "owner_member_id": {"$ne": member["member_id"]},
+        "status": "active",
+        "$or": [
+            {"shared_mode": "all"},
+            {"shared_with": member["member_id"]},
+        ]
+    }, {"_id": 0}).sort("created_at", -1).to_list(100)
     return {"own": own, "shared": shared}
 
 @router.post("/member/portfolios")
@@ -318,6 +327,7 @@ async def create_portfolio(request: Request, member: dict = Depends(get_current_
         "holdings": body.get("holdings", []),
         "activities": body.get("activities", []),
         "status": body.get("status", "active"),
+        "shared_mode": body.get("shared_mode", "all"),
         "shared_with": body.get("shared_with", []),
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat()
@@ -330,9 +340,13 @@ async def get_portfolio(portfolio_id: str, member: dict = Depends(get_current_me
     p = await db.portfolios.find_one({"id": portfolio_id}, {"_id": 0})
     if not p:
         raise HTTPException(status_code=404, detail="Portfolio not found")
-    if p["owner_member_id"] != member["member_id"] and member["member_id"] not in p.get("shared_with", []):
-        raise HTTPException(status_code=403, detail="Access denied")
-    return p
+    # Owner can always view
+    if p["owner_member_id"] == member["member_id"]:
+        return p
+    # Shared: must be active and either shared_mode=all or member in shared_with
+    if p.get("status") == "active" and (p.get("shared_mode") == "all" or member["member_id"] in p.get("shared_with", [])):
+        return p
+    raise HTTPException(status_code=403, detail="Access denied")
 
 @router.put("/member/portfolios/{portfolio_id}")
 async def update_portfolio(portfolio_id: str, request: Request, member: dict = Depends(get_current_member)):
@@ -374,7 +388,7 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
     member_id = f"member_{uuid.uuid4().hex[:12]}"
     first_name = body.get("first_name", "").strip()
     last_name = body.get("last_name", "").strip()
-    username = body.get("username", email.split("@")[0] + str(membership_number))
+    username = email  # username and email are the same
     password = body.get("password", "changeme123")
     new_member = {
         "member_id": member_id,
@@ -413,6 +427,8 @@ async def admin_update_member(member_id: str, request: Request, user: dict = Dep
         body["password_hash"] = hash_password(body.pop("password"))
     else:
         body.pop("password", None)
+    if "email" in body:
+        body["username"] = body["email"]  # username = email
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.members.update_one({"member_id": member_id}, {"$set": body})
     return await db.members.find_one({"member_id": member_id}, {"_id": 0, "password_hash": 0})
@@ -442,3 +458,29 @@ async def admin_assign_mentor(member_id: str, request: Request, user: dict = Dep
         "updated_at": datetime.now(timezone.utc).isoformat()
     }})
     return {"message": "Mentor assigned"}
+
+
+# ---- Sectors / Industries / Companies ----
+
+@router.get("/member/sectors")
+async def list_sectors():
+    return await db.sectors.find({}, {"_id": 0}).sort("name", 1).to_list(500)
+
+@router.get("/member/industries")
+async def list_industries(sector_id: str = None):
+    query = {"sector_id": sector_id} if sector_id else {}
+    return await db.industries.find(query, {"_id": 0}).sort("name", 1).to_list(500)
+
+@router.get("/member/companies")
+async def list_companies(industry_id: str = None):
+    query = {"industry_id": industry_id} if industry_id else {}
+    return await db.companies.find(query, {"_id": 0}).sort("symbol", 1).to_list(500)
+
+@router.get("/member/members-list")
+async def members_list_for_sharing(member: dict = Depends(get_current_member)):
+    """List members for portfolio sharing select."""
+    members = await db.members.find(
+        {"member_id": {"$ne": member["member_id"]}, "role": {"$ne": "admin"}},
+        {"_id": 0, "member_id": 1, "membership_id": 1, "first_name": 1, "last_name": 1}
+    ).sort("membership_number", 1).to_list(10000)
+    return members

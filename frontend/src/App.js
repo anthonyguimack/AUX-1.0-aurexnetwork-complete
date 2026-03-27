@@ -40,11 +40,11 @@ import { MemberProvider } from './lib/memberAuth';
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
 import MyAccountLayout from './pages/myaccount/MyAccountLayout';
+import MembershipProfile from './pages/myaccount/MembershipProfile';
 import MentorshipProfile from './pages/myaccount/MentorshipProfile';
 import MySponsor from './pages/myaccount/MySponsor';
 import InviteCode from './pages/myaccount/InviteCode';
 import MyCommunity from './pages/myaccount/MyCommunity';
-import UpdateBiography from './pages/myaccount/UpdateBiography';
 import PortfolioList from './pages/myaccount/PortfolioList';
 import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
@@ -127,12 +127,12 @@ function AppRouter() {
         <Route path="/my-account/login" element={<MemberLogin />} />
         <Route path="/my-account/register" element={<MemberRegister />} />
         <Route path="/my-account" element={<MemberRoute><MyAccountLayout /></MemberRoute>}>
-          <Route index element={<Navigate to="/my-account/mentorship-profile" replace />} />
+          <Route index element={<Navigate to="/my-account/membership-profile" replace />} />
+          <Route path="membership-profile" element={<MembershipProfile />} />
           <Route path="mentorship-profile" element={<MentorshipProfile />} />
           <Route path="my-sponsor" element={<MySponsor />} />
           <Route path="invite-code" element={<InviteCode />} />
           <Route path="my-community" element={<MyCommunity />} />
-          <Route path="update-biography" element={<UpdateBiography />} />
           <Route path="portfolios" element={<PortfolioList />} />
           <Route path="portfolios/new" element={<PortfolioForm />} />
           <Route path="portfolios/:id" element={<PortfolioDetail />} />

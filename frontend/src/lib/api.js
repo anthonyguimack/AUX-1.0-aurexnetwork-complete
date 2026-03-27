@@ -158,6 +158,11 @@ export const memberAPI = {
   getPortfolio: (id) => api.get(`/member/portfolios/${id}`),
   updatePortfolio: (id, data) => api.put(`/member/portfolios/${id}`, data),
   deletePortfolio: (id) => api.delete(`/member/portfolios/${id}`),
+  // Sectors / Industries / Companies
+  getSectors: () => api.get('/member/sectors'),
+  getIndustries: (sectorId) => api.get(`/member/industries${sectorId ? `?sector_id=${sectorId}` : ''}`),
+  getCompanies: (industryId) => api.get(`/member/companies${industryId ? `?industry_id=${industryId}` : ''}`),
+  getMembersList: () => api.get('/member/members-list'),
 };
 
 export default api;

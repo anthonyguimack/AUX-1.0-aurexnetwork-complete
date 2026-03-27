@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
@@ -7,10 +7,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2, Users } from 'lucide-react';
 
 const emptyMember = {
-  first_name: '', last_name: '', email: '', username: '', password: '',
+  first_name: '', last_name: '', email: '', password: '',
+  role: 'member',
   gender: '', phone: '', date_of_birth: '', address: '', country: '',
   state: '', zip_code: '', google_account: '', social_links: [],
-  sponsor_membership_number: null, mentor_membership_number: null
+  sponsor_membership_number: null, mentor_membership_number: null,
+  is_mentor: false, portfolio_development: false
 };
 
 export default function MembersManager() {
@@ -23,11 +25,19 @@ export default function MembersManager() {
   const load = () => adminAPI.getMembers().then(r => setItems(r.data)).catch(console.error);
   useEffect(() => { load(); }, []);
 
+  const mentors = useMemo(() => items.filter(m => m.is_mentor), [items]);
+
   const handleSave = async () => {
     setLoading(true);
     try {
-      if (editing.member_id) await adminAPI.updateMember(editing.member_id, editing);
-      else await adminAPI.createMember(editing);
+      const payload = { ...editing };
+      // username = email (they are the same)
+      payload.username = payload.email;
+      if (editing.member_id) {
+        await adminAPI.updateMember(editing.member_id, payload);
+      } else {
+        await adminAPI.createMember(payload);
+      }
       toast.success('Saved!'); setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setLoading(false); }
@@ -41,7 +51,6 @@ export default function MembersManager() {
   const addSocialLink = () => {
     setEditing(p => ({...p, social_links: [...(p.social_links || []), { platform: '', url: '' }]}));
   };
-
   const updateSocialLink = (idx, field, value) => {
     setEditing(p => {
       const links = [...(p.social_links || [])];
@@ -49,7 +58,6 @@ export default function MembersManager() {
       return { ...p, social_links: links };
     });
   };
-
   const removeSocialLink = (idx) => {
     setEditing(p => ({...p, social_links: (p.social_links || []).filter((_, i) => i !== idx)}));
   };
@@ -70,7 +78,7 @@ export default function MembersManager() {
             <th className="text-left p-3 font-medium text-slate-600">AUX</th>
             <th className="text-left p-3 font-medium text-slate-600">Name</th>
             <th className="text-left p-3 font-medium text-slate-600">Email</th>
-            <th className="text-left p-3 font-medium text-slate-600">Username</th>
+            <th className="text-left p-3 font-medium text-slate-600">Member Type</th>
             <th className="text-left p-3 font-medium text-slate-600">Sponsor</th>
             <th className="text-left p-3 font-medium text-slate-600">Mentor</th>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
@@ -81,7 +89,11 @@ export default function MembersManager() {
                 <td className="p-3 font-mono text-[#0D9488]">{item.membership_id}</td>
                 <td className="p-3 font-medium text-[#1a2332]">{item.first_name} {item.last_name}</td>
                 <td className="p-3 text-slate-500">{item.email}</td>
-                <td className="p-3 text-slate-500">{item.username}</td>
+                <td className="p-3">
+                  <span className={`inline-flex items-center px-2 py-0.5 rounded text-xs font-medium ${item.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>
+                    {item.role === 'admin' ? 'Admin' : 'Member'}
+                  </span>
+                </td>
                 <td className="p-3 text-slate-500">{item.sponsor_membership_number ? `AUX-${item.sponsor_membership_number}` : '-'}</td>
                 <td className="p-3 text-slate-500">{item.mentor_membership_number ? `AUX-${item.mentor_membership_number}` : '-'}</td>
                 <td className="p-3 text-right">
@@ -100,7 +112,6 @@ export default function MembersManager() {
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.member_id ? 'Edit' : 'New'} Member</DialogTitle></DialogHeader>
           {editing && (
             <div>
-              {/* Tabs */}
               <div className="flex gap-1 mb-4 bg-slate-100 rounded p-1">
                 {['personal', 'membership', 'social'].map(t => (
                   <button key={t} onClick={() => setTab(t)} className={`flex-1 px-3 py-1.5 rounded text-sm font-medium capitalize ${tab === t ? 'bg-white shadow text-[#1a2332]' : 'text-slate-500'}`}>{t === 'social' ? 'Social Links' : t + ' Info'}</button>
@@ -116,9 +127,16 @@ export default function MembersManager() {
                   </div>
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs">Email *</Label><Input type="email" value={editing.email} onChange={e => setEditing({...editing, email: e.target.value})} className="mt-1" data-testid="member-email-input" /></div>
-                    <div><Label className="text-xs">Username</Label><Input value={editing.username || ''} onChange={e => setEditing({...editing, username: e.target.value})} className="mt-1" /></div>
+                    <div>
+                      <Label className="text-xs">Member Type</Label>
+                      <select value={editing.role || 'member'} onChange={e => setEditing({...editing, role: e.target.value})}
+                        className="w-full px-3 py-2 border border-slate-200 rounded-sm text-sm mt-1" data-testid="member-type-select">
+                        <option value="member">Member</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
                   </div>
-                  {!editing.member_id && <div><Label className="text-xs">Password</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" placeholder="min 8 characters" /></div>}
+                  {!editing.member_id && <div><Label className="text-xs">Password *</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" placeholder="min 8 characters" /></div>}
                   <div className="grid grid-cols-2 gap-3">
                     <div><Label className="text-xs">Gender</Label><select value={editing.gender || ''} onChange={e => setEditing({...editing, gender: e.target.value})} className="w-full px-3 py-2 border border-slate-200 rounded-sm text-sm mt-1"><option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option></select></div>
                     <div><Label className="text-xs">Phone</Label><Input value={editing.phone || ''} onChange={e => setEditing({...editing, phone: e.target.value})} className="mt-1" /></div>
@@ -143,22 +161,43 @@ export default function MembersManager() {
                       <p className="text-lg font-bold text-[#0D9488]">{editing.membership_id}</p>
                     </div>
                   )}
-                  <div><Label className="text-xs">Sponsor (Membership Number)</Label>
-                    <Input type="number" value={editing.sponsor_membership_number || ''} onChange={e => setEditing({...editing, sponsor_membership_number: e.target.value ? parseInt(e.target.value) : null})} className="mt-1" placeholder="e.g. 1 for AUX-1" /></div>
-                  <div><Label className="text-xs">Mentor (Membership Number)</Label>
-                    <Input type="number" value={editing.mentor_membership_number || ''} onChange={e => setEditing({...editing, mentor_membership_number: e.target.value ? parseInt(e.target.value) : null})} className="mt-1" placeholder="e.g. 1 for AUX-1" />
-                    <p className="text-xs text-slate-400 mt-1">Assign a mentor by their membership number</p>
+                  <div>
+                    <Label className="text-xs">Sponsor</Label>
+                    <select value={editing.sponsor_membership_number || ''}
+                      onChange={e => setEditing({...editing, sponsor_membership_number: e.target.value ? parseInt(e.target.value) : null})}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-sm text-sm mt-1" data-testid="sponsor-select">
+                      <option value="">No Sponsor</option>
+                      {items.filter(m => m.member_id !== editing.member_id).map(m => (
+                        <option key={m.member_id} value={m.membership_number}>
+                          {m.membership_id} - {m.first_name} {m.last_name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  <div>
+                    <Label className="text-xs">Mentor</Label>
+                    <select value={editing.mentor_membership_number || ''}
+                      onChange={e => setEditing({...editing, mentor_membership_number: e.target.value ? parseInt(e.target.value) : null})}
+                      className="w-full px-3 py-2 border border-slate-200 rounded-sm text-sm mt-1" data-testid="mentor-select">
+                      <option value="">No Mentor</option>
+                      {mentors.filter(m => m.member_id !== editing.member_id).map(m => (
+                        <option key={m.member_id} value={m.membership_number}>
+                          {m.membership_id} - {m.first_name} {m.last_name}
+                        </option>
+                      ))}
+                    </select>
+                    {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors available. Mark a member as Mentor first.</p>}
                   </div>
                   <div className="grid grid-cols-2 gap-4 pt-2">
                     <div className="p-3 bg-slate-50 rounded">
                       <Label className="text-xs font-medium mb-2 block">Mentor</Label>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="radio" name="is_mentor" checked={editing.is_mentor === true} onChange={() => setEditing({...editing, is_mentor: true})} className="accent-[#0D9488]" />
+                          <input type="radio" name="is_mentor" checked={editing.is_mentor === true} onChange={() => setEditing({...editing, is_mentor: true})} className="accent-[#0D9488]" data-testid="is-mentor-yes" />
                           <span className="text-sm">Yes</span>
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="radio" name="is_mentor" checked={!editing.is_mentor} onChange={() => setEditing({...editing, is_mentor: false})} className="accent-[#0D9488]" />
+                          <input type="radio" name="is_mentor" checked={!editing.is_mentor} onChange={() => setEditing({...editing, is_mentor: false})} className="accent-[#0D9488]" data-testid="is-mentor-no" />
                           <span className="text-sm">No</span>
                         </label>
                       </div>
@@ -167,17 +206,17 @@ export default function MembersManager() {
                       <Label className="text-xs font-medium mb-2 block">Portfolio Development</Label>
                       <div className="flex gap-4">
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="radio" name="portfolio_dev" checked={editing.portfolio_development === true} onChange={() => setEditing({...editing, portfolio_development: true})} className="accent-[#0D9488]" />
+                          <input type="radio" name="portfolio_dev" checked={editing.portfolio_development === true} onChange={() => setEditing({...editing, portfolio_development: true})} className="accent-[#0D9488]" data-testid="portfolio-dev-yes" />
                           <span className="text-sm">Yes</span>
                         </label>
                         <label className="flex items-center gap-1.5 cursor-pointer">
-                          <input type="radio" name="portfolio_dev" checked={!editing.portfolio_development} onChange={() => setEditing({...editing, portfolio_development: false})} className="accent-[#0D9488]" />
+                          <input type="radio" name="portfolio_dev" checked={!editing.portfolio_development} onChange={() => setEditing({...editing, portfolio_development: false})} className="accent-[#0D9488]" data-testid="portfolio-dev-no" />
                           <span className="text-sm">No</span>
                         </label>
                       </div>
                     </div>
                   </div>
-                  {editing.member_id && editing.password !== undefined && (
+                  {editing.member_id && (
                     <div><Label className="text-xs">New Password (leave blank to keep current)</Label>
                     <Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>
                   )}

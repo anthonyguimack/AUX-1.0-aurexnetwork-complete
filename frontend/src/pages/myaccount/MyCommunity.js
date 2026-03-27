@@ -1,9 +1,18 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { User, Search, X } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import CommunityTree from '../../components/TreeNode';
+
+function flattenAll(nodes) {
+  const result = [];
+  for (const node of nodes) {
+    result.push(node);
+    if (node.children?.length) result.push(...flattenAll(node.children));
+  }
+  return result;
+}
 
 function filterNodes(nodes, q, field) {
   if (!q) return nodes;
@@ -35,6 +44,20 @@ export default function MyCommunity() {
 
   const defaultAvatar = settings.membership_default_avatar || '';
   const displayTree = filterNodes(data.tree, search, filter);
+
+  // Flat search results for clickable list
+  const allFlat = useMemo(() => flattenAll(data.tree), [data.tree]);
+  const searchResults = useMemo(() => {
+    if (!search) return [];
+    const lq = search.toLowerCase();
+    return allFlat.filter(n => {
+      let val = '';
+      if (filter === 'membership_number') val = n.membership_id || '';
+      else if (filter === 'first_name') val = n.first_name || '';
+      else val = n.last_name || '';
+      return val.toLowerCase().includes(lq);
+    });
+  }, [search, filter, allFlat]);
 
   return (
     <div data-testid="my-community-page">
@@ -84,6 +107,20 @@ export default function MyCommunity() {
               ))}
             </div>
           </div>
+          {/* Search Results List */}
+          {search && searchResults.length > 0 && (
+            <div className="px-4 py-2 border-b border-white/5 bg-[#0d0f14]/50 max-h-48 overflow-y-auto" data-testid="community-search-results">
+              <p className="text-xs text-gray-500 mb-2">{searchResults.length} result(s) found</p>
+              {searchResults.map(n => (
+                <button key={n.member_id} onClick={() => setSelected(n)}
+                  className="w-full text-left px-3 py-2 rounded text-sm text-gray-300 hover:bg-[#c9a84c]/10 hover:text-white flex items-center gap-2"
+                  data-testid={`search-result-${n.membership_id}`}>
+                  <span className="text-[#c9a84c] font-mono text-xs">{n.membership_id}</span>
+                  <span>{n.first_name} {n.last_name}</span>
+                </button>
+              ))}
+            </div>
+          )}
           <div className="p-4 max-h-[500px] overflow-y-auto">
             {displayTree.length > 0 ? (
               <CommunityTree tree={displayTree} onSelect={setSelected} />

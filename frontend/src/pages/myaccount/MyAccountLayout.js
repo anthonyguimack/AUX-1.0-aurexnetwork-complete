@@ -3,15 +3,15 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI } from '../../lib/api';
 import {
-  User, Key, Users, BookOpen, Edit3, Briefcase, LogOut, Menu, X, ChevronRight, Home
+  User, Key, Users, BookOpen, Edit3, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck
 } from 'lucide-react';
 
 const navItems = [
-  { label: 'Membership Profile', icon: User, href: '/my-account/mentorship-profile' },
-  { label: 'My Sponsor', icon: Users, href: '/my-account/my-sponsor' },
+  { label: 'Membership Profile', icon: User, href: '/my-account/membership-profile' },
+  { label: 'Mentorship Profile', icon: Award, href: '/my-account/mentorship-profile' },
+  { label: 'My Sponsor', icon: UserCheck, href: '/my-account/my-sponsor' },
   { label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
   { label: 'My Community', icon: Users, href: '/my-account/my-community' },
-  { label: 'Update Biography', icon: Edit3, href: '/my-account/update-biography' },
   { label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
 ];
 

@@ -18,7 +18,7 @@ export default function MemberLogin() {
   }, []);
 
   useEffect(() => {
-    if (member) navigate('/my-account/mentorship-profile', { replace: true });
+    if (member) navigate('/my-account/membership-profile', { replace: true });
   }, [member, navigate]);
 
   const handleSubmit = async (e) => {
@@ -27,7 +27,7 @@ export default function MemberLogin() {
     setError('');
     try {
       await login(email, password);
-      navigate('/my-account/mentorship-profile');
+      navigate('/my-account/membership-profile');
     } catch (err) {
       setError(err?.response?.data?.detail || 'Invalid credentials');
     } finally {
@@ -62,11 +62,11 @@ export default function MemberLogin() {
           )}
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="text-sm font-medium text-gray-300 mb-1 block">Email or Username</label>
+              <label className="text-sm font-medium text-gray-300 mb-1 block">Email</label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500" />
                 <input type="text" value={email} onChange={e => setEmail(e.target.value)}
-                  placeholder="Enter your email or username"
+                  placeholder="Enter your email"
                   className="w-full bg-[#13161e] border border-white/10 text-white rounded-lg pl-10 pr-4 py-3 text-sm focus:outline-none focus:border-[#c9a84c]/50"
                   required data-testid="member-login-email" />
               </div>
