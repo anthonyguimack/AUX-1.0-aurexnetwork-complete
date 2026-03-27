@@ -7,14 +7,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
+import MemberImageUpload from '../../components/MemberImageUpload';
 
 const quillDark = "[&_.ql-toolbar]:!bg-[#0d0f14] [&_.ql-toolbar]:!border-white/10 [&_.ql-container]:!border-white/10 [&_.ql-container]:!bg-[#0d0f14] [&_.ql-editor]:!text-white [&_.ql-editor]:!min-h-[150px] [&_.ql-snow_.ql-stroke]:!stroke-gray-400 [&_.ql-snow_.ql-fill]:!fill-gray-400 [&_.ql-snow_.ql-picker-label]:!text-gray-400 [&_.ql-snow_.ql-picker-options]:!bg-[#13161e]";
 
-const formatDate = (d) => {
+const fmtDate = (d) => {
   if (!d) return '-';
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
-  return `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}/${dt.getFullYear()}`;
+  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+  return d;
 };
 
 export default function MembershipProfile() {
@@ -54,7 +55,6 @@ export default function MembershipProfile() {
     }
   }, [member]);
 
-  // Cascading geo: load states when country changes
   useEffect(() => {
     if (form.country) {
       const c = countries.find(c => c.name === form.country);
@@ -63,7 +63,6 @@ export default function MembershipProfile() {
     } else { setStates([]); }
   }, [form.country, countries]);
 
-  // Cascading geo: load cities when state changes
   useEffect(() => {
     if (form.state) {
       const s = states.find(s => s.name === form.state);
@@ -127,11 +126,10 @@ export default function MembershipProfile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left - Avatar Card */}
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-6 flex flex-col items-center">
           <div className="w-28 h-28 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
             {(form.avatar || defaultAvatar) ?
-              <img src={form.avatar || defaultAvatar} alt="" className="w-full h-full object-cover" /> :
+              <img src={(form.avatar || defaultAvatar).startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${form.avatar || defaultAvatar}` : (form.avatar || defaultAvatar)} alt="" className="w-full h-full object-cover" /> :
               <User className="w-10 h-10 text-[#c9a84c]/50" />}
           </div>
           <p className="mt-3 text-white font-medium text-sm">{member?.first_name} {member?.last_name}</p>
@@ -140,7 +138,6 @@ export default function MembershipProfile() {
           {member?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
         </div>
 
-        {/* Right - Tabs */}
         <div className="lg:col-span-2 bg-[#13161e] border border-white/5 rounded-lg">
           <div className="border-b border-white/5 p-4">
             <div className="flex gap-4">
@@ -154,7 +151,6 @@ export default function MembershipProfile() {
             </div>
           </div>
           <div className="p-5">
-            {/* General Info Tab */}
             {tab === 'general' && (
               <div>
                 <div className="flex justify-end mb-4">
@@ -177,7 +173,11 @@ export default function MembershipProfile() {
                       <div><Label className="text-xs text-gray-400">First Name</Label><Input value={form.first_name} onChange={set('first_name')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                       <div><Label className="text-xs text-gray-400">Last Name</Label><Input value={form.last_name} onChange={set('last_name')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                     </div>
-                    <div><Label className="text-xs text-gray-400">Email</Label><Input value={form.email} disabled className="mt-1 bg-[#0d0f14] border-white/10 text-gray-500 cursor-not-allowed" /></div>
+                    <div>
+                      <Label className="text-xs text-gray-400">Email</Label>
+                      <Input value={form.email} onChange={set('email')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" data-testid="profile-email-input" />
+                      <p className="text-[10px] text-gray-500 mt-1">Changing your email will also update your login username.</p>
+                    </div>
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label className="text-xs text-gray-400">Phone</Label><Input value={form.phone} onChange={set('phone')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                       <div><Label className="text-xs text-gray-400">Gender</Label>
@@ -212,7 +212,12 @@ export default function MembershipProfile() {
                       </div>
                     </div>
                     <div><Label className="text-xs text-gray-400">ZIP Code</Label><Input value={form.zip_code} onChange={set('zip_code')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
-                    <div><Label className="text-xs text-gray-400">Avatar URL</Label><Input value={form.avatar} onChange={set('avatar')} placeholder="https://..." className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
+                    <div>
+                      <Label className="text-xs text-gray-400">Avatar</Label>
+                      <div className="mt-1">
+                        <MemberImageUpload value={form.avatar} onChange={v => setForm(p => ({...p, avatar: v}))} />
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-3">
@@ -222,7 +227,7 @@ export default function MembershipProfile() {
                       { label: 'Email', value: member?.email || '-' },
                       { label: 'Phone', value: member?.phone || '-' },
                       { label: 'Gender', value: member?.gender || '-' },
-                      { label: 'Date of Birth', value: formatDate(member?.date_of_birth) },
+                      { label: 'Date of Birth', value: fmtDate(member?.date_of_birth) },
                       { label: 'Address', value: member?.address || '-' },
                       { label: 'Country', value: member?.country || '-' },
                       { label: 'State', value: member?.state || '-' },
@@ -240,10 +245,9 @@ export default function MembershipProfile() {
               </div>
             )}
 
-            {/* Social Links Tab */}
             {tab === 'social' && (
               <div className="space-y-4">
-                <p className="text-xs text-gray-500 mb-4">Enter your social network profiles. These are the platforms enabled by the site administrator.</p>
+                <p className="text-xs text-gray-500 mb-4">Enter your social network profiles.</p>
                 {platformSocials.length > 0 ? platformSocials.map(platform => (
                   <div key={platform} className="flex items-center gap-3">
                     <span className="text-sm text-gray-400 w-28 capitalize flex-shrink-0">{platform}</span>
@@ -263,7 +267,6 @@ export default function MembershipProfile() {
               </div>
             )}
 
-            {/* Activities Tab */}
             {tab === 'activities' && (
               <div>
                 {activities.length > 0 ? (
@@ -271,7 +274,7 @@ export default function MembershipProfile() {
                     {activities.map((a, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-[#0d0f14] rounded border border-white/5">
                         <span className="text-sm text-white">{a.action}</span>
-                        <span className="text-xs text-gray-500">{formatDate(a.date)}</span>
+                        <span className="text-xs text-gray-500">{fmtDate(a.date)}</span>
                       </div>
                     ))}
                   </div>
@@ -282,7 +285,6 @@ export default function MembershipProfile() {
         </div>
       </div>
 
-      {/* Biography Modal - NO Cover Image */}
       <Dialog open={bioOpen} onOpenChange={setBioOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="biography-modal">
           <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Update Biography</DialogTitle></DialogHeader>

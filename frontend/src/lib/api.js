@@ -169,6 +169,7 @@ export const memberAPI = {
   getCompanies: (industryId) => api.get(`/member/companies${industryId ? `?industry_id=${industryId}` : ''}`),
   getMembersList: () => api.get('/member/members-list'),
   getMyLevel: () => api.get('/member/my-level'),
+  uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
 };
 
 // Geo API (public)

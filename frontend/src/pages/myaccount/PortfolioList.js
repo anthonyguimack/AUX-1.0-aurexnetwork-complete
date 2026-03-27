@@ -6,9 +6,9 @@ import { Plus, Eye, Edit2, Briefcase } from 'lucide-react';
 const fmtCurrency = (v) => `$${(parseFloat(v) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const fmtDate = (d) => {
   if (!d) return '-';
-  const dt = new Date(d);
-  if (isNaN(dt)) return d;
-  return `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}/${dt.getFullYear()}`;
+  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (m) return `${m[2]}/${m[3]}/${m[1]}`;
+  return d;
 };
 const stripHtml = (html) => { const tmp = document.createElement('div'); tmp.innerHTML = html || ''; return tmp.textContent || ''; };
 
@@ -70,7 +70,7 @@ export default function PortfolioList() {
                 </div>
                 <h3 className="text-white font-semibold text-sm mb-1">{p.title}</h3>
                 <p className="text-gray-500 text-xs mb-1">Member: {p.owner_name || p.owner_membership_id}</p>
-                <p className="text-gray-400 text-xs line-clamp-2 mb-3">{stripHtml(p.description)}</p>
+                <div className="text-gray-400 text-xs line-clamp-2 mb-3 [&_strong]:text-gray-300 [&_b]:text-gray-300 [&_em]:italic [&_a]:text-[#c9a84c]" dangerouslySetInnerHTML={{ __html: p.description || '' }} />
                 <div className="flex items-center justify-between pt-3 border-t border-white/5">
                   <span className="text-[#c9a84c] font-bold text-sm">{fmtCurrency(calcTotal(p))}</span>
                   <div className="flex gap-1">

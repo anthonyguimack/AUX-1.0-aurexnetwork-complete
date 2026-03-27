@@ -1,8 +1,9 @@
-from fastapi import APIRouter, HTTPException, Request, Response, Depends
-from models.database import db, verify_password, create_jwt_token, hash_password, send_email_smtp, get_current_user, require_admin, logger
+from fastapi import APIRouter, HTTPException, Request, Response, Depends, UploadFile, File
+from models.database import db, verify_password, create_jwt_token, hash_password, send_email_smtp, get_current_user, require_admin, logger, UPLOAD_DIR
 from datetime import datetime, timezone, timedelta
 import uuid
 import secrets
+import aiofiles
 
 router = APIRouter()
 
@@ -163,6 +164,9 @@ async def register_member(request: Request):
     first_name = body.get("first_name", "").strip()
     last_name = body.get("last_name", "").strip()
     username = email
+    # Assign default Level 1 (lowest order level)
+    default_level = await db.member_levels.find_one({}, {"_id": 0, "id": 1}, sort=[("order", 1)])
+    default_level_id = default_level["id"] if default_level else None
     new_member = {
         "member_id": member_id,
         "membership_number": membership_number,
@@ -187,7 +191,7 @@ async def register_member(request: Request):
         "role": "member",
         "is_mentor": False,
         "portfolio_development": False,
-        "level_id": None,
+        "level_id": default_level_id,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
@@ -291,12 +295,44 @@ async def update_biography(request: Request, member: dict = Depends(get_current_
 @router.put("/member/profile")
 async def update_profile(request: Request, member: dict = Depends(get_current_member)):
     body = await request.json()
-    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "city", "zip_code", "google_account", "gender", "social_links", "avatar")
+    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "city", "zip_code", "google_account", "gender", "social_links", "avatar", "email")
     update = {k: body[k] for k in allowed if k in body}
+    # Sync username with email if email changed
+    if "email" in update:
+        new_email = update["email"].strip().lower()
+        # Check if new email is already used by another member
+        existing = await db.members.find_one({"email": new_email, "member_id": {"$ne": member["member_id"]}})
+        if existing:
+            raise HTTPException(status_code=400, detail="Email already in use by another member")
+        update["email"] = new_email
+        update["username"] = new_email
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": update})
     updated = await db.members.find_one({"member_id": member["member_id"]}, {"_id": 0, "password_hash": 0})
     return updated
+
+# ---- Member File Upload ----
+
+@router.post("/member/upload")
+async def member_upload_file(file: UploadFile = File(...), member: dict = Depends(get_current_member)):
+    """Upload endpoint accessible to any authenticated member."""
+    allowed = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, GIF, WebP, SVG) allowed")
+    max_size = 10 * 1024 * 1024
+    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "jpg"
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = UPLOAD_DIR / filename
+    total = 0
+    async with aiofiles.open(filepath, "wb") as f:
+        while chunk := await file.read(1024 * 64):
+            total += len(chunk)
+            if total > max_size:
+                await f.close()
+                filepath.unlink(missing_ok=True)
+                raise HTTPException(status_code=400, detail="File too large (max 10MB)")
+            await f.write(chunk)
+    return {"url": f"/api/uploads/{filename}", "filename": filename}
 
 # ---- Portfolios ----
 

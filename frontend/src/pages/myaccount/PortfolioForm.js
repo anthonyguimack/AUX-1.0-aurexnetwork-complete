@@ -7,7 +7,7 @@ import { Save, Loader2, ArrowLeft, Plus, Trash2, X, AlertTriangle } from 'lucide
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
-import ImageUpload from '../../components/ImageUpload';
+import MemberImageUpload from '../../components/MemberImageUpload';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 
 const quillDark = "[&_.ql-toolbar]:!bg-[#0d0f14] [&_.ql-toolbar]:!border-white/10 [&_.ql-container]:!border-white/10 [&_.ql-container]:!bg-[#0d0f14] [&_.ql-editor]:!text-white [&_.ql-editor]:!min-h-[100px] [&_.ql-snow_.ql-stroke]:!stroke-gray-400 [&_.ql-snow_.ql-fill]:!fill-gray-400 [&_.ql-snow_.ql-picker-label]:!text-gray-400 [&_.ql-snow_.ql-picker-options]:!bg-[#13161e]";
@@ -51,12 +51,15 @@ export default function PortfolioForm() {
     if (isEdit) {
       memberAPI.getPortfolio(id).then(r => {
         const p = r.data;
+        const holdings = (p.holdings || []).map(h => ({ ...h, _key: Math.random().toString(36).substr(2,6) }));
+        // Sort by rank on load
+        holdings.sort((a, b) => (parseInt(a.rank) || 999) - (parseInt(b.rank) || 999));
         setForm({
           title: p.title || '', description: p.description || '',
           cover_image: p.cover_image || '',
           as_of_date: p.as_of_date || '',
           cash_balance: p.cash_balance || 0,
-          holdings: (p.holdings || []).map(h => ({ ...h, _key: Math.random().toString(36).substr(2,6) })),
+          holdings,
           shared_mode: p.shared_mode || (p.shared_with?.length > 0 ? 'select' : 'all'),
           shared_with: p.shared_with || [],
           status: p.status || 'active',
@@ -67,7 +70,6 @@ export default function PortfolioForm() {
 
   const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  // Holdings
   const addHolding = () => setForm(p => ({ ...p, holdings: [...p.holdings, emptyHolding()] }));
   const removeHolding = (idx) => setForm(p => ({ ...p, holdings: p.holdings.filter((_, i) => i !== idx) }));
 
@@ -104,7 +106,6 @@ export default function PortfolioForm() {
   const filteredIndustries = (sectorId) => industries.filter(i => i.sector_id === sectorId);
   const filteredCompanies = (industryId) => companies.filter(c => c.industry_id === industryId);
 
-  // Shared members
   const [memberSearch, setMemberSearch] = useState('');
   const memberSearchResults = useMemo(() => {
     if (!memberSearch || form.shared_mode !== 'select') return [];
@@ -197,12 +198,12 @@ export default function PortfolioForm() {
             </div>
             <div>
               <Label className="text-xs text-gray-400 mb-2 block">Cover Image</Label>
-              <ImageUpload value={form.cover_image} onChange={v => setForm(p => ({...p, cover_image: v}))} />
+              <MemberImageUpload value={form.cover_image} onChange={v => setForm(p => ({...p, cover_image: v}))} />
             </div>
           </div>
         </div>
 
-        {/* Holdings - Single Row Layout */}
+        {/* Holdings — adjusted column widths: Symbol smaller, Security wider */}
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-400">Holdings</h2>
@@ -212,14 +213,13 @@ export default function PortfolioForm() {
             <p className="text-sm text-gray-500 text-center py-6">No holdings yet. Click "Add Holding" to start.</p>
           ) : (
             <div className="space-y-3">
-              {/* Header row */}
-              <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_1fr_80px_90px_90px_70px_90px_32px] gap-2 text-xs text-gray-500 px-1">
+              {/* Header: Rank(50) Sector(1fr) Industry(1fr) Symbol(90px) Security(1.2fr) Price(80) Cost(80) Shares(65) Value(90) X(32) */}
+              <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_90px_1.2fr_80px_80px_65px_90px_32px] gap-2 text-xs text-gray-500 px-1">
                 <span>Rank</span><span>Sector</span><span>Industry</span><span>Symbol</span><span>Security</span><span>Price</span><span>Cost</span><span>Shares</span><span>Value</span><span></span>
               </div>
               {form.holdings.map((h, idx) => (
                 <div key={h._key || idx} className="bg-[#0d0f14] rounded-lg p-3 border border-white/5" data-testid={`holding-${idx}`}>
-                  {/* Desktop: single row */}
-                  <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_1fr_80px_90px_90px_70px_90px_32px] gap-2 items-center">
+                  <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_90px_1.2fr_80px_80px_65px_90px_32px] gap-2 items-center">
                     <Input type="number" value={h.rank} onChange={e => updateHolding(idx, 'rank', e.target.value)} className={`${inputCls} text-center px-1`} data-testid={`holding-rank-${idx}`} />
                     <select value={h.sector_id} onChange={e => updateHolding(idx, 'sector_id', e.target.value)} className={selectCls} data-testid={`holding-sector-${idx}`}>
                       <option value="">Sector</option>
@@ -233,14 +233,14 @@ export default function PortfolioForm() {
                       <option value="">Symbol</option>
                       {filteredCompanies(h.industry_id).map(c => <option key={c.id} value={c.symbol}>{c.symbol}</option>)}
                     </select>
-                    <span className="text-xs text-gray-400 truncate px-1">{h.security || '-'}</span>
+                    <span className="text-xs text-gray-300 truncate px-1" title={h.security || '-'}>{h.security || '-'}</span>
                     <span className="text-xs text-gray-400 px-1">{fmtCurrency(h.price)}</span>
                     <Input type="number" step="0.01" value={h.cost} onChange={e => updateHolding(idx, 'cost', e.target.value)} className={`${inputCls} px-1`} data-testid={`holding-cost-${idx}`} />
                     <Input type="number" value={h.shares} onChange={e => updateHolding(idx, 'shares', parseInt(e.target.value) || 0)} className={`${inputCls} px-1`} data-testid={`holding-shares-${idx}`} />
                     <span className="text-xs text-[#c9a84c] font-medium px-1">{fmtCurrency((h.price || 0) * (h.shares || 0))}</span>
                     <button onClick={() => removeHolding(idx)} className="text-gray-500 hover:text-red-400 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                   </div>
-                  {/* Mobile: stacked */}
+                  {/* Mobile */}
                   <div className="lg:hidden space-y-2">
                     <div className="grid grid-cols-2 gap-2">
                       <div><Label className="text-xs text-gray-500">Rank</Label><Input type="number" value={h.rank} onChange={e => updateHolding(idx, 'rank', e.target.value)} className={`mt-1 ${inputCls}`} /></div>
@@ -285,14 +285,11 @@ export default function PortfolioForm() {
           {form.shared_mode === 'select' && (
             <div>
               <div className="relative">
-                <Input value={memberSearch} onChange={e => setMemberSearch(e.target.value)}
-                  placeholder="Search members by name or ID..."
-                  className={inputCls} data-testid="share-member-search" />
+                <Input value={memberSearch} onChange={e => setMemberSearch(e.target.value)} placeholder="Search members by name or ID..." className={inputCls} data-testid="share-member-search" />
                 {memberSearchResults.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-[#0d0f14] border border-white/10 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {memberSearchResults.map(m => (
-                      <button key={m.member_id} onClick={() => addSharedMember(m)}
-                        className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#c9a84c]/10 hover:text-white">
+                      <button key={m.member_id} onClick={() => addSharedMember(m)} className="w-full text-left px-3 py-2 text-sm text-gray-300 hover:bg-[#c9a84c]/10 hover:text-white">
                         {m.membership_id} - {m.first_name} {m.last_name}
                       </button>
                     ))}
@@ -303,20 +300,16 @@ export default function PortfolioForm() {
                 <div className="flex flex-wrap gap-2 mt-3">
                   {form.shared_with.map(mid => (
                     <span key={mid} className="inline-flex items-center gap-1 bg-[#c9a84c]/10 text-[#c9a84c] text-xs px-2 py-1 rounded">
-                      {getMemberName(mid)}
-                      <button onClick={() => removeSharedMember(mid)}><X className="w-3 h-3" /></button>
+                      {getMemberName(mid)}<button onClick={() => removeSharedMember(mid)}><X className="w-3 h-3" /></button>
                     </span>
                   ))}
                 </div>
               )}
             </div>
           )}
-          <p className="text-xs text-gray-500 mt-2">
-            {form.shared_mode === 'all' ? 'This portfolio will be visible to all members.' : `Shared with ${form.shared_with.length} selected member(s).`}
-          </p>
+          <p className="text-xs text-gray-500 mt-2">{form.shared_mode === 'all' ? 'This portfolio will be visible to all members.' : `Shared with ${form.shared_with.length} selected member(s).`}</p>
         </div>
 
-        {/* Save Button */}
         <button onClick={handleSave} disabled={saving}
           className="w-full py-3 bg-[#c9a84c] text-[#0d0f14] font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-[#b8973f] transition-colors disabled:opacity-50"
           data-testid="portfolio-save-btn">
@@ -325,7 +318,6 @@ export default function PortfolioForm() {
         </button>
       </div>
 
-      {/* Delete Confirmation Dialog */}
       <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
         <DialogContent className="sm:max-w-[400px] bg-[#13161e] border-white/10" data-testid="delete-portfolio-dialog">
           <DialogHeader><DialogTitle className="text-white flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-400" /> Delete Portfolio</DialogTitle></DialogHeader>

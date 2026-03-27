@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
@@ -15,13 +15,23 @@ const ALL_NAV_ITEMS = [
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
 ];
 
+// Map route paths to permission IDs
+const ROUTE_TO_PERM = {
+  '/my-account/membership-profile': 'membership-profile',
+  '/my-account/mentorship-profile': 'mentorship-profile',
+  '/my-account/my-sponsor': 'my-sponsor',
+  '/my-account/invite-code': 'invite-code',
+  '/my-account/my-community': 'my-community',
+  '/my-account/portfolios': 'portfolios',
+};
+
 export default function MyAccountLayout() {
   const { member, logout } = useMember();
   const location = useLocation();
   const navigate = useNavigate();
   const [sideOpen, setSideOpen] = useState(false);
   const [settings, setSettings] = useState({});
-  const [levelPerms, setLevelPerms] = useState(null); // null = loading, [] = no level
+  const [levelPerms, setLevelPerms] = useState(null); // null = loading
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
@@ -31,22 +41,41 @@ export default function MyAccountLayout() {
   useEffect(() => {
     if (member) {
       if (member.role === 'admin') {
-        // Admins see everything
         setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
       } else if (member.level_id) {
         memberAPI.getMyLevel().then(r => {
-          if (r.data && r.data.permissions) {
+          if (r.data && r.data.permissions && r.data.permissions.length > 0) {
             setLevelPerms(r.data.permissions);
           } else {
-            setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)); // No restrictions if level has no permissions defined
+            setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
           }
         }).catch(() => setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)));
       } else {
-        // No level assigned — show all items by default
         setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
       }
     }
   }, [member]);
+
+  // Route protection: redirect if user doesn't have permission for current route
+  useEffect(() => {
+    if (levelPerms === null || !member) return; // still loading
+    const path = location.pathname;
+    // Find which permission this route requires
+    let requiredPerm = null;
+    for (const [route, perm] of Object.entries(ROUTE_TO_PERM)) {
+      if (path === route || path.startsWith(route + '/')) {
+        requiredPerm = perm;
+        break;
+      }
+    }
+    if (requiredPerm && !levelPerms.includes(requiredPerm)) {
+      // Redirect to the first permitted section
+      const firstAllowed = ALL_NAV_ITEMS.find(i => levelPerms.includes(i.id));
+      if (firstAllowed) {
+        navigate(firstAllowed.href, { replace: true });
+      }
+    }
+  }, [levelPerms, location.pathname, member, navigate]);
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
   const brandName = settings.brand_name || 'Legacy';
@@ -54,7 +83,10 @@ export default function MyAccountLayout() {
   // Filter nav items based on level permissions
   const navItems = levelPerms !== null
     ? ALL_NAV_ITEMS.filter(item => levelPerms.includes(item.id))
-    : ALL_NAV_ITEMS; // Show all while loading to avoid flash
+    : []; // Empty while loading — prevents flash
+
+  // Show loading while permissions are being fetched
+  const permissionsLoading = levelPerms === null;
 
   return (
     <div className="min-h-screen flex" style={{ background: '#0d0f14', fontFamily: "'DM Sans', sans-serif" }} data-testid="myaccount-layout">
@@ -83,17 +115,23 @@ export default function MyAccountLayout() {
           )}
         </div>
         <nav className="flex-1 py-4 overflow-y-auto">
-          {navItems.map(item => {
-            const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
-            return (
-              <Link key={item.href} to={item.href} onClick={() => setSideOpen(false)}
-                className={`flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${active ? 'text-[#c9a84c] bg-[#c9a84c]/10 border-r-2 border-[#c9a84c]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
-                data-testid={`myaccount-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
-                <item.icon className="w-4 h-4 flex-shrink-0" />
-                <span>{item.label}</span>
-              </Link>
-            );
-          })}
+          {permissionsLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <Loader2 className="w-5 h-5 text-[#c9a84c] animate-spin" />
+            </div>
+          ) : (
+            navItems.map(item => {
+              const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+              return (
+                <Link key={item.href} to={item.href} onClick={() => setSideOpen(false)}
+                  className={`flex items-center gap-3 px-5 py-2.5 text-sm transition-colors ${active ? 'text-[#c9a84c] bg-[#c9a84c]/10 border-r-2 border-[#c9a84c]' : 'text-gray-400 hover:text-white hover:bg-white/5'}`}
+                  data-testid={`myaccount-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                  <item.icon className="w-4 h-4 flex-shrink-0" />
+                  <span>{item.label}</span>
+                </Link>
+              );
+            })
+          )}
         </nav>
         <div className="p-4 border-t border-white/5 space-y-2">
           <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm text-gray-400 hover:text-white hover:bg-white/5 rounded">
@@ -114,7 +152,7 @@ export default function MyAccountLayout() {
           <div className="flex items-center text-xs text-gray-500">
             <span>My Account</span>
             <ChevronRight className="w-3 h-3 mx-1" />
-            <span className="text-gray-300">{navItems.find(i => location.pathname.startsWith(i.href))?.label || 'Dashboard'}</span>
+            <span className="text-gray-300">{ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href))?.label || 'Dashboard'}</span>
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8">
