@@ -1,15 +1,21 @@
 import React, { useState, useEffect } from 'react';
 import { useMember } from '../../lib/memberAuth';
-import { memberAPI, publicAPI } from '../../lib/api';
+import { memberAPI, publicAPI, geoAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { User, Save, Loader2, Edit3, Camera } from 'lucide-react';
+import { User, Save, Loader2, Edit3 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
-import ImageUpload from '../../components/ImageUpload';
 
 const quillDark = "[&_.ql-toolbar]:!bg-[#0d0f14] [&_.ql-toolbar]:!border-white/10 [&_.ql-container]:!border-white/10 [&_.ql-container]:!bg-[#0d0f14] [&_.ql-editor]:!text-white [&_.ql-editor]:!min-h-[150px] [&_.ql-snow_.ql-stroke]:!stroke-gray-400 [&_.ql-snow_.ql-fill]:!fill-gray-400 [&_.ql-snow_.ql-picker-label]:!text-gray-400 [&_.ql-snow_.ql-picker-options]:!bg-[#13161e]";
+
+const formatDate = (d) => {
+  if (!d) return '-';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}/${dt.getFullYear()}`;
+};
 
 export default function MembershipProfile() {
   const { member, refresh } = useMember();
@@ -19,11 +25,15 @@ export default function MembershipProfile() {
   const [loading, setLoading] = useState(false);
   const [settings, setSettings] = useState({});
   const [bioOpen, setBioOpen] = useState(false);
-  const [bioForm, setBioForm] = useState({ summary: '', biography: '', cover_image: '' });
+  const [bioForm, setBioForm] = useState({ summary: '', biography: '' });
   const [activities, setActivities] = useState([]);
+  const [countries, setCountries] = useState([]);
+  const [states, setStates] = useState([]);
+  const [cities, setCities] = useState([]);
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
+    geoAPI.getCountries().then(r => setCountries(r.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -33,18 +43,34 @@ export default function MembershipProfile() {
         email: member.email || '', phone: member.phone || '', gender: member.gender || '',
         date_of_birth: member.date_of_birth || '',
         address: member.address || '', country: member.country || '',
-        state: member.state || '', zip_code: member.zip_code || '',
+        state: member.state || '', city: member.city || '', zip_code: member.zip_code || '',
         google_account: member.google_account || '', avatar: member.avatar || '',
       });
-      setBioForm({ summary: member.summary || '', biography: member.biography || '', cover_image: member.cover_image || '' });
-      // Build simple activities from member data
+      setBioForm({ summary: member.summary || '', biography: member.biography || '' });
       const acts = [];
       if (member.created_at) acts.push({ action: 'Account created', date: member.created_at });
       if (member.updated_at) acts.push({ action: 'Profile updated', date: member.updated_at });
-      if (member.biography) acts.push({ action: 'Biography updated', date: member.updated_at || member.created_at });
       setActivities(acts.sort((a, b) => new Date(b.date) - new Date(a.date)));
     }
   }, [member]);
+
+  // Cascading geo: load states when country changes
+  useEffect(() => {
+    if (form.country) {
+      const c = countries.find(c => c.name === form.country);
+      if (c) geoAPI.getStates(c.id).then(r => setStates(r.data)).catch(() => {});
+      else setStates([]);
+    } else { setStates([]); }
+  }, [form.country, countries]);
+
+  // Cascading geo: load cities when state changes
+  useEffect(() => {
+    if (form.state) {
+      const s = states.find(s => s.name === form.state);
+      if (s) geoAPI.getCities(s.id).then(r => setCities(r.data)).catch(() => {});
+      else setCities([]);
+    } else { setCities([]); }
+  }, [form.state, states]);
 
   const handleSave = async () => {
     setLoading(true);
@@ -68,10 +94,8 @@ export default function MembershipProfile() {
     finally { setLoading(false); }
   };
 
-  // Social links management
   const platformSocials = (settings.social_links || []).map(s => s.platform || s.icon);
   const memberSocials = form.social_links || member?.social_links || [];
-
   const updateSocial = (platform, url) => {
     const links = [...memberSocials];
     const idx = links.findIndex(l => l.platform === platform);
@@ -79,12 +103,7 @@ export default function MembershipProfile() {
     else links.push({ platform, url });
     setForm(prev => ({ ...prev, social_links: links }));
   };
-
-  const getSocialUrl = (platform) => {
-    const link = memberSocials.find(l => l.platform === platform);
-    return link?.url || '';
-  };
-
+  const getSocialUrl = (platform) => memberSocials.find(l => l.platform === platform)?.url || '';
   const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
   const defaultAvatar = settings.membership_default_avatar || '';
@@ -93,6 +112,8 @@ export default function MembershipProfile() {
     { id: 'social', label: 'Social Links' },
     { id: 'activities', label: 'Activities' },
   ];
+
+  const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-sm focus:outline-none focus:border-[#c9a84c]/50";
 
   return (
     <div data-testid="membership-profile-page">
@@ -106,14 +127,12 @@ export default function MembershipProfile() {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left — Avatar Card */}
+        {/* Left - Avatar Card */}
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-6 flex flex-col items-center">
-          <div className="relative">
-            <div className="w-28 h-28 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
-              {(form.avatar || defaultAvatar) ?
-                <img src={form.avatar || defaultAvatar} alt="" className="w-full h-full object-cover" /> :
-                <User className="w-10 h-10 text-[#c9a84c]/50" />}
-            </div>
+          <div className="w-28 h-28 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
+            {(form.avatar || defaultAvatar) ?
+              <img src={form.avatar || defaultAvatar} alt="" className="w-full h-full object-cover" /> :
+              <User className="w-10 h-10 text-[#c9a84c]/50" />}
           </div>
           <p className="mt-3 text-white font-medium text-sm">{member?.first_name} {member?.last_name}</p>
           <p className="text-[#c9a84c] text-xs">{member?.membership_id}</p>
@@ -121,7 +140,7 @@ export default function MembershipProfile() {
           {member?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
         </div>
 
-        {/* Right — Tabs */}
+        {/* Right - Tabs */}
         <div className="lg:col-span-2 bg-[#13161e] border border-white/5 rounded-lg">
           <div className="border-b border-white/5 p-4">
             <div className="flex gap-4">
@@ -162,7 +181,7 @@ export default function MembershipProfile() {
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label className="text-xs text-gray-400">Phone</Label><Input value={form.phone} onChange={set('phone')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                       <div><Label className="text-xs text-gray-400">Gender</Label>
-                        <select value={form.gender} onChange={set('gender')} className="w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-sm">
+                        <select value={form.gender} onChange={set('gender')} className={selectCls}>
                           <option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option>
                         </select>
                       </div>
@@ -170,10 +189,29 @@ export default function MembershipProfile() {
                     <div><Label className="text-xs text-gray-400">Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={set('date_of_birth')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                     <div><Label className="text-xs text-gray-400">Address</Label><Input value={form.address} onChange={set('address')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                     <div className="grid grid-cols-3 gap-3">
-                      <div><Label className="text-xs text-gray-400">Country</Label><Input value={form.country} onChange={set('country')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
-                      <div><Label className="text-xs text-gray-400">State</Label><Input value={form.state} onChange={set('state')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
-                      <div><Label className="text-xs text-gray-400">ZIP Code</Label><Input value={form.zip_code} onChange={set('zip_code')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
+                      <div>
+                        <Label className="text-xs text-gray-400">Country</Label>
+                        <select value={form.country} onChange={e => setForm(p => ({...p, country: e.target.value, state: '', city: ''}))} className={selectCls} data-testid="profile-country-select">
+                          <option value="">Select</option>
+                          {countries.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-400">State</Label>
+                        <select value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value, city: ''}))} className={selectCls} disabled={!form.country} data-testid="profile-state-select">
+                          <option value="">Select</option>
+                          {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
+                        </select>
+                      </div>
+                      <div>
+                        <Label className="text-xs text-gray-400">City</Label>
+                        <select value={form.city} onChange={set('city')} className={selectCls} disabled={!form.state} data-testid="profile-city-select">
+                          <option value="">Select</option>
+                          {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                        </select>
+                      </div>
                     </div>
+                    <div><Label className="text-xs text-gray-400">ZIP Code</Label><Input value={form.zip_code} onChange={set('zip_code')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                     <div><Label className="text-xs text-gray-400">Avatar URL</Label><Input value={form.avatar} onChange={set('avatar')} placeholder="https://..." className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                   </div>
                 ) : (
@@ -184,9 +222,11 @@ export default function MembershipProfile() {
                       { label: 'Email', value: member?.email || '-' },
                       { label: 'Phone', value: member?.phone || '-' },
                       { label: 'Gender', value: member?.gender || '-' },
-                      { label: 'Date of Birth', value: member?.date_of_birth || '-' },
+                      { label: 'Date of Birth', value: formatDate(member?.date_of_birth) },
                       { label: 'Address', value: member?.address || '-' },
-                      { label: 'Country / State', value: [member?.country, member?.state].filter(Boolean).join(' / ') || '-' },
+                      { label: 'Country', value: member?.country || '-' },
+                      { label: 'State', value: member?.state || '-' },
+                      { label: 'City', value: member?.city || '-' },
                       { label: 'ZIP Code', value: member?.zip_code || '-' },
                       { label: 'Google Account', value: member?.google_account || '-' },
                     ].map(f => (
@@ -214,7 +254,7 @@ export default function MembershipProfile() {
                   </div>
                 )) : <p className="text-sm text-gray-500">No social platforms configured by the administrator.</p>}
                 {platformSocials.length > 0 && (
-                  <button onClick={() => { handleSave(); }} disabled={loading}
+                  <button onClick={handleSave} disabled={loading}
                     className="mt-4 px-4 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-medium flex items-center gap-1 disabled:opacity-50"
                     data-testid="save-socials-btn">
                     {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save Social Links
@@ -231,7 +271,7 @@ export default function MembershipProfile() {
                     {activities.map((a, i) => (
                       <div key={i} className="flex items-center justify-between p-3 bg-[#0d0f14] rounded border border-white/5">
                         <span className="text-sm text-white">{a.action}</span>
-                        <span className="text-xs text-gray-500">{new Date(a.date).toLocaleDateString()}</span>
+                        <span className="text-xs text-gray-500">{formatDate(a.date)}</span>
                       </div>
                     ))}
                   </div>
@@ -242,15 +282,11 @@ export default function MembershipProfile() {
         </div>
       </div>
 
-      {/* Biography Modal */}
+      {/* Biography Modal - NO Cover Image */}
       <Dialog open={bioOpen} onOpenChange={setBioOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="biography-modal">
           <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Update Biography</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div>
-              <Label className="text-xs text-gray-400 mb-2 block">Cover Image</Label>
-              <ImageUpload value={bioForm.cover_image} onChange={val => setBioForm(p => ({...p, cover_image: val}))} />
-            </div>
             <div>
               <Label className="text-xs text-gray-400 mb-2 block">Summary</Label>
               <div className={quillDark}>

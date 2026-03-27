@@ -3,17 +3,20 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Save, Loader2, ArrowLeft, Plus, Trash2, X } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, Plus, Trash2, X, AlertTriangle } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 
 const quillDark = "[&_.ql-toolbar]:!bg-[#0d0f14] [&_.ql-toolbar]:!border-white/10 [&_.ql-container]:!border-white/10 [&_.ql-container]:!bg-[#0d0f14] [&_.ql-editor]:!text-white [&_.ql-editor]:!min-h-[100px] [&_.ql-snow_.ql-stroke]:!stroke-gray-400 [&_.ql-snow_.ql-fill]:!fill-gray-400 [&_.ql-snow_.ql-picker-label]:!text-gray-400 [&_.ql-snow_.ql-picker-options]:!bg-[#13161e]";
 
+const fmtCurrency = (v) => `$${(parseFloat(v) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+
 const emptyHolding = () => ({
   _key: Math.random().toString(36).substr(2,6),
-  sector_id: '', industry_id: '', symbol: '', security: '', sector: '', industry: '', price: 0, shares: 0
+  sector_id: '', industry_id: '', symbol: '', security: '', sector: '', industry: '', price: 0, cost: 0, shares: 0, rank: 0
 });
 
 export default function PortfolioForm() {
@@ -27,10 +30,11 @@ export default function PortfolioForm() {
   const [industries, setIndustries] = useState([]);
   const [companies, setCompanies] = useState([]);
   const [allMembers, setAllMembers] = useState([]);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
   const [form, setForm] = useState({
     title: '', description: '', cover_image: '', as_of_date: '', cash_balance: 0,
-    holdings: [], activities: [],
-    shared_mode: 'all', shared_with: [], status: 'active',
+    holdings: [], shared_mode: 'all', shared_with: [], status: 'active',
   });
 
   useEffect(() => {
@@ -53,7 +57,6 @@ export default function PortfolioForm() {
           as_of_date: p.as_of_date || '',
           cash_balance: p.cash_balance || 0,
           holdings: (p.holdings || []).map(h => ({ ...h, _key: Math.random().toString(36).substr(2,6) })),
-          activities: p.activities || [],
           shared_mode: p.shared_mode || (p.shared_with?.length > 0 ? 'select' : 'all'),
           shared_with: p.shared_with || [],
           status: p.status || 'active',
@@ -64,7 +67,7 @@ export default function PortfolioForm() {
 
   const set = (field) => (e) => setForm(prev => ({ ...prev, [field]: e.target.value }));
 
-  // Holdings management
+  // Holdings
   const addHolding = () => setForm(p => ({ ...p, holdings: [...p.holdings, emptyHolding()] }));
   const removeHolding = (idx) => setForm(p => ({ ...p, holdings: p.holdings.filter((_, i) => i !== idx) }));
 
@@ -72,18 +75,14 @@ export default function PortfolioForm() {
     setForm(prev => {
       const h = [...prev.holdings];
       h[idx] = { ...h[idx], [field]: value };
-
-      // Auto-populate cascade
       if (field === 'sector_id') {
-        h[idx].industry_id = '';
-        h[idx].symbol = '';
+        h[idx].industry_id = ''; h[idx].symbol = '';
         h[idx].security = ''; h[idx].sector = ''; h[idx].industry = ''; h[idx].price = 0;
         const sector = sectors.find(s => s.id === value);
         if (sector) h[idx].sector = sector.name;
       }
       if (field === 'industry_id') {
-        h[idx].symbol = '';
-        h[idx].security = ''; h[idx].industry = ''; h[idx].price = 0;
+        h[idx].symbol = ''; h[idx].security = ''; h[idx].industry = ''; h[idx].price = 0;
         const ind = industries.find(i => i.id === value);
         if (ind) h[idx].industry = ind.name;
       }
@@ -105,7 +104,7 @@ export default function PortfolioForm() {
   const filteredIndustries = (sectorId) => industries.filter(i => i.sector_id === sectorId);
   const filteredCompanies = (industryId) => companies.filter(c => c.industry_id === industryId);
 
-  // Shared members management
+  // Shared members
   const [memberSearch, setMemberSearch] = useState('');
   const memberSearchResults = useMemo(() => {
     if (!memberSearch || form.shared_mode !== 'select') return [];
@@ -116,30 +115,9 @@ export default function PortfolioForm() {
     ).slice(0, 10);
   }, [memberSearch, allMembers, form.shared_with, form.shared_mode]);
 
-  const addSharedMember = (m) => {
-    setForm(p => ({ ...p, shared_with: [...p.shared_with, m.member_id] }));
-    setMemberSearch('');
-  };
-  const removeSharedMember = (memberId) => {
-    setForm(p => ({ ...p, shared_with: p.shared_with.filter(id => id !== memberId) }));
-  };
-
-  const getMemberName = (memberId) => {
-    const m = allMembers.find(m => m.member_id === memberId);
-    return m ? `${m.membership_id} - ${m.first_name} ${m.last_name}` : memberId;
-  };
-
-  // Activities
-  const addActivity = () => setForm(p => ({
-    ...p, activities: [...p.activities, { date: new Date().toISOString().split('T')[0], type: 'note', description: '' }]
-  }));
-  const updateActivity = (idx, field, value) => {
-    setForm(p => {
-      const acts = [...p.activities]; acts[idx] = { ...acts[idx], [field]: value };
-      return { ...p, activities: acts };
-    });
-  };
-  const removeActivity = (idx) => setForm(p => ({ ...p, activities: p.activities.filter((_, i) => i !== idx) }));
+  const addSharedMember = (m) => { setForm(p => ({ ...p, shared_with: [...p.shared_with, m.member_id] })); setMemberSearch(''); };
+  const removeSharedMember = (memberId) => setForm(p => ({ ...p, shared_with: p.shared_with.filter(x => x !== memberId) }));
+  const getMemberName = (memberId) => { const m = allMembers.find(x => x.member_id === memberId); return m ? `${m.membership_id} - ${m.first_name} ${m.last_name}` : memberId; };
 
   const handleSave = async () => {
     if (!form.title.trim()) { toast.error('Title is required'); return; }
@@ -147,7 +125,7 @@ export default function PortfolioForm() {
     try {
       const payload = {
         ...form,
-        holdings: form.holdings.map(({ _key, ...h }) => h),
+        holdings: form.holdings.map(({ _key, ...h }) => ({ ...h, shares: parseInt(h.shares) || 0, rank: parseInt(h.rank) || 0, cost: parseFloat(h.cost) || 0, price: parseFloat(h.price) || 0 })),
         cash_balance: parseFloat(form.cash_balance) || 0,
       };
       if (isEdit) { await memberAPI.updatePortfolio(id, payload); toast.success('Updated!'); }
@@ -157,6 +135,16 @@ export default function PortfolioForm() {
     finally { setSaving(false); }
   };
 
+  const handleDelete = async () => {
+    setDeleting(true);
+    try {
+      await memberAPI.deletePortfolio(id);
+      toast.success('Portfolio deleted');
+      navigate('/my-account/portfolios');
+    } catch (e) { toast.error(e.response?.data?.detail || 'Error deleting'); }
+    finally { setDeleting(false); setDeleteOpen(false); }
+  };
+
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 text-[#c9a84c] animate-spin" /></div>;
 
   const selectCls = "w-full px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-sm focus:outline-none focus:border-[#c9a84c]/50";
@@ -164,9 +152,16 @@ export default function PortfolioForm() {
 
   return (
     <div data-testid="portfolio-form-page">
-      <div className="flex items-center gap-3 mb-6">
-        <button onClick={() => navigate('/my-account/portfolios')} className="text-gray-400 hover:text-white"><ArrowLeft className="w-5 h-5" /></button>
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>{isEdit ? 'Edit' : 'New'} Portfolio</h1>
+      <div className="flex items-center justify-between mb-6">
+        <div className="flex items-center gap-3">
+          <button onClick={() => navigate('/my-account/portfolios')} className="text-gray-400 hover:text-white"><ArrowLeft className="w-5 h-5" /></button>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>{isEdit ? 'Edit' : 'New'} Portfolio</h1>
+        </div>
+        {isEdit && (
+          <button onClick={() => setDeleteOpen(true)} className="px-4 py-2 bg-red-500/10 text-red-400 border border-red-500/20 rounded text-sm font-medium flex items-center gap-2 hover:bg-red-500/20 transition-colors" data-testid="delete-portfolio-btn">
+            <Trash2 className="w-4 h-4" /> Delete Portfolio
+          </button>
+        )}
       </div>
 
       <div className="space-y-6">
@@ -207,7 +202,7 @@ export default function PortfolioForm() {
           </div>
         </div>
 
-        {/* Holdings */}
+        {/* Holdings - Single Row Layout */}
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-5">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-sm font-semibold text-gray-400">Holdings</h2>
@@ -216,50 +211,55 @@ export default function PortfolioForm() {
           {form.holdings.length === 0 ? (
             <p className="text-sm text-gray-500 text-center py-6">No holdings yet. Click "Add Holding" to start.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
+              {/* Header row */}
+              <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_1fr_80px_90px_90px_70px_90px_32px] gap-2 text-xs text-gray-500 px-1">
+                <span>Rank</span><span>Sector</span><span>Industry</span><span>Symbol</span><span>Security</span><span>Price</span><span>Cost</span><span>Shares</span><span>Value</span><span></span>
+              </div>
               {form.holdings.map((h, idx) => (
-                <div key={h._key || idx} className="bg-[#0d0f14] rounded-lg p-4 border border-white/5 relative" data-testid={`holding-${idx}`}>
-                  <button onClick={() => removeHolding(idx)} className="absolute top-2 right-2 text-gray-500 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
-                  <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                    <div>
-                      <Label className="text-xs text-gray-500">Sector</Label>
-                      <select value={h.sector_id} onChange={e => updateHolding(idx, 'sector_id', e.target.value)} className={`mt-1 ${selectCls}`} data-testid={`holding-sector-${idx}`}>
-                        <option value="">Select Sector</option>
-                        {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Industry</Label>
-                      <select value={h.industry_id} onChange={e => updateHolding(idx, 'industry_id', e.target.value)} className={`mt-1 ${selectCls}`} disabled={!h.sector_id} data-testid={`holding-industry-${idx}`}>
-                        <option value="">Select Industry</option>
-                        {filteredIndustries(h.sector_id).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
-                      </select>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Symbol</Label>
-                      <select value={h.symbol} onChange={e => updateHolding(idx, 'symbol', e.target.value)} className={`mt-1 ${selectCls}`} disabled={!h.industry_id} data-testid={`holding-symbol-${idx}`}>
-                        <option value="">Select Symbol</option>
-                        {filteredCompanies(h.industry_id).map(c => <option key={c.id} value={c.symbol}>{c.symbol} - {c.name}</option>)}
-                      </select>
-                    </div>
+                <div key={h._key || idx} className="bg-[#0d0f14] rounded-lg p-3 border border-white/5" data-testid={`holding-${idx}`}>
+                  {/* Desktop: single row */}
+                  <div className="hidden lg:grid lg:grid-cols-[50px_1fr_1fr_1fr_80px_90px_90px_70px_90px_32px] gap-2 items-center">
+                    <Input type="number" value={h.rank} onChange={e => updateHolding(idx, 'rank', e.target.value)} className={`${inputCls} text-center px-1`} data-testid={`holding-rank-${idx}`} />
+                    <select value={h.sector_id} onChange={e => updateHolding(idx, 'sector_id', e.target.value)} className={selectCls} data-testid={`holding-sector-${idx}`}>
+                      <option value="">Sector</option>
+                      {sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}
+                    </select>
+                    <select value={h.industry_id} onChange={e => updateHolding(idx, 'industry_id', e.target.value)} className={selectCls} disabled={!h.sector_id} data-testid={`holding-industry-${idx}`}>
+                      <option value="">Industry</option>
+                      {filteredIndustries(h.sector_id).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}
+                    </select>
+                    <select value={h.symbol} onChange={e => updateHolding(idx, 'symbol', e.target.value)} className={selectCls} disabled={!h.industry_id} data-testid={`holding-symbol-${idx}`}>
+                      <option value="">Symbol</option>
+                      {filteredCompanies(h.industry_id).map(c => <option key={c.id} value={c.symbol}>{c.symbol}</option>)}
+                    </select>
+                    <span className="text-xs text-gray-400 truncate px-1">{h.security || '-'}</span>
+                    <span className="text-xs text-gray-400 px-1">{fmtCurrency(h.price)}</span>
+                    <Input type="number" step="0.01" value={h.cost} onChange={e => updateHolding(idx, 'cost', e.target.value)} className={`${inputCls} px-1`} data-testid={`holding-cost-${idx}`} />
+                    <Input type="number" value={h.shares} onChange={e => updateHolding(idx, 'shares', parseInt(e.target.value) || 0)} className={`${inputCls} px-1`} data-testid={`holding-shares-${idx}`} />
+                    <span className="text-xs text-[#c9a84c] font-medium px-1">{fmtCurrency((h.price || 0) * (h.shares || 0))}</span>
+                    <button onClick={() => removeHolding(idx)} className="text-gray-500 hover:text-red-400 flex-shrink-0"><Trash2 className="w-4 h-4" /></button>
                   </div>
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
-                    <div>
-                      <Label className="text-xs text-gray-500">Security</Label>
-                      <Input value={h.security} readOnly className={`mt-1 ${inputCls} cursor-not-allowed opacity-60`} />
+                  {/* Mobile: stacked */}
+                  <div className="lg:hidden space-y-2">
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-xs text-gray-500">Rank</Label><Input type="number" value={h.rank} onChange={e => updateHolding(idx, 'rank', e.target.value)} className={`mt-1 ${inputCls}`} /></div>
+                      <div><Label className="text-xs text-gray-500">Sector</Label><select value={h.sector_id} onChange={e => updateHolding(idx, 'sector_id', e.target.value)} className={`mt-1 ${selectCls}`}><option value="">Select</option>{sectors.map(s => <option key={s.id} value={s.id}>{s.name}</option>)}</select></div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Price ($)</Label>
-                      <Input type="number" step="0.01" value={h.price} readOnly className={`mt-1 ${inputCls} cursor-not-allowed opacity-60`} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-xs text-gray-500">Industry</Label><select value={h.industry_id} onChange={e => updateHolding(idx, 'industry_id', e.target.value)} className={`mt-1 ${selectCls}`} disabled={!h.sector_id}><option value="">Select</option>{filteredIndustries(h.sector_id).map(i => <option key={i.id} value={i.id}>{i.name}</option>)}</select></div>
+                      <div><Label className="text-xs text-gray-500">Symbol</Label><select value={h.symbol} onChange={e => updateHolding(idx, 'symbol', e.target.value)} className={`mt-1 ${selectCls}`} disabled={!h.industry_id}><option value="">Select</option>{filteredCompanies(h.industry_id).map(c => <option key={c.id} value={c.symbol}>{c.symbol}</option>)}</select></div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Shares *</Label>
-                      <Input type="number" value={h.shares} onChange={e => updateHolding(idx, 'shares', parseInt(e.target.value) || 0)} className={`mt-1 ${inputCls}`} data-testid={`holding-shares-${idx}`} />
+                    <div className="grid grid-cols-3 gap-2">
+                      <div><Label className="text-xs text-gray-500">Security</Label><Input value={h.security || '-'} readOnly className={`mt-1 ${inputCls} opacity-60`} /></div>
+                      <div><Label className="text-xs text-gray-500">Price</Label><Input value={fmtCurrency(h.price)} readOnly className={`mt-1 ${inputCls} opacity-60`} /></div>
+                      <div><Label className="text-xs text-gray-500">Cost</Label><Input type="number" step="0.01" value={h.cost} onChange={e => updateHolding(idx, 'cost', e.target.value)} className={`mt-1 ${inputCls}`} /></div>
                     </div>
-                    <div>
-                      <Label className="text-xs text-gray-500">Value</Label>
-                      <Input value={`$${((h.price || 0) * (h.shares || 0)).toLocaleString('en-US', { minimumFractionDigits: 2 })}`} readOnly className={`mt-1 ${inputCls} cursor-not-allowed opacity-60 text-[#c9a84c]`} />
+                    <div className="grid grid-cols-2 gap-2">
+                      <div><Label className="text-xs text-gray-500">Shares</Label><Input type="number" value={h.shares} onChange={e => updateHolding(idx, 'shares', parseInt(e.target.value) || 0)} className={`mt-1 ${inputCls}`} /></div>
+                      <div><Label className="text-xs text-gray-500">Value</Label><Input value={fmtCurrency((h.price||0)*(h.shares||0))} readOnly className={`mt-1 ${inputCls} text-[#c9a84c] opacity-60`} /></div>
                     </div>
+                    <div className="flex justify-end"><button onClick={() => removeHolding(idx)} className="text-xs text-red-400 hover:underline flex items-center gap-1"><Trash2 className="w-3 h-3" /> Remove</button></div>
                   </div>
                 </div>
               ))}
@@ -287,7 +287,7 @@ export default function PortfolioForm() {
               <div className="relative">
                 <Input value={memberSearch} onChange={e => setMemberSearch(e.target.value)}
                   placeholder="Search members by name or ID..."
-                  className={`${inputCls}`} data-testid="share-member-search" />
+                  className={inputCls} data-testid="share-member-search" />
                 {memberSearchResults.length > 0 && (
                   <div className="absolute z-10 w-full mt-1 bg-[#0d0f14] border border-white/10 rounded-md shadow-lg max-h-48 overflow-y-auto">
                     {memberSearchResults.map(m => (
@@ -316,25 +316,6 @@ export default function PortfolioForm() {
           </p>
         </div>
 
-        {/* Activities */}
-        <div className="bg-[#13161e] border border-white/5 rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-sm font-semibold text-gray-400">Activities</h2>
-            <button onClick={addActivity} className="text-xs text-[#c9a84c] hover:underline flex items-center gap-1"><Plus className="w-3 h-3" /> Add Activity</button>
-          </div>
-          {form.activities.map((a, idx) => (
-            <div key={idx} className="flex gap-2 mb-3 items-start">
-              <input type="date" value={a.date || ''} onChange={e => updateActivity(idx, 'date', e.target.value)}
-                className={`${selectCls} w-40`} onClick={e => e.target.showPicker && e.target.showPicker()} />
-              <select value={a.type || 'note'} onChange={e => updateActivity(idx, 'type', e.target.value)} className={`${selectCls} w-32`}>
-                <option value="buy">Buy</option><option value="sell">Sell</option><option value="dividend">Dividend</option><option value="note">Note</option>
-              </select>
-              <Input value={a.description || ''} onChange={e => updateActivity(idx, 'description', e.target.value)} placeholder="Description" className={`flex-1 ${inputCls}`} />
-              <button onClick={() => removeActivity(idx)} className="p-2 text-gray-500 hover:text-red-400"><Trash2 className="w-4 h-4" /></button>
-            </div>
-          ))}
-        </div>
-
         {/* Save Button */}
         <button onClick={handleSave} disabled={saving}
           className="w-full py-3 bg-[#c9a84c] text-[#0d0f14] font-semibold rounded-lg flex items-center justify-center gap-2 hover:bg-[#b8973f] transition-colors disabled:opacity-50"
@@ -343,6 +324,22 @@ export default function PortfolioForm() {
           {saving ? 'Saving...' : `${isEdit ? 'Update' : 'Create'} Portfolio`}
         </button>
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog open={deleteOpen} onOpenChange={setDeleteOpen}>
+        <DialogContent className="sm:max-w-[400px] bg-[#13161e] border-white/10" data-testid="delete-portfolio-dialog">
+          <DialogHeader><DialogTitle className="text-white flex items-center gap-2"><AlertTriangle className="w-5 h-5 text-red-400" /> Delete Portfolio</DialogTitle></DialogHeader>
+          <p className="text-sm text-gray-400 mt-2">Are you sure you want to delete this portfolio? This action cannot be undone.</p>
+          <div className="flex gap-2 mt-4">
+            <button onClick={() => setDeleteOpen(false)} className="flex-1 py-2 border border-white/10 text-gray-400 rounded text-sm hover:bg-white/5">Cancel</button>
+            <button onClick={handleDelete} disabled={deleting}
+              className="flex-1 py-2 bg-red-500 text-white rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+              data-testid="confirm-delete-portfolio-btn">
+              {deleting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Trash2 className="w-4 h-4" />} Delete
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

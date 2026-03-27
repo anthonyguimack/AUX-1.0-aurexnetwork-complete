@@ -3,6 +3,15 @@ import { Link, useNavigate } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { Plus, Eye, Edit2, Briefcase } from 'lucide-react';
 
+const fmtCurrency = (v) => `$${(parseFloat(v) || 0).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const fmtDate = (d) => {
+  if (!d) return '-';
+  const dt = new Date(d);
+  if (isNaN(dt)) return d;
+  return `${String(dt.getMonth()+1).padStart(2,'0')}/${String(dt.getDate()).padStart(2,'0')}/${dt.getFullYear()}`;
+};
+const stripHtml = (html) => { const tmp = document.createElement('div'); tmp.innerHTML = html || ''; return tmp.textContent || ''; };
+
 export default function PortfolioList() {
   const [data, setData] = useState({ own: [], shared: [] });
   const [tab, setTab] = useState('own');
@@ -57,13 +66,13 @@ export default function PortfolioList() {
                   <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${p.status === 'active' ? 'bg-green-500/10 text-green-400' : 'bg-gray-500/10 text-gray-400'}`}>
                     {p.status || 'Active'}
                   </span>
-                  <span className="text-xs text-gray-500">{p.as_of_date}</span>
+                  <span className="text-xs text-gray-500">{fmtDate(p.as_of_date)}</span>
                 </div>
                 <h3 className="text-white font-semibold text-sm mb-1">{p.title}</h3>
                 <p className="text-gray-500 text-xs mb-1">Member: {p.owner_name || p.owner_membership_id}</p>
-                <p className="text-gray-400 text-xs line-clamp-2 mb-3">{p.description}</p>
+                <p className="text-gray-400 text-xs line-clamp-2 mb-3">{stripHtml(p.description)}</p>
                 <div className="flex items-center justify-between pt-3 border-t border-white/5">
-                  <span className="text-[#c9a84c] font-bold text-sm">${calcTotal(p).toLocaleString('en-US', { minimumFractionDigits: 2 })}</span>
+                  <span className="text-[#c9a84c] font-bold text-sm">{fmtCurrency(calcTotal(p))}</span>
                   <div className="flex gap-1">
                     <Link to={`/my-account/portfolios/${p.id}`} className="p-1.5 text-gray-400 hover:text-[#c9a84c]"><Eye className="w-4 h-4" /></Link>
                     {tab === 'own' && <Link to={`/my-account/portfolios/${p.id}/edit`} className="p-1.5 text-gray-400 hover:text-[#c9a84c]"><Edit2 className="w-4 h-4" /></Link>}
