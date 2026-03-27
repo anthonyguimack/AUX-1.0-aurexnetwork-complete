@@ -129,6 +129,71 @@ async def seed_data():
             await db.industries.insert_many(industries_data)
             await db.companies.insert_many(companies_data)
             logger.info("Seeded sectors/industries/companies")
+        # Seed countries/states/cities if missing
+        countries_count = await db.countries.count_documents({})
+        if countries_count == 0:
+            countries = [
+                {"id": "us", "name": "United States", "code": "US"},
+                {"id": "mx", "name": "Mexico", "code": "MX"},
+                {"id": "ca", "name": "Canada", "code": "CA"},
+                {"id": "es", "name": "Spain", "code": "ES"},
+                {"id": "co", "name": "Colombia", "code": "CO"},
+            ]
+            states = [
+                {"id": "us_ca", "name": "California", "country_id": "us"},
+                {"id": "us_ny", "name": "New York", "country_id": "us"},
+                {"id": "us_tx", "name": "Texas", "country_id": "us"},
+                {"id": "us_fl", "name": "Florida", "country_id": "us"},
+                {"id": "us_il", "name": "Illinois", "country_id": "us"},
+                {"id": "mx_cdmx", "name": "Ciudad de Mexico", "country_id": "mx"},
+                {"id": "mx_jal", "name": "Jalisco", "country_id": "mx"},
+                {"id": "mx_nl", "name": "Nuevo Leon", "country_id": "mx"},
+                {"id": "ca_on", "name": "Ontario", "country_id": "ca"},
+                {"id": "ca_qc", "name": "Quebec", "country_id": "ca"},
+                {"id": "ca_bc", "name": "British Columbia", "country_id": "ca"},
+                {"id": "es_md", "name": "Madrid", "country_id": "es"},
+                {"id": "es_ct", "name": "Catalonia", "country_id": "es"},
+                {"id": "co_bog", "name": "Bogota D.C.", "country_id": "co"},
+                {"id": "co_ant", "name": "Antioquia", "country_id": "co"},
+            ]
+            cities = [
+                {"id": "us_ca_la", "name": "Los Angeles", "state_id": "us_ca"},
+                {"id": "us_ca_sf", "name": "San Francisco", "state_id": "us_ca"},
+                {"id": "us_ca_sd", "name": "San Diego", "state_id": "us_ca"},
+                {"id": "us_ny_nyc", "name": "New York City", "state_id": "us_ny"},
+                {"id": "us_ny_buf", "name": "Buffalo", "state_id": "us_ny"},
+                {"id": "us_tx_hou", "name": "Houston", "state_id": "us_tx"},
+                {"id": "us_tx_dal", "name": "Dallas", "state_id": "us_tx"},
+                {"id": "us_tx_aus", "name": "Austin", "state_id": "us_tx"},
+                {"id": "us_fl_mia", "name": "Miami", "state_id": "us_fl"},
+                {"id": "us_fl_orl", "name": "Orlando", "state_id": "us_fl"},
+                {"id": "us_il_chi", "name": "Chicago", "state_id": "us_il"},
+                {"id": "mx_cdmx_c", "name": "Mexico City", "state_id": "mx_cdmx"},
+                {"id": "mx_jal_gdl", "name": "Guadalajara", "state_id": "mx_jal"},
+                {"id": "mx_nl_mty", "name": "Monterrey", "state_id": "mx_nl"},
+                {"id": "ca_on_tor", "name": "Toronto", "state_id": "ca_on"},
+                {"id": "ca_qc_mtl", "name": "Montreal", "state_id": "ca_qc"},
+                {"id": "ca_bc_van", "name": "Vancouver", "state_id": "ca_bc"},
+                {"id": "es_md_mad", "name": "Madrid", "state_id": "es_md"},
+                {"id": "es_ct_bcn", "name": "Barcelona", "state_id": "es_ct"},
+                {"id": "co_bog_bog", "name": "Bogota", "state_id": "co_bog"},
+                {"id": "co_ant_med", "name": "Medellin", "state_id": "co_ant"},
+            ]
+            await db.countries.insert_many(countries)
+            await db.states.insert_many(states)
+            await db.cities.insert_many(cities)
+            logger.info("Seeded countries/states/cities")
+        # Seed member levels if missing
+        levels_count = await db.member_levels.count_documents({})
+        if levels_count == 0:
+            levels = [
+                {"id": "level_1", "name": "Level 1", "permissions": ["membership-profile", "my-sponsor"], "order": 1, "created_at": datetime.now(timezone.utc).isoformat()},
+                {"id": "level_2", "name": "Level 2", "permissions": ["membership-profile", "my-sponsor", "mentorship-profile"], "order": 2, "created_at": datetime.now(timezone.utc).isoformat()},
+                {"id": "level_3", "name": "Level 3", "permissions": ["membership-profile", "my-sponsor", "mentorship-profile", "invite-code"], "order": 3, "created_at": datetime.now(timezone.utc).isoformat()},
+                {"id": "level_4", "name": "Level 4", "permissions": ["membership-profile", "my-sponsor", "mentorship-profile", "invite-code", "portfolios"], "order": 4, "created_at": datetime.now(timezone.utc).isoformat()},
+            ]
+            await db.member_levels.insert_many(levels)
+            logger.info("Seeded member levels")
         nav_pages_count = await db.nav_pages.count_documents({})
         if nav_pages_count == 0:
             await db.nav_pages.insert_many([

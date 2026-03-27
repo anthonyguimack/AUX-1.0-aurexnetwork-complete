@@ -35,6 +35,7 @@ import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
 import SeoManager from './pages/admin/SeoManager';
 import SectionOrderManager from './pages/admin/SectionOrderManager';
 import MembersManager from './pages/admin/MembersManager';
+import MemberLevelsManager from './pages/admin/MemberLevelsManager';
 // Membership / My Account
 import { MemberProvider } from './lib/memberAuth';
 import MemberLogin from './pages/myaccount/MemberLogin';
@@ -173,6 +174,7 @@ function AppRouter() {
           <Route path="pages" element={<PagesManager />} />
           <Route path="users" element={<UsersManager />} />
           <Route path="members" element={<MembersManager />} />
+          <Route path="member-levels" element={<MemberLevelsManager />} />
           <Route path="analytics" element={<AnalyticsDashboard />} />
           <Route path="seo" element={<SeoManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />

@@ -133,6 +133,11 @@ export const adminAPI = {
   updateMember: (id, data) => api.put(`/admin/members/${id}`, data),
   deleteMember: (id) => api.delete(`/admin/members/${id}`),
   assignMentor: (id, data) => api.put(`/admin/members/${id}/mentor`, data),
+  // Member Levels
+  getLevels: () => api.get('/admin/member-levels'),
+  createLevel: (data) => api.post('/admin/member-levels', data),
+  updateLevel: (id, data) => api.put(`/admin/member-levels/${id}`, data),
+  deleteLevel: (id) => api.delete(`/admin/member-levels/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
@@ -163,6 +168,14 @@ export const memberAPI = {
   getIndustries: (sectorId) => api.get(`/member/industries${sectorId ? `?sector_id=${sectorId}` : ''}`),
   getCompanies: (industryId) => api.get(`/member/companies${industryId ? `?industry_id=${industryId}` : ''}`),
   getMembersList: () => api.get('/member/members-list'),
+  getMyLevel: () => api.get('/member/my-level'),
+};
+
+// Geo API (public)
+export const geoAPI = {
+  getCountries: () => api.get('/geo/countries'),
+  getStates: (countryId) => api.get(`/geo/states${countryId ? `?country_id=${countryId}` : ''}`),
+  getCities: (stateId) => api.get(`/geo/cities${stateId ? `?state_id=${stateId}` : ''}`),
 };
 
 export default api;

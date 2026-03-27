@@ -174,9 +174,11 @@ async def register_member(request: Request):
         "gender": body.get("gender", ""),
         "phone": body.get("phone", ""),
         "date_of_birth": body.get("date_of_birth", ""),
-        "address": "", "country": "", "state": "", "zip_code": "",
+        "address": body.get("address", ""), "country": body.get("country", ""),
+        "state": body.get("state", ""), "city": body.get("city", ""),
+        "zip_code": body.get("zip_code", ""),
         "google_account": "",
-        "avatar": "",
+        "avatar": body.get("avatar", ""),
         "summary": "", "biography": "",
         "social_links": [],
         "sponsor_id": code_doc["owner_member_id"],
@@ -185,6 +187,7 @@ async def register_member(request: Request):
         "role": "member",
         "is_mentor": False,
         "portfolio_development": False,
+        "level_id": None,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
@@ -288,7 +291,7 @@ async def update_biography(request: Request, member: dict = Depends(get_current_
 @router.put("/member/profile")
 async def update_profile(request: Request, member: dict = Depends(get_current_member)):
     body = await request.json()
-    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "zip_code", "google_account", "gender", "social_links", "avatar")
+    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "city", "zip_code", "google_account", "gender", "social_links", "avatar")
     update = {k: body[k] for k in allowed if k in body}
     update["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": update})
@@ -401,7 +404,7 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "phone": body.get("phone", ""),
         "date_of_birth": body.get("date_of_birth", ""),
         "address": body.get("address", ""), "country": body.get("country", ""),
-        "state": body.get("state", ""), "zip_code": body.get("zip_code", ""),
+        "state": body.get("state", ""), "city": body.get("city", ""), "zip_code": body.get("zip_code", ""),
         "google_account": body.get("google_account", ""),
         "avatar": body.get("avatar", ""),
         "summary": "", "biography": "",
@@ -412,6 +415,7 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "mentor_membership_number": body.get("mentor_membership_number", None),
         "is_mentor": body.get("is_mentor", False),
         "portfolio_development": body.get("portfolio_development", False),
+        "level_id": body.get("level_id", None),
         "role": "member",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
@@ -428,7 +432,23 @@ async def admin_update_member(member_id: str, request: Request, user: dict = Dep
     else:
         body.pop("password", None)
     if "email" in body:
-        body["username"] = body["email"]  # username = email
+        body["username"] = body["email"]
+    # Resolve mentor_id from mentor_membership_number
+    if "mentor_membership_number" in body:
+        mn = body["mentor_membership_number"]
+        if mn:
+            mentor = await db.members.find_one({"membership_number": int(mn)}, {"member_id": 1, "_id": 0})
+            body["mentor_id"] = mentor["member_id"] if mentor else None
+        else:
+            body["mentor_id"] = None
+    # Resolve sponsor_id from sponsor_membership_number
+    if "sponsor_membership_number" in body:
+        sn = body["sponsor_membership_number"]
+        if sn:
+            sponsor = await db.members.find_one({"membership_number": int(sn)}, {"member_id": 1, "_id": 0})
+            body["sponsor_id"] = sponsor["member_id"] if sponsor else None
+        else:
+            body["sponsor_id"] = None
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.members.update_one({"member_id": member_id}, {"$set": body})
     return await db.members.find_one({"member_id": member_id}, {"_id": 0, "password_hash": 0})
@@ -484,3 +504,60 @@ async def members_list_for_sharing(member: dict = Depends(get_current_member)):
         {"_id": 0, "member_id": 1, "membership_id": 1, "first_name": 1, "last_name": 1}
     ).sort("membership_number", 1).to_list(10000)
     return members
+
+
+# ---- Countries / States / Cities ----
+
+@router.get("/geo/countries")
+async def list_countries():
+    return await db.countries.find({}, {"_id": 0}).sort("name", 1).to_list(500)
+
+@router.get("/geo/states")
+async def list_states(country_id: str = None):
+    query = {"country_id": country_id} if country_id else {}
+    return await db.states.find(query, {"_id": 0}).sort("name", 1).to_list(5000)
+
+@router.get("/geo/cities")
+async def list_cities(state_id: str = None):
+    query = {"state_id": state_id} if state_id else {}
+    return await db.cities.find(query, {"_id": 0}).sort("name", 1).to_list(10000)
+
+# ---- Member Levels ----
+
+@router.get("/admin/member-levels")
+async def admin_list_levels(user: dict = Depends(require_admin)):
+    return await db.member_levels.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+@router.post("/admin/member-levels")
+async def admin_create_level(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    level = {
+        "id": str(uuid.uuid4()),
+        "name": body.get("name", ""),
+        "permissions": body.get("permissions", []),
+        "order": body.get("order", 0),
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }
+    await db.member_levels.insert_one(level)
+    return {k: v for k, v in level.items() if k != "_id"}
+
+@router.put("/admin/member-levels/{level_id}")
+async def admin_update_level(level_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.member_levels.update_one({"id": level_id}, {"$set": body})
+    return await db.member_levels.find_one({"id": level_id}, {"_id": 0})
+
+@router.delete("/admin/member-levels/{level_id}")
+async def admin_delete_level(level_id: str, user: dict = Depends(require_admin)):
+    await db.member_levels.delete_one({"id": level_id})
+    return {"message": "Level deleted"}
+
+@router.get("/member/my-level")
+async def get_my_level(member: dict = Depends(get_current_member)):
+    level_id = member.get("level_id")
+    if not level_id:
+        return None
+    level = await db.member_levels.find_one({"id": level_id}, {"_id": 0})
+    return level
