@@ -15,32 +15,37 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
     admin_tools.py       # Upload, analytics, SEO, section order, SMTP
     payments.py          # Stripe checkout, webhook
     membership.py        # Member CRUD, invite codes, community tree, portfolios,
-                         # sectors/industries/companies endpoints, members-list
+                         # sectors/industries/companies, geo (countries/states/cities),
+                         # member levels
 /app/frontend/src/
   components/
     LoginModal.js        # Unified login (no tabs), Google OAuth, Register link
     TreeNode.js          # Iterative community tree renderer
   lib/
-    api.js               # Unified auth_token for all APIs (incl. memberAPI)
+    api.js               # Unified auth_token for all APIs (incl. memberAPI, geoAPI)
     auth.js              # Main auth provider
     memberAuth.js        # Thin wrapper over useAuth()
   pages/
     admin/
-      MembersManager.js  # SELECT: Sponsor, Mentor (mentors only), Member Type;
-                         # Radio: Mentor YES/NO, Portfolio Development YES/NO
+      MembersManager.js  # SELECT: Sponsor, Mentor, Member Type
+      MemberLevelsManager.js # CRUD for member levels with permissions
     myaccount/
-      MembershipProfile.js  # Tabs: General Info, Social Links, Activities + Biography modal
-      MentorshipProfile.js  # Assigned mentor info
+      MembershipProfile.js  # Cascading Country/State/City, tabs, Bio modal (no cover image)
+      MentorshipProfile.js  # Mentor info display with empty state handling
       MyCommunity.js        # Tree view + clickable search results list
-      PortfolioForm.js      # Cascading selects, Shared Members, Status
+      PortfolioForm.js      # Rank/Cost fields, single-row layout, delete confirmation, no Activities
+      PortfolioDetail.js    # 10 columns, 3 pie charts, ownership-based edit button
+      PortfolioList.js      # mm/dd/yyyy dates, $0.00 currencies, HTML-stripped descriptions
 ```
 
 ## DB Schema
-- `members`: ALL users (admin/member). Fields: member_id, membership_id, email, password_hash, role, is_mentor, portfolio_development, sponsor_id, mentor_id, social_links, biography, cover_image
+- `members`: ALL users (admin/member). Fields: member_id, membership_id, email, password_hash, role, is_mentor, portfolio_development, sponsor_id, mentor_id, social_links, biography, cover_image, country, state, city, level_id
 - `sectors`: {id, name}
 - `industries`: {id, name, sector_id}
 - `companies`: {id, symbol, name, security, sector_id, industry_id, price}
-- `portfolios`: {id, owner_member_id, title, holdings[], status(active/inactive), shared_mode(all/select), shared_with[]}
+- `portfolios`: {id, owner_member_id, title, holdings[{symbol, security, sector, industry, price, cost, shares, rank}], status, shared_mode, shared_with[], cash_balance}
+- `countries`, `states`, `cities`: Hierarchical location collections
+- `member_levels`: {id, name, permissions[], order}
 - `invite_codes`, `settings`, `nav_pages`, etc.
 
 ## Completed Features
@@ -54,23 +59,28 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 ### Phase A (Auth Unification) - COMPLETE (Mar 27, 2026)
 - Unified users/members into single `members` collection
 - Single login system for both Navbar and /my-account
-- Navbar shows "My Account" + "Admin Panel" (for admins)
 - **Phase A Fixes**: Email=Username, CMS Sponsor/Mentor as SELECT dropdowns, Member Type SELECT
 
 ### Phase B (Membership Profile Redesign) - COMPLETE (Mar 27, 2026)
 - Membership Profile page with 3 tabs: General Info (view/edit), Social Links, Activities
 - Update Biography moved to modal button (removed from sidebar)
-- Sidebar: Membership Profile, Mentorship Profile, My Sponsor, Invite Code, My Community, Portfolios
 
 ### Phase D (Portfolio Overhaul) - COMPLETE (Mar 27, 2026)
 - Sectors/Industries/Companies DB tables with 6 sectors, 13 industries, 15 companies
-- Cascading selects in portfolio form (Sector → Industry → Symbol auto-populates security/price)
+- Cascading selects in portfolio form (Sector -> Industry -> Symbol auto-populates)
 - Shared Members: All Members / Select Members with member search picker
 - Status: Active/Inactive with visibility rules
-- Rich text description, cover image, date picker fix
 
 ### Phase E (Community Polish) - COMPLETE (Mar 27, 2026)
-- My Community search shows clickable results list below search bar (CODE + Full Name)
+- My Community search shows clickable results list below search bar
+
+### Phase F (My Account UI/UX Updates) - COMPLETE (Mar 27, 2026)
+- **MembershipProfile**: Cascading Country/State/City selects in edit mode, Cover Image removed from Bio modal, City field in view, mm/dd/yyyy date formatting
+- **MentorshipProfile**: Fixed mentor info display, proper empty state for no mentor assigned
+- **PortfolioForm**: Added Rank (numeric) and Cost fields to holdings, single-row layout on desktop, Activities section hidden, Delete Portfolio button with confirmation dialog
+- **PortfolioDetail**: 10 table columns (Rank, % Portfolio, Current Value, Symbol, Security, Sector, Industry, Share Price, Cost, # Shares), 3 pie charts (Sector, Industry, Portfolio Balance), description rendered as HTML, Edit button hidden for non-owners
+- **PortfolioList**: mm/dd/yyyy date formatting, $0.00 currency formatting, HTML stripped from descriptions
+- **Global formatting**: Dates as mm/dd/yyyy, currencies as $0.00, percentages as 0.00%
 
 ## Testing History
 - Phase 1: 35/35 backend (iteration_1.json)
@@ -80,11 +90,13 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Phase 3: 13/13 + 12/12 (iteration_5.json)
 - Phase A: 13/13 + 14/14 (iteration_6.json)
 - Phases A-E: 13/13 + 19/19 (iteration_7.json)
+- Phase F (UI/UX): 11/11 backend + 26/26 frontend (iteration_8.json)
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
 ## Remaining Backlog
-- **(P1) Phase C — User Levels & Permissions**: CMS-managed levels controlling sidebar visibility, dynamic sidebar based on member's level, portfolio visibility rules
+- **(P1) CMS Settings "APIs" Tab**: Add tab in SettingsManager showing all third-party API integrations
+- **(P1) Phase C — User Levels & Permissions**: CMS-managed levels controlling sidebar visibility, dynamic sidebar based on member's level
 - **(P2)** Real S3/Cloud image storage
 - **(P2)** Production SMTP configuration
