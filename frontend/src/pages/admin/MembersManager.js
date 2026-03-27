@@ -149,6 +149,34 @@ export default function MembersManager() {
                     <Input type="number" value={editing.mentor_membership_number || ''} onChange={e => setEditing({...editing, mentor_membership_number: e.target.value ? parseInt(e.target.value) : null})} className="mt-1" placeholder="e.g. 1 for AUX-1" />
                     <p className="text-xs text-slate-400 mt-1">Assign a mentor by their membership number</p>
                   </div>
+                  <div className="grid grid-cols-2 gap-4 pt-2">
+                    <div className="p-3 bg-slate-50 rounded">
+                      <Label className="text-xs font-medium mb-2 block">Mentor</Label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="radio" name="is_mentor" checked={editing.is_mentor === true} onChange={() => setEditing({...editing, is_mentor: true})} className="accent-[#0D9488]" />
+                          <span className="text-sm">Yes</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="radio" name="is_mentor" checked={!editing.is_mentor} onChange={() => setEditing({...editing, is_mentor: false})} className="accent-[#0D9488]" />
+                          <span className="text-sm">No</span>
+                        </label>
+                      </div>
+                    </div>
+                    <div className="p-3 bg-slate-50 rounded">
+                      <Label className="text-xs font-medium mb-2 block">Portfolio Development</Label>
+                      <div className="flex gap-4">
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="radio" name="portfolio_dev" checked={editing.portfolio_development === true} onChange={() => setEditing({...editing, portfolio_development: true})} className="accent-[#0D9488]" />
+                          <span className="text-sm">Yes</span>
+                        </label>
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input type="radio" name="portfolio_dev" checked={!editing.portfolio_development} onChange={() => setEditing({...editing, portfolio_development: false})} className="accent-[#0D9488]" />
+                          <span className="text-sm">No</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
                   {editing.member_id && editing.password !== undefined && (
                     <div><Label className="text-xs">New Password (leave blank to keep current)</Label>
                     <Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>

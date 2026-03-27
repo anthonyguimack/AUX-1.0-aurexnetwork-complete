@@ -36,7 +36,7 @@ import SeoManager from './pages/admin/SeoManager';
 import SectionOrderManager from './pages/admin/SectionOrderManager';
 import MembersManager from './pages/admin/MembersManager';
 // Membership / My Account
-import { MemberProvider, useMember } from './lib/memberAuth';
+import { MemberProvider } from './lib/memberAuth';
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
 import MyAccountLayout from './pages/myaccount/MyAccountLayout';
@@ -109,9 +109,9 @@ function ProtectedRoute({ children }) {
 }
 
 function MemberRoute({ children }) {
-  const { member, loading } = useMember();
+  const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0d0f14]"><div className="animate-spin w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full" /></div>;
-  if (!member) return <Navigate to="/my-account/login" replace />;
+  if (!user) return <Navigate to="/my-account/login" replace />;
   return children;
 }
 

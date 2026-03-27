@@ -135,36 +135,29 @@ export const adminAPI = {
   assignMentor: (id, data) => api.put(`/admin/members/${id}/mentor`, data),
 };
 
-// Member API (separate token)
-const memberApi = axios.create({ baseURL: API, withCredentials: true });
-memberApi.interceptors.request.use((config) => {
-  const token = localStorage.getItem('member_token');
-  if (token) config.headers.Authorization = `Bearer ${token}`;
-  return config;
-});
-
+// Member API (unified - uses same auth_token)
 export const memberAPI = {
-  login: (data) => memberApi.post('/member/login', data),
-  me: () => memberApi.get('/member/me'),
+  login: (data) => api.post('/auth/login', { email: data.username || data.email, password: data.password }),
+  me: () => api.get('/auth/me'),
   // Invite codes
-  generateCodes: (count) => memberApi.post('/member/invite-codes/generate', { count }),
-  listCodes: () => memberApi.get('/member/invite-codes'),
-  sendInvite: (codeId, data) => memberApi.post(`/member/invite-codes/${codeId}/send`, data),
+  generateCodes: (count) => api.post('/member/invite-codes/generate', { count }),
+  listCodes: () => api.get('/member/invite-codes'),
+  sendInvite: (codeId, data) => api.post(`/member/invite-codes/${codeId}/send`, data),
   // Public
   validateCode: (code) => api.get(`/member/validate-code/${code}`),
   register: (data) => api.post('/member/register', data),
   // My Account
-  getSponsor: () => memberApi.get('/member/my-sponsor'),
-  getMentor: () => memberApi.get('/member/my-mentor'),
-  getCommunity: () => memberApi.get('/member/my-community'),
-  updateBiography: (data) => memberApi.put('/member/biography', data),
-  updateProfile: (data) => memberApi.put('/member/profile', data),
+  getSponsor: () => api.get('/member/my-sponsor'),
+  getMentor: () => api.get('/member/my-mentor'),
+  getCommunity: () => api.get('/member/my-community'),
+  updateBiography: (data) => api.put('/member/biography', data),
+  updateProfile: (data) => api.put('/member/profile', data),
   // Portfolios
-  getPortfolios: () => memberApi.get('/member/portfolios'),
-  createPortfolio: (data) => memberApi.post('/member/portfolios', data),
-  getPortfolio: (id) => memberApi.get(`/member/portfolios/${id}`),
-  updatePortfolio: (id, data) => memberApi.put(`/member/portfolios/${id}`, data),
-  deletePortfolio: (id) => memberApi.delete(`/member/portfolios/${id}`),
+  getPortfolios: () => api.get('/member/portfolios'),
+  createPortfolio: (data) => api.post('/member/portfolios', data),
+  getPortfolio: (id) => api.get(`/member/portfolios/${id}`),
+  updatePortfolio: (id, data) => api.put(`/member/portfolios/${id}`, data),
+  deletePortfolio: (id) => api.delete(`/member/portfolios/${id}`),
 };
 
 export default api;

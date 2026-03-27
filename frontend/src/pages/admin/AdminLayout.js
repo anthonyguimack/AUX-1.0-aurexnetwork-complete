@@ -21,7 +21,6 @@ const sidebarItems = [
   { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
   { label: 'Pages', icon: FileStack, href: '/admin/pages' },
   { label: 'Members', icon: UserCheck, href: '/admin/members' },
-  { label: 'Users', icon: Users, href: '/admin/users' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
   { label: 'Sections', icon: Layers, href: '/admin/section-order' },

@@ -35,7 +35,7 @@ def hash_password(password: str) -> str:
 def verify_password(password: str, hashed: str) -> bool:
     return bcrypt.checkpw(password.encode('utf-8'), hashed.encode('utf-8'))
 
-def create_jwt_token(user_id: str, email: str, role: str = "user") -> str:
+def create_jwt_token(user_id: str, email: str, role: str = "member") -> str:
     payload = {"user_id": user_id, "email": email, "role": role,
                "exp": datetime.now(timezone.utc) + timedelta(days=7),
                "iat": datetime.now(timezone.utc)}
@@ -45,6 +45,7 @@ def generate_reset_token():
     return ''.join(secrets.choice(string.ascii_letters + string.digits) for _ in range(48))
 
 async def get_current_user(request: Request) -> dict:
+    """Unified auth: checks members collection (which now holds all users including admin)."""
     token = request.cookies.get("session_token")
     if token:
         session = await db.user_sessions.find_one({"session_token": token}, {"_id": 0})
@@ -56,9 +57,9 @@ async def get_current_user(request: Request) -> dict:
                 expires_at = expires_at.replace(tzinfo=timezone.utc)
             if expires_at and expires_at < datetime.now(timezone.utc):
                 raise HTTPException(status_code=401, detail="Session expired")
-            user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
-            if user:
-                return user
+            member = await db.members.find_one({"member_id": session["user_id"]}, {"_id": 0})
+            if member:
+                return member
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header[7:]
@@ -71,14 +72,14 @@ async def get_current_user(request: Request) -> dict:
                 expires_at = expires_at.replace(tzinfo=timezone.utc)
             if expires_at and expires_at < datetime.now(timezone.utc):
                 raise HTTPException(status_code=401, detail="Session expired")
-            user = await db.users.find_one({"user_id": session["user_id"]}, {"_id": 0})
-            if user:
-                return user
+            member = await db.members.find_one({"member_id": session["user_id"]}, {"_id": 0})
+            if member:
+                return member
         try:
             payload = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-            user = await db.users.find_one({"user_id": payload["user_id"]}, {"_id": 0})
-            if user:
-                return user
+            member = await db.members.find_one({"member_id": payload["user_id"]}, {"_id": 0})
+            if member:
+                return member
         except pyjwt.ExpiredSignatureError:
             raise HTTPException(status_code=401, detail="Token expired")
         except pyjwt.InvalidTokenError:

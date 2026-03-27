@@ -40,8 +40,15 @@ api_router.include_router(membership_router)
 from models.database import db, hash_password, ADMIN_EMAIL, ADMIN_PASSWORD
 
 async def seed_data():
-    existing = await db.users.find_one({"email": ADMIN_EMAIL})
-    if existing:
+    # Check if admin exists in unified members collection
+    admin_member = await db.members.find_one({"email": ADMIN_EMAIL})
+    if admin_member:
+        # Ensure admin has the right role and fields
+        if admin_member.get("role") != "admin":
+            await db.members.update_one({"email": ADMIN_EMAIL}, {"$set": {"role": "admin"}})
+        # Ensure is_mentor and portfolio_development fields exist
+        if "is_mentor" not in admin_member:
+            await db.members.update_one({"email": ADMIN_EMAIL}, {"$set": {"is_mentor": False, "portfolio_development": False}})
         settings = await db.settings.find_one({}, {"_id": 0})
         if settings and "social_links" not in settings:
             await db.settings.update_one({}, {"$set": {
@@ -67,7 +74,6 @@ async def seed_data():
         settings_check = await db.settings.find_one({}, {"_id": 0})
         if settings_check and "section_order" not in settings_check:
             await db.settings.update_one({}, {"$set": {"section_order": ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]}})
-        # Add membership settings if missing
         if settings_check and "aux_prefix" not in settings_check:
             await db.settings.update_one({}, {"$set": {
                 "aux_prefix": "AUX",
@@ -91,23 +97,58 @@ async def seed_data():
             book = await db.books.find_one({"title": title, "synopsis": {"$exists": False}})
             if book:
                 await db.books.update_one({"title": title}, {"$set": fields})
-        sample_user = await db.users.find_one({"email": "user@example.com"})
-        if not sample_user:
-            await db.users.insert_one({
-                "user_id": f"user_{uuid.uuid4().hex[:12]}", "email": "user@example.com",
-                "name": "John Doe", "first_name": "John", "last_name": "Doe",
-                "password_hash": hash_password("User123!"), "role": "user",
-                "picture": "", "phone": "+1 555-0100",
-                "created_at": datetime.now(timezone.utc).isoformat()
-            })
+        return
+    # Migrate admin from users collection if present
+    old_admin = await db.users.find_one({"email": ADMIN_EMAIL})
+    if old_admin:
+        logger.info("Migrating admin to members collection...")
+        admin_member_id = f"member_{uuid.uuid4().hex[:12]}"
+        await db.members.insert_one({
+            "member_id": admin_member_id,
+            "membership_number": 0,
+            "membership_id": "ADMIN",
+            "username": "admin",
+            "email": ADMIN_EMAIL,
+            "password_hash": old_admin.get("password_hash", hash_password(ADMIN_PASSWORD)),
+            "first_name": old_admin.get("first_name", "Admin"),
+            "last_name": old_admin.get("last_name", ""),
+            "gender": "", "phone": old_admin.get("phone", ""),
+            "date_of_birth": "",
+            "address": "", "country": "", "state": "", "zip_code": "",
+            "google_account": "",
+            "avatar": old_admin.get("picture", ""),
+            "summary": "", "biography": "",
+            "social_links": [],
+            "sponsor_id": None, "sponsor_membership_number": None,
+            "mentor_id": None, "mentor_membership_number": None,
+            "is_mentor": False,
+            "portfolio_development": False,
+            "role": "admin",
+            "created_at": old_admin.get("created_at", datetime.now(timezone.utc).isoformat())
+        })
         return
     logger.info("Seeding initial data...")
-    admin_id = f"user_{uuid.uuid4().hex[:12]}"
-    await db.users.insert_one({
-        "user_id": admin_id, "email": ADMIN_EMAIL, "name": "Admin",
-        "first_name": "Admin", "last_name": "",
+    admin_member_id = f"member_{uuid.uuid4().hex[:12]}"
+    await db.members.insert_one({
+        "member_id": admin_member_id,
+        "membership_number": 0,
+        "membership_id": "ADMIN",
+        "username": "admin",
+        "email": ADMIN_EMAIL,
         "password_hash": hash_password(ADMIN_PASSWORD),
-        "role": "admin", "picture": "", "phone": "",
+        "first_name": "Admin", "last_name": "",
+        "gender": "", "phone": "",
+        "date_of_birth": "",
+        "address": "", "country": "", "state": "", "zip_code": "",
+        "google_account": "",
+        "avatar": "",
+        "summary": "", "biography": "",
+        "social_links": [],
+        "sponsor_id": None, "sponsor_membership_number": None,
+        "mentor_id": None, "mentor_membership_number": None,
+        "is_mentor": False,
+        "portfolio_development": False,
+        "role": "admin",
         "created_at": datetime.now(timezone.utc).isoformat()
     })
     await db.settings.insert_one({

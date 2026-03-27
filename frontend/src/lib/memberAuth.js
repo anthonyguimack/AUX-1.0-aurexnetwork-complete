@@ -1,41 +1,23 @@
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { memberAPI } from './api';
+import React, { createContext, useContext } from 'react';
+import { useAuth } from './auth';
 
-const MemberCtx = createContext(null);
+const MemberContext = createContext(null);
 
 export function MemberProvider({ children }) {
-  const [member, setMember] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  const check = useCallback(async () => {
-    const token = localStorage.getItem('member_token');
-    if (!token) { setLoading(false); return; }
-    try {
-      const r = await memberAPI.me();
-      setMember(r.data);
-    } catch { localStorage.removeItem('member_token'); }
-    finally { setLoading(false); }
-  }, []);
-
-  useEffect(() => { check(); }, [check]);
-
-  const login = async (username, password) => {
-    const r = await memberAPI.login({ username, password });
-    localStorage.setItem('member_token', r.data.token);
-    setMember(r.data.member);
-    return r.data;
-  };
-
-  const logout = () => {
-    localStorage.removeItem('member_token');
-    setMember(null);
-  };
-
-  return <MemberCtx.Provider value={{ member, loading, login, logout, refresh: check }}>{children}</MemberCtx.Provider>;
+  // MemberProvider is now a pass-through; auth is handled by AuthProvider
+  return <MemberContext.Provider value={{}}>{children}</MemberContext.Provider>;
 }
 
 export function useMember() {
-  const ctx = useContext(MemberCtx);
-  if (!ctx) throw new Error('useMember must be used within MemberProvider');
-  return ctx;
+  const auth = useAuth();
+  return {
+    member: auth.user,
+    loading: auth.loading,
+    login: async (email, password) => {
+      const userData = await auth.login(email, password);
+      return userData;
+    },
+    logout: auth.logout,
+    refresh: auth.checkAuth,
+  };
 }

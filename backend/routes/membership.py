@@ -23,7 +23,7 @@ async def format_membership_id(number):
     return f"{prefix}-{number}"
 
 async def get_current_member(request: Request) -> dict:
-    """Authenticate member from JWT token."""
+    """Authenticate member from JWT token. Accepts any role (member or admin)."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -32,8 +32,6 @@ async def get_current_member(request: Request) -> dict:
     from models.database import JWT_SECRET
     try:
         payload = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
-        if payload.get("role") != "member":
-            raise HTTPException(status_code=403, detail="Member access required")
         member = await db.members.find_one({"member_id": payload["user_id"]}, {"_id": 0})
         if not member:
             raise HTTPException(status_code=401, detail="Member not found")
@@ -185,6 +183,8 @@ async def register_member(request: Request):
         "sponsor_membership_number": code_doc["owner_membership_number"],
         "mentor_id": None, "mentor_membership_number": None,
         "role": "member",
+        "is_mentor": False,
+        "portfolio_development": False,
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
@@ -217,7 +217,13 @@ async def register_member(request: Request):
             await send_email_smtp(settings, email, first_name, f"Welcome to {platform_name}!", html)
         except Exception as e:
             logger.warning(f"Failed to send welcome email: {e}")
-    return {"message": "Registration successful", "membership_id": membership_id, "username": username}
+    return {
+        "message": "Registration successful",
+        "membership_id": membership_id,
+        "username": username,
+        "token": create_jwt_token(member_id, email, "member"),
+        "member": {k: v for k, v in new_member.items() if k not in ("password_hash", "_id")}
+    }
 
 # ---- My Sponsor ----
 
@@ -390,6 +396,8 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "sponsor_membership_number": body.get("sponsor_membership_number", None),
         "mentor_id": body.get("mentor_id", None),
         "mentor_membership_number": body.get("mentor_membership_number", None),
+        "is_mentor": body.get("is_mentor", False),
+        "portfolio_development": body.get("portfolio_development", False),
         "role": "member",
         "created_at": datetime.now(timezone.utc).isoformat()
     }

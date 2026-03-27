@@ -102,6 +102,7 @@ export default function Navbar() {
             </div>
             {user ? (
               <div className="hidden md:flex items-center gap-3">
+                <Link to="/my-account" className="text-sm font-medium transition-colors hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="nav-myaccount-link">My Account</Link>
                 {user.role === 'admin' && (
                   <Link to="/admin" className="text-sm font-medium transition-colors" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="nav-admin-link">Admin Panel</Link>
                 )}
@@ -132,6 +133,7 @@ export default function Navbar() {
             ))}
             {user ? (
               <>
+                <Link to="/my-account" className="block py-2 text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }} onClick={() => setMobileOpen(false)}>My Account</Link>
                 {user.role === 'admin' && <Link to="/admin" className="block py-2 text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }} onClick={() => setMobileOpen(false)}>Admin Panel</Link>}
                 <button onClick={() => { logout(); setMobileOpen(false); }} className="block py-2 text-sm text-slate-500">Logout</button>
               </>
