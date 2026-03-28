@@ -10,6 +10,7 @@ api.interceptors.request.use((config) => {
 export const publicAPI = {
   getSettings: () => api.get('/public/settings'),
   getHero: () => api.get('/public/hero'),
+  getHeroSlides: () => api.get('/public/hero-slides'),
   getAbout: () => api.get('/public/about'),
   getServices: () => api.get('/public/services'),
   getBlog: (page = 1, limit = 9, category = '') => api.get(`/public/blog?page=${page}&limit=${limit}&category=${category}`),
@@ -56,6 +57,12 @@ export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
   getHero: () => api.get('/admin/hero'),
   updateHero: (data) => api.put('/admin/hero', data),
+  // Hero Slides CRUD
+  getHeroSlides: () => api.get('/admin/hero-slides'),
+  getHeroSlide: (id) => api.get(`/admin/hero-slides/${id}`),
+  createHeroSlide: (data) => api.post('/admin/hero-slides', data),
+  updateHeroSlide: (id, data) => api.put(`/admin/hero-slides/${id}`, data),
+  deleteHeroSlide: (id) => api.delete(`/admin/hero-slides/${id}`),
   getAbout: () => api.get('/admin/about'),
   updateAbout: (data) => api.put('/admin/about', data),
   getServices: () => api.get('/admin/services'),

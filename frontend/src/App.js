@@ -18,6 +18,7 @@ import DynamicPage from './pages/DynamicPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import HeroManager from './pages/admin/HeroManager';
+import HeroSlideForm from './pages/admin/HeroSlideForm';
 import AboutManager from './pages/admin/AboutManager';
 import ServicesManager from './pages/admin/ServicesManager';
 import BlogManager from './pages/admin/BlogManager';
@@ -160,6 +161,8 @@ function AppRouter() {
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="hero" element={<HeroManager />} />
+          <Route path="hero/add" element={<HeroSlideForm />} />
+          <Route path="hero/edit/:id" element={<HeroSlideForm />} />
           <Route path="about" element={<AboutManager />} />
           <Route path="services" element={<ServicesManager />} />
           <Route path="blog" element={<BlogManager />} />

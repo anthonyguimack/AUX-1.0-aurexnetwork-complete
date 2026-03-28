@@ -28,7 +28,47 @@ async def crud_delete(col: str, item_id: str):
     await db[col].delete_one({"id": item_id})
     return {"message": "Deleted"}
 
-# Hero
+# Hero Slides (CRUD)
+@router.get("/admin/hero-slides")
+async def admin_list_hero_slides(user: dict = Depends(require_admin)):
+    slides = await db.hero_slides.find({}, {"_id": 0}).sort("date_start", 1).to_list(100)
+    return slides
+
+@router.post("/admin/hero-slides")
+async def admin_create_hero_slide(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body["id"] = str(uuid.uuid4())
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.hero_slides.insert_one(body)
+    return await db.hero_slides.find_one({"id": body["id"]}, {"_id": 0})
+
+@router.get("/admin/hero-slides/{slide_id}")
+async def admin_get_hero_slide(slide_id: str, user: dict = Depends(require_admin)):
+    slide = await db.hero_slides.find_one({"id": slide_id}, {"_id": 0})
+    if not slide:
+        raise HTTPException(status_code=404, detail="Slide not found")
+    return slide
+
+@router.put("/admin/hero-slides/{slide_id}")
+async def admin_update_hero_slide(slide_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.hero_slides.update_one({"id": slide_id}, {"$set": body})
+    updated = await db.hero_slides.find_one({"id": slide_id}, {"_id": 0})
+    if not updated:
+        raise HTTPException(status_code=404, detail="Slide not found")
+    return updated
+
+@router.delete("/admin/hero-slides/{slide_id}")
+async def admin_delete_hero_slide(slide_id: str, user: dict = Depends(require_admin)):
+    result = await db.hero_slides.delete_one({"id": slide_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Slide not found")
+    return {"message": "Deleted"}
+
+# Legacy single-doc hero (kept for backward compat)
 @router.get("/admin/hero")
 async def admin_get_hero(user: dict = Depends(require_admin)):
     return await db.hero.find_one({}, {"_id": 0}) or {}

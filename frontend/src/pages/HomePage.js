@@ -23,22 +23,114 @@ L.Icon.Default.mergeOptions({
 
 const iconMap = { 'briefcase': Briefcase, 'trending-up': TrendingUp, 'bar-chart-3': BarChart3, 'monitor': Monitor };
 
-function HeroSection({ data }) {
-  if (!data?.title) return null;
+function HeroSection({ data, slides }) {
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [animKey, setAnimKey] = useState(0);
+  const allSlides = useMemo(() => slides && slides.length > 0 ? slides : (data?.title ? [data] : []), [slides, data]);
+
+  useEffect(() => {
+    if (allSlides.length <= 1) return;
+    const s = allSlides[currentSlide];
+    const delay = s?.delay || 9400;
+    const timer = setTimeout(() => {
+      setCurrentSlide(prev => (prev + 1) % allSlides.length);
+      setAnimKey(prev => prev + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [currentSlide, allSlides]);
+
+  if (allSlides.length === 0) return null;
+  const slide = allSlides[currentSlide];
+  const isLegacy = !slide.slide_type;
+  const bg = slide.background || slide.background_image || '';
+  const speed = slide.speed_per_layer || 400;
+
+  const effectStyle = (effect, startDelay) => {
+    const dir = effect || 'top';
+    const transforms = { top: 'translateY(-40px)', bottom: 'translateY(40px)', left: 'translateX(-40px)', right: 'translateX(40px)' };
+    return {
+      animation: `heroLayerIn ${speed}ms ease-out ${startDelay || 0}ms both`,
+      '--hero-from': transforms[dir] || 'translateY(-40px)',
+    };
+  };
+
   return (
     <section className="relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden" data-testid="hero-section">
-      <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${data.background_image || ''})` }} />
+      <style>{`
+        @keyframes heroLayerIn {
+          from { opacity: 0; transform: var(--hero-from); }
+          to { opacity: 1; transform: translate(0,0); }
+        }
+      `}</style>
+      <div className="absolute inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: bg ? `url(${bg})` : 'none' }} />
       <div className="absolute inset-0" style={{ background: `linear-gradient(to right, var(--color-primary, #1a2332)ee, var(--color-primary, #1a2332)99)` }} />
-      <div className="relative max-w-7xl mx-auto px-6 md:px-12 py-20 w-full">
-        <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="hero-subtitle">{data.subtitle}</p>
-        <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="hero-title">
-          {data.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic' : ''}>{line}</span></React.Fragment>)}
-        </h1>
-        <p className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed" data-testid="hero-description">{data.description}</p>
-        <a href={data.button_link || '#contact'} className="inline-flex items-center gap-2 mt-8 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
-          {data.button_text || 'Get Started'} <ArrowRight className="w-4 h-4" />
-        </a>
+
+      <div className="relative max-w-7xl mx-auto px-6 md:px-12 py-20 w-full" key={animKey}>
+        {isLegacy ? (
+          <>
+            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="hero-subtitle">{slide.subtitle}</p>
+            <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="hero-title">
+              {slide.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic' : ''}>{line}</span></React.Fragment>)}
+            </h1>
+            <p className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed" data-testid="hero-description">{slide.description}</p>
+            <a href={slide.button_link || '#contact'} className="inline-flex items-center gap-2 mt-8 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
+              {slide.button_text || 'Get Started'} <ArrowRight className="w-4 h-4" />
+            </a>
+          </>
+        ) : (
+          <div className="flex flex-col lg:flex-row items-center gap-10 w-full">
+            {/* Text layers */}
+            <div className="flex-1 space-y-0">
+              {slide.title && (
+                <div style={effectStyle(slide.title_effect, slide.title_start)} data-testid="hero-title">
+                  <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl [&_strong]:text-white [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                </div>
+              )}
+              {slide.subtitle && (
+                <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
+                  <div className="text-xs uppercase tracking-[0.3em] font-semibold mt-3 [&_strong]:font-bold" style={{ color: 'var(--color-accent, #0D9488)' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                </div>
+              )}
+              {slide.description && (
+                <div style={effectStyle(slide.description_effect, slide.description_start)} data-testid="hero-description">
+                  <div className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed [&_strong]:text-white/90" dangerouslySetInnerHTML={{ __html: slide.description }} />
+                </div>
+              )}
+              {slide.button_text && (
+                <div style={effectStyle(slide.button_effect, slide.button_start)}>
+                  <a href={slide.button_url || '#'} target={slide.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 mt-8 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm"
+                    style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
+                    {slide.button_text} <ArrowRight className="w-4 h-4" />
+                  </a>
+                </div>
+              )}
+            </div>
+            {/* Media layer */}
+            {(slide.slide_type === 'video' && slide.video_embed) && (
+              <div className="flex-shrink-0 w-full lg:w-[420px]" style={effectStyle(slide.media_effect, slide.media_start)}>
+                <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
+              </div>
+            )}
+            {(slide.slide_type === 'photo' && slide.photo) && (
+              <div className="flex-shrink-0 w-full lg:w-[420px]" style={effectStyle(slide.media_effect, slide.media_start)}>
+                <img src={slide.photo} alt="" className="rounded-lg shadow-2xl w-full object-cover max-h-[400px]" />
+              </div>
+            )}
+          </div>
+        )}
       </div>
+
+      {/* Slide indicators */}
+      {allSlides.length > 1 && (
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {allSlides.map((_, i) => (
+            <button key={i} onClick={() => { setCurrentSlide(i); setAnimKey(p => p + 1); }}
+              className={`w-2.5 h-2.5 rounded-full transition-all ${i === currentSlide ? 'bg-white scale-110' : 'bg-white/30 hover:bg-white/50'}`}
+              data-testid={`hero-dot-${i}`} />
+          ))}
+        </div>
+      )}
     </section>
   );
 }
@@ -423,6 +515,7 @@ function ContactSection() {
 
 export default function HomePage() {
   const [hero, setHero] = useState({});
+  const [heroSlides, setHeroSlides] = useState([]);
   const [about, setAbout] = useState({});
   const [services, setServices] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -440,21 +533,22 @@ export default function HomePage() {
       publicAPI.getHero(), publicAPI.getAbout(), publicAPI.getServices(),
       publicAPI.getBlog(1, 3), publicAPI.getBooks(), publicAPI.getMaps(),
       publicAPI.getMapLocations(), publicAPI.getGallery(), publicAPI.getPortfolio(),
-      publicAPI.getTestimonials(), publicAPI.getSections()
-    ]).then(([h, a, s, b, bk, m, l, g, p, t, sec]) => {
+      publicAPI.getTestimonials(), publicAPI.getSections(), publicAPI.getHeroSlides()
+    ]).then(([h, a, s, b, bk, m, l, g, p, t, sec, hs]) => {
       setHero(h.data); setAbout(a.data); setServices(s.data);
       setPosts(b.data.posts || []); setBooks(bk.data); setMaps(m.data);
       setLocations(l.data); setGallery(g.data); setPortfolio(p.data);
       setTestimonials(t.data);
       setSections(sec.data?.sections || sec.data || {});
       setSectionOrder(sec.data?.section_order || ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]);
+      setHeroSlides(hs.data || []);
     }).catch(console.error);
   }, []);
 
   const isOn = (key) => !sections[key] || sections[key].enabled !== false;
 
   const sectionComponents = {
-    hero: () => isOn('hero') && <HeroSection data={hero} />,
+    hero: () => isOn('hero') && <HeroSection data={hero} slides={heroSlides} />,
     about: () => isOn('about') && <AboutSection data={about} />,
     services: () => isOn('services') && <ServicesSection services={services} />,
     news: () => isOn('news') && <NewsSection posts={posts} />,

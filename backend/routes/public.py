@@ -17,6 +17,13 @@ async def get_public_settings():
 async def get_public_hero():
     return await db.hero.find_one({}, {"_id": 0}) or {}
 
+@router.get("/public/hero-slides")
+async def get_public_hero_slides():
+    """Returns active hero slides sorted by date_start."""
+    from datetime import datetime, timezone
+    slides = await db.hero_slides.find({}, {"_id": 0}).sort("date_start", 1).to_list(100)
+    return slides
+
 @router.get("/public/about")
 async def get_public_about():
     return await db.about.find_one({}, {"_id": 0}) or {}
