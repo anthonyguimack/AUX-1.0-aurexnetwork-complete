@@ -88,7 +88,7 @@ function HeroSection({ data, slides }) {
               )}
               {slide.subtitle && (
                 <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
-                  <div className="text-xs uppercase tracking-[0.3em] font-semibold mt-3 [&_strong]:font-bold" style={{ color: 'var(--color-accent, #0D9488)' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                  <div className="text-lg sm:text-xl font-semibold mt-3 text-white [&_strong]:font-bold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
                 </div>
               )}
               {slide.description && (

@@ -19,10 +19,32 @@ async def get_public_hero():
 
 @router.get("/public/hero-slides")
 async def get_public_hero_slides():
-    """Returns active hero slides sorted by date_start."""
+    """Returns only currently active hero slides (within date_start/date_end range), sorted by date_start."""
     from datetime import datetime, timezone
-    slides = await db.hero_slides.find({}, {"_id": 0}).sort("date_start", 1).to_list(100)
-    return slides
+    now = datetime.now(timezone.utc).isoformat()
+    all_slides = await db.hero_slides.find({}, {"_id": 0}).sort("date_start", 1).to_list(100)
+    active = []
+    for s in all_slides:
+        ds = s.get("date_start", "")
+        de = s.get("date_end", "")
+        # If no dates set, always show
+        if not ds and not de:
+            active.append(s)
+            continue
+        # If only start date set, show if now >= start
+        if ds and not de:
+            if now >= ds:
+                active.append(s)
+            continue
+        # If only end date set, show if now <= end
+        if not ds and de:
+            if now <= de:
+                active.append(s)
+            continue
+        # Both dates set: show if start <= now <= end
+        if ds <= now <= de:
+            active.append(s)
+    return active
 
 @router.get("/public/about")
 async def get_public_about():

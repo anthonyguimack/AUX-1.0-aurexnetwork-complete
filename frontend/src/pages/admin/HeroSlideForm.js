@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
@@ -7,6 +7,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
+import HeroCanvasEditor from '../../components/HeroCanvasEditor';
 
 const effectOptions = ['top', 'right', 'bottom', 'left'];
 
@@ -16,16 +17,13 @@ const defaultSlide = {
   button_text: '', button_url: '', window_open: 'same',
   slide_type: 'photo', video_embed: '', photo: '',
   background: '',
-  // Animation effects
   title_effect: 'top', subtitle_effect: 'right', description_effect: 'bottom',
   button_effect: 'left', media_effect: 'right',
-  // Coordinates
   title_x: 100, title_y: 50,
   subtitle_x: 100, subtitle_y: 80,
   description_x: 100, description_y: 120,
   button_x: 100, button_y: 180,
   media_x: 400, media_y: 50,
-  // Revolution slider params
   transition: 'fade', slot_amount: 8, master_speed: 700,
   delay: 9400, speed_per_layer: 400,
   title_start: 1500, subtitle_start: 2000, description_start: 2500,
@@ -55,6 +53,10 @@ export default function HeroSlideForm() {
   const set = (field) => (e) => setForm(p => ({ ...p, [field]: e.target.value }));
   const setNum = (field) => (e) => setForm(p => ({ ...p, [field]: parseInt(e.target.value) || 0 }));
 
+  const handleCanvasChange = useCallback((layerId, x, y) => {
+    setForm(p => ({ ...p, [`${layerId}_x`]: x, [`${layerId}_y`]: y }));
+  }, []);
+
   const handleSave = async () => {
     if (!form.title.trim() && !form.subtitle.trim()) { toast.error('Title or Subtitle is required'); return; }
     setSaving(true);
@@ -71,6 +73,14 @@ export default function HeroSlideForm() {
   const sectionCls = "bg-white border border-slate-100 rounded-sm p-5 mb-5";
   const sectionTitle = "text-sm font-semibold text-[#1a2332] mb-4 pb-2 border-b border-slate-100";
   const selectCls = "w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none focus:border-[#0D9488]/50";
+
+  const canvasCoords = {
+    title_x: form.title_x, title_y: form.title_y,
+    subtitle_x: form.subtitle_x, subtitle_y: form.subtitle_y,
+    description_x: form.description_x, description_y: form.description_y,
+    button_x: form.button_x, button_y: form.button_y,
+    media_x: form.media_x, media_y: form.media_y,
+  };
 
   return (
     <div data-testid="hero-slide-form">
@@ -201,33 +211,11 @@ export default function HeroSlideForm() {
         </div>
       </div>
 
-      {/* X/Y Positioning Coordinates */}
+      {/* X/Y Positioning — Visual Drag-and-Drop Canvas */}
       <div className={sectionCls}>
-        <h2 className={sectionTitle}>X/Y Positioning Coordinates</h2>
-        <p className="text-xs text-slate-400 mb-3">X Range: 0–700 / Y Range: 0–300</p>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          {[
-            { label: 'Title', xf: 'title_x', yf: 'title_y' },
-            { label: 'Subtitle', xf: 'subtitle_x', yf: 'subtitle_y' },
-            { label: 'Description', xf: 'description_x', yf: 'description_y' },
-            { label: 'Button URL', xf: 'button_x', yf: 'button_y' },
-            { label: 'Video/Photo', xf: 'media_x', yf: 'media_y' },
-          ].map(c => (
-            <div key={c.label} className="bg-slate-50 rounded p-3 border border-slate-100">
-              <Label className="text-xs text-slate-500 block mb-2">{c.label}</Label>
-              <div className="grid grid-cols-2 gap-2">
-                <div>
-                  <span className="text-[10px] text-slate-400">X</span>
-                  <Input type="number" min={0} max={700} value={form[c.xf]} onChange={setNum(c.xf)} className="mt-0.5" data-testid={`slide-${c.xf}`} />
-                </div>
-                <div>
-                  <span className="text-[10px] text-slate-400">Y</span>
-                  <Input type="number" min={0} max={300} value={form[c.yf]} onChange={setNum(c.yf)} className="mt-0.5" data-testid={`slide-${c.yf}`} />
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
+        <h2 className={sectionTitle}>Layer Positioning</h2>
+        <p className="text-xs text-slate-400 mb-4">Drag each layer to position it on the slide canvas (700 x 300). Coordinates are saved automatically.</p>
+        <HeroCanvasEditor coords={canvasCoords} onChange={handleCanvasChange} />
       </div>
 
       {/* Revolution Slider Parameters */}
