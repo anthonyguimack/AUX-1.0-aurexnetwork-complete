@@ -142,7 +142,6 @@ export default function MemberRegister() {
                   <div><label className="text-xs text-gray-400 mb-1 block">State</label><select value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value, city: ''}))} className={selectCls} disabled={!form.country}><option value="">Select</option>{states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}</select></div>
                   <div><label className="text-xs text-gray-400 mb-1 block">City</label><select value={form.city} onChange={set('city')} className={selectCls} disabled={!form.state}><option value="">Select</option>{cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}</select></div>
                 </div>
-                <div><label className="text-xs text-gray-400 mb-1 block">Avatar</label><ImageUpload value={form.avatar} onChange={v => setForm(p => ({...p, avatar: v}))} /></div>
                 <button type="submit" disabled={loading} className="w-full py-3 bg-[#c9a84c] text-[#0d0f14] font-semibold rounded-lg flex items-center justify-center gap-2 disabled:opacity-50 mt-2" data-testid="register-submit-btn">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <UserPlus className="w-4 h-4" />} {loading ? 'Creating...' : 'Create Account'}
                 </button>

@@ -87,6 +87,11 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Phase C + APIs: 9/9 + 19/19
 - Bug fixes: 7/7 backend + visual verification
 
+### Bug Fixes Round 2 (Mar 28, 2026) - COMPLETE
+- Route protection instant block: Unauthorized routes show spinner immediately (no content flash before redirect)
+- Registration form: Removed Avatar section
+- Portfolio charts CASH inclusion: CASH added to Current Stock Holdings, By Sector, and By Industry charts so percentages sum to 100%
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 

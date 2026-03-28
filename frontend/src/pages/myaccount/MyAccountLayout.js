@@ -56,11 +56,10 @@ export default function MyAccountLayout() {
     }
   }, [member]);
 
-  // Route protection: redirect if user doesn't have permission for current route
-  useEffect(() => {
-    if (levelPerms === null || !member) return; // still loading
+  // Route protection: check permission BEFORE rendering content
+  const isRouteAllowed = (() => {
+    if (levelPerms === null) return null; // still loading
     const path = location.pathname;
-    // Find which permission this route requires
     let requiredPerm = null;
     for (const [route, perm] of Object.entries(ROUTE_TO_PERM)) {
       if (path === route || path.startsWith(route + '/')) {
@@ -68,14 +67,18 @@ export default function MyAccountLayout() {
         break;
       }
     }
-    if (requiredPerm && !levelPerms.includes(requiredPerm)) {
-      // Redirect to the first permitted section
+    if (requiredPerm && !levelPerms.includes(requiredPerm)) return false;
+    return true;
+  })();
+
+  useEffect(() => {
+    if (isRouteAllowed === false) {
       const firstAllowed = ALL_NAV_ITEMS.find(i => levelPerms.includes(i.id));
       if (firstAllowed) {
         navigate(firstAllowed.href, { replace: true });
       }
     }
-  }, [levelPerms, location.pathname, member, navigate]);
+  }, [isRouteAllowed, levelPerms, navigate]);
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
   const brandName = settings.brand_name || 'Legacy';
@@ -156,7 +159,17 @@ export default function MyAccountLayout() {
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8">
-          <Outlet />
+          {isRouteAllowed === false ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 text-[#c9a84c] animate-spin" />
+            </div>
+          ) : isRouteAllowed === null ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 text-[#c9a84c] animate-spin" />
+            </div>
+          ) : (
+            <Outlet />
+          )}
         </main>
       </div>
 

@@ -72,18 +72,23 @@ export default function PortfolioDetail() {
   const allRows = [cashRow, ...stockHoldings];
   const grandTotal = totalValue; // cash + stocks
 
-  // Sector breakdown (stocks only)
+  // Sector breakdown — include CASH so percentages reach 100%
   const sectorMap = {};
+  if (cashBalance > 0) sectorMap['CASH'] = cashBalance;
   stockHoldings.forEach(h => { const s = h.sector || 'Other'; sectorMap[s] = (sectorMap[s] || 0) + h.currentValue; });
   const sectorData = Object.entries(sectorMap).map(([name, value]) => ({ name, value }));
 
-  // Industry breakdown (stocks only)
+  // Industry breakdown — include CASH
   const indMap = {};
+  if (cashBalance > 0) indMap['CASH'] = cashBalance;
   stockHoldings.forEach(h => { const ind = h.industry || 'Other'; indMap[ind] = (indMap[ind] || 0) + h.currentValue; });
   const industryData = Object.entries(indMap).map(([name, value]) => ({ name, value }));
 
-  // Current Stock Holdings (individual stocks by value)
-  const stockChartData = stockHoldings.filter(h => h.currentValue > 0).map(h => ({ name: h.symbol, value: h.currentValue }));
+  // Current Stock Holdings — include CASH
+  const stockChartData = [
+    ...(cashBalance > 0 ? [{ name: 'CASH', value: cashBalance }] : []),
+    ...stockHoldings.filter(h => h.currentValue > 0).map(h => ({ name: h.symbol, value: h.currentValue })),
+  ];
 
   // Portfolio Balance (Cash vs Stocks)
   const balanceData = [
@@ -197,7 +202,7 @@ export default function PortfolioDetail() {
               {stockChartData.map((s, i) => (
                 <span key={i} className="flex items-center gap-1 text-xs text-gray-400">
                   <span className="w-2 h-2 rounded-full flex-shrink-0" style={{ background: COLORS[i % COLORS.length] }} />
-                  {s.name} ({totalHoldings > 0 ? fmtPct(s.value / totalHoldings * 100) : '0.00%'})
+                  {s.name} ({totalValue > 0 ? fmtPct(s.value / totalValue * 100) : '0.00%'})
                 </span>
               ))}
             </div>
