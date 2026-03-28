@@ -92,6 +92,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Registration form: Removed Avatar section
 - Portfolio charts CASH inclusion: CASH added to Current Stock Holdings, By Sector, and By Industry charts so percentages sum to 100%
 
+### Hero Slides CRUD (Mar 28, 2026) - COMPLETE
+- Full CRUD: List table (Title, Subtitle, Type, Dates, Actions), Add/Edit form, Delete with confirmation
+- Form sections: Timer (date start/end), WYSIWYG (title/subtitle/desc), Links (button text/url/window), Slide Type (photo/video), Background, Animation Effects (5 selects), X/Y Coordinates (5 pairs), Revolution Slider Params (transition, speed, delays)
+- Frontend hero renders multiple slides with layer animations, auto-rotation, and indicator dots
+- Backward compatible: Falls back to legacy single-doc hero if no slides exist
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
