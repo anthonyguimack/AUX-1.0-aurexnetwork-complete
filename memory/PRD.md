@@ -138,6 +138,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Backend enrichment**: `/auth/me` and `/member/me` now return `_member_type` with `allowed_pages` and `permissions` dict.
 - Testing: 12/12 backend + 100% frontend verification (Iteration 17)
 
+### Mentor System Migrated to Member Types (Mar 30, 2026) - COMPLETE
+- **Mentor dropdown now uses Member Types**: Admin Members form mentor dropdown populated from `GET /api/admin/mentors` which queries member types with `is_mentor: true`. Old per-member `is_mentor` flag no longer used for filtering.
+- **New endpoints**: `GET /api/admin/mentors` and `GET /api/member/available-mentors` for type-based mentor lists.
+- **My Account updated**: MentorshipProfile and MembershipProfile show mentor badge from `_member_type.permissions.is_mentor`.
+- Testing: 11/11 backend + 100% frontend verification (Iteration 18)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
