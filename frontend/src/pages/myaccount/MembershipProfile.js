@@ -136,6 +136,7 @@ export default function MembershipProfile() {
           <p className="text-[#c9a84c] text-xs">{member?.membership_id}</p>
           <p className="text-gray-500 text-xs mt-1">{member?.email}</p>
           {member?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
+          {member?._member_type?.permissions?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
         </div>
 
         <div className="lg:col-span-2 bg-[#13161e] border border-white/5 rounded-lg">

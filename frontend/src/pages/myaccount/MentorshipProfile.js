@@ -80,7 +80,7 @@ export default function MentorshipProfile() {
           </div>
           <p className="mt-3 text-white font-medium" data-testid="mentor-name">{mentor.first_name} {mentor.last_name}</p>
           <p className="text-[#c9a84c] text-xs mt-1" data-testid="mentor-membership-id">{mentor.membership_id}</p>
-          {mentor.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
+          {(mentor.is_mentor || mentor._member_type?.permissions?.is_mentor) && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
         </div>
 
         {/* Right - Details */}

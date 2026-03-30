@@ -545,6 +545,34 @@ async def admin_assign_mentor(member_id: str, request: Request, user: dict = Dep
     return {"message": "Mentor assigned"}
 
 
+@router.get("/admin/mentors")
+async def admin_get_mentors(user: dict = Depends(require_admin)):
+    """Get members whose member_type has is_mentor=true."""
+    mentor_types = await db.member_types.find({"is_mentor": True}, {"_id": 0, "id": 1}).to_list(100)
+    mentor_type_ids = [t["id"] for t in mentor_types]
+    if not mentor_type_ids:
+        return []
+    members = await db.members.find(
+        {"member_type_id": {"$in": mentor_type_ids}},
+        {"_id": 0, "password_hash": 0}
+    ).sort("membership_number", 1).to_list(10000)
+    return members
+
+
+@router.get("/member/available-mentors")
+async def member_get_available_mentors(member: dict = Depends(get_current_member)):
+    """Get available mentors for My Account mentor selection."""
+    mentor_types = await db.member_types.find({"is_mentor": True}, {"_id": 0, "id": 1}).to_list(100)
+    mentor_type_ids = [t["id"] for t in mentor_types]
+    if not mentor_type_ids:
+        return []
+    members = await db.members.find(
+        {"member_type_id": {"$in": mentor_type_ids}, "member_id": {"$ne": member["member_id"]}},
+        {"_id": 0, "member_id": 1, "membership_number": 1, "membership_id": 1, "first_name": 1, "last_name": 1, "avatar": 1, "email": 1, "phone": 1, "address": 1, "country": 1, "state": 1, "city": 1, "zip_code": 1, "date_of_birth": 1}
+    ).sort("membership_number", 1).to_list(10000)
+    return members
+
+
 # ---- Sectors / Industries / Companies ----
 
 @router.get("/member/sectors")

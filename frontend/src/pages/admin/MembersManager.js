@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect } from 'react';
 import { adminAPI, geoAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
@@ -25,6 +25,7 @@ export default function MembersManager() {
   const [tab, setTab] = useState('personal');
   const [levels, setLevels] = useState([]);
   const [memberTypes, setMemberTypes] = useState([]);
+  const [mentors, setMentors] = useState([]);
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -33,11 +34,10 @@ export default function MembersManager() {
     adminAPI.getMembers().then(r => setItems(r.data)).catch(console.error);
     adminAPI.getLevels().then(r => setLevels(r.data)).catch(console.error);
     adminAPI.getMemberTypes().then(r => setMemberTypes(r.data || [])).catch(console.error);
+    adminAPI.getMentors().then(r => setMentors(r.data || [])).catch(console.error);
     geoAPI.getCountries().then(r => setCountries(r.data)).catch(console.error);
   };
   useEffect(() => { load(); }, []);
-
-  const mentors = useMemo(() => items.filter(m => m.is_mentor), [items]);
 
   // Load states when country changes
   useEffect(() => {
@@ -243,7 +243,7 @@ export default function MembersManager() {
                       <option value="">No Mentor</option>
                       {mentors.filter(m => m.member_id !== editing.member_id).map(m => <option key={m.member_id} value={m.membership_number}>{m.membership_id} - {m.first_name} {m.last_name}</option>)}
                     </select>
-                    {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Mark a member type as Mentor first.</p>}
+                    {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Create a Member Type with Mentor permission enabled and assign it to members.</p>}
                   </div>
                   {editing.member_id && <div><Label className="text-xs">New Password (leave blank to keep)</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>}
                 </div>

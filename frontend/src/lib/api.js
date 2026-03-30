@@ -141,6 +141,7 @@ export const adminAPI = {
   updateMember: (id, data) => api.put(`/admin/members/${id}`, data),
   deleteMember: (id) => api.delete(`/admin/members/${id}`),
   assignMentor: (id, data) => api.put(`/admin/members/${id}/mentor`, data),
+  getMentors: () => api.get('/admin/mentors'),
   // Member Levels
   getLevels: () => api.get('/admin/member-levels'),
   createLevel: (data) => api.post('/admin/member-levels', data),
@@ -167,6 +168,7 @@ export const memberAPI = {
   // My Account
   getSponsor: () => api.get('/member/my-sponsor'),
   getMentor: () => api.get('/member/my-mentor'),
+  getAvailableMentors: () => api.get('/member/available-mentors'),
   getCommunity: () => api.get('/member/my-community'),
   updateBiography: (data) => api.put('/member/biography', data),
   updateProfile: (data) => api.put('/member/profile', data),
