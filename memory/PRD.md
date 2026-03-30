@@ -112,6 +112,14 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Slide navigation indicator dots working across all viewports
 - Testing: 17/17 backend + 100% frontend verification (Iteration 13)
 
+### CMS Pages & Hero Improvements (Mar 30, 2026) - COMPLETE
+- **Hero per-page assignment**: Each hero slide has `assigned_pages` array. Admin form shows checklist of all site pages. Public endpoint accepts `?page=X` to filter slides by page.
+- **Pages content dynamic**: Backend syncs nav_pages to `pages` collection when `page_type` is set, so TermsPage/PrivacyPage always show latest CMS content.
+- **Login Required URL protection**: New `PageProtectedRoute` in App.js checks nav_pages `login_required` field before rendering /terms, /privacy, /page/:pageId. Shows "Login Required" screen for unauthenticated users.
+- **Open in New Tab fix**: Navbar and Footer use `<a target="_blank">` instead of `<Link>` for pages with `open_in_new_tab: true`.
+- **Pages Manager reorganized**: Two tabs — Custom Pages (editable, deletable) and System Pages (built-in, read-only info display).
+- Testing: 24/24 backend + 100% frontend verification (Iteration 14)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
