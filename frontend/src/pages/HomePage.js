@@ -78,42 +78,43 @@ function HeroSection({ data, slides }) {
             </a>
           </>
         ) : (
-          <div className="flex flex-col lg:flex-row items-center gap-10 w-full">
-            {/* Text layers */}
-            <div className="flex-1 space-y-0">
-              {slide.title && (
-                <div style={effectStyle(slide.title_effect, slide.title_start)} data-testid="hero-title">
-                  <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl [&_strong]:text-white [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
-                </div>
-              )}
-              {slide.subtitle && (
-                <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
-                  <div className="text-lg sm:text-xl font-semibold mt-3 text-white [&_strong]:font-bold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
-                </div>
-              )}
-              {slide.description && (
-                <div style={effectStyle(slide.description_effect, slide.description_start)} data-testid="hero-description">
-                  <div className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed [&_strong]:text-white/90" dangerouslySetInnerHTML={{ __html: slide.description }} />
-                </div>
-              )}
-              {slide.button_text && (
-                <div style={effectStyle(slide.button_effect, slide.button_start)}>
-                  <a href={slide.button_url || '#'} target={slide.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 mt-8 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm"
-                    style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
-                    {slide.button_text} <ArrowRight className="w-4 h-4" />
-                  </a>
-                </div>
-              )}
-            </div>
-            {/* Media layer */}
+          <div className="relative w-full" style={{ minHeight: '400px' }}>
+            {/* Title — absolutely positioned using coordinates */}
+            {slide.title && (
+              <div className="absolute" style={{ left: `${(slide.title_x || 100) / 7}%`, top: `${(slide.title_y || 50) / 3}%`, ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
+                <div className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl [&_strong]:text-white [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+              </div>
+            )}
+            {/* Subtitle — absolutely positioned */}
+            {slide.subtitle && (
+              <div className="absolute" style={{ left: `${(slide.subtitle_x || 100) / 7}%`, top: `${(slide.subtitle_y || 80) / 3}%`, ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle">
+                <div className="text-lg sm:text-xl font-semibold text-white [&_strong]:font-bold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+              </div>
+            )}
+            {/* Description — absolutely positioned */}
+            {slide.description && (
+              <div className="absolute" style={{ left: `${(slide.description_x || 100) / 7}%`, top: `${(slide.description_y || 120) / 3}%`, ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description">
+                <div className="text-white/70 max-w-xl text-base md:text-lg leading-relaxed [&_strong]:text-white/90" dangerouslySetInnerHTML={{ __html: slide.description }} />
+              </div>
+            )}
+            {/* Button — absolutely positioned */}
+            {slide.button_text && (
+              <div className="absolute" style={{ left: `${(slide.button_x || 100) / 7}%`, top: `${(slide.button_y || 180) / 3}%`, ...effectStyle(slide.button_effect, slide.button_start) }}>
+                <a href={slide.button_url || '#'} target={slide.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer"
+                  className="inline-flex items-center gap-2 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm"
+                  style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
+                  {slide.button_text} <ArrowRight className="w-4 h-4" />
+                </a>
+              </div>
+            )}
+            {/* Media — absolutely positioned */}
             {(slide.slide_type === 'video' && slide.video_embed) && (
-              <div className="flex-shrink-0 w-full lg:w-[420px]" style={effectStyle(slide.media_effect, slide.media_start)}>
+              <div className="absolute w-[320px] lg:w-[420px]" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, ...effectStyle(slide.media_effect, slide.media_start) }}>
                 <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
               </div>
             )}
             {(slide.slide_type === 'photo' && slide.photo) && (
-              <div className="flex-shrink-0 w-full lg:w-[420px]" style={effectStyle(slide.media_effect, slide.media_start)}>
+              <div className="absolute w-[320px] lg:w-[420px]" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, ...effectStyle(slide.media_effect, slide.media_start) }}>
                 <img src={slide.photo} alt="" className="rounded-lg shadow-2xl w-full object-cover max-h-[400px]" />
               </div>
             )}

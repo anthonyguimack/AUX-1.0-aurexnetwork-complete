@@ -215,7 +215,7 @@ export default function HeroSlideForm() {
       <div className={sectionCls}>
         <h2 className={sectionTitle}>Layer Positioning</h2>
         <p className="text-xs text-slate-400 mb-4">Drag each layer to position it on the slide canvas (700 x 300). Coordinates are saved automatically.</p>
-        <HeroCanvasEditor coords={canvasCoords} onChange={handleCanvasChange} />
+        <HeroCanvasEditor coords={canvasCoords} onChange={handleCanvasChange} backgroundImage={form.background} />
       </div>
 
       {/* Revolution Slider Parameters */}

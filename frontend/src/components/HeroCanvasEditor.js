@@ -19,7 +19,7 @@ const LAYER_LABELS = {
   media: 'Video / Photo',
 };
 
-export default function HeroCanvasEditor({ coords, onChange }) {
+export default function HeroCanvasEditor({ coords, onChange, backgroundImage }) {
   const canvasRef = useRef(null);
   const [dragging, setDragging] = useState(null);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -63,7 +63,6 @@ export default function HeroCanvasEditor({ coords, onChange }) {
     setDragging(null);
   }, []);
 
-  // Touch events
   const handleTouchStart = (layerId, e) => {
     const touch = e.touches[0];
     const pos = getCanvasCoords(touch);
@@ -82,25 +81,41 @@ export default function HeroCanvasEditor({ coords, onChange }) {
     onChange(dragging, newX, newY);
   }, [dragging, offset, getCanvasCoords, onChange]);
 
+  // Build background style
+  const bgStyle = {};
+  if (backgroundImage) {
+    bgStyle.backgroundImage = `url(${backgroundImage})`;
+    bgStyle.backgroundSize = 'cover';
+    bgStyle.backgroundPosition = 'center';
+  }
+
   return (
     <div data-testid="hero-canvas-editor">
       <div
         ref={canvasRef}
-        className="relative w-full border-2 border-slate-200 rounded-sm bg-slate-900 select-none overflow-hidden"
-        style={{ aspectRatio: `${CANVAS_W}/${CANVAS_H}`, cursor: dragging ? 'grabbing' : 'default' }}
+        className="relative w-full border-2 border-slate-200 rounded-sm select-none overflow-hidden"
+        style={{
+          aspectRatio: `${CANVAS_W}/${CANVAS_H}`,
+          cursor: dragging ? 'grabbing' : 'default',
+          backgroundColor: backgroundImage ? undefined : '#0f172a',
+          ...bgStyle,
+        }}
         onMouseMove={handleMouseMove}
         onMouseUp={handleMouseUp}
         onMouseLeave={handleMouseUp}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleMouseUp}
       >
+        {/* Dark overlay on top of background for readability */}
+        <div className="absolute inset-0 bg-black/40 pointer-events-none" />
+
         {/* Grid lines */}
         <div className="absolute inset-0 pointer-events-none">
           {[1, 2, 3, 4, 5, 6].map(i => (
-            <div key={`v${i}`} className="absolute top-0 bottom-0 border-l border-white/5" style={{ left: `${(i / 7) * 100}%` }} />
+            <div key={`v${i}`} className="absolute top-0 bottom-0 border-l border-white/10" style={{ left: `${(i / 7) * 100}%` }} />
           ))}
           {[1, 2].map(i => (
-            <div key={`h${i}`} className="absolute left-0 right-0 border-t border-white/5" style={{ top: `${(i / 3) * 100}%` }} />
+            <div key={`h${i}`} className="absolute left-0 right-0 border-t border-white/10" style={{ top: `${(i / 3) * 100}%` }} />
           ))}
         </div>
 
@@ -134,7 +149,7 @@ export default function HeroCanvasEditor({ coords, onChange }) {
         })}
 
         {/* Canvas size label */}
-        <div className="absolute bottom-1 right-2 text-[9px] text-white/30">{CANVAS_W} x {CANVAS_H}</div>
+        <div className="absolute bottom-1 right-2 text-[9px] text-white/50 z-20">{CANVAS_W} x {CANVAS_H}</div>
       </div>
 
       {/* Legend */}
