@@ -12,8 +12,6 @@ import NewsDetailPage from './pages/NewsDetailPage';
 import ReadingListPage from './pages/ReadingListPage';
 import GalleryPage from './pages/GalleryPage';
 import MapDetailPage from './pages/MapDetailPage';
-import TermsPage from './pages/TermsPage';
-import PrivacyPage from './pages/PrivacyPage';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import DynamicPage from './pages/DynamicPage';
 import AdminLayout from './pages/admin/AdminLayout';
@@ -160,6 +158,30 @@ function MemberRoute({ children }) {
   return children;
 }
 
+// Maps system page URLs to their hero page identifiers
+const SYSTEM_PAGE_MAP = {
+  '/news': 'news',
+  '/gallery': 'gallery',
+  '/reading-list': 'reading-list',
+};
+
+function SystemPageHero() {
+  const location = useLocation();
+  const [heroSlides, setHeroSlides] = useState([]);
+  const pageId = SYSTEM_PAGE_MAP[location.pathname];
+
+  useEffect(() => {
+    if (!pageId) { setHeroSlides([]); return; }
+    publicAPI.getHeroSlides(pageId).then(r => setHeroSlides(r.data || [])).catch(() => setHeroSlides([]));
+  }, [pageId]);
+
+  if (heroSlides.length === 0) return null;
+
+  // Lazy-load HeroSection to avoid circular import issues
+  const HeroSection = require('./components/HeroSection').default;
+  return <HeroSection slides={heroSlides} />;
+}
+
 function AppRouter() {
   const location = useLocation();
   if (location.hash?.includes('session_id=')) return <AuthCallback />;
@@ -190,6 +212,7 @@ function AppRouter() {
   return (
     <>
       <Navbar />
+      <SystemPageHero />
       <Routes>
         <Route path="/" element={<HomePage />} />
         <Route path="/news" element={<NewsPage />} />
@@ -197,8 +220,8 @@ function AppRouter() {
         <Route path="/reading-list" element={<ReadingListPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/map/:slug" element={<MapDetailPage />} />
-        <Route path="/terms" element={<PageProtectedRoute><TermsPage /></PageProtectedRoute>} />
-        <Route path="/privacy" element={<PageProtectedRoute><PrivacyPage /></PageProtectedRoute>} />
+        <Route path="/terms" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
+        <Route path="/privacy" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
         <Route path="/page/:pageId" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
@@ -225,6 +248,8 @@ function AppRouter() {
           <Route path="seo" element={<SeoManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
         </Route>
+        {/* Catch-all: custom page URLs like /kls */}
+        <Route path="*" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
       </Routes>
       <Footer />
     </>
