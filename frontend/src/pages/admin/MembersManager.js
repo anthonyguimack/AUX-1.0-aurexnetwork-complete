@@ -12,11 +12,9 @@ const emptyMember = {
   gender: '', phone: '', date_of_birth: '', address: '', country: '', state: '', city: '', zip_code: '',
   google_account: '', social_links: [], avatar: '',
   sponsor_membership_number: null, mentor_membership_number: null,
-  is_mentor: false, portfolio_development: false, level_id: null,
+  level_id: null,
   membership_ranking: '', membership_status: 'Free', active_date: '', expiration_date: '',
-  membership_fee: '', member_type_id: '', corporate: false,
-  application_reviewer: false, opportunities_development: false, opportunities_reviewer: false,
-  project_development: false, project_reviewer: false, project_management: false, content_operator: false,
+  membership_fee: '', member_type_id: '',
 };
 
 export default function MembersManager() {
@@ -213,20 +211,26 @@ export default function MembersManager() {
                       <Input type="date" value={editing.expiration_date || ''} onChange={e => setEditing({...editing, expiration_date: e.target.value})} className="mt-1" data-testid="expiration-date-input" />
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div><Label className="text-xs">Member Type</Label>
-                      <select value={editing.member_type_id || ''} onChange={e => setEditing({...editing, member_type_id: e.target.value || ''})} className={selectCls} data-testid="member-type-id-select">
-                        <option value="">Select Type</option>
-                        {memberTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
-                      </select>
-                      {memberTypes.length === 0 && <p className="text-xs text-amber-500 mt-1">No types. Create one in Member Types.</p>}
-                    </div>
-                    <div className="p-3 bg-slate-50 rounded"><Label className="text-xs font-medium mb-2 block">Corporate</Label>
-                      <div className="flex gap-4">
-                        <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="corporate" checked={editing.corporate === true} onChange={() => setEditing({...editing, corporate: true})} className="accent-[#0D9488]" /><span className="text-sm">Yes</span></label>
-                        <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="corporate" checked={!editing.corporate} onChange={() => setEditing({...editing, corporate: false})} className="accent-[#0D9488]" /><span className="text-sm">No</span></label>
-                      </div>
-                    </div>
+                  <div><Label className="text-xs">Member Type</Label>
+                    <select value={editing.member_type_id || ''} onChange={e => setEditing({...editing, member_type_id: e.target.value || ''})} className={selectCls} data-testid="member-type-id-select">
+                      <option value="">Select Type</option>
+                      {memberTypes.map(t => <option key={t.id} value={t.id}>{t.name}</option>)}
+                    </select>
+                    {memberTypes.length === 0 && <p className="text-xs text-amber-500 mt-1">No types. Create one in Member Types.</p>}
+                    {editing.member_type_id && (() => {
+                      const mt = memberTypes.find(t => t.id === editing.member_type_id);
+                      if (!mt) return null;
+                      const perms = ['corporate','is_mentor','portfolio_development','application_reviewer','opportunities_development','opportunities_reviewer','project_development','project_reviewer','project_management','content_operator'].filter(k => mt[k]);
+                      const pageCount = (mt.allowed_pages || []).length;
+                      if (!perms.length && !pageCount) return null;
+                      return (
+                        <div className="mt-2 p-3 bg-[#0D9488]/5 border border-[#0D9488]/20 rounded-sm">
+                          <p className="text-xs font-medium text-[#0D9488] mb-1">Inherited from type "{mt.name}":</p>
+                          {perms.length > 0 && <div className="flex flex-wrap gap-1 mb-1">{perms.map(p => <span key={p} className="px-1.5 py-0.5 bg-[#0D9488]/10 text-[#0D9488] text-xs rounded">{p.replace(/_/g, ' ')}</span>)}</div>}
+                          {pageCount > 0 && <p className="text-xs text-slate-500">{pageCount} page(s) access granted</p>}
+                        </div>
+                      );
+                    })()}
                   </div>
                   <div><Label className="text-xs">Sponsor</Label>
                     <select value={editing.sponsor_membership_number || ''} onChange={e => setEditing({...editing, sponsor_membership_number: e.target.value ? parseInt(e.target.value) : null})} className={selectCls} data-testid="sponsor-select">
@@ -239,35 +243,8 @@ export default function MembersManager() {
                       <option value="">No Mentor</option>
                       {mentors.filter(m => m.member_id !== editing.member_id).map(m => <option key={m.member_id} value={m.membership_number}>{m.membership_id} - {m.first_name} {m.last_name}</option>)}
                     </select>
-                    {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Mark a member as Mentor first.</p>}
+                    {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Mark a member type as Mentor first.</p>}
                   </div>
-
-                  {/* Role Toggles Grid */}
-                  <div className="border-t border-slate-100 pt-3 mt-1">
-                    <p className="text-xs text-slate-400 font-medium uppercase tracking-wider mb-3">Roles & Permissions</p>
-                    <div className="grid grid-cols-2 gap-3">
-                      {[
-                        { key: 'is_mentor', label: 'Mentor', name: 'is_mentor' },
-                        { key: 'portfolio_development', label: 'Portfolio Development', name: 'portfolio_dev' },
-                        { key: 'application_reviewer', label: 'Application Reviewer', name: 'app_reviewer' },
-                        { key: 'opportunities_development', label: 'Opportunities Development', name: 'opp_dev' },
-                        { key: 'opportunities_reviewer', label: 'Opportunities Reviewer', name: 'opp_reviewer' },
-                        { key: 'project_development', label: 'Project Development', name: 'proj_dev' },
-                        { key: 'project_reviewer', label: 'Project Reviewer', name: 'proj_reviewer' },
-                        { key: 'project_management', label: 'Project Management', name: 'proj_mgmt' },
-                        { key: 'content_operator', label: 'Content Operator', name: 'content_op' },
-                      ].map(({ key, label, name }) => (
-                        <div key={key} className="p-3 bg-slate-50 rounded">
-                          <Label className="text-xs font-medium mb-2 block">{label}</Label>
-                          <div className="flex gap-4">
-                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name={name} checked={editing[key] === true} onChange={() => setEditing({...editing, [key]: true})} className="accent-[#0D9488]" /><span className="text-sm">Yes</span></label>
-                            <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name={name} checked={!editing[key]} onChange={() => setEditing({...editing, [key]: false})} className="accent-[#0D9488]" /><span className="text-sm">No</span></label>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
                   {editing.member_id && <div><Label className="text-xs">New Password (leave blank to keep)</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>}
                 </div>
               )}

@@ -57,7 +57,21 @@ async def member_login(request: Request, response: Response):
 
 @router.get("/member/me")
 async def member_me(member: dict = Depends(get_current_member)):
-    return {k: v for k, v in member.items() if k != "password_hash"}
+    result = {k: v for k, v in member.items() if k != "password_hash"}
+    mt_id = member.get("member_type_id")
+    if mt_id:
+        mt = await db.member_types.find_one({"id": mt_id}, {"_id": 0})
+        if mt:
+            result["_member_type"] = {
+                "name": mt.get("name", ""),
+                "allowed_pages": mt.get("allowed_pages", []),
+                "permissions": {k: mt.get(k, False) for k in (
+                    "corporate", "is_mentor", "portfolio_development", "application_reviewer",
+                    "opportunities_development", "opportunities_reviewer", "project_development",
+                    "project_reviewer", "project_management", "content_operator",
+                )}
+            }
+    return result
 
 # ---- Invite Codes ----
 

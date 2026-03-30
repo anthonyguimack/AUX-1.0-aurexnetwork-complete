@@ -1,6 +1,7 @@
 import React, { useRef, useEffect, useState, createContext, useContext } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './lib/auth';
+import { MemberProvider, useMember } from './lib/memberAuth';
 import { authAPI, publicAPI } from './lib/api';
 import { Toaster } from 'sonner';
 import Navbar from './components/layout/Navbar';
@@ -38,7 +39,6 @@ import MembersManager from './pages/admin/MembersManager';
 import MemberLevelsManager from './pages/admin/MemberLevelsManager';
 import MemberTypesManager from './pages/admin/MemberTypesManager';
 // Membership / My Account
-import { MemberProvider } from './lib/memberAuth';
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
 import MyAccountLayout from './pages/myaccount/MyAccountLayout';
@@ -112,6 +112,7 @@ function ProtectedRoute({ children }) {
 
 function PageProtectedRoute({ children }) {
   const { user, loading: authLoading } = useAuth();
+  const { member, loading: memberLoading } = useMember();
   const location = useLocation();
   const [pageData, setPageData] = useState(null);
   const [checking, setChecking] = useState(true);
@@ -127,26 +128,53 @@ function PageProtectedRoute({ children }) {
     }).catch(() => setChecking(false));
   }, [location.pathname]);
 
-  if (checking || authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
+  if (checking || authLoading || memberLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
 
-  if (pageData?.login_required && !user) {
-    return (
-      <>
-        <div className="min-h-screen flex items-center justify-center bg-slate-50">
-          <div className="text-center max-w-md mx-auto px-6">
-            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
-              <span className="text-white text-2xl" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
+  // If page requires login
+  if (pageData?.login_required) {
+    // Admin bypasses all restrictions
+    if (user?.role === 'admin') return children;
+
+    // If member is logged in, check their type's allowed_pages
+    if (member) {
+      const allowedPages = member._member_type?.allowed_pages || [];
+      const pageId = pageData.id;
+      if (allowedPages.length > 0 && !allowedPages.includes(pageId)) {
+        return (
+          <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="text-center max-w-md mx-auto px-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                <span className="text-white text-2xl" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
+              </div>
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Access Restricted</h2>
+              <p className="text-slate-500 text-sm mb-6">Your membership type does not include access to this page.</p>
             </div>
-            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Login Required</h2>
-            <p className="text-slate-500 text-sm mb-6">You need to be logged in to access this page.</p>
-            <button onClick={() => setShowLogin(true)} className="px-6 py-2.5 rounded-sm text-sm font-medium" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="page-login-btn">
-              Login to Continue
-            </button>
           </div>
-        </div>
-        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
-      </>
-    );
+        );
+      }
+      return children;
+    }
+
+    // Not logged in at all — show login prompt
+    if (!user && !member) {
+      return (
+        <>
+          <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="text-center max-w-md mx-auto px-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                <span className="text-white text-2xl" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
+              </div>
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Login Required</h2>
+              <p className="text-slate-500 text-sm mb-6">You need to be logged in to access this page.</p>
+              <button onClick={() => setShowLogin(true)} className="px-6 py-2.5 rounded-sm text-sm font-medium" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="page-login-btn">
+                Login to Continue
+              </button>
+            </div>
+          </div>
+          <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+        </>
+      );
+    }
   }
 
   return children;

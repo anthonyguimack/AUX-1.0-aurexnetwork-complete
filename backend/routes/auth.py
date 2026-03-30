@@ -27,7 +27,22 @@ async def login(request: Request, response: Response):
 @router.get("/auth/me")
 async def auth_me(request: Request):
     user = await get_current_user(request)
-    return {k: v for k, v in user.items() if k != "password_hash"}
+    result = {k: v for k, v in user.items() if k != "password_hash"}
+    # If member has a member_type_id, attach the type's permissions and allowed_pages
+    mt_id = user.get("member_type_id")
+    if mt_id:
+        mt = await db.member_types.find_one({"id": mt_id}, {"_id": 0})
+        if mt:
+            result["_member_type"] = {
+                "name": mt.get("name", ""),
+                "allowed_pages": mt.get("allowed_pages", []),
+                "permissions": {k: mt.get(k, False) for k in (
+                    "corporate", "is_mentor", "portfolio_development", "application_reviewer",
+                    "opportunities_development", "opportunities_reviewer", "project_development",
+                    "project_reviewer", "project_management", "content_operator",
+                )}
+            }
+    return result
 
 @router.post("/auth/logout")
 async def logout(request: Request, response: Response):
