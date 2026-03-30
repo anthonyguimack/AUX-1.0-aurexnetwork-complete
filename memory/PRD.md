@@ -100,9 +100,11 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 
 ### Hero Slides Improvements (Mar 28, 2026) - COMPLETE
 - Timer filtering: Public endpoint only returns slides within their date_start/date_end range
-- Visual drag-and-drop canvas: Replaced manual X/Y inputs with interactive canvas editor (5 color-coded draggable blocks)
+- Visual drag-and-drop canvas: Replaced manual X/Y inputs with interactive canvas editor
 - Subtitle color: Changed to white to match title styling
 - Expired slides properly excluded from public website
+- Layer Positioning affects homepage: All layers use absolute positioning with X/Y coordinates from CMS
+- Canvas background: Admin canvas shows the slide's background image with dark overlay for context
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
