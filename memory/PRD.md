@@ -106,6 +106,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Layer Positioning affects homepage: All layers use absolute positioning with X/Y coordinates from CMS
 - Canvas background: Admin canvas shows the slide's background image with dark overlay for context
 
+### Hero Responsive Layout Fix (Mar 30, 2026) - COMPLETE
+- Desktop (lg+): Absolute positioning from CMS X/Y coordinates via `hidden lg:block` container
+- Mobile & Tablet (<1024px): Stacked flex column layout via `lg:hidden` container - no text overlap
+- Slide navigation indicator dots working across all viewports
+- Testing: 17/17 backend + 100% frontend verification (Iteration 13)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
