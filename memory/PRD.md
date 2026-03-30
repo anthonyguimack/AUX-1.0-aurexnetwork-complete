@@ -118,7 +118,11 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Login Required URL protection**: New `PageProtectedRoute` in App.js checks nav_pages `login_required` field before rendering /terms, /privacy, /page/:pageId. Shows "Login Required" screen for unauthenticated users.
 - **Open in New Tab fix**: Navbar and Footer use `<a target="_blank">` instead of `<Link>` for pages with `open_in_new_tab: true`.
 - **Pages Manager reorganized**: Two tabs — Custom Pages (editable, deletable) and System Pages (built-in, read-only info display).
-- Testing: 24/24 backend + 100% frontend verification (Iteration 14)
+### Hero Per-Page Assignment & Custom Page Routing Fix (Mar 30, 2026) - COMPLETE
+- **Hero on all pages**: Extracted HeroSection into shared component (`/components/HeroSection.js`). System pages (News, Gallery, Reading List) show hero slides via `SystemPageHero` in App.js. Custom pages (KLS, Terms, etc.) show hero slides via DynamicPage.
+- **Custom page URL routing**: Added catch-all route `*` in App.js. DynamicPage now looks up pages by URL path (not just by ID). Custom pages like `/kls` now load correctly.
+- **Terms/Privacy unified**: Both now route through DynamicPage for consistent hero + content rendering.
+- Testing: 20/20 backend + 100% frontend verification (Iteration 15)
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
