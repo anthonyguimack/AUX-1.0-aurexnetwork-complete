@@ -1,6 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { publicAPI } from '../lib/api';
-import PageBanner from '../components/layout/PageBanner';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 
 export default function GalleryPage() {
@@ -19,7 +18,6 @@ export default function GalleryPage() {
 
   return (
     <div data-testid="gallery-page">
-      <PageBanner title="Gallery" image="https://images.unsplash.com/photo-1529156069898-49953e39b3ac?w=800" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
         <div className="flex justify-center gap-3 mb-10">
           {['all', 'professional', 'personal'].map(t => (

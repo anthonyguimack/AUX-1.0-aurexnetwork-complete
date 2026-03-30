@@ -453,6 +453,21 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "portfolio_development": body.get("portfolio_development", False),
         "level_id": body.get("level_id", None),
         "role": "member",
+        # New membership fields
+        "membership_ranking": body.get("membership_ranking", ""),
+        "membership_status": body.get("membership_status", "Free"),
+        "active_date": body.get("active_date", ""),
+        "expiration_date": body.get("expiration_date", ""),
+        "membership_fee": body.get("membership_fee", ""),
+        "member_type_id": body.get("member_type_id", ""),
+        "corporate": body.get("corporate", False),
+        "application_reviewer": body.get("application_reviewer", False),
+        "opportunities_development": body.get("opportunities_development", False),
+        "opportunities_reviewer": body.get("opportunities_reviewer", False),
+        "project_development": body.get("project_development", False),
+        "project_reviewer": body.get("project_reviewer", False),
+        "project_management": body.get("project_management", False),
+        "content_operator": body.get("content_operator", False),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)

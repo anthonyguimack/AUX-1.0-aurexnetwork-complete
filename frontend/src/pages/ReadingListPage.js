@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { publicAPI } from '../lib/api';
-import PageBanner from '../components/layout/PageBanner';
 import { Dialog, DialogContent } from '../components/ui/dialog';
 import { BookOpen, ExternalLink, Quote } from 'lucide-react';
 
@@ -12,7 +11,6 @@ export default function ReadingListPage() {
 
   return (
     <div data-testid="reading-list-page">
-      <PageBanner title="Reading List" image="https://images.unsplash.com/photo-1481627834876-b7833e8f5570?w=800" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
         {/* Inspirational quote */}
         <div className="bg-[#F8FAFC] p-8 md:p-12 rounded-sm border border-slate-100 mb-12 text-center">

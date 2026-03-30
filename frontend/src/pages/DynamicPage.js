@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useLocation } from 'react-router-dom';
 import { publicAPI } from '../lib/api';
-import PageBanner from '../components/layout/PageBanner';
 import HeroSection from '../components/HeroSection';
 
 export default function DynamicPage() {
@@ -18,7 +17,6 @@ export default function DynamicPage() {
 
     publicAPI.getNavPages().then(r => {
       const pages = r.data || [];
-      // Find page by: 1) ID param, 2) /page/:id URL match, 3) current pathname match
       const currentPath = location.pathname;
       const found = pages.find(p =>
         (pageId && p.id === pageId) ||
@@ -28,11 +26,9 @@ export default function DynamicPage() {
 
       if (found) {
         setPage(found);
-        // Fetch hero slides for this page
         publicAPI.getHeroSlides(found.id).then(hs => {
           setHeroSlides(hs.data || []);
         }).catch(() => {});
-        // If page_type is set, also load the rich content from pages collection
         if (found.page_type) {
           publicAPI.getPage(found.page_type).then(res => {
             setPage(prev => ({ ...prev, ...res.data, title: found.title }));
@@ -56,12 +52,9 @@ export default function DynamicPage() {
 
   return (
     <div data-testid="dynamic-page">
-      {heroSlides.length > 0 ? (
-        <HeroSection slides={heroSlides} />
-      ) : (
-        <PageBanner title={page.title} image={page.banner_image} />
-      )}
+      {heroSlides.length > 0 && <HeroSection slides={heroSlides} />}
       <div className="max-w-4xl mx-auto px-6 md:px-12 py-16">
+        {!heroSlides.length && <h1 className="text-3xl font-bold mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{page.title}</h1>}
         {page.summary && <p className="text-slate-500 mb-6">{page.summary}</p>}
         {page.content && <div className="rich-text-content" dangerouslySetInnerHTML={{ __html: page.content }} />}
       </div>

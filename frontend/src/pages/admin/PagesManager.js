@@ -7,9 +7,8 @@ import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Globe, Lock, ExternalLink, FileText, Home, Newspaper, Image, BookOpen } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
-import ImageUpload from '../../components/ImageUpload';
 
-const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, banner_image: '', summary: '', content: '', page_type: '' };
+const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '' };
 
 const SYSTEM_PAGES = [
   { id: '_sys_home', title: 'Home', url: '/', icon: Home, system: true, description: 'Main homepage' },
@@ -193,10 +192,6 @@ export default function PagesManager() {
                   <Label className="text-xs text-slate-500">Display Order</Label>
                   <Input type="number" value={editing.order || 0} onChange={e => setEditing({ ...editing, order: parseInt(e.target.value) || 0 })} className="mt-1 w-24" />
                 </div>
-              </div>
-              <div>
-                <Label className="text-xs text-slate-500">Banner Image</Label>
-                <ImageUpload value={editing.banner_image || ''} onChange={val => setEditing({ ...editing, banner_image: val })} className="mt-1" />
               </div>
               <div>
                 <Label className="text-xs text-slate-500">Summary</Label>

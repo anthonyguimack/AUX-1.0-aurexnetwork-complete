@@ -371,6 +371,28 @@ async def admin_delete_user(user_id: str, admin: dict = Depends(require_admin)):
     await db.user_sessions.delete_many({"user_id": user_id})
     return {"message": "User deleted"}
 
+# Member Types
+@router.get("/admin/member-types")
+async def admin_list_member_types(user: dict = Depends(require_admin)):
+    return await db.member_types.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+@router.post("/admin/member-types")
+async def admin_create_member_type(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.setdefault("id", str(uuid.uuid4()))
+    body.setdefault("order", 0)
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    return await crud_create("member_types", body)
+
+@router.put("/admin/member-types/{item_id}")
+async def admin_update_member_type(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    return await crud_update("member_types", item_id, await request.json())
+
+@router.delete("/admin/member-types/{item_id}")
+async def admin_delete_member_type(item_id: str, user: dict = Depends(require_admin)):
+    return await crud_delete("member_types", item_id)
+
+
 # Dashboard
 @router.get("/admin/dashboard")
 async def admin_dashboard(user: dict = Depends(require_admin)):

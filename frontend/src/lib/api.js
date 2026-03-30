@@ -146,6 +146,11 @@ export const adminAPI = {
   createLevel: (data) => api.post('/admin/member-levels', data),
   updateLevel: (id, data) => api.put(`/admin/member-levels/${id}`, data),
   deleteLevel: (id) => api.delete(`/admin/member-levels/${id}`),
+  // Member Types
+  getMemberTypes: () => api.get('/admin/member-types'),
+  createMemberType: (data) => api.post('/admin/member-types', data),
+  updateMemberType: (id, data) => api.put(`/admin/member-types/${id}`, data),
+  deleteMemberType: (id) => api.delete(`/admin/member-types/${id}`),
 };
 
 // Member API (unified - uses same auth_token)

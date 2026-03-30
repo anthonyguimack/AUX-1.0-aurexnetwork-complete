@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { publicAPI } from '../lib/api';
-import PageBanner from '../components/layout/PageBanner';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
 
 export default function NewsPage() {
@@ -18,7 +17,6 @@ export default function NewsPage() {
 
   return (
     <div data-testid="news-page">
-      <PageBanner title="News & Blog" image="https://images.unsplash.com/photo-1504711434969-e33886168d6c?w=800" />
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
         {categories.length > 0 && (
           <div className="flex gap-3 mb-10 flex-wrap">
