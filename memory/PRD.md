@@ -124,6 +124,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Terms/Privacy unified**: Both now route through DynamicPage for consistent hero + content rendering.
 - Testing: 20/20 backend + 100% frontend verification (Iteration 15)
 
+### Banner Image Removal & Member Types Module (Mar 30, 2026) - COMPLETE
+- **Banner Image removed**: Removed from PagesManager form, DynamicPage, and all system pages (News, Gallery, ReadingList). Hero carousel is now the sole visual header system.
+- **Member Types CRUD**: New `/api/admin/member-types` endpoints + `MemberTypesManager` admin page with full CRUD. Feeds the Member Type dropdown in Members form.
+- **Extended Membership Info**: Added 14 fields to membership tab: Membership Ranking, Status (Free/Professional), Active Date, Expiration Date, Membership Fee, Member Type (dropdown from member_types), Corporate, Application Reviewer, Opportunities Development/Reviewer, Project Development/Reviewer/Management, Content Operator.
+- Testing: 17/17 backend + 100% frontend verification (Iteration 16)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
