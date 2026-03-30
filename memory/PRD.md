@@ -130,6 +130,14 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Extended Membership Info**: Added 14 fields to membership tab: Membership Ranking, Status (Free/Professional), Active Date, Expiration Date, Membership Fee, Member Type (dropdown from member_types), Corporate, Application Reviewer, Opportunities Development/Reviewer, Project Development/Reviewer/Management, Content Operator.
 - Testing: 17/17 backend + 100% frontend verification (Iteration 16)
 
+### Permissions Moved to Member Types + Page Access Control (Mar 30, 2026) - COMPLETE
+- **Permissions on Member Types**: Moved all 10 role permission radio buttons (Corporate, Mentor, Portfolio Dev, Application Reviewer, Opportunities Dev/Reviewer, Project Dev/Reviewer/Management, Content Operator) from the Members form to the Member Types module. Types now have 3 tabs: General, Permissions, Page Access.
+- **Page Access Checklist**: Each Member Type has a page access checklist (all site pages). Controls which pages members of that type can access.
+- **Inherited Permissions**: When editing a member and selecting a type, inherited permissions + page count shown as read-only badges.
+- **Page Access Enforcement**: PageProtectedRoute in App.js checks member's type `allowed_pages` before granting access to login-required pages. Admins bypass all restrictions.
+- **Backend enrichment**: `/auth/me` and `/member/me` now return `_member_type` with `allowed_pages` and `permissions` dict.
+- Testing: 12/12 backend + 100% frontend verification (Iteration 17)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
