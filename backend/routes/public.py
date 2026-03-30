@@ -18,33 +18,43 @@ async def get_public_hero():
     return await db.hero.find_one({}, {"_id": 0}) or {}
 
 @router.get("/public/hero-slides")
-async def get_public_hero_slides():
-    """Returns only currently active hero slides (within date_start/date_end range), sorted by date_start."""
-    from datetime import datetime, timezone
+async def get_public_hero_slides(page: str = Query("")):
+    """Returns only currently active hero slides, optionally filtered by assigned page."""
     now = datetime.now(timezone.utc).isoformat()
     all_slides = await db.hero_slides.find({}, {"_id": 0}).sort("date_start", 1).to_list(100)
     active = []
     for s in all_slides:
         ds = s.get("date_start", "")
         de = s.get("date_end", "")
-        # If no dates set, always show
         if not ds and not de:
             active.append(s)
             continue
-        # If only start date set, show if now >= start
         if ds and not de:
             if now >= ds:
                 active.append(s)
             continue
-        # If only end date set, show if now <= end
         if not ds and de:
             if now <= de:
                 active.append(s)
             continue
-        # Both dates set: show if start <= now <= end
         if ds <= now <= de:
             active.append(s)
+    if page:
+        active = [s for s in active if page in (s.get("assigned_pages") or [])]
     return active
+
+@router.get("/public/site-pages")
+async def get_public_site_pages():
+    """Returns all site pages (system + custom) for hero assignment and other uses."""
+    system_pages = [
+        {"id": "home", "title": "Home", "url": "/", "system": True},
+        {"id": "news", "title": "News", "url": "/news", "system": True},
+        {"id": "gallery", "title": "Gallery", "url": "/gallery", "system": True},
+        {"id": "reading-list", "title": "Reading List", "url": "/reading-list", "system": True},
+    ]
+    nav_pages = await db.nav_pages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    custom = [{"id": p["id"], "title": p["title"], "url": p.get("url", ""), "system": False} for p in nav_pages]
+    return system_pages + custom
 
 @router.get("/public/about")
 async def get_public_about():

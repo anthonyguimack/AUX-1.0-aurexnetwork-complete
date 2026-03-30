@@ -5,6 +5,7 @@ import { authAPI, publicAPI } from './lib/api';
 import { Toaster } from 'sonner';
 import Navbar from './components/layout/Navbar';
 import Footer from './components/layout/Footer';
+import LoginModal from './components/LoginModal';
 import HomePage from './pages/HomePage';
 import NewsPage from './pages/NewsPage';
 import NewsDetailPage from './pages/NewsDetailPage';
@@ -110,6 +111,48 @@ function ProtectedRoute({ children }) {
   return children;
 }
 
+function PageProtectedRoute({ children }) {
+  const { user, loading: authLoading } = useAuth();
+  const location = useLocation();
+  const [pageData, setPageData] = useState(null);
+  const [checking, setChecking] = useState(true);
+  const [showLogin, setShowLogin] = useState(false);
+
+  useEffect(() => {
+    publicAPI.getNavPages().then(r => {
+      const pages = r.data || [];
+      const path = location.pathname;
+      const found = pages.find(p => p.url === path || `/page/${p.id}` === path);
+      setPageData(found || null);
+      setChecking(false);
+    }).catch(() => setChecking(false));
+  }, [location.pathname]);
+
+  if (checking || authLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
+
+  if (pageData?.login_required && !user) {
+    return (
+      <>
+        <div className="min-h-screen flex items-center justify-center bg-slate-50">
+          <div className="text-center max-w-md mx-auto px-6">
+            <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+              <span className="text-white text-2xl" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
+            </div>
+            <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Login Required</h2>
+            <p className="text-slate-500 text-sm mb-6">You need to be logged in to access this page.</p>
+            <button onClick={() => setShowLogin(true)} className="px-6 py-2.5 rounded-sm text-sm font-medium" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="page-login-btn">
+              Login to Continue
+            </button>
+          </div>
+        </div>
+        <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+      </>
+    );
+  }
+
+  return children;
+}
+
 function MemberRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0d0f14]"><div className="animate-spin w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full" /></div>;
@@ -154,10 +197,10 @@ function AppRouter() {
         <Route path="/reading-list" element={<ReadingListPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/map/:slug" element={<MapDetailPage />} />
-        <Route path="/terms" element={<TermsPage />} />
-        <Route path="/privacy" element={<PrivacyPage />} />
+        <Route path="/terms" element={<PageProtectedRoute><TermsPage /></PageProtectedRoute>} />
+        <Route path="/privacy" element={<PageProtectedRoute><PrivacyPage /></PageProtectedRoute>} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
-        <Route path="/page/:pageId" element={<DynamicPage />} />
+        <Route path="/page/:pageId" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="hero" element={<HeroManager />} />

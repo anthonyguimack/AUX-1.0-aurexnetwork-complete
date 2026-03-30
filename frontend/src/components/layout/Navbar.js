@@ -86,6 +86,16 @@ export default function Navbar() {
                   >{page.title}</a>
                 );
               }
+              if (page.open_in_new_tab) {
+                return (
+                  <a key={page.id} href={page.url?.startsWith('#') ? `/${page.url}` : page.url || '/'}
+                    target="_blank" rel="noreferrer"
+                    className="text-sm font-medium transition-colors hover:opacity-70"
+                    style={{ color: location.pathname === page.url ? 'var(--color-accent, #0D9488)' : 'var(--color-heading, #1a2332)' }}
+                    onClick={(e) => handlePageClick(page, e)}
+                  >{page.title}</a>
+                );
+              }
               return (
                 <Link key={page.id} to={page.url?.startsWith('#') ? `/${page.url}` : page.url || '/'}
                   className="text-sm font-medium transition-colors hover:opacity-70"
@@ -128,9 +138,16 @@ export default function Navbar() {
             {baseLinks.map(link => (
               <Link key={link.href} to={link.href} className="block py-2 text-sm font-medium" style={{ color: 'var(--color-heading, #1a2332)' }} onClick={() => setMobileOpen(false)}>{link.label}</Link>
             ))}
-            {headerPages.map(page => (
-              <Link key={page.id} to={page.url || '/'} className="block py-2 text-sm font-medium" style={{ color: 'var(--color-heading, #1a2332)' }} onClick={(e) => { handlePageClick(page, e); setMobileOpen(false); }}>{page.title}</Link>
-            ))}
+            {headerPages.map(page => {
+              if (page.open_in_new_tab || isExternal(page.url)) {
+                return (
+                  <a key={page.id} href={isExternal(page.url) ? page.url : (page.url || '/')} target="_blank" rel="noreferrer" className="block py-2 text-sm font-medium" style={{ color: 'var(--color-heading, #1a2332)' }} onClick={(e) => { handlePageClick(page, e); setMobileOpen(false); }}>{page.title}</a>
+                );
+              }
+              return (
+                <Link key={page.id} to={page.url || '/'} className="block py-2 text-sm font-medium" style={{ color: 'var(--color-heading, #1a2332)' }} onClick={(e) => { handlePageClick(page, e); setMobileOpen(false); }}>{page.title}</Link>
+              );
+            })}
             {user ? (
               <>
                 <Link to="/my-account" className="block py-2 text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }} onClick={() => setMobileOpen(false)}>My Account</Link>

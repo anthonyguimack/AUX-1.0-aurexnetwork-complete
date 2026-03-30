@@ -292,6 +292,15 @@ async def admin_update_page(page_type: str, request: Request, user: dict = Depen
 async def admin_list_nav_pages(user: dict = Depends(require_admin)):
     return await db.nav_pages.find({}, {"_id": 0}).sort("order", 1).to_list(100)
 
+async def _sync_page_type(body: dict):
+    """If nav_page has a page_type, sync content to pages collection so TermsPage/PrivacyPage stay current."""
+    pt = body.get("page_type", "")
+    if pt:
+        sync = {"page_type": pt, "title": body.get("title", ""), "content": body.get("content", ""),
+                "banner_image": body.get("banner_image", ""), "summary": body.get("summary", ""),
+                "updated_at": datetime.now(timezone.utc).isoformat()}
+        await db.pages.update_one({"page_type": pt}, {"$set": sync}, upsert=True)
+
 @router.post("/admin/nav-pages")
 async def admin_create_nav_page(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
@@ -301,11 +310,17 @@ async def admin_create_nav_page(request: Request, user: dict = Depends(require_a
         body.setdefault(k, False)
     for k in ("banner_image", "summary", "content"):
         body.setdefault(k, "")
-    return await crud_create("nav_pages", body)
+    result = await crud_create("nav_pages", body)
+    await _sync_page_type(body)
+    return result
 
 @router.put("/admin/nav-pages/{item_id}")
 async def admin_update_nav_page(item_id: str, request: Request, user: dict = Depends(require_admin)):
-    return await crud_update("nav_pages", item_id, await request.json())
+    body = await request.json()
+    result = await crud_update("nav_pages", item_id, body)
+    if result:
+        await _sync_page_type(result)
+    return result
 
 @router.delete("/admin/nav-pages/{item_id}")
 async def admin_delete_nav_page(item_id: str, user: dict = Depends(require_admin)):

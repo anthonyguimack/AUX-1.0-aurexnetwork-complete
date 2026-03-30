@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { adminAPI } from '../../lib/api';
+import { adminAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Save, Loader2, ArrowLeft } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Checkbox } from '../../components/ui/checkbox';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 import HeroCanvasEditor from '../../components/HeroCanvasEditor';
@@ -28,6 +29,7 @@ const defaultSlide = {
   delay: 9400, speed_per_layer: 400,
   title_start: 1500, subtitle_start: 2000, description_start: 2500,
   button_start: 3000, media_start: 1000,
+  assigned_pages: [],
 };
 
 const quillCls = "[&_.ql-toolbar]:!bg-slate-50 [&_.ql-toolbar]:!border-slate-200 [&_.ql-container]:!border-slate-200 [&_.ql-editor]:!min-h-[80px]";
@@ -39,6 +41,11 @@ export default function HeroSlideForm() {
   const [form, setForm] = useState({ ...defaultSlide });
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [sitePages, setSitePages] = useState([]);
+
+  useEffect(() => {
+    publicAPI.getSitePages().then(r => setSitePages(r.data || [])).catch(() => {});
+  }, []);
 
   useEffect(() => {
     if (isEdit) {
@@ -216,6 +223,33 @@ export default function HeroSlideForm() {
         <h2 className={sectionTitle}>Layer Positioning</h2>
         <p className="text-xs text-slate-400 mb-4">Drag each layer to position it on the slide canvas (700 x 300). Coordinates are saved automatically.</p>
         <HeroCanvasEditor coords={canvasCoords} onChange={handleCanvasChange} backgroundImage={form.background} />
+      </div>
+
+      {/* Page Assignment */}
+      <div className={sectionCls}>
+        <h2 className={sectionTitle}>Page Assignment</h2>
+        <p className="text-xs text-slate-400 mb-4">Select which pages this slide should appear on. If none selected, the slide won't display on any page.</p>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+          {sitePages.map(pg => {
+            const checked = (form.assigned_pages || []).includes(pg.id);
+            return (
+              <label key={pg.id} className={`flex items-center gap-2.5 p-2.5 rounded-sm border cursor-pointer transition-colors ${checked ? 'bg-[#0D9488]/5 border-[#0D9488]/30' : 'bg-slate-50 border-slate-200 hover:border-slate-300'}`}
+                data-testid={`page-assign-${pg.id}`}>
+                <Checkbox checked={checked} onCheckedChange={(v) => {
+                  setForm(p => {
+                    const cur = p.assigned_pages || [];
+                    return { ...p, assigned_pages: v ? [...cur, pg.id] : cur.filter(x => x !== pg.id) };
+                  });
+                }} />
+                <div>
+                  <span className="text-sm font-medium text-[#1a2332]">{pg.title}</span>
+                  <span className="block text-xs text-slate-400 font-mono">{pg.url}</span>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+        {sitePages.length === 0 && <p className="text-xs text-slate-400">Loading pages...</p>}
       </div>
 
       {/* Revolution Slider Parameters */}

@@ -570,7 +570,7 @@ export default function HomePage() {
       publicAPI.getHero(), publicAPI.getAbout(), publicAPI.getServices(),
       publicAPI.getBlog(1, 3), publicAPI.getBooks(), publicAPI.getMaps(),
       publicAPI.getMapLocations(), publicAPI.getGallery(), publicAPI.getPortfolio(),
-      publicAPI.getTestimonials(), publicAPI.getSections(), publicAPI.getHeroSlides()
+      publicAPI.getTestimonials(), publicAPI.getSections(), publicAPI.getHeroSlides('home')
     ]).then(([h, a, s, b, bk, m, l, g, p, t, sec, hs]) => {
       setHero(h.data); setAbout(a.data); setServices(s.data);
       setPosts(b.data.posts || []); setBooks(bk.data); setMaps(m.data);

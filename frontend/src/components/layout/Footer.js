@@ -53,8 +53,8 @@ export default function Footer() {
             <ul className="space-y-2">
               {footerPages.map(page => (
                 <li key={page.id}>
-                  {isExternal(page.url) ? (
-                    <a href={page.url} target={page.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="opacity-60 text-sm hover:opacity-100 transition-opacity flex items-center gap-2">
+                  {isExternal(page.url) || page.open_in_new_tab ? (
+                    <a href={isExternal(page.url) ? page.url : (page.url || '/')} target="_blank" rel="noreferrer" className="opacity-60 text-sm hover:opacity-100 transition-opacity flex items-center gap-2">
                       <span style={{ color: 'var(--color-accent, #0D9488)' }}>&rarr;</span> {page.title}
                     </a>
                   ) : (

@@ -10,7 +10,7 @@ api.interceptors.request.use((config) => {
 export const publicAPI = {
   getSettings: () => api.get('/public/settings'),
   getHero: () => api.get('/public/hero'),
-  getHeroSlides: () => api.get('/public/hero-slides'),
+  getHeroSlides: (page = '') => api.get(`/public/hero-slides${page ? `?page=${page}` : ''}`),
   getAbout: () => api.get('/public/about'),
   getServices: () => api.get('/public/services'),
   getBlog: (page = 1, limit = 9, category = '') => api.get(`/public/blog?page=${page}&limit=${limit}&category=${category}`),
@@ -25,6 +25,7 @@ export const publicAPI = {
   getSections: () => api.get('/public/sections'),
   getPage: (type) => api.get(`/public/page/${type}`),
   getNavPages: () => api.get('/public/nav-pages'),
+  getSitePages: () => api.get('/public/site-pages'),
   getSeo: (path) => api.get(`/public/seo/${path}`),
 };
 
