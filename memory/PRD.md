@@ -144,6 +144,15 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **My Account updated**: MentorshipProfile and MembershipProfile show mentor badge from `_member_type.permissions.is_mentor`.
 - Testing: 11/11 backend + 100% frontend verification (Iteration 18)
 
+### Ebank, Business Card QR, New Member Fields (Mar 30, 2026) - COMPLETE
+- **New Personal Info fields**: HTTP Access (read-only, auto-captured from registration domain), Passport ID#, Zelle #
+- **Ebank tab (Admin)**: Read-only display of 16 financial fields per member, populated from My Account
+- **Business Card tab (Admin)**: Generate QR code for sponsor-based registration, "Click Here"/"View QR" toggle
+- **My Ebank (My Account)**: Editable form for all 16 financial fields + Activities tab (auto-logs each field change with timestamp)
+- **QR/Sponsor Registration**: New registration method via `?sponsor=X` param, independent from invite codes. QR URL built dynamically.
+- **Passport ID#**: Added to My Account Membership Profile (edit + view modes)
+- Testing: 14/14 backend + 100% frontend verification (Iteration 19)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
