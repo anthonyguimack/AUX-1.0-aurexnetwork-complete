@@ -153,6 +153,15 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Passport ID#**: Added to My Account Membership Profile (edit + view modes)
 - Testing: 14/14 backend + 100% frontend verification (Iteration 19)
 
+### Membership Settings & Profile Action Buttons (Mar 31, 2026) - COMPLETE
+- **Admin Membership Settings**: New CMS page (`/admin/membership-settings`) with checkbox grid for 16 profile + 16 ebank fields. Admin selects which fields are "mandatory" for profile completion.
+- **Profile Completion Progress Bar**: Calculates % based only on admin-defined mandatory fields. Color-coded: red (<50%), gold (50-79%), green (80%+).
+- **Change Password Modal**: Wired to `PUT /api/member/change-password` with min 8-char and match validation.
+- **View Full Bio Modal**: Read-only display of member's formatted Summary & Biography HTML.
+- **Steps to Complete Profile Modal**: Lists missing mandatory fields (red) and missing optional fields (gray) separately.
+- **Backend endpoints**: `GET/PUT /api/admin/membership-settings`, `GET /api/public/membership-settings`, `PUT /api/member/change-password`
+- Testing: 11/11 backend + 100% frontend verification (Iteration 20)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
