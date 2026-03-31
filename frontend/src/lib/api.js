@@ -154,6 +154,9 @@ export const adminAPI = {
   createMemberType: (data) => api.post('/admin/member-types', data),
   updateMemberType: (id, data) => api.put(`/admin/member-types/${id}`, data),
   deleteMemberType: (id) => api.delete(`/admin/member-types/${id}`),
+  // Membership Settings
+  getMembershipSettings: () => api.get('/admin/membership-settings'),
+  updateMembershipSettings: (data) => api.put('/admin/membership-settings', data),
 };
 
 // Member API (unified - uses same auth_token)
@@ -191,6 +194,8 @@ export const memberAPI = {
   getCompanies: (industryId) => api.get(`/member/companies${industryId ? `?industry_id=${industryId}` : ''}`),
   getMembersList: () => api.get('/member/members-list'),
   getMyLevel: () => api.get('/member/my-level'),
+  changePassword: (data) => api.put('/member/change-password', data),
+  getMembershipSettings: () => api.get('/public/membership-settings'),
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
 };
 

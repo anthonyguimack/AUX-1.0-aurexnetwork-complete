@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI, geoAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { User, Save, Loader2, Edit3 } from 'lucide-react';
+import { User, Save, Loader2, Edit3, Lock, Eye, ListChecks, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -18,6 +18,27 @@ const fmtDate = (d) => {
   return d;
 };
 
+const FIELD_LABELS = {
+  first_name: 'First Name', last_name: 'Last Name', email: 'Email', phone: 'Phone',
+  gender: 'Gender', date_of_birth: 'Date of Birth', address: 'Address',
+  country: 'Country', state: 'State', city: 'City', zip_code: 'ZIP Code',
+  passport_id: 'Passport ID#', google_account: 'Google Account', avatar: 'Avatar',
+  summary: 'Summary (Bio)', biography: 'Biography',
+  'ebank.investment_amount': 'Investment Amount', 'ebank.additional_capital': 'Additional Capital',
+  'ebank.investment_goal': 'Investment Goal', 'ebank.monthly_savings': 'Monthly Savings',
+  'ebank.deposit_date': 'Deposit Date', 'ebank.target_date': 'Target Date',
+  'ebank.credit_limit': 'Credit Limit', 'ebank.credit_debt': 'Credit Debt',
+  'ebank.risk_level': 'Risk Level', 'ebank.finance_involvement': 'Finance Involvement',
+  'ebank.investment_safety': 'Investment Safety', 'ebank.financial_independence_age': 'Financial Independence Age',
+  'ebank.rate_of_return': 'Rate of Return', 'ebank.investment_duration': 'Investment Duration',
+  'ebank.own_business': 'Own Business', 'ebank.projects': 'Projects',
+};
+
+function stripHtml(html) {
+  if (!html) return '';
+  return html.replace(/<[^>]*>/g, '').trim();
+}
+
 export default function MembershipProfile() {
   const { member, refresh } = useMember();
   const [tab, setTab] = useState('general');
@@ -31,10 +52,21 @@ export default function MembershipProfile() {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  // New modals
+  const [pwOpen, setPwOpen] = useState(false);
+  const [pwForm, setPwForm] = useState({ new_password: '', confirm_password: '' });
+  const [pwLoading, setPwLoading] = useState(false);
+  const [viewBioOpen, setViewBioOpen] = useState(false);
+  const [stepsOpen, setStepsOpen] = useState(false);
+  // Membership settings (mandatory fields)
+  const [mandatoryFields, setMandatoryFields] = useState([]);
+  const [ebankData, setEbankData] = useState({});
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
     geoAPI.getCountries().then(r => setCountries(r.data)).catch(() => {});
+    memberAPI.getMembershipSettings().then(r => setMandatoryFields(r.data?.mandatory_fields || [])).catch(() => {});
+    memberAPI.getEbank().then(r => setEbankData(r.data || {})).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -46,6 +78,7 @@ export default function MembershipProfile() {
         address: member.address || '', country: member.country || '',
         state: member.state || '', city: member.city || '', zip_code: member.zip_code || '',
         google_account: member.google_account || '', avatar: member.avatar || '',
+        passport_id: member.passport_id || '',
       });
       setBioForm({ summary: member.summary || '', biography: member.biography || '' });
       const acts = [];
@@ -71,6 +104,51 @@ export default function MembershipProfile() {
     } else { setCities([]); }
   }, [form.state, states]);
 
+  // --- Profile completion ---
+  const { percentage, missingMandatory, missingOptional } = useMemo(() => {
+    if (!member || mandatoryFields.length === 0) return { percentage: 0, missingMandatory: [], missingOptional: [] };
+
+    const profileFields = mandatoryFields.filter(f => !f.startsWith('ebank.'));
+    const ebankFields = mandatoryFields.filter(f => f.startsWith('ebank.'));
+
+    let filled = 0;
+    const missing = [];
+
+    profileFields.forEach(key => {
+      const val = member[key];
+      if (val && stripHtml(String(val))) filled++;
+      else missing.push(key);
+    });
+
+    ebankFields.forEach(key => {
+      const ebankKey = key.replace('ebank.', '');
+      const val = ebankData[ebankKey];
+      if (val && String(val).trim()) filled++;
+      else missing.push(key);
+    });
+
+    const pct = Math.round((filled / mandatoryFields.length) * 100);
+
+    // Optional: all known fields NOT in mandatory list
+    const allProfileKeys = ['first_name', 'last_name', 'email', 'phone', 'gender', 'date_of_birth', 'address', 'country', 'state', 'city', 'zip_code', 'passport_id', 'google_account', 'avatar', 'summary', 'biography'];
+    const allEbankKeys = ['ebank.investment_amount', 'ebank.additional_capital', 'ebank.investment_goal', 'ebank.monthly_savings', 'ebank.deposit_date', 'ebank.target_date', 'ebank.credit_limit', 'ebank.credit_debt', 'ebank.risk_level', 'ebank.finance_involvement', 'ebank.investment_safety', 'ebank.financial_independence_age', 'ebank.rate_of_return', 'ebank.investment_duration', 'ebank.own_business', 'ebank.projects'];
+    const allKeys = [...allProfileKeys, ...allEbankKeys];
+    const optionalKeys = allKeys.filter(k => !mandatoryFields.includes(k));
+
+    const missingOpt = [];
+    optionalKeys.forEach(key => {
+      if (key.startsWith('ebank.')) {
+        const ek = key.replace('ebank.', '');
+        if (!ebankData[ek] || !String(ebankData[ek]).trim()) missingOpt.push(key);
+      } else {
+        const val = member[key];
+        if (!val || !stripHtml(String(val))) missingOpt.push(key);
+      }
+    });
+
+    return { percentage: pct, missingMandatory: missing, missingOptional: missingOpt };
+  }, [member, mandatoryFields, ebankData]);
+
   const handleSave = async () => {
     setLoading(true);
     try {
@@ -91,6 +169,19 @@ export default function MembershipProfile() {
       refresh();
     } catch { toast.error('Error saving'); }
     finally { setLoading(false); }
+  };
+
+  const handleChangePassword = async () => {
+    if (pwForm.new_password.length < 8) { toast.error('Password must be at least 8 characters'); return; }
+    if (pwForm.new_password !== pwForm.confirm_password) { toast.error('Passwords do not match'); return; }
+    setPwLoading(true);
+    try {
+      await memberAPI.changePassword(pwForm);
+      toast.success('Password changed successfully!');
+      setPwOpen(false);
+      setPwForm({ new_password: '', confirm_password: '' });
+    } catch (e) { toast.error(e.response?.data?.detail || 'Error changing password'); }
+    finally { setPwLoading(false); }
   };
 
   const platformSocials = (settings.social_links || []).map(s => s.platform || s.icon);
@@ -114,6 +205,8 @@ export default function MembershipProfile() {
 
   const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-sm focus:outline-none focus:border-[#c9a84c]/50";
 
+  const progressColor = percentage >= 80 ? '#22c55e' : percentage >= 50 ? '#c9a84c' : '#ef4444';
+
   return (
     <div data-testid="membership-profile-page">
       <div className="flex items-center justify-between mb-6">
@@ -125,6 +218,36 @@ export default function MembershipProfile() {
         </button>
       </div>
 
+      {/* Progress Bar & Action Buttons */}
+      {mandatoryFields.length > 0 && (
+        <div className="mb-6 bg-[#13161e] border border-white/5 rounded-lg p-5" data-testid="profile-completion-section">
+          <div className="flex items-center justify-between mb-3">
+            <h2 className="text-sm font-semibold text-white">Profile Completion</h2>
+            <span className="text-sm font-bold" style={{ color: progressColor }} data-testid="profile-completion-pct">{percentage}%</span>
+          </div>
+          <div className="w-full h-2.5 bg-white/10 rounded-full overflow-hidden mb-4">
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${percentage}%`, backgroundColor: progressColor }} data-testid="profile-progress-bar" />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <button onClick={() => setPwOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded text-xs text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+              data-testid="change-password-btn">
+              <Lock className="w-3.5 h-3.5" /> Change your password
+            </button>
+            <button onClick={() => setViewBioOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded text-xs text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+              data-testid="view-bio-btn">
+              <Eye className="w-3.5 h-3.5" /> View full bio
+            </button>
+            <button onClick={() => setStepsOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-white/5 border border-white/10 rounded text-xs text-gray-300 hover:bg-white/10 hover:text-white transition-colors"
+              data-testid="steps-to-complete-btn">
+              <ListChecks className="w-3.5 h-3.5" /> Steps to complete my profile
+            </button>
+          </div>
+        </div>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-6 flex flex-col items-center">
           <div className="w-28 h-28 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
@@ -135,7 +258,6 @@ export default function MembershipProfile() {
           <p className="mt-3 text-white font-medium text-sm">{member?.first_name} {member?.last_name}</p>
           <p className="text-[#c9a84c] text-xs">{member?.membership_id}</p>
           <p className="text-gray-500 text-xs mt-1">{member?.email}</p>
-          {member?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
           {member?._member_type?.permissions?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
         </div>
 
@@ -288,6 +410,7 @@ export default function MembershipProfile() {
         </div>
       </div>
 
+      {/* Update Biography Modal */}
       <Dialog open={bioOpen} onOpenChange={setBioOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="biography-modal">
           <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Update Biography</DialogTitle></DialogHeader>
@@ -312,6 +435,117 @@ export default function MembershipProfile() {
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
               </button>
             </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Change Password Modal */}
+      <Dialog open={pwOpen} onOpenChange={setPwOpen}>
+        <DialogContent className="sm:max-w-[420px] bg-[#13161e] border-white/10" data-testid="change-password-modal">
+          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Change Password</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label className="text-xs text-gray-400 mb-1 block">New Password</Label>
+              <Input type="password" value={pwForm.new_password}
+                onChange={e => setPwForm(p => ({ ...p, new_password: e.target.value }))}
+                placeholder="Min. 8 characters"
+                className="bg-[#0d0f14] border-white/10 text-white"
+                data-testid="new-password-input" />
+            </div>
+            <div>
+              <Label className="text-xs text-gray-400 mb-1 block">Confirm Password</Label>
+              <Input type="password" value={pwForm.confirm_password}
+                onChange={e => setPwForm(p => ({ ...p, confirm_password: e.target.value }))}
+                placeholder="Re-enter password"
+                className="bg-[#0d0f14] border-white/10 text-white"
+                data-testid="confirm-password-input" />
+            </div>
+            <div className="flex gap-2 pt-2">
+              <button onClick={() => setPwOpen(false)} className="flex-1 py-2 border border-white/10 text-gray-400 rounded text-sm hover:bg-white/5">Cancel</button>
+              <button onClick={handleChangePassword} disabled={pwLoading}
+                className="flex-1 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                data-testid="submit-change-password-btn">
+                {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />} Change Password
+              </button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Full Bio Modal */}
+      <Dialog open={viewBioOpen} onOpenChange={setViewBioOpen}>
+        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="view-bio-modal">
+          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Full Biography</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            {member?.summary && stripHtml(member.summary) ? (
+              <div>
+                <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-2">Summary</h3>
+                <div className="text-sm text-gray-300 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: member.summary }} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">No summary written yet.</p>
+            )}
+            <hr className="border-white/10" />
+            {member?.biography && stripHtml(member.biography) ? (
+              <div>
+                <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-2">Biography</h3>
+                <div className="text-sm text-gray-300 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: member.biography }} />
+              </div>
+            ) : (
+              <p className="text-sm text-gray-500 italic">No biography written yet.</p>
+            )}
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Steps to Complete Profile Modal */}
+      <Dialog open={stepsOpen} onOpenChange={setStepsOpen}>
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="steps-modal">
+          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Steps to Complete Your Profile</DialogTitle></DialogHeader>
+          <div className="space-y-5">
+            {missingMandatory.length > 0 ? (
+              <div>
+                <h3 className="text-xs font-semibold text-red-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  <AlertCircle className="w-3.5 h-3.5" /> Required Fields ({missingMandatory.length})
+                </h3>
+                <div className="space-y-1.5">
+                  {missingMandatory.map(key => (
+                    <div key={key} className="flex items-center gap-2 p-2 bg-red-500/5 border border-red-500/10 rounded text-sm" data-testid={`missing-mandatory-${key}`}>
+                      <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
+                      <span className="text-gray-300">{FIELD_LABELS[key] || key}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded">
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-300">All mandatory fields are complete!</span>
+              </div>
+            )}
+
+            {missingOptional.length > 0 && (
+              <div>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3 flex items-center gap-1.5">
+                  Optional Fields ({missingOptional.length})
+                </h3>
+                <div className="space-y-1.5">
+                  {missingOptional.map(key => (
+                    <div key={key} className="flex items-center gap-2 p-2 bg-white/5 border border-white/5 rounded text-sm" data-testid={`missing-optional-${key}`}>
+                      <div className="w-1.5 h-1.5 rounded-full bg-gray-500 flex-shrink-0" />
+                      <span className="text-gray-400">{FIELD_LABELS[key] || key}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {missingMandatory.length === 0 && missingOptional.length === 0 && (
+              <div className="flex items-center gap-2 p-3 bg-green-500/10 border border-green-500/20 rounded">
+                <CheckCircle2 className="w-4 h-4 text-green-400" />
+                <span className="text-sm text-green-300">Your profile is 100% complete!</span>
+              </div>
+            )}
           </div>
         </DialogContent>
       </Dialog>
