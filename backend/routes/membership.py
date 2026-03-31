@@ -324,20 +324,43 @@ async def get_my_community(member: dict = Depends(get_current_member)):
 @router.put("/member/biography")
 async def update_biography(request: Request, member: dict = Depends(get_current_member)):
     body = await request.json()
+    now = datetime.now(timezone.utc).isoformat()
+    # Log biography field changes
+    for field in ("summary", "biography"):
+        old_val = member.get(field, "")
+        new_val = body.get(field, "")
+        if str(old_val or "") != str(new_val or ""):
+            action = "updated" if old_val else "added"
+            await db.profile_activities.insert_one({
+                "id": str(uuid.uuid4()),
+                "member_id": member["member_id"],
+                "field": field,
+                "action": action,
+                "old_value": "",
+                "new_value": "(content updated)",
+                "timestamp": now,
+            })
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": {
         "summary": body.get("summary", ""),
         "biography": body.get("biography", ""),
         "cover_image": body.get("cover_image", ""),
-        "updated_at": datetime.now(timezone.utc).isoformat()
+        "updated_at": now
     }})
     return {"message": "Biography updated"}
+
+@router.get("/member/profile-activities")
+async def get_profile_activities(member: dict = Depends(get_current_member)):
+    activities = await db.profile_activities.find(
+        {"member_id": member["member_id"]}, {"_id": 0}
+    ).sort("timestamp", -1).to_list(500)
+    return activities
 
 # ---- Update Profile ----
 
 @router.put("/member/profile")
 async def update_profile(request: Request, member: dict = Depends(get_current_member)):
     body = await request.json()
-    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "city", "zip_code", "google_account", "gender", "social_links", "avatar", "email")
+    allowed = ("first_name", "last_name", "phone", "date_of_birth", "address", "country", "state", "city", "zip_code", "google_account", "gender", "social_links", "avatar", "email", "passport_id")
     update = {k: body[k] for k in allowed if k in body}
     # Sync username with email if email changed
     if "email" in update:
@@ -348,7 +371,25 @@ async def update_profile(request: Request, member: dict = Depends(get_current_me
             raise HTTPException(status_code=400, detail="Email already in use by another member")
         update["email"] = new_email
         update["username"] = new_email
-    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(timezone.utc).isoformat()
+    update["updated_at"] = now
+    # Log individual field changes as profile activities
+    skip_activity = ("social_links", "avatar", "updated_at")
+    for field in allowed:
+        if field in body and field not in skip_activity:
+            old_val = member.get(field, "")
+            new_val = body[field]
+            if str(old_val or "") != str(new_val or ""):
+                action = "updated" if old_val else "added"
+                await db.profile_activities.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "member_id": member["member_id"],
+                    "field": field,
+                    "action": action,
+                    "old_value": str(old_val) if old_val else "",
+                    "new_value": str(new_val),
+                    "timestamp": now,
+                })
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": update})
     updated = await db.members.find_one({"member_id": member["member_id"]}, {"_id": 0, "password_hash": 0})
     return updated

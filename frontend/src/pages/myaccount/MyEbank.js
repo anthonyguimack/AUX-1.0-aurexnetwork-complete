@@ -88,7 +88,8 @@ export default function MyEbank() {
                 </div>
               ) : (
                 <Input type={field.type} value={form[field.key] || ''} onChange={e => setField(field.key, e.target.value)}
-                  className="bg-[#0d0f14] border-[#2a2d35] text-white focus:border-[#c9a84c]" data-testid={`ebank-${field.key}`} />
+                  className="bg-[#0d0f14] border-[#2a2d35] text-white focus:border-[#c9a84c]" data-testid={`ebank-${field.key}`}
+                  style={field.type === 'date' ? { colorScheme: 'dark' } : undefined} />
               )}
             </div>
           ))}

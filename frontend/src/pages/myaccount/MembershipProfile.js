@@ -2,8 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI, geoAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { User, Save, Loader2, Edit3, Lock, Eye, ListChecks, CheckCircle2, AlertCircle } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { User, Save, Loader2, Edit3, Lock, Eye, ListChecks, CheckCircle2, AlertCircle, Clock } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import RichTextEditor from '../../components/RichTextEditor';
@@ -18,12 +18,16 @@ const fmtDate = (d) => {
   return d;
 };
 
-const FIELD_LABELS = {
+const PROFILE_FIELD_LABELS = {
   first_name: 'First Name', last_name: 'Last Name', email: 'Email', phone: 'Phone',
   gender: 'Gender', date_of_birth: 'Date of Birth', address: 'Address',
   country: 'Country', state: 'State', city: 'City', zip_code: 'ZIP Code',
-  passport_id: 'Passport ID#', google_account: 'Google Account', avatar: 'Avatar',
+  passport_id: 'ID# (Passport or DNI or etc.)', google_account: 'Google Account', avatar: 'Avatar',
   summary: 'Summary (Bio)', biography: 'Biography',
+};
+
+const COMPLETION_FIELD_LABELS = {
+  ...PROFILE_FIELD_LABELS,
   'ebank.investment_amount': 'Investment Amount', 'ebank.additional_capital': 'Additional Capital',
   'ebank.investment_goal': 'Investment Goal', 'ebank.monthly_savings': 'Monthly Savings',
   'ebank.deposit_date': 'Deposit Date', 'ebank.target_date': 'Target Date',
@@ -39,6 +43,9 @@ function stripHtml(html) {
   return html.replace(/<[^>]*>/g, '').trim();
 }
 
+// Dark dialog class: makes the close button (X) visible on dark backgrounds
+const darkDialogCls = "[&>button]:text-white";
+
 export default function MembershipProfile() {
   const { member, refresh } = useMember();
   const [tab, setTab] = useState('general');
@@ -48,7 +55,7 @@ export default function MembershipProfile() {
   const [settings, setSettings] = useState({});
   const [bioOpen, setBioOpen] = useState(false);
   const [bioForm, setBioForm] = useState({ summary: '', biography: '' });
-  const [activities, setActivities] = useState([]);
+  const [profileActivities, setProfileActivities] = useState([]);
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
@@ -62,11 +69,16 @@ export default function MembershipProfile() {
   const [mandatoryFields, setMandatoryFields] = useState([]);
   const [ebankData, setEbankData] = useState({});
 
+  const fetchActivities = () => {
+    memberAPI.getProfileActivities().then(r => setProfileActivities(r.data || [])).catch(() => {});
+  };
+
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
     geoAPI.getCountries().then(r => setCountries(r.data)).catch(() => {});
     memberAPI.getMembershipSettings().then(r => setMandatoryFields(r.data?.mandatory_fields || [])).catch(() => {});
     memberAPI.getEbank().then(r => setEbankData(r.data || {})).catch(() => {});
+    fetchActivities();
   }, []);
 
   useEffect(() => {
@@ -81,10 +93,6 @@ export default function MembershipProfile() {
         passport_id: member.passport_id || '',
       });
       setBioForm({ summary: member.summary || '', biography: member.biography || '' });
-      const acts = [];
-      if (member.created_at) acts.push({ action: 'Account created', date: member.created_at });
-      if (member.updated_at) acts.push({ action: 'Profile updated', date: member.updated_at });
-      setActivities(acts.sort((a, b) => new Date(b.date) - new Date(a.date)));
     }
   }, [member]);
 
@@ -129,7 +137,6 @@ export default function MembershipProfile() {
 
     const pct = Math.round((filled / mandatoryFields.length) * 100);
 
-    // Optional: all known fields NOT in mandatory list
     const allProfileKeys = ['first_name', 'last_name', 'email', 'phone', 'gender', 'date_of_birth', 'address', 'country', 'state', 'city', 'zip_code', 'passport_id', 'google_account', 'avatar', 'summary', 'biography'];
     const allEbankKeys = ['ebank.investment_amount', 'ebank.additional_capital', 'ebank.investment_goal', 'ebank.monthly_savings', 'ebank.deposit_date', 'ebank.target_date', 'ebank.credit_limit', 'ebank.credit_debt', 'ebank.risk_level', 'ebank.finance_involvement', 'ebank.investment_safety', 'ebank.financial_independence_age', 'ebank.rate_of_return', 'ebank.investment_duration', 'ebank.own_business', 'ebank.projects'];
     const allKeys = [...allProfileKeys, ...allEbankKeys];
@@ -156,6 +163,7 @@ export default function MembershipProfile() {
       toast.success('Profile updated!');
       setEditing(false);
       refresh();
+      fetchActivities();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error saving'); }
     finally { setLoading(false); }
   };
@@ -167,6 +175,7 @@ export default function MembershipProfile() {
       toast.success('Biography updated!');
       setBioOpen(false);
       refresh();
+      fetchActivities();
     } catch { toast.error('Error saving'); }
     finally { setLoading(false); }
   };
@@ -203,7 +212,8 @@ export default function MembershipProfile() {
     { id: 'activities', label: 'Activities' },
   ];
 
-  const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-sm focus:outline-none focus:border-[#c9a84c]/50";
+  // iOS-compatible native select style: font-size 16px prevents iOS zoom
+  const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-base focus:outline-none focus:border-[#c9a84c]/50";
 
   const progressColor = percentage >= 80 ? '#22c55e' : percentage >= 50 ? '#c9a84c' : '#ef4444';
 
@@ -304,38 +314,38 @@ export default function MembershipProfile() {
                     <div className="grid grid-cols-2 gap-3">
                       <div><Label className="text-xs text-gray-400">Phone</Label><Input value={form.phone} onChange={set('phone')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
                       <div><Label className="text-xs text-gray-400">Gender</Label>
-                        <select value={form.gender} onChange={set('gender')} className={selectCls}>
+                        <select value={form.gender} onChange={set('gender')} className={selectCls} style={{ colorScheme: 'dark' }}>
                           <option value="">Select</option><option value="Male">Male</option><option value="Female">Female</option>
                         </select>
                       </div>
                     </div>
-                    <div><Label className="text-xs text-gray-400">Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={set('date_of_birth')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
+                    <div><Label className="text-xs text-gray-400">Date of Birth</Label><Input type="date" value={form.date_of_birth} onChange={set('date_of_birth')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" style={{ colorScheme: 'dark' }} /></div>
                     <div><Label className="text-xs text-gray-400">Address</Label><Input value={form.address} onChange={set('address')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
-                    <div className="grid grid-cols-3 gap-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                       <div>
                         <Label className="text-xs text-gray-400">Country</Label>
-                        <select value={form.country} onChange={e => setForm(p => ({...p, country: e.target.value, state: '', city: ''}))} className={selectCls} data-testid="profile-country-select">
+                        <select value={form.country} onChange={e => setForm(p => ({...p, country: e.target.value, state: '', city: ''}))} className={selectCls} style={{ colorScheme: 'dark' }} data-testid="profile-country-select">
                           <option value="">Select</option>
                           {countries.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
                       </div>
                       <div>
                         <Label className="text-xs text-gray-400">State</Label>
-                        <select value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value, city: ''}))} className={selectCls} disabled={!form.country} data-testid="profile-state-select">
+                        <select value={form.state} onChange={e => setForm(p => ({...p, state: e.target.value, city: ''}))} className={selectCls} style={{ colorScheme: 'dark' }} disabled={!form.country} data-testid="profile-state-select">
                           <option value="">Select</option>
                           {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
                         </select>
                       </div>
                       <div>
                         <Label className="text-xs text-gray-400">City</Label>
-                        <select value={form.city} onChange={set('city')} className={selectCls} disabled={!form.state} data-testid="profile-city-select">
+                        <select value={form.city} onChange={set('city')} className={selectCls} style={{ colorScheme: 'dark' }} disabled={!form.state} data-testid="profile-city-select">
                           <option value="">Select</option>
                           {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
                         </select>
                       </div>
                     </div>
                     <div><Label className="text-xs text-gray-400">ZIP Code</Label><Input value={form.zip_code} onChange={set('zip_code')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
-                    <div><Label className="text-xs text-gray-400">Passport ID#</Label><Input value={form.passport_id || ''} onChange={set('passport_id')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" data-testid="profile-passport-input" /></div>
+                    <div><Label className="text-xs text-gray-400">ID# (Passport or DNI or etc.)</Label><Input value={form.passport_id || ''} onChange={set('passport_id')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" data-testid="profile-passport-input" /></div>
                     <div>
                       <Label className="text-xs text-gray-400">Avatar</Label>
                       <div className="mt-1">
@@ -357,11 +367,11 @@ export default function MembershipProfile() {
                       { label: 'State', value: member?.state || '-' },
                       { label: 'City', value: member?.city || '-' },
                       { label: 'ZIP Code', value: member?.zip_code || '-' },
-                      { label: 'Passport ID#', value: member?.passport_id || '-' },
+                      { label: 'ID# (Passport or DNI or etc.)', value: member?.passport_id || '-' },
                       { label: 'Google Account', value: member?.google_account || '-' },
                     ].map(f => (
                       <div key={f.label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">
-                        <span className="text-xs text-gray-500 w-40 flex-shrink-0">{f.label}</span>
+                        <span className="text-xs text-gray-500 w-48 flex-shrink-0">{f.label}</span>
                         <span className="text-sm text-white">{f.value || '-'}</span>
                       </div>
                     ))}
@@ -393,17 +403,29 @@ export default function MembershipProfile() {
             )}
 
             {tab === 'activities' && (
-              <div>
-                {activities.length > 0 ? (
-                  <div className="space-y-3">
-                    {activities.map((a, i) => (
-                      <div key={i} className="flex items-center justify-between p-3 bg-[#0d0f14] rounded border border-white/5">
-                        <span className="text-sm text-white">{a.action}</span>
-                        <span className="text-xs text-gray-500">{fmtDate(a.date)}</span>
-                      </div>
-                    ))}
+              <div className="space-y-2" data-testid="profile-activities">
+                {profileActivities.length === 0 ? (
+                  <div className="text-center py-12 text-gray-500 text-sm">No activities yet. Start by updating your profile information.</div>
+                ) : profileActivities.map(act => (
+                  <div key={act.id} className="bg-[#0d0f14] rounded-lg p-3 border border-white/5 flex items-start gap-3">
+                    <div className="mt-0.5">
+                      <Clock className="w-4 h-4 text-[#c9a84c]" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm text-white">
+                        <span className={`font-medium ${act.action === 'added' ? 'text-green-400' : 'text-[#c9a84c]'}`}>{act.action === 'added' ? 'Added' : 'Updated'}</span>
+                        {' '}<span className="text-[#c9a84c]">{PROFILE_FIELD_LABELS[act.field] || act.field}</span>
+                      </p>
+                      {act.action === 'updated' && act.old_value && (
+                        <p className="text-xs text-gray-500 mt-0.5 break-words">"{act.old_value}" &rarr; "{act.new_value}"</p>
+                      )}
+                      {act.action === 'added' && act.new_value && (
+                        <p className="text-xs text-gray-500 mt-0.5 break-words">Set to: "{act.new_value}"</p>
+                      )}
+                      <p className="text-xs text-gray-600 mt-1">{new Date(act.timestamp).toLocaleString()}</p>
+                    </div>
                   </div>
-                ) : <p className="text-sm text-gray-500">No activity recorded yet.</p>}
+                ))}
               </div>
             )}
           </div>
@@ -412,8 +434,11 @@ export default function MembershipProfile() {
 
       {/* Update Biography Modal */}
       <Dialog open={bioOpen} onOpenChange={setBioOpen}>
-        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="biography-modal">
-          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Update Biography</DialogTitle></DialogHeader>
+        <DialogContent className={`sm:max-w-[700px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10 ${darkDialogCls}`} data-testid="biography-modal">
+          <DialogHeader>
+            <DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Update Biography</DialogTitle>
+            <DialogDescription className="text-gray-500">Edit your summary and biography below.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label className="text-xs text-gray-400 mb-2 block">Summary</Label>
@@ -441,8 +466,11 @@ export default function MembershipProfile() {
 
       {/* Change Password Modal */}
       <Dialog open={pwOpen} onOpenChange={setPwOpen}>
-        <DialogContent className="sm:max-w-[420px] bg-[#13161e] border-white/10" data-testid="change-password-modal">
-          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Change Password</DialogTitle></DialogHeader>
+        <DialogContent className={`sm:max-w-[420px] bg-[#13161e] border-white/10 ${darkDialogCls}`} data-testid="change-password-modal">
+          <DialogHeader>
+            <DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Change Password</DialogTitle>
+            <DialogDescription className="text-gray-500">Enter your new password below.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-4">
             <div>
               <Label className="text-xs text-gray-400 mb-1 block">New Password</Label>
@@ -472,36 +500,48 @@ export default function MembershipProfile() {
         </DialogContent>
       </Dialog>
 
-      {/* View Full Bio Modal */}
+      {/* View Full Bio Modal — vertical layout, proper rich text rendering */}
       <Dialog open={viewBioOpen} onOpenChange={setViewBioOpen}>
-        <DialogContent className="sm:max-w-[650px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="view-bio-modal">
-          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Full Biography</DialogTitle></DialogHeader>
-          <div className="space-y-4">
-            {member?.summary && stripHtml(member.summary) ? (
-              <div>
-                <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-2">Summary</h3>
-                <div className="text-sm text-gray-300 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: member.summary }} />
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">No summary written yet.</p>
-            )}
+        <DialogContent className={`sm:max-w-[650px] max-h-[85vh] overflow-y-auto overflow-x-hidden bg-[#13161e] border-white/10 ${darkDialogCls}`} data-testid="view-bio-modal">
+          <DialogHeader>
+            <DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Full Biography</DialogTitle>
+            <DialogDescription className="text-gray-500">Your summary and biography content.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-5">
+            <div>
+              <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-3">Summary</h3>
+              {member?.summary && stripHtml(member.summary) ? (
+                <div
+                  className="text-gray-300 break-words bio-rich-content"
+                  dangerouslySetInnerHTML={{ __html: member.summary }}
+                />
+              ) : (
+                <p className="text-sm text-gray-500 italic">No summary written yet.</p>
+              )}
+            </div>
             <hr className="border-white/10" />
-            {member?.biography && stripHtml(member.biography) ? (
-              <div>
-                <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-2">Biography</h3>
-                <div className="text-sm text-gray-300 prose prose-invert prose-sm max-w-none" dangerouslySetInnerHTML={{ __html: member.biography }} />
-              </div>
-            ) : (
-              <p className="text-sm text-gray-500 italic">No biography written yet.</p>
-            )}
+            <div>
+              <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-3">Biography</h3>
+              {member?.biography && stripHtml(member.biography) ? (
+                <div
+                  className="text-gray-300 break-words bio-rich-content"
+                  dangerouslySetInnerHTML={{ __html: member.biography }}
+                />
+              ) : (
+                <p className="text-sm text-gray-500 italic">No biography written yet.</p>
+              )}
+            </div>
           </div>
         </DialogContent>
       </Dialog>
 
       {/* Steps to Complete Profile Modal */}
       <Dialog open={stepsOpen} onOpenChange={setStepsOpen}>
-        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10" data-testid="steps-modal">
-          <DialogHeader><DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Steps to Complete Your Profile</DialogTitle></DialogHeader>
+        <DialogContent className={`sm:max-w-[500px] max-h-[85vh] overflow-y-auto bg-[#13161e] border-white/10 ${darkDialogCls}`} data-testid="steps-modal">
+          <DialogHeader>
+            <DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Steps to Complete Your Profile</DialogTitle>
+            <DialogDescription className="text-gray-500">Fields you still need to fill in.</DialogDescription>
+          </DialogHeader>
           <div className="space-y-5">
             {missingMandatory.length > 0 ? (
               <div>
@@ -512,7 +552,7 @@ export default function MembershipProfile() {
                   {missingMandatory.map(key => (
                     <div key={key} className="flex items-center gap-2 p-2 bg-red-500/5 border border-red-500/10 rounded text-sm" data-testid={`missing-mandatory-${key}`}>
                       <div className="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0" />
-                      <span className="text-gray-300">{FIELD_LABELS[key] || key}</span>
+                      <span className="text-gray-300">{COMPLETION_FIELD_LABELS[key] || key}</span>
                     </div>
                   ))}
                 </div>
@@ -533,7 +573,7 @@ export default function MembershipProfile() {
                   {missingOptional.map(key => (
                     <div key={key} className="flex items-center gap-2 p-2 bg-white/5 border border-white/5 rounded text-sm" data-testid={`missing-optional-${key}`}>
                       <div className="w-1.5 h-1.5 rounded-full bg-gray-500 flex-shrink-0" />
-                      <span className="text-gray-400">{FIELD_LABELS[key] || key}</span>
+                      <span className="text-gray-400">{COMPLETION_FIELD_LABELS[key] || key}</span>
                     </div>
                   ))}
                 </div>
