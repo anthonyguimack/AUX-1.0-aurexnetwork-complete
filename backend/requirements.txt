@@ -95,6 +95,7 @@ python-multipart==0.0.22
 python-slugify==8.0.4
 pytokens==0.4.1
 PyYAML==6.0.3
+qrcode==8.2
 referencing==0.37.0
 regex==2026.2.19
 requests==2.32.5

@@ -29,6 +29,8 @@ export default function MembersManager() {
   const [countries, setCountries] = useState([]);
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
+  const [ebankData, setEbankData] = useState(null);
+  const [qrLoading, setQrLoading] = useState(false);
 
   const load = () => {
     adminAPI.getMembers().then(r => setItems(r.data)).catch(console.error);
@@ -124,9 +126,9 @@ export default function MembersManager() {
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.member_id ? 'Edit' : 'New'} Member</DialogTitle></DialogHeader>
           {editing && (
             <div>
-              <div className="flex gap-1 mb-4 bg-slate-100 rounded p-1">
-                {['personal', 'membership'].map(t => (
-                  <button key={t} onClick={() => setTab(t)} className={`flex-1 px-3 py-1.5 rounded text-sm font-medium capitalize ${tab === t ? 'bg-white shadow text-[#1a2332]' : 'text-slate-500'}`}>{t} Info</button>
+              <div className="flex gap-1 mb-4 bg-slate-100 rounded p-1 flex-wrap">
+                {[{k:'personal',l:'Personal'},{k:'membership',l:'Membership'},{k:'ebank',l:'Ebank'},{k:'business-card',l:'Business Card'}].map(t => (
+                  <button key={t.k} onClick={() => { setTab(t.k); if (t.k === 'ebank' && editing.member_id) adminAPI.getMemberEbank(editing.member_id).then(r => setEbankData(r.data)).catch(() => setEbankData(null)); }} className={`flex-1 px-3 py-1.5 rounded text-xs font-medium ${tab === t.k ? 'bg-white shadow text-[#1a2332]' : 'text-slate-500'}`}>{t.l}</button>
                 ))}
               </div>
 
@@ -172,6 +174,11 @@ export default function MembersManager() {
                     </div>
                   </div>
                   <div><Label className="text-xs">ZIP Code</Label><Input value={editing.zip_code || ''} onChange={e => setEditing({...editing, zip_code: e.target.value})} className="mt-1" /></div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div><Label className="text-xs">Passport ID#</Label><Input value={editing.passport_id || ''} onChange={e => setEditing({...editing, passport_id: e.target.value})} className="mt-1" data-testid="passport-id-input" /></div>
+                    <div><Label className="text-xs">Zelle #</Label><Input value={editing.zelle || ''} onChange={e => setEditing({...editing, zelle: e.target.value})} className="mt-1" data-testid="zelle-input" /></div>
+                  </div>
+                  <div><Label className="text-xs">HTTP Access</Label><Input value={editing.http_access || ''} readOnly className="mt-1 bg-slate-100 cursor-not-allowed" data-testid="http-access-input" /><p className="text-xs text-slate-400 mt-0.5">Auto-populated from the domain where the member registered.</p></div>
                   <div><Label className="text-xs">Avatar</Label>
                     <ImageUpload value={editing.avatar || ''} onChange={v => setEditing({...editing, avatar: v})} />
                   </div>
@@ -246,6 +253,78 @@ export default function MembersManager() {
                     {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Create a Member Type with Mentor permission enabled and assign it to members.</p>}
                   </div>
                   {editing.member_id && <div><Label className="text-xs">New Password (leave blank to keep)</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>}
+                </div>
+              )}
+
+              {/* Ebank Tab (Read-only) */}
+              {tab === 'ebank' && (
+                <div className="space-y-3" data-testid="ebank-tab">
+                  <p className="text-xs text-slate-400 mb-2">These fields are managed by the member from their My Account.</p>
+                  {ebankData ? (
+                    <div className="grid grid-cols-2 gap-3">
+                      {[
+                        ['Investment Amount', ebankData.investment_amount],
+                        ['Additional Capital', ebankData.additional_capital],
+                        ['Investment Goal', ebankData.investment_goal],
+                        ['Monthly Savings', ebankData.monthly_savings],
+                        ['Deposit Date', ebankData.deposit_date],
+                        ['Target Date', ebankData.target_date],
+                        ['Credit Limit', ebankData.credit_limit],
+                        ['Credit Debt', ebankData.credit_debt],
+                        ['Risk Level (1-5)', ebankData.risk_level],
+                        ['Finance Involvement (1-5)', ebankData.finance_involvement],
+                        ['Investment Safety (1-5)', ebankData.investment_safety],
+                        ['Financial Independence Age', ebankData.financial_independence_age],
+                        ['Rate of Return', ebankData.rate_of_return],
+                        ['Investment Duration', ebankData.investment_duration],
+                        ['Start Own Business?', ebankData.own_business],
+                        ['Projects', ebankData.projects],
+                      ].map(([label, val]) => (
+                        <div key={label} className="p-2.5 bg-slate-50 rounded border border-slate-100">
+                          <p className="text-xs text-slate-400">{label}</p>
+                          <p className="text-sm font-medium text-[#1a2332] mt-0.5">{val || '-'}</p>
+                        </div>
+                      ))}
+                    </div>
+                  ) : <p className="text-sm text-slate-400 text-center py-8">No Ebank data available for this member.</p>}
+                </div>
+              )}
+
+              {/* Business Card Tab */}
+              {tab === 'business-card' && (
+                <div className="space-y-4" data-testid="business-card-tab">
+                  <div>
+                    <Label className="text-xs font-medium">Generate QR</Label>
+                    {editing.qr_code ? (
+                      <div className="mt-2 space-y-3">
+                        <div className="flex items-center gap-2">
+                          <button onClick={() => {
+                            const w = window.open('', '_blank');
+                            w.document.write(`<html><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0"><img src="${editing.qr_code}" style="max-width:400px" /></body></html>`);
+                          }} className="text-[#0D9488] underline text-sm font-medium" data-testid="view-qr-btn">View QR</button>
+                        </div>
+                        <img src={editing.qr_code} alt="QR Code" className="w-48 h-48 border rounded" data-testid="qr-image" />
+                        <p className="text-xs text-slate-400 break-all">{editing.qr_url}</p>
+                      </div>
+                    ) : (
+                      <div className="mt-2">
+                        <button onClick={async () => {
+                          if (!editing.member_id) { toast.error('Save the member first'); return; }
+                          setQrLoading(true);
+                          try {
+                            const baseUrl = window.location.origin;
+                            const r = await adminAPI.generateMemberQR(editing.member_id, { base_url: baseUrl });
+                            setEditing(prev => ({ ...prev, qr_code: r.data.qr_code, qr_url: r.data.qr_url }));
+                            toast.success('QR generated!');
+                          } catch (e) { toast.error('Failed to generate QR'); }
+                          finally { setQrLoading(false); }
+                        }} className="text-[#0D9488] underline text-sm font-medium" disabled={qrLoading} data-testid="generate-qr-btn">
+                          {qrLoading ? 'Generating...' : 'Click Here'}
+                        </button>
+                        <p className="text-xs text-slate-400 mt-1">Generate a QR code for sponsor-based registration.</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
 

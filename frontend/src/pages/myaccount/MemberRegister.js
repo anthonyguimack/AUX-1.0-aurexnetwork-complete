@@ -15,6 +15,7 @@ export default function MemberRegister() {
   const [code, setCode] = useState(params.get('code') || '');
   const [codeValid, setCodeValid] = useState(null);
   const [codeInfo, setCodeInfo] = useState(null);
+  const [sponsorInfo, setSponsorInfo] = useState(null);
   const [validating, setValidating] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -32,7 +33,20 @@ export default function MemberRegister() {
     geoAPI.getCountries().then(r => setCountries(r.data)).catch(() => {});
   }, []);
 
-  useEffect(() => { if (params.get('code')) validateCode(params.get('code')); }, []); // eslint-disable-line
+  // Handle ?sponsor=X (QR-based) or ?code=X (invite code)
+  useEffect(() => {
+    const sponsorNum = params.get('sponsor');
+    if (sponsorNum) {
+      setValidating(true);
+      memberAPI.validateSponsor(sponsorNum).then(r => {
+        setSponsorInfo({ ...r.data, membership_number: parseInt(sponsorNum) });
+        setStep('form');
+      }).catch(() => { setSponsorInfo(null); setError('Invalid sponsor link'); })
+      .finally(() => setValidating(false));
+    } else if (params.get('code')) {
+      validateCode(params.get('code'));
+    }
+  }, []); // eslint-disable-line
 
   useEffect(() => {
     if (form.country) {
@@ -67,7 +81,14 @@ export default function MemberRegister() {
     if (form.password !== form.confirm_password) { setError('Passwords do not match'); return; }
     setLoading(true);
     try {
-      const res = await memberAPI.register({ invite_code: code, ...form });
+      const httpAccess = window.location.hostname;
+      const payload = { ...form, http_access: httpAccess };
+      if (sponsorInfo) {
+        payload.sponsor_membership_number = sponsorInfo.membership_number;
+      } else {
+        payload.invite_code = code;
+      }
+      const res = await memberAPI.register(payload);
       if (res.data.token) { localStorage.setItem('auth_token', res.data.token); if (res.data.member) setUserData(res.data.member); }
       toast.success(`Welcome! Your membership ID is ${res.data.membership_id}`);
       navigate('/my-account/membership-profile', { replace: true });
@@ -91,7 +112,7 @@ export default function MemberRegister() {
             <span className="text-white text-xl font-semibold">{brandName}</span>
           </Link>
 
-          {step === 'code' && (
+          {step === 'code' && !sponsorInfo && (
             <>
               <h1 className="text-3xl font-bold text-white mb-2" style={{ fontFamily: "'DM Serif Display', serif" }}>Join {brandName}</h1>
               <p className="text-gray-400 text-sm mb-8">Enter your invitation code to get started</p>
@@ -113,10 +134,10 @@ export default function MemberRegister() {
           {step === 'form' && (
             <>
               <div className="flex items-center gap-2 mb-4">
-                <button onClick={() => setStep('code')} className="text-gray-500 hover:text-white"><ArrowLeft className="w-4 h-4" /></button>
+                {!sponsorInfo && <button onClick={() => setStep('code')} className="text-gray-500 hover:text-white"><ArrowLeft className="w-4 h-4" /></button>}
                 <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Create Account</h1>
               </div>
-              <div className="bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-lg p-3 mb-4 text-xs text-[#c9a84c]">Sponsored by: <strong>{codeInfo?.sponsor_membership_id}</strong></div>
+              <div className="bg-[#c9a84c]/10 border border-[#c9a84c]/20 rounded-lg p-3 mb-4 text-xs text-[#c9a84c]">Sponsored by: <strong>{sponsorInfo?.sponsor_membership_id || codeInfo?.sponsor_membership_id}</strong> {sponsorInfo?.sponsor_name && `(${sponsorInfo.sponsor_name})`}</div>
               {error && <div className="bg-red-500/10 border border-red-500/20 text-red-400 text-sm p-3 rounded-lg mb-4">{error}</div>}
               <form onSubmit={handleSubmit} className="space-y-3 max-h-[60vh] overflow-y-auto pr-1">
                 <div className="grid grid-cols-2 gap-3">

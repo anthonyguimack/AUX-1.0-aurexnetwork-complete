@@ -4,6 +4,9 @@ from datetime import datetime, timezone, timedelta
 import uuid
 import secrets
 import aiofiles
+import qrcode
+import io
+import base64
 
 router = APIRouter()
 
@@ -156,9 +159,23 @@ async def validate_invite_code(code: str):
 async def register_member(request: Request):
     body = await request.json()
     code_str = body.get("invite_code", "").strip()
-    code_doc = await db.invite_codes.find_one({"code": code_str, "status": "available"}, {"_id": 0})
-    if not code_doc:
-        raise HTTPException(status_code=400, detail="Invalid or used invite code")
+    sponsor_number = body.get("sponsor_membership_number")  # QR-based
+    sponsor_doc = None
+    code_doc = None
+
+    if code_str:
+        # Invite code registration
+        code_doc = await db.invite_codes.find_one({"code": code_str, "status": "available"}, {"_id": 0})
+        if not code_doc:
+            raise HTTPException(status_code=400, detail="Invalid or used invite code")
+    elif sponsor_number is not None:
+        # QR/sponsor-based registration (no invite code needed)
+        sponsor_doc = await db.members.find_one({"membership_number": int(sponsor_number)}, {"_id": 0, "password_hash": 0})
+        if not sponsor_doc:
+            raise HTTPException(status_code=400, detail="Invalid sponsor")
+    else:
+        raise HTTPException(status_code=400, detail="An invite code or sponsor link is required")
+
     email = body.get("email", "").strip().lower()
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
@@ -178,9 +195,17 @@ async def register_member(request: Request):
     first_name = body.get("first_name", "").strip()
     last_name = body.get("last_name", "").strip()
     username = email
-    # Assign default Level 1 (lowest order level)
     default_level = await db.member_levels.find_one({}, {"_id": 0, "id": 1}, sort=[("order", 1)])
     default_level_id = default_level["id"] if default_level else None
+
+    # Determine sponsor info
+    if code_doc:
+        s_id = code_doc["owner_member_id"]
+        s_num = code_doc["owner_membership_number"]
+    else:
+        s_id = sponsor_doc["member_id"]
+        s_num = sponsor_doc["membership_number"]
+
     new_member = {
         "member_id": member_id,
         "membership_number": membership_number,
@@ -199,18 +224,21 @@ async def register_member(request: Request):
         "avatar": body.get("avatar", ""),
         "summary": "", "biography": "",
         "social_links": [],
-        "sponsor_id": code_doc["owner_member_id"],
-        "sponsor_membership_number": code_doc["owner_membership_number"],
+        "sponsor_id": s_id,
+        "sponsor_membership_number": s_num,
         "mentor_id": None, "mentor_membership_number": None,
         "role": "member",
         "is_mentor": False,
         "portfolio_development": False,
         "level_id": default_level_id,
+        "http_access": body.get("http_access", ""),
+        "passport_id": "", "zelle": "",
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
-    # Mark invite code as used
-    await db.invite_codes.update_one({"id": code_doc["id"]}, {"$set": {
+    # Mark invite code as used (only if invite code was used)
+    if code_doc:
+        await db.invite_codes.update_one({"id": code_doc["id"]}, {"$set": {
         "status": "used",
         "used_at": datetime.now(timezone.utc).isoformat(),
         "used_by_membership_id": membership_id,
@@ -654,3 +682,123 @@ async def get_my_level(member: dict = Depends(get_current_member)):
         return None
     level = await db.member_levels.find_one({"id": level_id}, {"_id": 0})
     return level
+
+
+# ---- Ebank ----
+
+EBANK_FIELDS = [
+    "investment_amount", "additional_capital", "investment_goal",
+    "monthly_savings", "deposit_date", "target_date",
+    "credit_limit", "credit_debt", "risk_level", "finance_involvement",
+    "investment_safety", "financial_independence_age",
+    "rate_of_return", "investment_duration", "own_business", "projects",
+]
+
+@router.get("/member/ebank")
+async def get_my_ebank(member: dict = Depends(get_current_member)):
+    doc = await db.ebank.find_one({"member_id": member["member_id"]}, {"_id": 0})
+    return doc or {"member_id": member["member_id"]}
+
+@router.put("/member/ebank")
+async def update_my_ebank(request: Request, member: dict = Depends(get_current_member)):
+    body = await request.json()
+    mid = member["member_id"]
+    existing = await db.ebank.find_one({"member_id": mid}, {"_id": 0})
+    now = datetime.now(timezone.utc).isoformat()
+
+    update = {k: body[k] for k in EBANK_FIELDS if k in body}
+    update["member_id"] = mid
+    update["updated_at"] = now
+
+    # Log individual field changes as activities
+    for field in EBANK_FIELDS:
+        if field in body:
+            old_val = existing.get(field, "") if existing else ""
+            new_val = body[field]
+            if str(old_val) != str(new_val):
+                action = "updated" if old_val else "added"
+                await db.ebank_activities.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "member_id": mid,
+                    "field": field,
+                    "action": action,
+                    "old_value": str(old_val) if old_val else "",
+                    "new_value": str(new_val),
+                    "timestamp": now,
+                })
+
+    await db.ebank.update_one({"member_id": mid}, {"$set": update}, upsert=True)
+    return await db.ebank.find_one({"member_id": mid}, {"_id": 0})
+
+@router.get("/member/ebank/activities")
+async def get_my_ebank_activities(member: dict = Depends(get_current_member)):
+    activities = await db.ebank_activities.find(
+        {"member_id": member["member_id"]}, {"_id": 0}
+    ).sort("timestamp", -1).to_list(500)
+    return activities
+
+@router.get("/admin/members/{member_id}/ebank")
+async def admin_get_member_ebank(member_id: str, user: dict = Depends(require_admin)):
+    doc = await db.ebank.find_one({"member_id": member_id}, {"_id": 0})
+    return doc or {"member_id": member_id}
+
+
+# ---- QR / Business Card ----
+
+@router.post("/member/generate-qr")
+async def generate_member_qr(request: Request, member: dict = Depends(get_current_member)):
+    """Generate QR code for sponsor-based registration."""
+    body = await request.json()
+    base_url = body.get("base_url", "").rstrip("/")
+    if not base_url:
+        raise HTTPException(status_code=400, detail="base_url is required")
+    reg_url = f"{base_url}/my-account/register?sponsor={member['membership_number']}"
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(reg_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    qr_b64 = base64.b64encode(buf.read()).decode()
+    qr_data_url = f"data:image/png;base64,{qr_b64}"
+    # Store QR in member document
+    await db.members.update_one(
+        {"member_id": member["member_id"]},
+        {"$set": {"qr_code": qr_data_url, "qr_url": reg_url, "qr_generated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"qr_code": qr_data_url, "qr_url": reg_url}
+
+@router.post("/admin/members/{member_id}/generate-qr")
+async def admin_generate_member_qr(member_id: str, request: Request, user: dict = Depends(require_admin)):
+    """Admin generates QR for a member."""
+    body = await request.json()
+    base_url = body.get("base_url", "").rstrip("/")
+    if not base_url:
+        raise HTTPException(status_code=400, detail="base_url is required")
+    member = await db.members.find_one({"member_id": member_id}, {"_id": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+    reg_url = f"{base_url}/my-account/register?sponsor={member['membership_number']}"
+    qr = qrcode.QRCode(version=1, box_size=10, border=4)
+    qr.add_data(reg_url)
+    qr.make(fit=True)
+    img = qr.make_image(fill_color="black", back_color="white")
+    buf = io.BytesIO()
+    img.save(buf, format="PNG")
+    buf.seek(0)
+    qr_b64 = base64.b64encode(buf.read()).decode()
+    qr_data_url = f"data:image/png;base64,{qr_b64}"
+    await db.members.update_one(
+        {"member_id": member_id},
+        {"$set": {"qr_code": qr_data_url, "qr_url": reg_url, "qr_generated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"qr_code": qr_data_url, "qr_url": reg_url}
+
+@router.get("/member/validate-sponsor/{membership_number}")
+async def validate_sponsor(membership_number: int):
+    """Validate a sponsor by membership number for QR-based registration."""
+    member = await db.members.find_one({"membership_number": membership_number}, {"_id": 0, "password_hash": 0})
+    if not member:
+        raise HTTPException(status_code=404, detail="Sponsor not found")
+    return {"valid": True, "sponsor_membership_id": member.get("membership_id", ""), "sponsor_name": f"{member.get('first_name', '')} {member.get('last_name', '')}".strip()}

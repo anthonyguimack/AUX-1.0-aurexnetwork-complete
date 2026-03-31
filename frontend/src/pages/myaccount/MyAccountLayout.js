@@ -3,13 +3,14 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
   { id: 'membership-profile', label: 'Membership Profile', icon: User, href: '/my-account/membership-profile' },
   { id: 'mentorship-profile', label: 'Mentorship Profile', icon: Award, href: '/my-account/mentorship-profile' },
   { id: 'my-sponsor', label: 'My Sponsor', icon: UserCheck, href: '/my-account/my-sponsor' },
+  { id: 'ebank', label: 'My Ebank', icon: Wallet, href: '/my-account/ebank' },
   { id: 'invite-code', label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
   { id: 'my-community', label: 'My Community', icon: Users, href: '/my-account/my-community' },
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
@@ -20,6 +21,7 @@ const ROUTE_TO_PERM = {
   '/my-account/membership-profile': 'membership-profile',
   '/my-account/mentorship-profile': 'mentorship-profile',
   '/my-account/my-sponsor': 'my-sponsor',
+  '/my-account/ebank': 'ebank',
   '/my-account/invite-code': 'invite-code',
   '/my-account/my-community': 'my-community',
   '/my-account/portfolios': 'portfolios',

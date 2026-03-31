@@ -213,6 +213,7 @@ export default function MembershipProfile() {
                       </div>
                     </div>
                     <div><Label className="text-xs text-gray-400">ZIP Code</Label><Input value={form.zip_code} onChange={set('zip_code')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" /></div>
+                    <div><Label className="text-xs text-gray-400">Passport ID#</Label><Input value={form.passport_id || ''} onChange={set('passport_id')} className="mt-1 bg-[#0d0f14] border-white/10 text-white" data-testid="profile-passport-input" /></div>
                     <div>
                       <Label className="text-xs text-gray-400">Avatar</Label>
                       <div className="mt-1">
@@ -234,6 +235,7 @@ export default function MembershipProfile() {
                       { label: 'State', value: member?.state || '-' },
                       { label: 'City', value: member?.city || '-' },
                       { label: 'ZIP Code', value: member?.zip_code || '-' },
+                      { label: 'Passport ID#', value: member?.passport_id || '-' },
                       { label: 'Google Account', value: member?.google_account || '-' },
                     ].map(f => (
                       <div key={f.label} className="flex flex-col sm:flex-row sm:items-center gap-1 sm:gap-4">

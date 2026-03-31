@@ -47,6 +47,7 @@ import MentorshipProfile from './pages/myaccount/MentorshipProfile';
 import MySponsor from './pages/myaccount/MySponsor';
 import InviteCode from './pages/myaccount/InviteCode';
 import MyCommunity from './pages/myaccount/MyCommunity';
+import MyEbank from './pages/myaccount/MyEbank';
 import PortfolioList from './pages/myaccount/PortfolioList';
 import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
@@ -228,6 +229,7 @@ function AppRouter() {
           <Route path="mentorship-profile" element={<MentorshipProfile />} />
           <Route path="my-sponsor" element={<MySponsor />} />
           <Route path="invite-code" element={<InviteCode />} />
+          <Route path="ebank" element={<MyEbank />} />
           <Route path="my-community" element={<MyCommunity />} />
           <Route path="portfolios" element={<PortfolioList />} />
           <Route path="portfolios/new" element={<PortfolioForm />} />
