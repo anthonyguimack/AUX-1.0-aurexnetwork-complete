@@ -162,6 +162,14 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Backend endpoints**: `GET/PUT /api/admin/membership-settings`, `GET /api/public/membership-settings`, `PUT /api/member/change-password`
 - Testing: 11/11 backend + 100% frontend verification (Iteration 20)
 
+### Profile & Ebank Fixes (Mar 31, 2026) - COMPLETE
+- **Passport ID# field bug fix**: Added `passport_id` to allowed update fields in backend. Label changed to "ID# (Passport or DNI or etc.)".
+- **Bio Modal overhaul**: Close button (X) visible on dark bg, vertical-only scrolling (no horizontal overflow), proper WYSIWYG rendering (h1=2rem, h2=1.5rem, bold, italic, lists, blockquotes via `.bio-rich-content` CSS).
+- **Profile Activities tab**: New detailed field-level activity log (like MyEbank), tracks old/new values with timestamps via `GET /api/member/profile-activities`.
+- **iOS select fix**: Country/State/City/Gender selects use `text-base` (16px) + `colorScheme: 'dark'` to prevent iOS Safari zoom and picker issues.
+- **Ebank date calendar**: Deposit Date & Target Date inputs get `colorScheme: 'dark'` for native calendar picker styling.
+- Testing: 9/9 backend + 100% frontend verification (Iteration 21)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
