@@ -684,6 +684,44 @@ async def get_my_level(member: dict = Depends(get_current_member)):
     return level
 
 
+# ---- Change Password ----
+
+@router.put("/member/change-password")
+async def member_change_password(request: Request, member: dict = Depends(get_current_member)):
+    body = await request.json()
+    new_password = body.get("new_password", "")
+    confirm = body.get("confirm_password", "")
+    if len(new_password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if new_password != confirm:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+    await db.members.update_one(
+        {"member_id": member["member_id"]},
+        {"$set": {"password_hash": hash_password(new_password), "updated_at": datetime.now(timezone.utc).isoformat()}}
+    )
+    return {"message": "Password changed successfully"}
+
+
+# ---- Membership Settings (Admin) ----
+
+@router.get("/admin/membership-settings")
+async def get_membership_settings(user: dict = Depends(require_admin)):
+    doc = await db.membership_settings.find_one({}, {"_id": 0})
+    return doc or {"mandatory_fields": []}
+
+@router.put("/admin/membership-settings")
+async def update_membership_settings(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    update = {"mandatory_fields": body.get("mandatory_fields", []), "updated_at": datetime.now(timezone.utc).isoformat()}
+    await db.membership_settings.update_one({}, {"$set": update}, upsert=True)
+    return await db.membership_settings.find_one({}, {"_id": 0})
+
+@router.get("/public/membership-settings")
+async def get_public_membership_settings():
+    doc = await db.membership_settings.find_one({}, {"_id": 0})
+    return doc or {"mandatory_fields": []}
+
+
 # ---- Ebank ----
 
 EBANK_FIELDS = [
