@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
+import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
@@ -33,10 +34,14 @@ const sidebarItems = [
 
 export default function AdminLayout() {
   const { user, logout } = useAuth();
+  const settings = useSettings();
   const location = useLocation();
   const navigate = useNavigate();
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOff = settings.logo_off;
+  const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
   const handleLogout = async () => { await logout(); navigate('/'); };
 
@@ -57,10 +62,16 @@ export default function AdminLayout() {
           style={{ borderBottom: `1px solid rgba(255,255,255,0.1)` }}>
           {!collapsed && (
             <Link to="/admin" className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ backgroundColor: v('accent', '#0D9488') }}>
-                <span className="text-white text-xs font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
-              </div>
-              <span className="text-sm font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Legacy CMS</span>
+              {logoSrc ? (
+                <img src={logoSrc} alt="Admin" className="h-7 w-auto object-contain" data-testid="admin-sidebar-logo-img" />
+              ) : (
+                <>
+                  <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ backgroundColor: v('accent', '#0D9488') }}>
+                    <span className="text-white text-xs font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                  </div>
+                  <span className="text-sm font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Legacy'} CMS</span>
+                </>
+              )}
             </Link>
           )}
           <button onClick={() => setCollapsed(!collapsed)} className="hidden md:block text-white/50 hover:text-white" data-testid="sidebar-collapse-btn">

@@ -11,7 +11,7 @@ export default function ReadingListPage() {
 
   return (
     <div data-testid="reading-list-page">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 pt-24 md:pt-28">
         {/* Inspirational quote */}
         <div className="bg-[#F8FAFC] p-8 md:p-12 rounded-sm border border-slate-100 mb-12 text-center">
           <Quote className="w-10 h-10 mx-auto mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} />

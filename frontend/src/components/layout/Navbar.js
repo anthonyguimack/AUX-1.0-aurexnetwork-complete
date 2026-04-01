@@ -76,8 +76,10 @@ function DefaultNavbar() {
   const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
-  const logoOn = settings.logo_on;
-  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
+  const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
+  // Default theme always has solid bg, so use logo_on_2 (or fallback to logo_on_1)
+  const logoSrc = resolveSrc(settings.logo_on_2 || settings.logo_on_1 || settings.logo_on);
+  const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   if (isAdmin) return null;
 
@@ -96,14 +98,14 @@ function DefaultNavbar() {
           <Link to="/" className="flex items-center gap-2" data-testid="brand-logo">
             {logoSrc ? (
               <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-8 w-auto object-contain" data-testid="navbar-logo-img" />
-            ) : (
+            ) : settingsLoaded ? (
               <>
                 <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
                   <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
                 </div>
                 <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading-color, #1a2332)' }}>{settings.brand_name || 'Legacy'}</span>
               </>
-            )}
+            ) : <div className="h-8 w-24" />}
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <NavLinks {...{ baseLinks, headerPages, isExternal, handlePageClick, location, user }} />
@@ -112,6 +114,7 @@ function DefaultNavbar() {
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="search-toggle"><Search className="w-4 h-4" /></button>
             {user ? (
               <div className="flex items-center gap-2">
+                <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-sm hover:opacity-80" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="nav-my-account">My Account</Link>
                 {user.role === 'admin' && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-sm" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }}>Admin</Link>}
                 <button onClick={logout} className="text-sm flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }}><LogOut className="w-4 h-4" /></button>
               </div>
@@ -128,6 +131,7 @@ function DefaultNavbar() {
           <div className="md:hidden border-t px-6 py-4 space-y-3 bg-white">
             {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{link.label}</Link>)}
             {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>)}
+            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
       </header>
@@ -142,8 +146,10 @@ function ModernNavbar() {
   const [scrolled, setScrolled] = useState(false);
   const [hasHero, setHasHero] = useState(true);
   const API = process.env.REACT_APP_BACKEND_URL;
-  const logoOn = settings.logo_on;
-  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
+  const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
+  const logoOn1 = resolveSrc(settings.logo_on_1 || settings.logo_on);
+  const logoOn2 = resolveSrc(settings.logo_on_2 || settings.logo_on);
+  const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -176,16 +182,19 @@ function ModernNavbar() {
         data-testid="main-navbar">
         <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
-            {logoSrc ? (
-              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="navbar-logo-img" />
-            ) : (
-              <>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
-                  <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
-                </div>
-                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>{settings.brand_name || 'Legacy'}</span>
-              </>
-            )}
+            {(() => {
+              const currentLogo = showSolid ? logoOn2 : logoOn1;
+              if (currentLogo) return <img src={currentLogo} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="navbar-logo-img" />;
+              if (!settingsLoaded) return <div className="h-10 w-28" />;
+              return (
+                <>
+                  <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
+                    <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                  </div>
+                  <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>{settings.brand_name || 'Legacy'}</span>
+                </>
+              );
+            })()}
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             {baseLinks.map(link => (
@@ -206,6 +215,7 @@ function ModernNavbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2">
+                <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-full hover:opacity-80" style={{ color: textColor }} data-testid="nav-my-account">My Account</Link>
                 {user.role === 'admin' && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }}>Admin</Link>}
                 <button onClick={logout} className="p-2 hover:opacity-70" style={{ color: textColor }}><LogOut className="w-4 h-4" /></button>
               </div>
@@ -220,6 +230,8 @@ function ModernNavbar() {
         {mobileOpen && (
           <div className="md:hidden px-6 py-4 space-y-3 bg-white shadow-lg">
             {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{link.label}</Link>)}
+            {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>)}
+            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
       </header>
@@ -232,8 +244,9 @@ function ClassicNavbar() {
   const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
-  const logoOn = settings.logo_on;
-  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
+  const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
+  const logoSrc = resolveSrc(settings.logo_on_2 || settings.logo_on_1 || settings.logo_on);
+  const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   if (isAdmin) return null;
 
@@ -253,6 +266,7 @@ function ClassicNavbar() {
           <div>
             {user ? (
               <div className="flex items-center gap-3">
+                <Link to="/my-account/membership-profile" className="font-medium hover:opacity-70" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="nav-my-account">My Account</Link>
                 {user.role === 'admin' && <Link to="/admin" className="font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>Admin Panel</Link>}
                 <button onClick={logout} className="flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-primary, #1a2332)' }}><LogOut className="w-3 h-3" /> Logout</button>
               </div>
@@ -268,7 +282,7 @@ function ClassicNavbar() {
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
             {logoSrc ? (
               <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-9 w-auto object-contain" data-testid="navbar-logo-img" />
-            ) : (
+            ) : settingsLoaded ? (
               <>
                 <div className="w-9 h-9 rounded-none flex items-center justify-center border-2" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: 'var(--color-primary, #1a2332)' }}>
                   <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>{(settings.brand_name || 'L')[0]}</span>
@@ -278,7 +292,7 @@ function ClassicNavbar() {
                   <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>{settings.tagline || 'Consulting'}</span>
                 </div>
               </>
-            )}
+            ) : <div className="h-9 w-28" />}
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {baseLinks.map(link => (
@@ -307,6 +321,8 @@ function ClassicNavbar() {
         {mobileOpen && (
           <div className="md:hidden px-6 py-4 space-y-3" style={{ backgroundColor: '#faf9f6', borderTop: '1px solid #e8e4de' }}>
             {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{link.label}</Link>)}
+            {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{page.title}</Link>)}
+            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-accent, #0D9488)', fontFamily: "'Playfair Display', serif" }}>My Account</Link>}
           </div>
         )}
       </header>

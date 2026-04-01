@@ -5,6 +5,8 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Save, Loader2 } from 'lucide-react';
 
+import ImageUpload from '../../components/ImageUpload';
+
 export default function AboutManager() {
   const [data, setData] = useState({ label: '', title: '', description: '', phone: '', signature_name: '', signature_title: '', image: '' });
   const [loading, setLoading] = useState(false);
@@ -30,8 +32,8 @@ export default function AboutManager() {
         <div><Label>Description</Label><textarea value={data.description} onChange={e => setData({...data, description: e.target.value})} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Phone</Label><Input value={data.phone} onChange={e => setData({...data, phone: e.target.value})} className="mt-1" /></div>
-          <div><Label>Image URL</Label><Input value={data.image} onChange={e => setData({...data, image: e.target.value})} className="mt-1" /></div>
         </div>
+        <div><Label>Image</Label><ImageUpload value={data.image} onChange={v => setData({...data, image: v})} className="mt-1" /></div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Signature Name</Label><Input value={data.signature_name} onChange={e => setData({...data, signature_name: e.target.value})} className="mt-1" /></div>
           <div><Label>Signature Title</Label><Input value={data.signature_title} onChange={e => setData({...data, signature_title: e.target.value})} className="mt-1" /></div>

@@ -258,3 +258,31 @@ html {
 [data-testid="admin-layout"] .bg-teal-50 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 10%, white) !important; }
 [data-testid="admin-layout"] .text-teal-700 { color: var(--ad-accent, #0D9488) !important; }
 
+/* === DIALOG/MODAL — Admin button overrides (portals render outside admin-layout) === */
+[role="dialog"] .bg-\[\#0D9488\] { background-color: var(--ad-button-bg, #0D9488) !important; }
+[role="dialog"] .bg-\[\#0D9488\].text-white { color: var(--ad-button-text, #ffffff) !important; }
+[role="dialog"] .text-\[\#0D9488\] { color: var(--ad-accent, #0D9488) !important; }
+[role="dialog"] .hover\:text-\[\#0D9488\]:hover { color: var(--ad-accent, #0D9488) !important; }
+[role="dialog"] .bg-\[\#0D9488\]\/10 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 10%, transparent) !important; }
+
+
+/* === Rich Text Content — Prevent horizontal overflow === */
+.rich-text-content {
+  overflow-x: hidden;
+  word-break: break-word;
+  max-width: 100%;
+}
+.rich-text-content img {
+  max-width: 100%;
+  height: auto;
+}
+.rich-text-content table {
+  max-width: 100%;
+  overflow-x: auto;
+  display: block;
+}
+.rich-text-content pre {
+  overflow-x: auto;
+  max-width: 100%;
+}
+

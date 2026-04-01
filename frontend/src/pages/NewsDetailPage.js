@@ -25,7 +25,7 @@ export default function NewsDetailPage() {
           </div>
         </div>
       </div>
-      <div className="max-w-4xl mx-auto px-6 md:px-12 py-12">
+      <div className="max-w-4xl mx-auto px-6 md:px-12 py-12 pt-24 md:pt-28">
         <div className="flex items-center gap-6 mb-8 pb-6 border-b border-slate-200">
           <div className="flex items-center gap-2 text-sm text-slate-500">
             <User className="w-4 h-4 text-[#0D9488]" /> {post.author}

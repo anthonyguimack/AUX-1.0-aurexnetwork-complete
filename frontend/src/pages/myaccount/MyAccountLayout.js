@@ -93,8 +93,8 @@ export default function MyAccountLayout() {
         <div className="p-5" style={{ borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
           <Link to="/" className="flex items-center gap-2" data-testid="myaccount-brand">
             {(() => {
-              const logoOn = settings.logo_on;
-              const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${logoOn}` : logoOn) : null;
+              const logoOff = settings.logo_off;
+              const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${logoOff}` : logoOff) : null;
               if (logoSrc) return <img src={logoSrc} alt={brandName} className="h-8 w-auto object-contain" data-testid="sidebar-logo-img" />;
               return (
                 <>

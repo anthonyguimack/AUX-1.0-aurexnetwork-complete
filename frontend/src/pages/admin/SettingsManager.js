@@ -158,15 +158,22 @@ export default function SettingsManager() {
 
             <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Logo &amp; Favicon</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <Label>Logo On <span className="text-xs text-slate-400 font-normal">(Header &amp; Sidebar)</span></Label>
-                <p className="text-xs text-slate-400 mb-2">Displayed in the site header and My Account sidebar.</p>
-                <ImageUpload value={settings.logo_on || ''} onChange={v => setSettings({...settings, logo_on: v})} data-testid="settings-logo-on" />
+                <Label>Logo On #1 <span className="text-xs text-slate-400 font-normal">(Hero / Initial)</span></Label>
+                <p className="text-xs text-slate-400 mb-2">Shown on the hero or when the page first loads (before scrolling).</p>
+                <ImageUpload value={settings.logo_on_1 || ''} onChange={v => setSettings({...settings, logo_on_1: v})} data-testid="settings-logo-on-1" />
               </div>
               <div>
-                <Label>Logo Off <span className="text-xs text-slate-400 font-normal">(Footer)</span></Label>
-                <p className="text-xs text-slate-400 mb-2">Displayed in the site footer. Replaces the text fallback.</p>
+                <Label>Logo On #2 <span className="text-xs text-slate-400 font-normal">(Scrolled Header)</span></Label>
+                <p className="text-xs text-slate-400 mb-2">Shown when the header has a white/solid background (after scrolling).</p>
+                <ImageUpload value={settings.logo_on_2 || ''} onChange={v => setSettings({...settings, logo_on_2: v})} data-testid="settings-logo-on-2" />
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <Label>Logo Off <span className="text-xs text-slate-400 font-normal">(Footer, Admin Sidebar, My Account)</span></Label>
+                <p className="text-xs text-slate-400 mb-2">Displayed in the footer, admin sidebar, and My Account sidebar.</p>
                 <ImageUpload value={settings.logo_off || ''} onChange={v => setSettings({...settings, logo_off: v})} data-testid="settings-logo-off" />
               </div>
               <div>
@@ -175,6 +182,11 @@ export default function SettingsManager() {
                 <ImageUpload value={settings.favicon || ''} onChange={v => setSettings({...settings, favicon: v})} data-testid="settings-favicon" />
               </div>
             </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Footer Text</h3>
+            <div><Label>Footer Description</Label><p className="text-xs text-slate-400 mb-1">Text shown below the logo in the footer.</p><textarea value={settings.footer_description || ''} onChange={e => setSettings({...settings, footer_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="settings-footer-description" /></div>
+            <div><Label>Footer Copyright</Label><p className="text-xs text-slate-400 mb-1">Copyright text at the bottom of the footer.</p><Input value={settings.footer_copyright || ''} onChange={e => setSettings({...settings, footer_copyright: e.target.value})} className="mt-1" data-testid="settings-footer-copyright" /></div>
           </div>
         </TabsContent>
 

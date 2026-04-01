@@ -17,7 +17,7 @@ export default function NewsPage() {
 
   return (
     <div data-testid="news-page">
-      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
+      <div className="max-w-7xl mx-auto px-6 md:px-12 py-16 pt-24 md:pt-28">
         {categories.length > 0 && (
           <div className="flex gap-3 mb-10 flex-wrap">
             <button onClick={() => setCategory('')} className={`px-5 py-2 rounded-sm text-sm font-medium transition-colors ${!category ? 'bg-[#1a2332] text-white' : 'bg-white text-slate-600 border border-slate-200'}`} data-testid="news-cat-all">All</button>

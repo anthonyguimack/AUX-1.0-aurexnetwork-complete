@@ -54,7 +54,7 @@ function DefaultFooter() {
                 </>
               )}
             </div>
-            <p className="opacity-60 text-sm leading-relaxed">Strategic consulting for businesses seeking sustainable growth and lasting impact.</p>
+            <p className="opacity-60 text-sm leading-relaxed">{settings.footer_description || 'Strategic consulting for businesses seeking sustainable growth and lasting impact.'}</p>
           </div>
           <div>
             <h4 className="text-base font-semibold mb-4" style={{ fontFamily: 'Playfair Display, serif' }}>Quick Links</h4>
@@ -98,7 +98,7 @@ function DefaultFooter() {
         </div>
       </div>
       <div className="border-t border-white/10 py-4">
-        <p className="text-center opacity-40 text-sm">Legacy - Copyright All rights reserved.</p>
+        <p className="text-center opacity-40 text-sm">{settings.footer_copyright || 'Legacy Consulting - All rights reserved.'}</p>
       </div>
     </footer>
   );
@@ -129,7 +129,7 @@ function ModernFooter() {
                 </>
               )}
             </div>
-            <p className="text-white/50 text-sm leading-relaxed max-w-sm mb-6">Strategic consulting for businesses seeking sustainable growth and lasting impact in today's dynamic market.</p>
+            <p className="text-white/50 text-sm leading-relaxed max-w-sm mb-6">{settings.footer_description || 'Strategic consulting for businesses seeking sustainable growth and lasting impact in today\'s dynamic market.'}</p>
             <div className="flex items-center gap-3">
               {socialLinks.map(link => {
                 const IconComp = socialIconMap[link.icon] || Facebook;
@@ -142,6 +142,15 @@ function ModernFooter() {
             <ul className="space-y-3">
               {[{ label: 'Home', href: '/' }, { label: 'News', href: '/news' }, { label: 'Gallery', href: '/gallery' }, { label: 'Reading List', href: '/reading-list' }].map(link => (
                 <li key={link.href}><Link to={link.href} className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="w-3 h-3" /> {link.label}</Link></li>
+              ))}
+              {footerPages.map(page => (
+                <li key={page.id}>
+                  {isExternal(page.url) || page.open_in_new_tab ? (
+                    <a href={isExternal(page.url) ? page.url : (page.url || '/')} target="_blank" rel="noreferrer" className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="w-3 h-3" /> {page.title}</a>
+                  ) : (
+                    <Link to={page.url || '/'} className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2"><ArrowRight className="w-3 h-3" /> {page.title}</Link>
+                  )}
+                </li>
               ))}
             </ul>
           </div>
@@ -156,7 +165,7 @@ function ModernFooter() {
         </div>
       </div>
       <div className="relative border-t border-white/5 py-5">
-        <p className="text-center text-white/30 text-xs">Legacy Consulting - All rights reserved.</p>
+        <p className="text-center text-white/30 text-xs">{settings.footer_copyright || 'Legacy Consulting - All rights reserved.'}</p>
       </div>
     </footer>
   );
@@ -190,7 +199,7 @@ function ClassicFooter() {
                   </>
                 )}
               </div>
-              <p className="text-white/50 text-sm leading-relaxed" style={{ fontFamily: "'Playfair Display', serif" }}>Trusted advisory services for lasting business success.</p>
+              <p className="text-white/50 text-sm leading-relaxed" style={{ fontFamily: "'Playfair Display', serif" }}>{settings.footer_description || 'Trusted advisory services for lasting business success.'}</p>
             </div>
             <div>
               <h4 className="text-white text-sm font-bold mb-4 pb-2" style={{ fontFamily: "'Playfair Display', serif", borderBottom: '1px solid var(--color-accent, #0D9488)' }}>Site Map</h4>
@@ -231,7 +240,7 @@ function ClassicFooter() {
         </div>
       </div>
       <div className="py-3 text-center" style={{ backgroundColor: '#0f1a27' }}>
-        <p className="text-white/30 text-xs" style={{ fontFamily: "'Playfair Display', serif" }}>Legacy Consulting - All rights reserved.</p>
+        <p className="text-white/30 text-xs" style={{ fontFamily: "'Playfair Display', serif" }}>{settings.footer_copyright || 'Legacy Consulting - All rights reserved.'}</p>
       </div>
     </footer>
   );

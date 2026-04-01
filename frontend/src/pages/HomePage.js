@@ -251,12 +251,23 @@ function ReadingListSection({ books, theme }) {
           <Link to="/reading-list" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View All <ArrowRight className="w-4 h-4" /></Link>
         </div>
         <div className={`grid gap-6 ${theme === 'modern' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5' : theme === 'classic' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'}`}>
-          {books.slice(0, theme === 'modern' ? 5 : theme === 'classic' ? 4 : 5).map(b => (
-            <Link to="/reading-list" key={b.id} className={`group transition-all ${theme === 'modern' ? 'rounded-xl overflow-hidden shadow-sm hover:shadow-lg' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md'}`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
-              {b.cover_image && <div className={`${theme === 'modern' ? 'h-56' : 'h-48'} overflow-hidden`}><img src={b.cover_image?.startsWith('/api') ? `${API}${b.cover_image}` : b.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
+          {books.slice(0, theme === 'modern' ? 5 : theme === 'classic' ? 4 : 5).map(b => {
+            const coverImg = b.image || b.cover_image;
+            const imgSrc = coverImg ? (coverImg.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${coverImg}` : coverImg) : null;
+            return (
+            <Link to="/reading-list" key={b.id} className={`group transition-all ${theme === 'modern' ? 'rounded-xl overflow-hidden shadow-sm hover:shadow-lg bg-white' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md bg-white' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md bg-white'}`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
+              {imgSrc ? (
+                <div className={`${theme === 'modern' ? 'h-56' : 'h-48'} overflow-hidden`}>
+                  <img src={imgSrc} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform" />
+                </div>
+              ) : (
+                <div className={`${theme === 'modern' ? 'h-56' : 'h-48'} flex items-center justify-center`} style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                  <BookOpen className="w-8 h-8 text-white/50" />
+                </div>
+              )}
               <div className="p-3"><p className="text-sm font-medium truncate" style={{ color: 'var(--color-heading, #1a2332)' }}>{b.title}</p><p className="text-xs text-slate-400 truncate">{b.author}</p></div>
             </Link>
-          ))}
+          );})}
         </div>
       </div>
     </section>

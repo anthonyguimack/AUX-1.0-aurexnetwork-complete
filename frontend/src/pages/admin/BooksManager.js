@@ -6,6 +6,8 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 
+import ImageUpload from '../../components/ImageUpload';
+
 const emptyBook = { title: '', author: '', description: '', image: '', amazon_link: '', other_links: [], featured: false };
 
 export default function BooksManager() {
@@ -74,7 +76,7 @@ export default function BooksManager() {
               <div><Label>Synopsis</Label><textarea value={editing.synopsis || ''} onChange={e => setEditing({...editing, synopsis: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="What is the book about?" /></div>
               <div><Label>Who Is It For?</Label><textarea value={editing.who_is_it_for || ''} onChange={e => setEditing({...editing, who_is_it_for: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
               <div><Label>About the Author</Label><textarea value={editing.about_author || ''} onChange={e => setEditing({...editing, about_author: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-              <div><Label>Cover Image URL</Label><Input value={editing.image} onChange={e => setEditing({...editing, image: e.target.value})} className="mt-1" /></div>
+              <div><Label>Cover Image</Label><ImageUpload value={editing.image} onChange={v => setEditing({...editing, image: v})} className="mt-1" /></div>
               <div><Label>Amazon Link</Label><Input value={editing.amazon_link} onChange={e => setEditing({...editing, amazon_link: e.target.value})} className="mt-1" /></div>
               <div className="flex items-center gap-2">
                 <input type="checkbox" checked={editing.featured} onChange={e => setEditing({...editing, featured: e.target.checked})} id="featured" />
