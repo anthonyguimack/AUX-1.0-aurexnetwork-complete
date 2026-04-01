@@ -5,9 +5,47 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
+import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, THEMES } from '../../lib/themeColors';
+
+function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
+  const [open, setOpen] = useState(true);
+  return (
+    <div className="border rounded-sm overflow-hidden" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }} data-testid={`color-group-${testIdPrefix}`}>
+      <button onClick={() => setOpen(!open)} className="w-full flex items-center justify-between px-5 py-3 text-left hover:bg-slate-50 transition-colors">
+        <div>
+          <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>{title}</h3>
+          <p className="text-xs mt-0.5" style={{ color: 'var(--ad-text-secondary, #64748b)' }}>{description}</p>
+        </div>
+        {open ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+      </button>
+      {open && (
+        <div className="px-5 py-4 border-t border-slate-100">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+            {colors.map(cf => (
+              <div key={cf.key} className="p-2.5 border border-slate-100 rounded-sm">
+                <Label className="text-xs block mb-1.5">{cf.label}</Label>
+                <div className="flex items-center gap-2">
+                  <input type="color" value={values[cf.key] || cf.default} onChange={e => onChange(cf.key, e.target.value)} className="w-7 h-7 rounded-sm cursor-pointer border-0 flex-shrink-0" />
+                  <Input value={values[cf.key] || cf.default} onChange={e => onChange(cf.key, e.target.value)} className="flex-1 h-7 text-xs font-mono" data-testid={`color-${testIdPrefix}-${cf.key}`} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <button onClick={() => {
+            const defaults = {};
+            colors.forEach(c => { defaults[c.key] = c.default; });
+            Object.keys(defaults).forEach(k => onChange(k, defaults[k]));
+          }} className="mt-3 text-xs text-slate-400 hover:text-slate-600 hover:underline">
+            Reset to defaults
+          </button>
+        </div>
+      )}
+    </div>
+  );
+}
 
 export default function SettingsManager() {
   const [settings, setSettings] = useState({});
@@ -19,7 +57,7 @@ export default function SettingsManager() {
 
   const save = async () => {
     setLoading(true);
-    try { await adminAPI.updateSettings(settings); toast.success('Settings saved!'); }
+    try { await adminAPI.updateSettings(settings); toast.success('Settings saved! Refresh the page to see color changes.'); }
     catch { toast.error('Error saving'); }
     finally { setLoading(false); }
   };
@@ -28,8 +66,14 @@ export default function SettingsManager() {
     setSettings(prev => ({ ...prev, sections: { ...prev.sections, [key]: { ...prev.sections?.[key], [field]: value } } }));
   };
 
-  const updateColor = (key, value) => {
-    setSettings(prev => ({ ...prev, colors: { ...prev.colors, [key]: value } }));
+  const updateThemeColor = (group, key, value) => {
+    setSettings(prev => ({
+      ...prev,
+      theme_colors: {
+        ...prev.theme_colors,
+        [group]: { ...(prev.theme_colors || {})[group], [key]: value }
+      }
+    }));
   };
 
   const updateSocialLink = (index, field, value) => {
@@ -74,27 +118,19 @@ export default function SettingsManager() {
     finally { setTestingEmail(false); }
   };
 
-  const colors = settings.colors || {};
-  const colorFields = [
-    { key: 'primary', label: 'Primary Color' },
-    { key: 'accent', label: 'Accent Color' },
-    { key: 'button_bg', label: 'Button Background' },
-    { key: 'button_text', label: 'Button Text' },
-    { key: 'link_color', label: 'Link Color' },
-    { key: 'tab_active_bg', label: 'Tab Active Background' },
-    { key: 'tab_active_text', label: 'Tab Active Text' },
-    { key: 'icon_color', label: 'Icon Color' },
-    { key: 'heading_color', label: 'Heading Color' },
-    { key: 'body_text', label: 'Body Text Color' },
-    { key: 'footer_bg', label: 'Footer Background' },
-    { key: 'footer_text', label: 'Footer Text' },
-  ];
+  const tc = settings.theme_colors || {};
+  // Migrate legacy colors if theme_colors.website is empty
+  const websiteColors = tc.website || settings.colors || {};
+  const myAccountColors = tc.my_account || {};
+  const adminColors = tc.admin || {};
+
+  const activeTheme = settings.active_theme || 'default';
 
   return (
     <div data-testid="settings-manager">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Settings</h1>
-        <button onClick={save} disabled={loading} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2 disabled:opacity-50" data-testid="settings-save-btn">
+        <h1 className="text-2xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Settings</h1>
+        <button onClick={save} disabled={loading} className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="settings-save-btn">
           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Settings
         </button>
       </div>
@@ -102,6 +138,7 @@ export default function SettingsManager() {
         <TabsList className="mb-4 flex-wrap">
           <TabsTrigger value="general"><Globe className="w-3 h-3 mr-1" />General</TabsTrigger>
           <TabsTrigger value="colors"><Palette className="w-3 h-3 mr-1" />Colors</TabsTrigger>
+          <TabsTrigger value="themes"><Layout className="w-3 h-3 mr-1" />Themes</TabsTrigger>
           <TabsTrigger value="sections"><Shield className="w-3 h-3 mr-1" />Sections</TabsTrigger>
           <TabsTrigger value="social"><Globe className="w-3 h-3 mr-1" />Social Links</TabsTrigger>
           <TabsTrigger value="email"><Mail className="w-3 h-3 mr-1" />Email/SMTP</TabsTrigger>
@@ -126,17 +163,61 @@ export default function SettingsManager() {
         </TabsContent>
 
         <TabsContent value="colors">
-          <div className="bg-white rounded-sm border border-slate-100 p-6">
-            <p className="text-sm text-slate-500 mb-4">Manage all website colors. Changes will be reflected globally across the entire interface.</p>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {colorFields.map(cf => (
-                <div key={cf.key} className="p-3 border border-slate-100 rounded-sm">
-                  <Label className="text-xs">{cf.label}</Label>
-                  <div className="flex items-center gap-2 mt-1">
-                    <input type="color" value={colors[cf.key] || '#000000'} onChange={e => updateColor(cf.key, e.target.value)} className="w-8 h-8 rounded-sm cursor-pointer border-0" />
-                    <Input value={colors[cf.key] || ''} onChange={e => updateColor(cf.key, e.target.value)} className="flex-1 h-8 text-xs font-mono" data-testid={`color-${cf.key}`} />
+          <div className="space-y-4" data-testid="colors-tab">
+            <div className="bg-white rounded-sm border border-slate-100 p-4">
+              <p className="text-sm text-slate-500">Customize colors for every section of the application. Changes apply globally after saving.</p>
+            </div>
+            <ColorGroup
+              title="Website"
+              description="Colors for the public-facing frontend — header, hero, cards, buttons, footer."
+              colors={WEBSITE_COLORS}
+              values={websiteColors}
+              onChange={(key, val) => updateThemeColor('website', key, val)}
+              testIdPrefix="website"
+            />
+            <ColorGroup
+              title="My Account (Member Portal)"
+              description="Colors for the member portal — sidebar, cards, forms, modals, progress bars."
+              colors={MYACCOUNT_COLORS}
+              values={myAccountColors}
+              onChange={(key, val) => updateThemeColor('my_account', key, val)}
+              testIdPrefix="myaccount"
+            />
+            <ColorGroup
+              title="CMS (Admin Panel)"
+              description="Colors for the admin interface — sidebar, navbar, tables, buttons, badges."
+              colors={ADMIN_COLORS}
+              values={adminColors}
+              onChange={(key, val) => updateThemeColor('admin', key, val)}
+              testIdPrefix="admin"
+            />
+          </div>
+        </TabsContent>
+
+        <TabsContent value="themes">
+          <div className="bg-white rounded-sm border border-slate-100 p-6" data-testid="themes-tab">
+            <h3 className="font-semibold mb-1" style={{ color: 'var(--ad-heading, #1a2332)' }}>Website Theme</h3>
+            <p className="text-sm text-slate-500 mb-6">Select a layout template for the public website. This only affects the frontend — Admin Panel and My Account are not changed.</p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+              {THEMES.map(theme => (
+                <button key={theme.id}
+                  onClick={() => setSettings(prev => ({ ...prev, active_theme: theme.id }))}
+                  className={`text-left rounded-lg overflow-hidden border-2 transition-all hover:shadow-lg ${activeTheme === theme.id ? 'border-[#0D9488] shadow-md' : 'border-slate-200 hover:border-slate-300'}`}
+                  data-testid={`theme-${theme.id}`}
+                >
+                  <div className="aspect-[16/10] bg-slate-100 relative overflow-hidden">
+                    <ThemePreview themeId={theme.id} />
+                    {activeTheme === theme.id && (
+                      <div className="absolute top-2 right-2 w-6 h-6 bg-[#0D9488] rounded-full flex items-center justify-center">
+                        <Check className="w-3.5 h-3.5 text-white" />
+                      </div>
+                    )}
                   </div>
-                </div>
+                  <div className="p-3">
+                    <p className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>{theme.name}</p>
+                    <p className="text-xs text-slate-500 mt-0.5">{theme.description}</p>
+                  </div>
+                </button>
               ))}
             </div>
           </div>
@@ -174,13 +255,13 @@ export default function SettingsManager() {
                 </div>
               ))}
             </div>
-            <button onClick={addSocialLink} className="mt-3 flex items-center gap-2 text-sm text-[#0D9488] hover:underline" data-testid="add-social-link-btn"><Plus className="w-4 h-4" /> Add Social Link</button>
+            <button onClick={addSocialLink} className="mt-3 flex items-center gap-2 text-sm hover:underline" style={{ color: 'var(--ad-accent, #0D9488)' }} data-testid="add-social-link-btn"><Plus className="w-4 h-4" /> Add Social Link</button>
           </div>
         </TabsContent>
 
         <TabsContent value="email">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-            <h3 className="font-semibold text-[#1a2332]">SMTP Configuration</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>SMTP Configuration</h3>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>SMTP Host</Label><Input value={settings.smtp_host || ''} onChange={e => setSettings({...settings, smtp_host: e.target.value})} className="mt-1" placeholder="valor-smtp.us-east-2.amazonaws.com" data-testid="smtp-host-input" /></div>
               <div><Label>SMTP Port</Label><Input type="number" value={settings.smtp_port || 587} onChange={e => setSettings({...settings, smtp_port: parseInt(e.target.value)})} className="mt-1" data-testid="smtp-port-input" /></div>
@@ -190,7 +271,7 @@ export default function SettingsManager() {
               <div><Label>SMTP Password</Label><Input type="password" value={settings.smtp_password || ''} onChange={e => setSettings({...settings, smtp_password: e.target.value})} className="mt-1" data-testid="smtp-pass-input" /></div>
             </div>
             <hr className="border-slate-200" />
-            <h3 className="font-semibold text-[#1a2332]">Email Sender/Receiver</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>Email Sender/Receiver</h3>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>From Name ($name_from)</Label><Input value={settings.name_from || ''} onChange={e => setSettings({...settings, name_from: e.target.value})} className="mt-1" placeholder="Contact form sender name" data-testid="name-from-input" /><p className="text-xs text-slate-400 mt-1">Uses contact form's "name" field if empty</p></div>
               <div><Label>From Email ($from)</Label><Input value={settings.email_from || ''} onChange={e => setSettings({...settings, email_from: e.target.value})} className="mt-1" placeholder="verified@yourdomain.com" data-testid="email-from-input" /><p className="text-xs text-slate-400 mt-1">Must be verified in AWS SES</p></div>
@@ -204,10 +285,10 @@ export default function SettingsManager() {
               <Input value={settings.email_cc || ''} onChange={e => setSettings({...settings, email_cc: e.target.value})} className="mt-1" placeholder="monitor1@company.com, monitor2@company.com" data-testid="email-cc-input" />
             </div>
             <div className="flex gap-3 pt-2">
-              <button onClick={testConnection} disabled={testingConn} className="flex items-center gap-2 px-4 py-2 border border-[#0D9488] text-[#0D9488] rounded-sm text-sm font-medium hover:bg-[#0D9488]/5 disabled:opacity-50" data-testid="test-connection-btn">
+              <button onClick={testConnection} disabled={testingConn} className="flex items-center gap-2 px-4 py-2 border rounded-sm text-sm font-medium hover:bg-slate-50 disabled:opacity-50" style={{ borderColor: 'var(--ad-accent, #0D9488)', color: 'var(--ad-accent, #0D9488)' }} data-testid="test-connection-btn">
                 {testingConn ? <Loader2 className="w-4 h-4 animate-spin" /> : <Wifi className="w-4 h-4" />} Test Connection
               </button>
-              <button onClick={testEmail} disabled={testingEmail} className="flex items-center gap-2 px-4 py-2 bg-[#0D9488] text-white rounded-sm text-sm font-medium hover:bg-[#0D9488]/80 disabled:opacity-50" data-testid="test-email-btn">
+              <button onClick={testEmail} disabled={testingEmail} className="flex items-center gap-2 px-4 py-2 text-white rounded-sm text-sm font-medium disabled:opacity-50" style={{ backgroundColor: 'var(--ad-accent, #0D9488)' }} data-testid="test-email-btn">
                 {testingEmail ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Test Email
               </button>
             </div>
@@ -216,7 +297,7 @@ export default function SettingsManager() {
 
         <TabsContent value="blogapi">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-            <h3 className="font-semibold text-[#1a2332]">External Blog API</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>External Blog API</h3>
             <p className="text-sm text-slate-500">Configure the external JSON API URL for the Blog section on the homepage. The News section uses internal posts.</p>
             <div>
               <Label>Blog API URL</Label>
@@ -228,7 +309,7 @@ export default function SettingsManager() {
 
         <TabsContent value="membership">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-            <h3 className="font-semibold text-[#1a2332]">Membership Settings</h3>
+            <h3 className="font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>Membership Settings</h3>
             <div className="grid grid-cols-2 gap-4">
               <div><Label>AUX Prefix</Label><Input value={settings.aux_prefix || 'AUX'} onChange={e => setSettings({...settings, aux_prefix: e.target.value})} className="mt-1" placeholder="AUX" data-testid="aux-prefix-input" />
                 <p className="text-xs text-slate-400 mt-1">Prefix for membership IDs (e.g. AUX-1, AUX-2)</p></div>
@@ -247,7 +328,7 @@ export default function SettingsManager() {
 
         <TabsContent value="apis">
           <div className="bg-white rounded-sm border border-slate-100 p-6" data-testid="apis-tab">
-            <h3 className="font-semibold text-[#1a2332] mb-1">Third-Party API Integrations</h3>
+            <h3 className="font-semibold mb-1" style={{ color: 'var(--ad-heading, #1a2332)' }}>Third-Party API Integrations</h3>
             <p className="text-sm text-slate-500 mb-5">Overview of all external services and APIs used in this project.</p>
             <div className="space-y-3">
               {[
@@ -262,7 +343,7 @@ export default function SettingsManager() {
                   <div className={`w-2.5 h-2.5 rounded-full mt-1.5 flex-shrink-0 ${api.status ? 'bg-green-500' : 'bg-slate-300'}`} />
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-0.5">
-                      <span className="font-medium text-sm text-[#1a2332]">{api.name}</span>
+                      <span className="font-medium text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>{api.name}</span>
                       <span className="text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">{api.category}</span>
                     </div>
                     <p className="text-xs text-slate-500">{api.desc}</p>
@@ -279,4 +360,111 @@ export default function SettingsManager() {
       </Tabs>
     </div>
   );
+}
+
+// Visual theme previews rendered as mini mockups
+function ThemePreview({ themeId }) {
+  if (themeId === 'default') {
+    return (
+      <div className="w-full h-full bg-white flex flex-col text-[3px]">
+        <div className="bg-[#1a2332] h-[4%]" />
+        <div className="bg-white h-[6%] border-b border-slate-100 flex items-center px-[4%]">
+          <div className="w-[8%] h-[60%] bg-[#1a2332] rounded-sm" />
+          <div className="flex-1 flex justify-center gap-[3%]">
+            <div className="w-[8%] h-[40%] bg-slate-300 rounded-full" />
+            <div className="w-[8%] h-[40%] bg-slate-300 rounded-full" />
+            <div className="w-[8%] h-[40%] bg-slate-300 rounded-full" />
+          </div>
+        </div>
+        <div className="bg-[#1a2332] h-[35%] flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-[40%] mx-auto h-[3px] bg-white/80 rounded mb-1" />
+            <div className="w-[60%] mx-auto h-[2px] bg-white/40 rounded mb-2" />
+            <div className="w-[20%] mx-auto h-[4px] bg-[#0D9488] rounded" />
+          </div>
+        </div>
+        <div className="flex-1 bg-white p-[4%]">
+          <div className="flex gap-[3%]">
+            <div className="flex-1 h-[20px] bg-slate-100 rounded-sm" />
+            <div className="flex-1 h-[20px] bg-slate-100 rounded-sm" />
+            <div className="flex-1 h-[20px] bg-slate-100 rounded-sm" />
+          </div>
+        </div>
+        <div className="bg-[#1a2332] h-[15%]" />
+      </div>
+    );
+  }
+  if (themeId === 'modern') {
+    return (
+      <div className="w-full h-full bg-white flex flex-col text-[3px]">
+        <div className="h-[45%] bg-gradient-to-br from-slate-900 to-slate-700 relative">
+          <div className="absolute inset-x-0 top-0 h-[12%] flex items-center justify-between px-[5%]">
+            <div className="w-[8%] h-[50%] bg-white/20 rounded" />
+            <div className="flex gap-[3%]">
+              <div className="w-[6%] h-[40%] bg-white/30 rounded-full" />
+              <div className="w-[6%] h-[40%] bg-white/30 rounded-full" />
+              <div className="w-[6%] h-[40%] bg-white/30 rounded-full" />
+            </div>
+          </div>
+          <div className="absolute bottom-[15%] left-[8%]">
+            <div className="w-[45%] h-[3px] bg-white rounded mb-1" />
+            <div className="w-[30%] h-[2px] bg-white/50 rounded mb-2" />
+            <div className="flex gap-1">
+              <div className="w-[15%] h-[4px] bg-[#0D9488] rounded-full" />
+              <div className="w-[15%] h-[4px] bg-white/20 rounded-full" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 p-[5%] flex gap-[3%]">
+          <div className="flex-1 bg-slate-50 rounded-lg p-[3%]">
+            <div className="w-full h-[8px] bg-slate-200 rounded-lg mb-1" />
+            <div className="w-[70%] h-[4px] bg-slate-100 rounded" />
+          </div>
+          <div className="flex-1 bg-slate-50 rounded-lg p-[3%]">
+            <div className="w-full h-[8px] bg-slate-200 rounded-lg mb-1" />
+            <div className="w-[70%] h-[4px] bg-slate-100 rounded" />
+          </div>
+        </div>
+        <div className="bg-slate-900 h-[12%]" />
+      </div>
+    );
+  }
+  if (themeId === 'classic') {
+    return (
+      <div className="w-full h-full bg-[#faf9f6] flex flex-col text-[3px]">
+        <div className="bg-[#2c1810] h-[4%]" />
+        <div className="bg-[#faf9f6] border-b-2 border-[#2c1810] h-[8%] flex items-center px-[5%]">
+          <div className="w-[10%] h-[50%] bg-[#2c1810] rounded-sm" />
+          <div className="flex-1 flex justify-center gap-[2%]">
+            <div className="w-[10%] h-[40%] bg-[#2c1810]/20 rounded-sm" />
+            <div className="w-[10%] h-[40%] bg-[#2c1810]/20 rounded-sm" />
+            <div className="w-[10%] h-[40%] bg-[#2c1810]/20 rounded-sm" />
+          </div>
+        </div>
+        <div className="mx-[8%] my-[3%] border-2 border-[#2c1810]/20 p-[3%] flex-1 flex gap-[4%]">
+          <div className="flex-1">
+            <div className="w-[70%] h-[3px] bg-[#2c1810] rounded mb-1" />
+            <div className="w-full h-[2px] bg-[#2c1810]/30 rounded mb-0.5" />
+            <div className="w-full h-[2px] bg-[#2c1810]/30 rounded mb-0.5" />
+            <div className="w-[60%] h-[2px] bg-[#2c1810]/30 rounded mb-2" />
+            <div className="w-[25%] h-[4px] bg-[#8B4513] rounded-sm" />
+          </div>
+          <div className="w-[40%] bg-[#2c1810]/10 rounded-sm" />
+        </div>
+        <div className="flex gap-[3%] mx-[8%] mb-[3%]">
+          <div className="flex-1 border border-[#2c1810]/20 p-[2%] rounded-sm">
+            <div className="w-full h-[10px] bg-[#2c1810]/10 rounded-sm" />
+          </div>
+          <div className="flex-1 border border-[#2c1810]/20 p-[2%] rounded-sm">
+            <div className="w-full h-[10px] bg-[#2c1810]/10 rounded-sm" />
+          </div>
+          <div className="flex-1 border border-[#2c1810]/20 p-[2%] rounded-sm">
+            <div className="w-full h-[10px] bg-[#2c1810]/10 rounded-sm" />
+          </div>
+        </div>
+        <div className="bg-[#2c1810] h-[12%]" />
+      </div>
+    );
+  }
+  return null;
 }

@@ -1,7 +1,9 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
+import { useTheme } from '../App';
 
 export default function HeroSection({ data, slides }) {
+  const theme = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const allSlides = useMemo(() => slides && slides.length > 0 ? slides : (data?.title ? [data] : []), [slides, data]);
@@ -32,8 +34,20 @@ export default function HeroSection({ data, slides }) {
     };
   };
 
+  const heroClasses = theme === 'modern'
+    ? 'relative min-h-[750px] md:min-h-[800px] flex items-center overflow-hidden'
+    : theme === 'classic'
+    ? 'relative min-h-[500px] md:min-h-[550px] flex items-center overflow-hidden'
+    : 'relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden';
+
+  const overlayStyle = theme === 'modern'
+    ? { background: `linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.7))` }
+    : theme === 'classic'
+    ? { background: `linear-gradient(to right, var(--color-primary, #1a2332)f0, var(--color-primary, #1a2332)80)` }
+    : { background: `linear-gradient(to right, var(--color-primary, #1a2332)ee, var(--color-primary, #1a2332)99)` };
+
   return (
-    <section className="relative min-h-[600px] md:min-h-[700px] flex items-center overflow-hidden" data-testid="hero-section">
+    <section className={heroClasses} data-testid="hero-section">
       <style>{`
         @keyframes heroLayerIn {
           from { opacity: 0; transform: var(--hero-from); }
@@ -41,7 +55,7 @@ export default function HeroSection({ data, slides }) {
         }
       `}</style>
       <div className="absolute inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: bg ? `url(${bg})` : 'none' }} />
-      <div className="absolute inset-0" style={{ background: `linear-gradient(to right, var(--color-primary, #1a2332)ee, var(--color-primary, #1a2332)99)` }} />
+      <div className="absolute inset-0" style={overlayStyle} />
 
       <div className="relative max-w-7xl mx-auto px-6 md:px-12 py-20 w-full" key={animKey}>
         {isLegacy ? (

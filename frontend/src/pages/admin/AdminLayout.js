@@ -38,29 +38,29 @@ export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
 
-  const handleLogout = async () => {
-    await logout();
-    navigate('/');
-  };
+  const handleLogout = async () => { await logout(); navigate('/'); };
+
+  const v = (name, fallback) => `var(--ad-${name}, ${fallback})`;
 
   return (
-    <div className="min-h-screen bg-slate-50 flex" data-testid="admin-layout">
-      {/* Mobile overlay */}
+    <div className="min-h-screen flex" style={{ backgroundColor: v('page-bg', '#f8fafc') }} data-testid="admin-layout">
       {mobileOpen && <div className="fixed inset-0 bg-black/50 z-40 md:hidden" onClick={() => setMobileOpen(false)} />}
       
       {/* Sidebar */}
-      <aside className={`fixed md:sticky top-0 left-0 h-screen bg-[#1a2332] text-white z-50 transition-all duration-300 flex flex-col
+      <aside className={`fixed md:sticky top-0 left-0 h-screen z-50 transition-all duration-300 flex flex-col
         ${collapsed ? 'w-16' : 'w-60'} 
         ${mobileOpen ? 'translate-x-0' : '-translate-x-full md:translate-x-0'}`}
+        style={{ backgroundColor: v('sidebar-bg', '#1a2332') }}
         data-testid="admin-sidebar"
       >
-        <div className={`flex items-center h-14 px-4 border-b border-white/10 ${collapsed ? 'justify-center' : 'justify-between'}`}>
+        <div className={`flex items-center h-14 px-4 ${collapsed ? 'justify-center' : 'justify-between'}`}
+          style={{ borderBottom: `1px solid rgba(255,255,255,0.1)` }}>
           {!collapsed && (
             <Link to="/admin" className="flex items-center gap-2">
-              <div className="w-6 h-6 bg-[#0D9488] rounded-sm flex items-center justify-center">
+              <div className="w-6 h-6 rounded-sm flex items-center justify-center" style={{ backgroundColor: v('accent', '#0D9488') }}>
                 <span className="text-white text-xs font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
               </div>
-              <span className="text-sm font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>Legacy CMS</span>
+              <span className="text-sm font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Legacy CMS</span>
             </Link>
           )}
           <button onClick={() => setCollapsed(!collapsed)} className="hidden md:block text-white/50 hover:text-white" data-testid="sidebar-collapse-btn">
@@ -75,7 +75,15 @@ export default function AdminLayout() {
             const active = location.pathname === item.href;
             return (
               <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}
-                className={`flex items-center gap-3 px-4 py-2.5 mx-2 rounded-sm text-sm transition-colors ${active ? 'bg-[#0D9488] text-white' : 'text-white/60 hover:text-white hover:bg-white/5'}`}
+                className="flex items-center gap-3 px-4 py-2.5 mx-2 rounded-sm text-sm transition-colors"
+                style={active ? {
+                  backgroundColor: v('sidebar-active-bg', '#0D9488'),
+                  color: v('sidebar-active-text', '#ffffff')
+                } : {
+                  color: v('sidebar-text', 'rgba(255,255,255,0.6)')
+                }}
+                onMouseEnter={e => { if (!active) { e.currentTarget.style.backgroundColor = v('sidebar-hover-bg', 'rgba(255,255,255,0.05)'); e.currentTarget.style.color = '#ffffff'; }}}
+                onMouseLeave={e => { if (!active) { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = v('sidebar-text', 'rgba(255,255,255,0.6)'); }}}
                 data-testid={`admin-nav-${item.label.toLowerCase().replace(/\s/g, '-')}`}
                 title={collapsed ? item.label : undefined}
               >
@@ -85,7 +93,7 @@ export default function AdminLayout() {
             );
           })}
         </nav>
-        <div className="border-t border-white/10 p-3">
+        <div className="p-3" style={{ borderTop: '1px solid rgba(255,255,255,0.1)' }}>
           <Link to="/" className={`flex items-center gap-3 px-2 py-2 text-white/50 hover:text-white text-sm transition-colors ${collapsed ? 'justify-center' : ''}`} data-testid="admin-back-site">
             <ChevronLeft className="w-4 h-4" />
             {!collapsed && <span>Back to Site</span>}
@@ -99,15 +107,16 @@ export default function AdminLayout() {
 
       {/* Main content */}
       <div className="flex-1 min-w-0">
-        <header className="h-14 bg-white border-b border-slate-200 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30">
-          <button onClick={() => setMobileOpen(true)} className="md:hidden p-2 text-slate-500" data-testid="admin-mobile-menu">
+        <header className="h-14 flex items-center justify-between px-4 md:px-6 sticky top-0 z-30"
+          style={{ backgroundColor: v('navbar-bg', '#ffffff'), borderBottom: `1px solid ${v('navbar-border', '#e2e8f0')}` }}>
+          <button onClick={() => setMobileOpen(true)} className="md:hidden p-2" style={{ color: v('text-secondary', '#64748b') }} data-testid="admin-mobile-menu">
             <Menu className="w-5 h-5" />
           </button>
-          <div className="text-sm text-slate-500">
-            Welcome, <span className="font-medium text-[#1a2332]">{user?.name || user?.email}</span>
+          <div className="text-sm" style={{ color: v('text-secondary', '#64748b') }}>
+            Welcome, <span className="font-medium" style={{ color: v('heading', '#1a2332') }}>{user?.name || user?.email}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs text-[#0D9488] bg-[#0D9488]/10 px-2 py-1 rounded-sm font-medium">Admin</span>
+            <span className="text-xs px-2 py-1 rounded-sm font-medium" style={{ color: v('accent', '#0D9488'), backgroundColor: `${v('accent', '#0D9488')}15` }}>Admin</span>
           </div>
         </header>
         <main className="p-4 md:p-6">

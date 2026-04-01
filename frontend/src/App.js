@@ -53,9 +53,14 @@ import PortfolioList from './pages/myaccount/PortfolioList';
 import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
 
-// Global settings context for colors
+import { injectThemeColors } from './lib/themeColors';
+
+// Global settings context for colors and theme
 export const SettingsContext = createContext({});
 export const useSettings = () => useContext(SettingsContext);
+
+export const ThemeContext = createContext('default');
+export const useTheme = () => useContext(ThemeContext);
 
 function SettingsProvider({ children }) {
   const [settings, setSettings] = useState({});
@@ -63,25 +68,25 @@ function SettingsProvider({ children }) {
     publicAPI.getSettings().then(r => setSettings(r.data || {})).catch(() => {});
   }, []);
 
-  // Apply CSS variables from settings colors
+  // Apply CSS variables from theme_colors (new) and colors (legacy)
   useEffect(() => {
-    const colors = settings.colors || {};
-    const root = document.documentElement;
-    if (colors.primary) root.style.setProperty('--color-primary', colors.primary);
-    if (colors.accent) root.style.setProperty('--color-accent', colors.accent);
-    if (colors.button_bg) root.style.setProperty('--color-button-bg', colors.button_bg);
-    if (colors.button_text) root.style.setProperty('--color-button-text', colors.button_text);
-    if (colors.link_color) root.style.setProperty('--color-link', colors.link_color);
-    if (colors.tab_active_bg) root.style.setProperty('--color-tab-active-bg', colors.tab_active_bg);
-    if (colors.tab_active_text) root.style.setProperty('--color-tab-active-text', colors.tab_active_text);
-    if (colors.icon_color) root.style.setProperty('--color-icon', colors.icon_color);
-    if (colors.heading_color) root.style.setProperty('--color-heading', colors.heading_color);
-    if (colors.body_text) root.style.setProperty('--color-body-text', colors.body_text);
-    if (colors.footer_bg) root.style.setProperty('--color-footer-bg', colors.footer_bg);
-    if (colors.footer_text) root.style.setProperty('--color-footer-text', colors.footer_text);
-  }, [settings.colors]);
+    const themeColors = settings.theme_colors || {};
+    // Migrate legacy colors.* into website group if theme_colors.website is empty
+    if (!themeColors.website && settings.colors) {
+      themeColors.website = settings.colors;
+    }
+    injectThemeColors(themeColors);
+  }, [settings.theme_colors, settings.colors]);
 
-  return <SettingsContext.Provider value={settings}>{children}</SettingsContext.Provider>;
+  const activeTheme = settings.active_theme || 'default';
+
+  return (
+    <SettingsContext.Provider value={settings}>
+      <ThemeContext.Provider value={activeTheme}>
+        {children}
+      </ThemeContext.Provider>
+    </SettingsContext.Provider>
+  );
 }
 
 function AuthCallback() {
