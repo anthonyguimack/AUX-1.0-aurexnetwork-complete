@@ -170,6 +170,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Ebank date calendar**: Deposit Date & Target Date inputs get `colorScheme: 'dark'` for native calendar picker styling.
 - Testing: 9/9 backend + 100% frontend verification (Iteration 21)
 
+### Color Management System & Theme Switcher (Apr 1, 2026) - COMPLETE
+- **Color Management (Settings > Colors)**: Reorganized into 3 groups — Website (16 colors), My Account (26 colors), CMS Admin Panel (25 colors). Each color has a color picker + text input. Colors are stored in `settings.theme_colors` and applied via CSS custom properties (`--color-*`, `--ma-*`, `--ad-*`) injected at the root level.
+- **Theme Switcher (Settings > Themes)**: 3 themes with visual preview thumbnails: Default (current design), Modern (transparent header, uppercase nav, rounded buttons), Classic (teal accent, serif nav, social bar). Active theme stored in `settings.active_theme`. Only affects public frontend — Admin Panel and My Account are unaffected.
+- **Layout Components Updated**: `MyAccountLayout.js` uses `--ma-*` variables. `AdminLayout.js` uses `--ad-*` variables. `Navbar.js` switches between Default/Modern/Classic variants. `Footer.js` has 3 layout variants. `HeroSection.js` adjusts height/overlay by theme.
+- Testing: 11/11 backend + 100% frontend verification (Iteration 22)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
