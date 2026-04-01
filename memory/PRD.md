@@ -176,6 +176,16 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Layout Components Updated**: `MyAccountLayout.js` uses `--ma-*` variables. `AdminLayout.js` uses `--ad-*` variables. `Navbar.js` switches between Default/Modern/Classic variants. `Footer.js` has 3 layout variants. `HeroSection.js` adjusts height/overlay by theme.
 - Testing: 11/11 backend + 100% frontend verification (Iteration 22)
 
+### Theme-Specific HomePage Sections (Apr 1, 2026) - COMPLETE
+- **HomePage.js rewritten**: All homepage sections (About, Services, News, Blog, Reading List, Map, Portfolio, Gallery, Testimonials, Contact) now render with distinct layouts per theme (Default, Modern, Classic).
+- **Classic theme**: Cream backgrounds (#faf9f6), bordered cards, serif fonts (Playfair Display), teal accents.
+- **Modern theme**: Clean white backgrounds, rounded corners, decorative accent bars, 3-item carousel for testimonials.
+- **Default theme**: Original design with slate backgrounds and standard layouts.
+- **Navbar hero-less detection**: Modern navbar uses MutationObserver to detect if page has `.hero-section`, applies solid background on hero-less pages (fixes white-on-white text on /membership_services).
+- **CSS variable overrides in index.css**: Maps hardcoded Tailwind colors to CSS variables for My Account and CMS color management.
+- **Bug fixes**: React hooks violation in TestimonialsSection (useState after early return), publicAPI.getBlogPosts renamed to getBlog, map section key mismatch (locations vs map in sectionMap).
+- Testing: 22/22 backend + 100% frontend verification (Iteration 23)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
