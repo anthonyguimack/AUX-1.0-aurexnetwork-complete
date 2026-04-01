@@ -186,6 +186,15 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Bug fixes**: React hooks violation in TestimonialsSection (useState after early return), publicAPI.getBlogPosts renamed to getBlog, map section key mismatch (locations vs map in sectionMap).
 - Testing: 22/22 backend + 100% frontend verification (Iteration 23)
 
+### Hardcoded Color Fixes & Logo/Favicon Feature (Apr 1, 2026) - COMPLETE
+- **My Account color fixes**: Radio buttons (MyCommunity, PortfolioForm), Change Password button, Bio modal headings, Ebank range sliders/tabs/save button — all converted from hardcoded `#c9a84c` to `var(--ma-*)` CSS variables.
+- **Logout button**: Changed from hardcoded red to sidebar text color CSS variable.
+- **CMS Admin color fixes**: Comprehensive CSS overrides in `index.css` map all `bg-[#0D9488]` button classes to `var(--ad-button-bg)` and text to `var(--ad-button-text)` within `[data-testid="admin-layout"]` scope. Includes hover states, badges, checkboxes, switches.
+- **My Account CSS overrides**: Added `[data-testid="myaccount-layout"]` scoped rules for remaining Tailwind classes (`.bg-[#c9a84c]`, `.text-[#c9a84c]`, borders, hover states).
+- **Logo On/Off/Favicon**: Three new fields in Settings > General tab, each with ImageUpload (upload or URL). Logo On displayed in Navbar (all 3 themes) + My Account sidebar. Logo Off displayed in Footer (all 3 themes). Favicon dynamically injected via `<link>` element in App.js SettingsProvider.
+- **Backend**: Settings collection updated with `logo_on`, `logo_off`, `favicon` fields. Public API exposes them.
+- Testing: 12/12 backend + 100% frontend verification (Iteration 24)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
