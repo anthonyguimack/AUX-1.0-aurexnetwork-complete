@@ -213,7 +213,7 @@ export default function MembershipProfile() {
   ];
 
   // iOS-compatible native select style: font-size 16px prevents iOS zoom
-  const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-base focus:outline-none focus:border-[#c9a84c]/50";
+  const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-base focus:outline-none";
 
   const progressColor = percentage >= 80
     ? (getComputedStyle(document.documentElement).getPropertyValue('--ma-progress-high')?.trim() || '#22c55e')
@@ -226,7 +226,8 @@ export default function MembershipProfile() {
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Membership Profile</h1>
         <button onClick={() => setBioOpen(true)}
-          className="px-4 py-2 bg-[#c9a84c]/20 text-[#c9a84c] border border-[#c9a84c]/30 rounded text-sm font-medium flex items-center gap-2 hover:bg-[#c9a84c]/30 transition-colors"
+          className="px-4 py-2 border rounded text-sm font-medium flex items-center gap-2 transition-colors"
+          style={{ backgroundColor: 'var(--ma-accent, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)', opacity: 0.9, borderColor: 'var(--ma-accent, #c9a84c)' }}
           data-testid="update-biography-btn">
           <Edit3 className="w-4 h-4" /> Update Biography
         </button>
@@ -264,15 +265,15 @@ export default function MembershipProfile() {
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-6 flex flex-col items-center">
-          <div className="w-28 h-28 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
+          <div className="w-28 h-28 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--ma-avatar-bg, rgba(201,168,76,0.1))', border: '2px solid var(--ma-avatar-border, rgba(201,168,76,0.3))' }}>
             {(form.avatar || defaultAvatar) ?
               <img src={(form.avatar || defaultAvatar).startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${form.avatar || defaultAvatar}` : (form.avatar || defaultAvatar)} alt="" className="w-full h-full object-cover" /> :
-              <User className="w-10 h-10 text-[#c9a84c]/50" />}
+              <User className="w-10 h-10" style={{ color: 'var(--ma-accent, #c9a84c)', opacity: 0.5 }} />}
           </div>
           <p className="mt-3 text-white font-medium text-sm">{member?.first_name} {member?.last_name}</p>
-          <p className="text-[#c9a84c] text-xs">{member?.membership_id}</p>
+          <p className="text-xs" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{member?.membership_id}</p>
           <p className="text-gray-500 text-xs mt-1">{member?.email}</p>
-          {member?._member_type?.permissions?.is_mentor && <span className="mt-2 text-xs bg-[#c9a84c]/20 text-[#c9a84c] px-2 py-0.5 rounded">Mentor</span>}
+          {member?._member_type?.permissions?.is_mentor && <span className="mt-2 text-xs px-2 py-0.5 rounded" style={{ backgroundColor: 'var(--ma-accent, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)', opacity: 0.8 }}>Mentor</span>}
         </div>
 
         <div className="lg:col-span-2 bg-[#13161e] border border-white/5 rounded-lg">
@@ -280,7 +281,8 @@ export default function MembershipProfile() {
             <div className="flex gap-4">
               {tabs.map(t => (
                 <button key={t.id} onClick={() => setTab(t.id)}
-                  className={`text-sm font-medium pb-2 px-1 transition-colors ${tab === t.id ? 'text-[#c9a84c] border-b-2 border-[#c9a84c]' : 'text-gray-500 hover:text-gray-300'}`}
+                  className={`text-sm font-medium pb-2 px-1 transition-colors ${tab === t.id ? 'border-b-2' : 'text-gray-500 hover:text-gray-300'}`}
+                  style={tab === t.id ? { color: 'var(--ma-accent, #c9a84c)', borderColor: 'var(--ma-accent, #c9a84c)' } : {}}
                   data-testid={`profile-tab-${t.id}`}>
                   {t.label}
                 </button>
@@ -292,13 +294,13 @@ export default function MembershipProfile() {
               <div>
                 <div className="flex justify-end mb-4">
                   {!editing ? (
-                    <button onClick={() => setEditing(true)} className="text-sm text-[#c9a84c] hover:underline flex items-center gap-1" data-testid="edit-profile-btn">
+                    <button onClick={() => setEditing(true)} className="text-sm hover:underline flex items-center gap-1" style={{ color: 'var(--ma-accent, #c9a84c)' }} data-testid="edit-profile-btn">
                       <Edit3 className="w-3.5 h-3.5" /> Edit
                     </button>
                   ) : (
                     <div className="flex gap-2">
                       <button onClick={() => setEditing(false)} className="text-sm text-gray-500 hover:text-gray-300 px-3 py-1">Cancel</button>
-                      <button onClick={handleSave} disabled={loading} className="text-sm bg-[#c9a84c] text-[#0d0f14] px-4 py-1.5 rounded font-medium flex items-center gap-1 disabled:opacity-50" data-testid="save-profile-btn">
+                      <button onClick={handleSave} disabled={loading} className="text-sm px-4 py-1.5 rounded font-medium flex items-center gap-1 disabled:opacity-50" style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }} data-testid="save-profile-btn">
                         {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save
                       </button>
                     </div>
@@ -398,7 +400,8 @@ export default function MembershipProfile() {
                 )) : <p className="text-sm text-gray-500">No social platforms configured by the administrator.</p>}
                 {platformSocials.length > 0 && (
                   <button onClick={handleSave} disabled={loading}
-                    className="mt-4 px-4 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-medium flex items-center gap-1 disabled:opacity-50"
+                    className="mt-4 px-4 py-2 rounded text-sm font-medium flex items-center gap-1 disabled:opacity-50"
+                    style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }}
                     data-testid="save-socials-btn">
                     {loading ? <Loader2 className="w-3 h-3 animate-spin" /> : <Save className="w-3 h-3" />} Save Social Links
                   </button>
@@ -413,12 +416,12 @@ export default function MembershipProfile() {
                 ) : profileActivities.map(act => (
                   <div key={act.id} className="bg-[#0d0f14] rounded-lg p-3 border border-white/5 flex items-start gap-3">
                     <div className="mt-0.5">
-                      <Clock className="w-4 h-4 text-[#c9a84c]" />
+                      <Clock className="w-4 h-4" style={{ color: 'var(--ma-accent, #c9a84c)' }} />
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm text-white">
-                        <span className={`font-medium ${act.action === 'added' ? 'text-green-400' : 'text-[#c9a84c]'}`}>{act.action === 'added' ? 'Added' : 'Updated'}</span>
-                        {' '}<span className="text-[#c9a84c]">{PROFILE_FIELD_LABELS[act.field] || act.field}</span>
+                        <span className={`font-medium ${act.action === 'added' ? 'text-green-400' : ''}`} style={act.action !== 'added' ? { color: 'var(--ma-accent, #c9a84c)' } : {}}>{act.action === 'added' ? 'Added' : 'Updated'}</span>
+                        {' '}<span style={{ color: 'var(--ma-accent, #c9a84c)' }}>{PROFILE_FIELD_LABELS[act.field] || act.field}</span>
                       </p>
                       {act.action === 'updated' && act.old_value && (
                         <p className="text-xs text-gray-500 mt-0.5 break-words">"{act.old_value}" &rarr; "{act.new_value}"</p>
@@ -459,7 +462,8 @@ export default function MembershipProfile() {
             <div className="flex gap-2 pt-2">
               <button onClick={() => setBioOpen(false)} className="flex-1 py-2 border border-white/10 text-gray-400 rounded text-sm hover:bg-white/5">Cancel</button>
               <button onClick={handleBioSave} disabled={loading}
-                className="flex-1 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }}
                 data-testid="save-biography-btn">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save
               </button>
@@ -495,7 +499,8 @@ export default function MembershipProfile() {
             <div className="flex gap-2 pt-2">
               <button onClick={() => setPwOpen(false)} className="flex-1 py-2 border border-white/10 text-gray-400 rounded text-sm hover:bg-white/5">Cancel</button>
               <button onClick={handleChangePassword} disabled={pwLoading}
-                className="flex-1 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                className="flex-1 py-2 rounded text-sm font-semibold flex items-center justify-center gap-2 disabled:opacity-50"
+                style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }}
                 data-testid="submit-change-password-btn">
                 {pwLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Lock className="w-4 h-4" />} Change Password
               </button>
@@ -513,7 +518,7 @@ export default function MembershipProfile() {
           </DialogHeader>
           <div className="space-y-5">
             <div>
-              <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-3">Summary</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ma-accent, #c9a84c)' }}>Summary</h3>
               {member?.summary && stripHtml(member.summary) ? (
                 <div
                   className="text-gray-300 break-words bio-rich-content"
@@ -525,7 +530,7 @@ export default function MembershipProfile() {
             </div>
             <hr className="border-white/10" />
             <div>
-              <h3 className="text-xs font-semibold text-[#c9a84c] uppercase tracking-wider mb-3">Biography</h3>
+              <h3 className="text-xs font-semibold uppercase tracking-wider mb-3" style={{ color: 'var(--ma-accent, #c9a84c)' }}>Biography</h3>
               {member?.biography && stripHtml(member.biography) ? (
                 <div
                   className="text-gray-300 break-words bio-rich-content"

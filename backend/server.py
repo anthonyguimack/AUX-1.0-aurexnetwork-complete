@@ -266,6 +266,7 @@ async def seed_data():
     await db.settings.insert_one({
         "id": "main", "brand_name": "Legacy", "tagline": "Strategic Business Consulting",
         "logo_url": "", "favicon_url": "",
+        "logo_on": "", "logo_off": "", "favicon": "",
         "meta_title": "Legacy - Strategic Business Consulting",
         "meta_description": "Innovative solutions tailored for your success",
         "primary_color": "#1a2332", "accent_color": "#0D9488",

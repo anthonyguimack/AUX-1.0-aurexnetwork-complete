@@ -33,6 +33,9 @@ export default function Footer() {
 function DefaultFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOff = settings.logo_off;
+  const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
   return (
     <footer style={{ backgroundColor: 'var(--color-footer-bg, #1a2332)', color: 'var(--color-footer-text, #FFFFFF)' }} data-testid="site-footer">
@@ -40,10 +43,16 @@ function DefaultFooter() {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-12">
           <div>
             <div className="flex items-center gap-2 mb-4">
-              <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
-                <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
-              </div>
-              <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>Legacy</span>
+              {logoSrc ? (
+                <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="footer-logo-img" />
+              ) : (
+                <>
+                  <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
+                    <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                  </div>
+                  <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Legacy'}</span>
+                </>
+              )}
             </div>
             <p className="opacity-60 text-sm leading-relaxed">Strategic consulting for businesses seeking sustainable growth and lasting impact.</p>
           </div>
@@ -98,6 +107,9 @@ function DefaultFooter() {
 function ModernFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOff = settings.logo_off;
+  const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
   return (
     <footer className="relative overflow-hidden" data-testid="site-footer">
@@ -106,10 +118,16 @@ function ModernFooter() {
         <div className="grid grid-cols-1 md:grid-cols-12 gap-12">
           <div className="md:col-span-5">
             <div className="flex items-center gap-3 mb-6">
-              <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
-                <span className="text-white font-bold text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
-              </div>
-              <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>Legacy</span>
+              {logoSrc ? (
+                <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-12 w-auto object-contain" data-testid="footer-logo-img" />
+              ) : (
+                <>
+                  <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
+                    <span className="text-white font-bold text-lg" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                  </div>
+                  <span className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Legacy'}</span>
+                </>
+              )}
             </div>
             <p className="text-white/50 text-sm leading-relaxed max-w-sm mb-6">Strategic consulting for businesses seeking sustainable growth and lasting impact in today's dynamic market.</p>
             <div className="flex items-center gap-3">
@@ -147,6 +165,9 @@ function ModernFooter() {
 function ClassicFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOff = settings.logo_off;
+  const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
   return (
     <footer data-testid="site-footer">
@@ -155,13 +176,19 @@ function ClassicFooter() {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-10">
             <div>
               <div className="flex items-center gap-3 mb-4">
-                <div className="w-9 h-9 border-2 border-white/40 flex items-center justify-center">
-                  <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>L</span>
-                </div>
-                <div>
-                  <span className="text-white font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>Legacy</span>
-                  <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>Consulting</span>
-                </div>
+                {logoSrc ? (
+                  <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-9 w-auto object-contain" data-testid="footer-logo-img" />
+                ) : (
+                  <>
+                    <div className="w-9 h-9 border-2 border-white/40 flex items-center justify-center">
+                      <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>{(settings.brand_name || 'L')[0]}</span>
+                    </div>
+                    <div>
+                      <span className="text-white font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif" }}>{settings.brand_name || 'Legacy'}</span>
+                      <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>{settings.tagline || 'Consulting'}</span>
+                    </div>
+                  </>
+                )}
               </div>
               <p className="text-white/50 text-sm leading-relaxed" style={{ fontFamily: "'Playfair Display', serif" }}>Trusted advisory services for lasting business success.</p>
             </div>

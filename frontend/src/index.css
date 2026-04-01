@@ -205,6 +205,17 @@ html {
 [data-testid="myaccount-layout"] .border-\[\#2a2d35\] { border-color: var(--ma-input-border, rgba(255,255,255,0.1)) !important; }
 /* Checkbox accent */
 [data-testid="myaccount-layout"] input[type="checkbox"] { accent-color: var(--ma-accent, #c9a84c); }
+/* Button color overrides for My Account */
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\] { background-color: var(--ma-button-bg, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\].text-\[\#0d0f14\] { color: var(--ma-button-text, #0d0f14) !important; }
+[data-testid="myaccount-layout"] .text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .border-\[\#c9a84c\]\/30 { border-color: var(--ma-avatar-border, rgba(201,168,76,0.3)) !important; }
+[data-testid="myaccount-layout"] .hover\:bg-\[\#d4b85d\]:hover,
+[data-testid="myaccount-layout"] .hover\:bg-\[\#d4b85c\]:hover { background-color: var(--ma-button-bg, #c9a84c) !important; opacity: 0.85; }
+[data-testid="myaccount-layout"] .hover\:bg-\[\#c9a84c\]\/10:hover { background-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 10%, transparent) !important; }
+[data-testid="myaccount-layout"] .hover\:text-\[\#c9a84c\]:hover { color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .hover\:border-\[\#c9a84c\]\/30:hover { border-color: var(--ma-avatar-border, rgba(201,168,76,0.3)) !important; }
+[data-testid="myaccount-layout"] a.text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
 /* Login page (outside layout) */
 [data-testid="member-login-page"] .bg-\[\#c9a84c\] { background-color: var(--ma-accent, #c9a84c) !important; }
 [data-testid="member-login-page"] .text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
@@ -217,12 +228,15 @@ html {
 [data-testid="member-register-page"] .bg-\[\#0d0f14\] { background-color: var(--ma-input-bg, #0d0f14) !important; }
 
 /* === ADMIN/CMS — Dynamic Color Overrides === */
-/* Accent backgrounds */
-[data-testid="admin-layout"] .bg-\[\#0D9488\] { background-color: var(--ad-accent, #0D9488) !important; }
+/* Button backgrounds → use button-bg variable */
+[data-testid="admin-layout"] .bg-\[\#0D9488\] { background-color: var(--ad-button-bg, #0D9488) !important; }
 [data-testid="admin-layout"] .bg-\[\#0D9488\]\/5 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 5%, transparent) !important; }
 [data-testid="admin-layout"] .bg-\[\#0D9488\]\/10 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 10%, transparent) !important; }
-[data-testid="admin-layout"] .bg-\[\#0D9488\]\/80 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 80%, transparent) !important; }
-[data-testid="admin-layout"] .bg-\[\#0D9488\]\/90 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 90%, transparent) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/80,
+[data-testid="admin-layout"] .hover\:bg-\[\#0D9488\]\/80:hover { background-color: color-mix(in srgb, var(--ad-button-bg, #0D9488) 80%, transparent) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/90 { background-color: color-mix(in srgb, var(--ad-button-bg, #0D9488) 90%, transparent) !important; }
+/* Button text color → use button-text variable */
+[data-testid="admin-layout"] .bg-\[\#0D9488\].text-white { color: var(--ad-button-text, #ffffff) !important; }
 /* Accent text */
 [data-testid="admin-layout"] .text-\[\#0D9488\] { color: var(--ad-accent, #0D9488) !important; }
 /* Accent borders */
@@ -234,10 +248,13 @@ html {
 [data-testid="admin-layout"] .text-\[\#1a2332\] { color: var(--ad-heading, #1a2332) !important; }
 /* Page backgrounds */
 [data-testid="admin-layout"] .bg-\[\#1a2332\] { background-color: var(--ad-heading, #1a2332) !important; }
-/* Spinner */
-[data-testid="admin-layout"] .border-\[\#0D9488\] { border-color: var(--ad-accent, #0D9488) !important; }
 /* Checkbox accent */
 [data-testid="admin-layout"] input[type="checkbox"] { accent-color: var(--ad-accent, #0D9488); }
 /* Switch component accent */
 [data-testid="admin-layout"] [role="switch"][data-state="checked"] { background-color: var(--ad-accent, #0D9488) !important; }
+/* Hover text accent */
+[data-testid="admin-layout"] .hover\:text-\[\#0D9488\]:hover { color: var(--ad-accent, #0D9488) !important; }
+/* Badge colors */
+[data-testid="admin-layout"] .bg-teal-50 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 10%, white) !important; }
+[data-testid="admin-layout"] .text-teal-700 { color: var(--ad-accent, #0D9488) !important; }
 

@@ -75,6 +75,9 @@ function NavLinks({ baseLinks, headerPages, isExternal, handlePageClick, locatio
 function DefaultNavbar() {
   const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOn = settings.logo_on;
+  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
 
   if (isAdmin) return null;
 
@@ -91,10 +94,16 @@ function DefaultNavbar() {
       <header className="sticky top-0 z-50" style={{ backgroundColor: 'var(--color-navbar-bg, #ffffff)', borderBottom: '1px solid #e2e8f0' }} data-testid="main-navbar">
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2" data-testid="brand-logo">
-            <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
-              <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
-            </div>
-            <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading-color, #1a2332)' }}>Legacy</span>
+            {logoSrc ? (
+              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-8 w-auto object-contain" data-testid="navbar-logo-img" />
+            ) : (
+              <>
+                <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                  <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                </div>
+                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading-color, #1a2332)' }}>{settings.brand_name || 'Legacy'}</span>
+              </>
+            )}
           </Link>
           <nav className="hidden md:flex items-center gap-6">
             <NavLinks {...{ baseLinks, headerPages, isExternal, handlePageClick, location, user }} />
@@ -128,10 +137,13 @@ function DefaultNavbar() {
 }
 
 function ModernNavbar() {
-  const { user, logout, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hasHero, setHasHero] = useState(true);
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOn = settings.logo_on;
+  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -164,10 +176,16 @@ function ModernNavbar() {
         data-testid="main-navbar">
         <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
-              <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
-            </div>
-            <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>Legacy</span>
+            {logoSrc ? (
+              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="navbar-logo-img" />
+            ) : (
+              <>
+                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
+                  <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                </div>
+                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>{settings.brand_name || 'Legacy'}</span>
+              </>
+            )}
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             {baseLinks.map(link => (
@@ -211,8 +229,11 @@ function ModernNavbar() {
 }
 
 function ClassicNavbar() {
-  const { user, logout, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const logoOn = settings.logo_on;
+  const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${API}${logoOn}` : logoOn) : null;
 
   if (isAdmin) return null;
 
@@ -245,13 +266,19 @@ function ClassicNavbar() {
       <header className="sticky top-0 z-50 shadow-sm" style={{ backgroundColor: '#faf9f6', borderBottom: '2px solid var(--color-primary, #1a2332)' }} data-testid="main-navbar">
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
-            <div className="w-9 h-9 rounded-none flex items-center justify-center border-2" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: 'var(--color-primary, #1a2332)' }}>
-              <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>L</span>
-            </div>
-            <div>
-              <span className="text-lg font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading-color, #1a2332)' }}>Legacy</span>
-              <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>Consulting</span>
-            </div>
+            {logoSrc ? (
+              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-9 w-auto object-contain" data-testid="navbar-logo-img" />
+            ) : (
+              <>
+                <div className="w-9 h-9 rounded-none flex items-center justify-center border-2" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                  <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>{(settings.brand_name || 'L')[0]}</span>
+                </div>
+                <div>
+                  <span className="text-lg font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading-color, #1a2332)' }}>{settings.brand_name || 'Legacy'}</span>
+                  <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>{settings.tagline || 'Consulting'}</span>
+                </div>
+              </>
+            )}
           </Link>
           <nav className="hidden md:flex items-center gap-1">
             {baseLinks.map(link => (

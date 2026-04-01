@@ -78,6 +78,20 @@ function SettingsProvider({ children }) {
     injectThemeColors(themeColors);
   }, [settings.theme_colors, settings.colors]);
 
+  // Dynamic favicon
+  useEffect(() => {
+    const faviconUrl = settings.favicon;
+    if (!faviconUrl) return;
+    const src = faviconUrl.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${faviconUrl}` : faviconUrl;
+    let link = document.querySelector("link[rel~='icon']");
+    if (!link) {
+      link = document.createElement('link');
+      link.rel = 'icon';
+      document.head.appendChild(link);
+    }
+    link.href = src;
+  }, [settings.favicon]);
+
   const activeTheme = settings.active_theme || 'default';
 
   return (

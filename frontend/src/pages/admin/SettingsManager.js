@@ -150,14 +150,30 @@ export default function SettingsManager() {
         <TabsContent value="general">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Brand Name</Label><Input value={settings.brand_name || ''} onChange={e => setSettings({...settings, brand_name: e.target.value})} className="mt-1" /></div>
+              <div><Label>Brand Name</Label><Input value={settings.brand_name || ''} onChange={e => setSettings({...settings, brand_name: e.target.value})} className="mt-1" data-testid="settings-brand-name" /></div>
               <div><Label>Tagline</Label><Input value={settings.tagline || ''} onChange={e => setSettings({...settings, tagline: e.target.value})} className="mt-1" /></div>
             </div>
             <div><Label>Meta Title</Label><Input value={settings.meta_title || ''} onChange={e => setSettings({...settings, meta_title: e.target.value})} className="mt-1" /></div>
             <div><Label>Meta Description</Label><textarea value={settings.meta_description || ''} onChange={e => setSettings({...settings, meta_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-            <div className="grid grid-cols-2 gap-4">
-              <div><Label>Logo URL</Label><Input value={settings.logo_url || ''} onChange={e => setSettings({...settings, logo_url: e.target.value})} className="mt-1" /></div>
-              <div><Label>Favicon URL</Label><Input value={settings.favicon_url || ''} onChange={e => setSettings({...settings, favicon_url: e.target.value})} className="mt-1" /></div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Logo &amp; Favicon</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div>
+                <Label>Logo On <span className="text-xs text-slate-400 font-normal">(Header &amp; Sidebar)</span></Label>
+                <p className="text-xs text-slate-400 mb-2">Displayed in the site header and My Account sidebar.</p>
+                <ImageUpload value={settings.logo_on || ''} onChange={v => setSettings({...settings, logo_on: v})} data-testid="settings-logo-on" />
+              </div>
+              <div>
+                <Label>Logo Off <span className="text-xs text-slate-400 font-normal">(Footer)</span></Label>
+                <p className="text-xs text-slate-400 mb-2">Displayed in the site footer. Replaces the text fallback.</p>
+                <ImageUpload value={settings.logo_off || ''} onChange={v => setSettings({...settings, logo_off: v})} data-testid="settings-logo-off" />
+              </div>
+              <div>
+                <Label>Favicon</Label>
+                <p className="text-xs text-slate-400 mb-2">Browser tab icon. Recommended: 32x32 or 64x64 PNG.</p>
+                <ImageUpload value={settings.favicon || ''} onChange={v => setSettings({...settings, favicon: v})} data-testid="settings-favicon" />
+              </div>
             </div>
           </div>
         </TabsContent>

@@ -92,12 +92,21 @@ export default function MyAccountLayout() {
         style={{ backgroundColor: v('sidebar-bg', '#13161e'), borderRight: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
         <div className="p-5" style={{ borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
           <Link to="/" className="flex items-center gap-2" data-testid="myaccount-brand">
-            <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: v('accent', '#c9a84c') }}>
-              <span className="font-bold text-sm" style={{ color: v('button-text', '#0d0f14'), fontFamily: "'DM Serif Display', serif" }}>
-                {brandName[0]}
-              </span>
-            </div>
-            <span className="font-semibold text-sm" style={{ color: v('text-primary', '#ffffff') }}>{brandName}</span>
+            {(() => {
+              const logoOn = settings.logo_on;
+              const logoSrc = logoOn ? (logoOn.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${logoOn}` : logoOn) : null;
+              if (logoSrc) return <img src={logoSrc} alt={brandName} className="h-8 w-auto object-contain" data-testid="sidebar-logo-img" />;
+              return (
+                <>
+                  <div className="w-8 h-8 rounded flex items-center justify-center" style={{ backgroundColor: v('accent', '#c9a84c') }}>
+                    <span className="font-bold text-sm" style={{ color: v('button-text', '#0d0f14'), fontFamily: "'DM Serif Display', serif" }}>
+                      {brandName[0]}
+                    </span>
+                  </div>
+                  <span className="font-semibold text-sm" style={{ color: v('text-primary', '#ffffff') }}>{brandName}</span>
+                </>
+              );
+            })()}
           </Link>
           {member && (
             <div className="mt-4 flex items-center gap-3">
@@ -144,7 +153,10 @@ export default function MyAccountLayout() {
           <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}>
             <Home className="w-4 h-4" /><span>Back to Website</span>
           </Link>
-          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:text-red-300 hover:bg-red-500/10 rounded" data-testid="myaccount-logout-btn">
+          <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}
+            onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
+            onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
+            data-testid="myaccount-logout-btn">
             <LogOut className="w-4 h-4" /><span>Logout</span>
           </button>
         </div>

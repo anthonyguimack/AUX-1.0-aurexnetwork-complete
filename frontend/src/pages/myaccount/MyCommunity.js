@@ -69,7 +69,7 @@ export default function MyCommunity() {
             <div className="space-y-3">
               <div className="flex justify-between items-center p-3 bg-[#0d0f14] rounded">
                 <span className="text-xs text-gray-400">Membership Invitation</span>
-                <span className="text-lg font-bold text-[#c9a84c]" data-testid="total-invites">{data.total_invites}</span>
+                <span className="text-lg font-bold" style={{ color: 'var(--ma-accent, #c9a84c)' }} data-testid="total-invites">{data.total_invites}</span>
               </div>
               <div className="flex justify-between items-center p-3 bg-[#0d0f14] rounded">
                 <span className="text-xs text-gray-400">Invited Members</span>
@@ -78,15 +78,15 @@ export default function MyCommunity() {
             </div>
           </div>
           <div className="bg-[#13161e] border border-white/5 rounded-lg p-6 flex flex-col items-center">
-            <div className="w-24 h-24 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/30 flex items-center justify-center overflow-hidden">
+            <div className="w-24 h-24 rounded-full flex items-center justify-center overflow-hidden" style={{ backgroundColor: 'var(--ma-avatar-bg, rgba(201,168,76,0.1))', border: '2px solid var(--ma-avatar-border, rgba(201,168,76,0.3))' }}>
               {(member?.avatar || defaultAvatar) ? (
                 <img src={member?.avatar || defaultAvatar} alt="" className="w-full h-full object-cover" />
               ) : (
-                <User className="w-10 h-10 text-[#c9a84c]/50" />
+                <User className="w-10 h-10" style={{ color: 'var(--ma-accent, #c9a84c)', opacity: 0.5 }} />
               )}
             </div>
             <p className="mt-2 text-white text-sm font-medium">{member?.first_name} {member?.last_name}</p>
-            <p className="text-[#c9a84c] text-xs">{member?.membership_id}</p>
+            <p className="text-xs" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{member?.membership_id}</p>
           </div>
         </div>
         <div className="lg:col-span-2 bg-[#13161e] border border-white/5 rounded-lg">
@@ -101,7 +101,7 @@ export default function MyCommunity() {
               </div>
               {['membership_number', 'first_name', 'last_name'].map(f => (
                 <label key={f} className="flex items-center gap-1.5 cursor-pointer">
-                  <input type="radio" name="communityFilter" value={f} checked={filter === f} onChange={e => setFilter(e.target.value)} className="accent-[#c9a84c]" />
+                  <input type="radio" name="communityFilter" value={f} checked={filter === f} onChange={e => setFilter(e.target.value)} style={{ accentColor: 'var(--ma-accent, #c9a84c)' }} />
                   <span className="text-xs text-gray-400 capitalize">{f.replace('_', ' ')}</span>
                 </label>
               ))}
@@ -113,9 +113,10 @@ export default function MyCommunity() {
               <p className="text-xs text-gray-500 mb-2">{searchResults.length} result(s) found</p>
               {searchResults.map(n => (
                 <button key={n.member_id} onClick={() => setSelected(n)}
-                  className="w-full text-left px-3 py-2 rounded text-sm text-gray-300 hover:bg-[#c9a84c]/10 hover:text-white flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded text-sm text-gray-300 hover:text-white flex items-center gap-2"
+                  style={{ '--hover-bg': 'var(--ma-accent, #c9a84c)' }}
                   data-testid={`search-result-${n.membership_id}`}>
-                  <span className="text-[#c9a84c] font-mono text-xs">{n.membership_id}</span>
+                  <span className="font-mono text-xs" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{n.membership_id}</span>
                   <span>{n.first_name} {n.last_name}</span>
                 </button>
               ))}
@@ -134,12 +135,12 @@ export default function MyCommunity() {
           {selected && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full bg-[#c9a84c]/10 flex items-center justify-center">
-                  <span className="text-[#c9a84c] font-bold">{(selected.first_name || '?')[0].toUpperCase()}</span>
+                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--ma-avatar-bg, rgba(201,168,76,0.1))' }}>
+                  <span className="font-bold" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{(selected.first_name || '?')[0].toUpperCase()}</span>
                 </div>
                 <div>
                   <p className="font-medium text-white">{selected.first_name} {selected.last_name}</p>
-                  <p className="text-[#c9a84c] text-xs">{selected.membership_id}</p>
+                  <p className="text-xs" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{selected.membership_id}</p>
                 </div>
               </div>
               {selected.email && <div><span className="text-xs text-gray-500">Email:</span><p className="text-sm text-white">{selected.email}</p></div>}

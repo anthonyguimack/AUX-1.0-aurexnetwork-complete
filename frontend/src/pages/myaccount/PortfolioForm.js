@@ -273,12 +273,12 @@ export default function PortfolioForm() {
           <div className="flex gap-6 mb-4">
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="shared_mode" value="all" checked={form.shared_mode === 'all'}
-                onChange={() => setForm(p => ({...p, shared_mode: 'all', shared_with: []}))} className="accent-[#c9a84c]" data-testid="share-all-radio" />
+                onChange={() => setForm(p => ({...p, shared_mode: 'all', shared_with: []}))} style={{ accentColor: 'var(--ma-accent, #c9a84c)' }} data-testid="share-all-radio" />
               <span className="text-sm text-gray-300">All Members</span>
             </label>
             <label className="flex items-center gap-2 cursor-pointer">
               <input type="radio" name="shared_mode" value="select" checked={form.shared_mode === 'select'}
-                onChange={() => setForm(p => ({...p, shared_mode: 'select'}))} className="accent-[#c9a84c]" data-testid="share-select-radio" />
+                onChange={() => setForm(p => ({...p, shared_mode: 'select'}))} style={{ accentColor: 'var(--ma-accent, #c9a84c)' }} data-testid="share-select-radio" />
               <span className="text-sm text-gray-300">Select Members</span>
             </label>
           </div>

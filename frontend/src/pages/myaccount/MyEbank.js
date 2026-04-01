@@ -55,19 +55,20 @@ export default function MyEbank() {
   };
 
   const setField = (key, val) => setForm(prev => ({ ...prev, [key]: val }));
-  const tabCls = (t) => `flex-1 px-4 py-2 text-sm font-medium rounded transition-colors ${activeTab === t ? 'bg-[#c9a84c] text-[#0d0f14]' : 'text-[#8a8d93] hover:text-white'}`;
+  const tabCls = (t) => `flex-1 px-4 py-2 text-sm font-medium rounded transition-colors ${activeTab === t ? '' : 'hover:text-white'}`;
+  const tabStyle = (t) => activeTab === t ? { backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' } : { color: '#8a8d93' };
 
-  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin text-[#c9a84c]" /></div>;
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin" style={{ color: 'var(--ma-accent, #c9a84c)' }} /></div>;
 
   return (
     <div className="space-y-6" data-testid="my-ebank-page">
       <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>My Ebank</h1>
 
       <div className="flex gap-2 bg-[#1a1d24] rounded p-1">
-        <button onClick={() => setActiveTab('form')} className={tabCls('form')} data-testid="ebank-form-tab">
+        <button onClick={() => setActiveTab('form')} className={tabCls('form')} style={tabStyle('form')} data-testid="ebank-form-tab">
           <Save className="w-3.5 h-3.5 inline mr-1.5" />My Finances
         </button>
-        <button onClick={() => setActiveTab('activities')} className={tabCls('activities')} data-testid="ebank-activities-tab">
+        <button onClick={() => setActiveTab('activities')} className={tabCls('activities')} style={tabStyle('activities')} data-testid="ebank-activities-tab">
           <Activity className="w-3.5 h-3.5 inline mr-1.5" />Activities
         </button>
       </div>
@@ -79,22 +80,22 @@ export default function MyEbank() {
               <Label className="text-xs text-[#8a8d93] block mb-1.5">{field.label}</Label>
               {field.type === 'textarea' ? (
                 <textarea value={form[field.key] || ''} onChange={e => setField(field.key, e.target.value)} rows={3}
-                  className="w-full bg-[#0d0f14] border border-[#2a2d35] rounded px-3 py-2 text-white text-sm focus:border-[#c9a84c] outline-none" data-testid={`ebank-${field.key}`} />
+                  className="w-full bg-[#0d0f14] border border-[#2a2d35] rounded px-3 py-2 text-white text-sm outline-none" style={{ '--tw-ring-color': 'var(--ma-accent, #c9a84c)' }} data-testid={`ebank-${field.key}`} />
               ) : field.type === 'range' ? (
                 <div className="flex items-center gap-3">
                   <input type="range" min="1" max="5" value={form[field.key] || 3} onChange={e => setField(field.key, e.target.value)}
-                    className="flex-1 accent-[#c9a84c]" data-testid={`ebank-${field.key}`} />
-                  <span className="text-[#c9a84c] font-bold text-lg w-6 text-center">{form[field.key] || 3}</span>
+                    className="flex-1" style={{ accentColor: 'var(--ma-accent, #c9a84c)' }} data-testid={`ebank-${field.key}`} />
+                  <span className="font-bold text-lg w-6 text-center" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{form[field.key] || 3}</span>
                 </div>
               ) : (
                 <Input type={field.type} value={form[field.key] || ''} onChange={e => setField(field.key, e.target.value)}
-                  className="bg-[#0d0f14] border-[#2a2d35] text-white focus:border-[#c9a84c]" data-testid={`ebank-${field.key}`}
+                  className="bg-[#0d0f14] border-[#2a2d35] text-white" data-testid={`ebank-${field.key}`}
                   style={field.type === 'date' ? { colorScheme: 'dark' } : undefined} />
               )}
             </div>
           ))}
 
-          <button onClick={handleSave} disabled={saving} className="w-full bg-[#c9a84c] text-[#0d0f14] py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#d4b85c] transition-colors" data-testid="ebank-save-btn">
+          <button onClick={handleSave} disabled={saving} className="w-full py-3 rounded-lg text-sm font-bold flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }} data-testid="ebank-save-btn">
             {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} Save Changes
           </button>
         </div>
@@ -107,12 +108,12 @@ export default function MyEbank() {
           ) : activities.map(act => (
             <div key={act.id} className="bg-[#1a1d24] rounded-lg p-3 border border-[#2a2d35] flex items-start gap-3">
               <div className="mt-0.5">
-                <Clock className="w-4 h-4 text-[#c9a84c]" />
+                <Clock className="w-4 h-4" style={{ color: 'var(--ma-accent, #c9a84c)' }} />
               </div>
               <div className="flex-1">
                 <p className="text-sm text-white">
-                  <span className={`font-medium ${act.action === 'added' ? 'text-green-400' : 'text-[#c9a84c]'}`}>{act.action === 'added' ? 'Added' : 'Updated'}</span>
-                  {' '}<span className="text-[#c9a84c]">{FIELD_LABELS[act.field] || act.field}</span>
+                  <span className={`font-medium ${act.action === 'added' ? 'text-green-400' : ''}`} style={act.action !== 'added' ? { color: 'var(--ma-accent, #c9a84c)' } : {}}>{act.action === 'added' ? 'Added' : 'Updated'}</span>
+                  {' '}<span style={{ color: 'var(--ma-accent, #c9a84c)' }}>{FIELD_LABELS[act.field] || act.field}</span>
                 </p>
                 {act.action === 'updated' && act.old_value && (
                   <p className="text-xs text-[#8a8d93] mt-0.5">"{act.old_value}" → "{act.new_value}"</p>
