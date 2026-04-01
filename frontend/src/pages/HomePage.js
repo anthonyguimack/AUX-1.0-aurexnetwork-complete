@@ -373,10 +373,10 @@ function GallerySection({ items, theme }) {
 
 /* ==================== TESTIMONIALS ==================== */
 function TestimonialsSection({ items, theme }) {
-  if (!items?.length) return null;
   const [carouselIdx, setCarouselIdx] = useState(0);
   const perPage = 3;
-  const totalPages = Math.ceil(items.length / perPage);
+  const totalPages = Math.ceil((items?.length || 0) / perPage);
+  if (!items?.length) return null;
 
   if (theme === 'modern') {
     const visible = items.slice(carouselIdx * perPage, carouselIdx * perPage + perPage);
@@ -530,7 +530,7 @@ export default function HomePage() {
   useEffect(() => {
     publicAPI.getAbout().then(r => setAbout(r.data)).catch(() => {});
     publicAPI.getServices().then(r => setServices(r.data)).catch(() => {});
-    publicAPI.getBlogPosts().then(r => setPosts(r.data)).catch(() => {});
+    publicAPI.getBlog().then(r => setPosts(r.data?.posts || r.data || [])).catch(() => {});
     publicAPI.getBooks().then(r => setBooks(r.data)).catch(() => {});
     publicAPI.getMaps().then(r => setMaps(r.data)).catch(() => {});
     publicAPI.getMapLocations?.().then(r => setLocations(r.data)).catch(() => {});
@@ -551,7 +551,8 @@ export default function HomePage() {
     news: <NewsSection key="news" posts={posts} theme={theme} />,
     blog: <ExternalBlogSection key="blog" theme={theme} />,
     reading_list: <ReadingListSection key="reading" books={books} theme={theme} />,
-    locations: <MapSection key="map" maps={maps} locations={locations} theme={theme} />,
+    map: <MapSection key="map" maps={maps} locations={locations} theme={theme} />,
+    locations: <MapSection key="locations" maps={maps} locations={locations} theme={theme} />,
     portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
     gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
     testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
