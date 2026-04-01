@@ -195,6 +195,19 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Backend**: Settings collection updated with `logo_on`, `logo_off`, `favicon` fields. Public API exposes them.
 - Testing: 12/12 backend + 100% frontend verification (Iteration 24)
 
+### Dual Logo System, Footer CMS, CMS Fixes, Internal Page Layout (Apr 1, 2026) - COMPLETE
+- **Dual Logo ON**: Logo ON #1 (hero/initial load state) + Logo ON #2 (scrolled/solid header). Both accept upload or URL. Modern navbar swaps logos on scroll; Default/Classic always use Logo ON #2.
+- **Logo OFF**: Now used in Footer, Admin sidebar, and My Account sidebar (was previously Logo ON).
+- **Logo flash fix**: Text fallback only shows after settings are confirmed loaded; empty placeholder div shown during load.
+- **Footer CMS**: Footer description and copyright text are now editable fields in Settings > General tab. All 3 theme footers use these dynamic values.
+- **Modern Footer pages**: Internal pages now display in the Modern footer's Navigation section.
+- **My Account link**: Added to all 3 theme navbars (desktop + mobile) for logged-in users.
+- **Internal page fixes**: DynamicPage always shows title (even with hero), has top padding for hero-less pages, overflow-x hidden for rich-text content. Gallery/ReadingList/News pages also have proper top padding.
+- **CMS modal buttons**: CSS overrides for `[role="dialog"]` ensure portal-rendered modals follow admin color settings.
+- **ImageUpload**: BooksManager (cover image) and AboutManager (image) now use ImageUpload component (upload or URL).
+- **Favicon**: Dynamic injection via App.js SettingsProvider from settings.favicon field.
+- Testing: 16/16 backend + 100% frontend verification (Iteration 25)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
