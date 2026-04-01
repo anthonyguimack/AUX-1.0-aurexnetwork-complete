@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI, contactAPI, checkoutAPI, blogExternalAPI } from '../lib/api';
-import { useSettings } from '../App';
+import { useSettings, useTheme } from '../App';
 import { toast } from 'sonner';
 import {
   ArrowRight, Phone, Briefcase, TrendingUp, BarChart3, Monitor, Star,
-  MapPin, BookOpen, Send, ChevronRight, Quote, Shield, Clock, ExternalLink, Loader2
+  MapPin, BookOpen, Send, ChevronRight, Quote, Shield, Clock, ExternalLink, Loader2,
+  ChevronLeft, ArrowUpRight
 } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-markercluster';
@@ -22,12 +23,48 @@ L.Icon.Default.mergeOptions({
 });
 
 const iconMap = { 'briefcase': Briefcase, 'trending-up': TrendingUp, 'bar-chart-3': BarChart3, 'monitor': Monitor };
+const API = process.env.REACT_APP_BACKEND_URL;
 
-// HeroSection is imported from shared component
 import HeroSection from '../components/HeroSection';
 
-function AboutSection({ data }) {
+/* ==================== ABOUT ==================== */
+function AboutSection({ data, theme }) {
   if (!data?.title) return null;
+  if (theme === 'modern') return (
+    <section className="py-24 bg-white" id="about" data-testid="about-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-16 items-center">
+          {data.image && <div className="lg:col-span-2"><img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="w-full rounded-2xl shadow-2xl" /></div>}
+          <div className={data.image ? 'lg:col-span-3' : 'lg:col-span-5'}>
+            <div className="w-12 h-0.5 mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.label}</p>
+            <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
+            <p className="text-lg leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{data.description}</p>
+            {data.phone && <div className="mt-8 flex items-center gap-3"><div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Phone className="w-5 h-5 text-white" /></div><div><p className="text-xs text-slate-400">Call us anytime</p><p className="font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{data.phone}</p></div></div>}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+  if (theme === 'classic') return (
+    <section className="py-20 bg-[#faf9f6]" id="about" data-testid="about-section">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="border-2 p-10 md:p-16" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            <div>
+              <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.label}</p>
+              <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-6" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
+              <div className="w-16 h-0.5 mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+              <p className="leading-relaxed" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif" }}>{data.description}</p>
+              {data.signature_name && <p className="mt-6 text-lg italic" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>- {data.signature_name}, {data.signature_title}</p>}
+            </div>
+            {data.image && <img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="w-full border-2" style={{ borderColor: 'var(--color-primary, #1a2332)' }} />}
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+  // Default
   return (
     <section className="py-20 md:py-28 bg-white" id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
@@ -37,80 +74,88 @@ function AboutSection({ data }) {
             <h2 className="text-3xl md:text-4xl font-bold leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
             <p className="mt-6 leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{data.description}</p>
             <div className="flex items-center gap-6 mt-8">
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Phone className="w-4 h-4 text-white" /></div>
-                <div>
-                  <p className="text-xs text-slate-400">Call us anytime</p>
-                  <p className="text-sm font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{data.phone}</p>
-                </div>
-              </div>
-              {data.signature_name && (
-                <div className="border-l border-slate-200 pl-6">
-                  <p className="text-lg italic" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{data.signature_name}</p>
-                  <p className="text-xs text-slate-400">{data.signature_title}</p>
-                </div>
-              )}
+              {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Phone className="w-4 h-4 text-white" /></div><div><p className="text-xs text-slate-400">Call us anytime</p><p className="text-sm font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{data.phone}</p></div></div>}
+              {data.signature_name && <div className="border-l border-slate-200 pl-6"><p className="text-lg italic" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{data.signature_name}</p><p className="text-xs text-slate-400">{data.signature_title}</p></div>}
             </div>
           </div>
-          <div className="relative">
-            <img src={data.image} alt="About" className="rounded-sm w-full object-cover h-[400px]" />
-            {data.stats?.length > 0 && (
-              <div className="absolute bottom-4 left-4 text-white px-6 py-4 rounded-sm" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
-                <p className="text-2xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.stats[0].value}</p>
-                <p className="text-xs text-white/70">{data.stats[0].label}</p>
-              </div>
-            )}
-          </div>
+          {data.image && <img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="rounded-lg shadow-lg" />}
         </div>
       </div>
     </section>
   );
 }
 
-function ServicesSection({ services }) {
-  const [tab, setTab] = useState('all');
-  const filtered = useMemo(() => tab === 'all' ? services : services.filter(s => s.type === tab), [services, tab]);
-  const handleBuy = async (service) => {
-    try {
-      const res = await checkoutAPI.create(service.id, window.location.origin);
-      if (res.data.url) window.location.href = res.data.url;
-    } catch (err) { toast.error(err.response?.data?.detail || 'Checkout failed'); }
-  };
+/* ==================== SERVICES ==================== */
+function ServicesSection({ services, theme }) {
   if (!services?.length) return null;
-  return (
-    <section className="py-20 md:py-28 bg-[#F8FAFC]" id="services" data-testid="services-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>OUR LATEST SERVICES</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Service We Provide</h2>
+  const handleCheckout = async (s) => {
+    if (!s.stripe_price_id) { toast.info('No pricing configured'); return; }
+    try { const r = await checkoutAPI.create({ price_id: s.stripe_price_id, service_name: s.title, amount: s.price }); if (r.data.url) window.location.href = r.data.url; } catch { toast.error('Checkout error'); }
+  };
+
+  if (theme === 'modern') return (
+    <section className="py-24 bg-slate-50" id="services" data-testid="services-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <div className="text-center mb-16">
+          <div className="w-12 h-0.5 mx-auto mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+          <h2 className="text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="services-title">Our Services</h2>
         </div>
-        <div className="flex justify-center gap-3 mb-10">
-          {['all', 'service', 'product'].map(t => (
-            <button key={t} onClick={() => setTab(t)}
-              className="px-5 py-2 rounded-sm text-sm font-medium transition-colors border"
-              style={tab === t ? { backgroundColor: 'var(--color-tab-active-bg, #1a2332)', color: 'var(--color-tab-active-text, #fff)', borderColor: 'transparent' } : { backgroundColor: '#fff', color: 'var(--color-body-text, #64748B)', borderColor: '#e2e8f0' }}
-              data-testid={`services-tab-${t}`}
-            >{t === 'all' ? 'All' : t.charAt(0).toUpperCase() + t.slice(1) + 's'}</button>
-          ))}
-        </div>
-        <div className="space-y-4">
-          {filtered.map(service => {
-            const IconComp = iconMap[service.icon] || Briefcase;
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map(s => {
+            const Icon = iconMap[s.icon] || Briefcase;
             return (
-              <div key={service.id} className="bg-white p-6 md:p-8 rounded-sm border border-slate-100 flex flex-col md:flex-row items-start md:items-center gap-6 hover:shadow-lg transition-all group" data-testid={`service-card-${service.id}`}>
-                <div className="w-14 h-14 rounded-sm bg-[#F8FAFC] flex items-center justify-center border border-slate-100">
-                  <IconComp className="w-6 h-6" style={{ color: 'var(--color-icon, #0D9488)' }} />
-                </div>
-                <div className="flex-1">
-                  <h3 className="text-lg font-semibold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{service.title}</h3>
-                  <p className="text-sm mt-1" style={{ color: 'var(--color-body-text, #475569)' }}>{service.description}</p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <span className="text-xl font-bold" style={{ color: 'var(--color-heading, #1a2332)' }}>${service.price?.toFixed(2)}</span>
-                  <button onClick={() => handleBuy(service)} className="p-3 rounded-sm transition-colors" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid={`buy-service-${service.id}`}>
-                    <ArrowRight className="w-4 h-4" />
-                  </button>
-                </div>
+              <div key={s.id} className="bg-white rounded-2xl p-8 hover:shadow-xl transition-all duration-300 group border border-slate-100">
+                <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors group-hover:scale-110" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-6 h-6 text-white" /></div>
+                <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                {s.price > 0 && <div className="flex items-center justify-between pt-4 border-t border-slate-100"><span className="text-2xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 rounded-full text-sm font-medium text-white transition-colors" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>Get Started</button></div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+
+  if (theme === 'classic') return (
+    <section className="py-20 bg-[#faf9f6]" id="services" data-testid="services-section">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-14">
+          <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="services-title">Our Services</h2>
+          <div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map(s => {
+            const Icon = iconMap[s.icon] || Briefcase;
+            return (
+              <div key={s.id} className="border-2 p-8 hover:shadow-md transition-all" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: '#faf9f6' }}>
+                <Icon className="w-8 h-8 mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} />
+                <h3 className="text-lg font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
+                <div className="w-10 h-0.5 mb-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                {s.price > 0 && <div className="flex items-center justify-between"><span className="text-lg font-bold" style={{ color: 'var(--color-heading, #1a2332)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>Purchase</button></div>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </section>
+  );
+
+  // Default
+  return (
+    <section className="py-20 bg-slate-50" id="services" data-testid="services-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="text-center mb-14"><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>What We Offer</p><h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="services-title">Our Services</h2></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {services.map(s => {
+            const Icon = iconMap[s.icon] || Briefcase;
+            return (
+              <div key={s.id} className="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition-all border border-slate-100 group">
+                <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-5 h-5 text-white" /></div>
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
+                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                {s.price > 0 && <div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="text-sm font-medium px-4 py-2 rounded-sm text-white" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)' }}>Purchase</button></div>}
               </div>
             );
           })}
@@ -120,74 +165,67 @@ function ServicesSection({ services }) {
   );
 }
 
-function NewsSection({ posts }) {
+/* ==================== NEWS ==================== */
+function NewsSection({ posts, theme }) {
   if (!posts?.length) return null;
+  const bgClass = theme === 'classic' ? 'bg-[#faf9f6]' : 'bg-white';
+  const cardStyle = theme === 'modern' ? 'rounded-2xl overflow-hidden shadow-sm hover:shadow-xl' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-slate-100';
+  const borderColor = theme === 'classic' ? 'var(--color-primary, #1a2332)' : undefined;
   return (
-    <section className="py-20 md:py-28 bg-white" data-testid="news-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>LATEST NEWS</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Company News</h2>
+    <section className={`py-20 ${bgClass}`} id="news" data-testid="news-section">
+      <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6 ${theme === 'modern' ? 'md:px-10' : 'md:px-12'}`}>
+        <div className={`flex items-center justify-between mb-12`}>
+          <div>
+            {theme === 'modern' && <div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+            <h2 className={`text-3xl ${theme === 'modern' ? 'md:text-4xl' : ''} font-bold`} style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="news-title">Latest News</h2>
+            {theme === 'classic' && <div className="w-16 h-0.5 mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+          </div>
+          <Link to="/news" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="news-view-all"><span>View All</span> <ArrowRight className="w-4 h-4" /></Link>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {posts.slice(0, 3).map(post => (
-            <Link key={post.id} to={`/news/${post.slug}`} className="group bg-white rounded-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all" data-testid={`news-card-${post.slug}`}>
-              <div className="h-48 overflow-hidden"><img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
+          {posts.slice(0, 3).map(p => (
+            <Link to={`/news/${p.id}`} key={p.id} className={`bg-white group transition-all ${cardStyle}`} style={borderColor ? { borderColor } : {}}>
+              {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-6">
-                <span className="text-xs uppercase tracking-wider font-semibold" style={{ color: 'var(--color-accent, #0D9488)' }}>{post.category}</span>
-                <h3 className="text-lg font-semibold mt-2 group-hover:opacity-80 transition-colors" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{post.title}</h3>
-                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{post.summary}</p>
-                <div className="flex items-center justify-between mt-4 pt-4 border-t border-slate-100">
-                  <span className="text-xs text-slate-400">{post.author}</span>
-                  <span className="text-xs font-medium flex items-center gap-1" style={{ color: 'var(--color-link, #0D9488)' }}>Read More <ChevronRight className="w-3 h-3" /></span>
-                </div>
+                <div className="flex items-center gap-2 mb-3"><Clock className="w-3 h-3 text-slate-400" /><span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString()}</span></div>
+                <h3 className="font-bold mb-2 group-hover:opacity-70 transition-colors" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: theme === 'classic' ? "'Playfair Display', serif" : undefined }}>{p.title}</h3>
+                <p className="text-sm line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.excerpt || p.content?.replace(/<[^>]*>/g, '').slice(0, 120)}</p>
               </div>
             </Link>
           ))}
-        </div>
-        <div className="text-center mt-10">
-          <Link to="/news" className="inline-flex items-center gap-2 border px-6 py-2.5 rounded-sm text-sm font-medium transition-colors hover:opacity-80" style={{ borderColor: 'var(--color-primary, #1a2332)', color: 'var(--color-primary, #1a2332)' }} data-testid="news-view-all-btn">
-            View All News <ArrowRight className="w-4 h-4" />
-          </Link>
         </div>
       </div>
     </section>
   );
 }
 
-function ExternalBlogSection() {
+/* ==================== EXTERNAL BLOG ==================== */
+function ExternalBlogSection({ theme }) {
+  const settings = useSettings();
   const [posts, setPosts] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
-
   useEffect(() => {
-    blogExternalAPI.getLatest()
-      .then(r => { setPosts(r.data.posts || []); if (r.data.error) setError(r.data.error); })
-      .catch(() => setError('Blog unavailable'))
-      .finally(() => setLoading(false));
-  }, []);
-
+    if (settings.blog_api_url) blogExternalAPI.getLatest().then(r => setPosts(r.data?.posts || [])).catch(() => {});
+  }, [settings.blog_api_url]);
+  if (!posts.length) return null;
+  const bgClass = theme === 'classic' ? 'bg-white' : 'bg-slate-50';
+  const cardStyle = theme === 'modern' ? 'rounded-2xl overflow-hidden shadow-sm hover:shadow-xl' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-slate-100';
   return (
-    <section className="py-20 md:py-28 bg-[#F8FAFC]" data-testid="blog-external-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>INSIGHTS & ARTICLES</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>From Our Blog</h2>
+    <section className={`py-20 ${bgClass}`} id="blog" data-testid="blog-section">
+      <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6 ${theme === 'modern' ? 'md:px-10' : 'md:px-12'}`}>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            {theme === 'modern' && <div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+            <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="blog-title">Blog</h2>
+            {theme === 'classic' && <div className="w-16 h-0.5 mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+          </div>
         </div>
-        {loading && <div className="flex justify-center"><Loader2 className="w-8 h-8 animate-spin" style={{ color: 'var(--color-accent, #0D9488)' }} /></div>}
-        {error && !posts.length && <p className="text-center text-slate-400 text-sm">{error}</p>}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {posts.map((post, idx) => (
-            <a key={idx} href={post.url} target="_blank" rel="noopener noreferrer" className="group bg-white rounded-sm border border-slate-100 overflow-hidden hover:shadow-xl transition-all" data-testid={`blog-ext-card-${idx}`}>
-              <div className="h-48 overflow-hidden">
-                <img src={post.image} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              </div>
+          {posts.slice(0, 3).map((p, i) => (
+            <a key={i} href={p.url || p.link} target="_blank" rel="noreferrer" className={`bg-white group transition-all ${cardStyle}`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
+              {p.image && <div className="h-48 overflow-hidden"><img src={p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-6">
-                <h3 className="text-lg font-semibold group-hover:opacity-80 transition-colors" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{post.title}</h3>
-                <p className="text-sm mt-2 line-clamp-3" style={{ color: 'var(--color-body-text, #475569)' }}>{post.summary}</p>
-                <span className="inline-flex items-center gap-1 mt-4 text-xs font-medium" style={{ color: 'var(--color-link, #0D9488)' }}>
-                  Read More <ExternalLink className="w-3 h-3" />
-                </span>
+                <h3 className="font-bold mb-2 group-hover:opacity-70 transition-colors flex items-center gap-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{p.title} <ExternalLink className="w-3 h-3 flex-shrink-0 opacity-40" /></h3>
+                <p className="text-sm line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.summary || p.excerpt}</p>
               </div>
             </a>
           ))}
@@ -197,158 +235,134 @@ function ExternalBlogSection() {
   );
 }
 
-function ReadingListSection({ books }) {
+/* ==================== READING LIST ==================== */
+function ReadingListSection({ books, theme }) {
   if (!books?.length) return null;
-  const featured = books.find(b => b.featured) || books[0];
+  const bgClass = theme === 'classic' ? 'bg-[#faf9f6]' : 'bg-white';
   return (
-    <section className="py-20 md:py-28 bg-white" data-testid="reading-list-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>RECOMMENDED READING</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Reading List</h2>
-        </div>
-        {featured && (
-          <div className="flex flex-col md:flex-row items-center gap-10 bg-[#F8FAFC] p-8 md:p-12 rounded-sm border border-slate-100">
-            <img src={featured.image} alt={featured.title} className="w-40 h-56 object-cover rounded-sm shadow-lg" />
-            <div>
-              <h3 className="text-2xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{featured.title}</h3>
-              <p className="text-sm font-medium mt-1" style={{ color: 'var(--color-accent, #0D9488)' }}>by {featured.author}</p>
-              <p className="mt-4 leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{featured.description}</p>
-              <Link to="/reading-list" className="inline-flex items-center gap-2 mt-6 font-medium text-sm hover:underline" style={{ color: 'var(--color-link, #0D9488)' }}>
-                <BookOpen className="w-4 h-4" /> View Full Reading List <ArrowRight className="w-4 h-4" />
-              </Link>
-            </div>
+    <section className={`py-20 ${bgClass}`} id="reading-list" data-testid="reading-section">
+      <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6 ${theme === 'modern' ? 'md:px-10' : 'md:px-12'}`}>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            {theme === 'modern' && <div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+            <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="reading-title">Reading List</h2>
+            {theme === 'classic' && <div className="w-16 h-0.5 mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
           </div>
-        )}
+          <Link to="/reading-list" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View All <ArrowRight className="w-4 h-4" /></Link>
+        </div>
+        <div className={`grid gap-6 ${theme === 'modern' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5' : theme === 'classic' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'}`}>
+          {books.slice(0, theme === 'modern' ? 5 : theme === 'classic' ? 4 : 5).map(b => (
+            <Link to="/reading-list" key={b.id} className={`group transition-all ${theme === 'modern' ? 'rounded-xl overflow-hidden shadow-sm hover:shadow-lg' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md'}`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
+              {b.cover_image && <div className={`${theme === 'modern' ? 'h-56' : 'h-48'} overflow-hidden`}><img src={b.cover_image?.startsWith('/api') ? `${API}${b.cover_image}` : b.cover_image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
+              <div className="p-3"><p className="text-sm font-medium truncate" style={{ color: 'var(--color-heading, #1a2332)' }}>{b.title}</p><p className="text-xs text-slate-400 truncate">{b.author}</p></div>
+            </Link>
+          ))}
+        </div>
       </div>
     </section>
   );
 }
 
-function MapSection({ maps, locations }) {
-  if (!locations?.length) return null;
+/* ==================== MAP ==================== */
+function MapSection({ maps, locations, theme }) {
+  const allLocations = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
+  if (!allLocations.length) return null;
+  const center = [allLocations[0].lat, allLocations[0].lng];
   return (
-    <section className="py-20 md:py-28 bg-[#F8FAFC]" id="map" data-testid="map-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>OUR PRESENCE</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Global Reach</h2>
+    <section className={`py-20 ${theme === 'classic' ? 'bg-white' : 'bg-slate-50'}`} id="locations" data-testid="map-section">
+      <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6`}>
+        <div className="text-center mb-10">
+          {theme === 'modern' && <div className="w-12 h-0.5 mx-auto mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+          <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="map-title">Our Locations</h2>
+          {theme === 'classic' && <div className="w-16 h-0.5 mx-auto mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
         </div>
-        <div className="h-[450px] rounded-sm overflow-hidden border border-slate-200" data-testid="map-container">
-          <MapContainer center={[30, 0]} zoom={2} scrollWheelZoom={true} style={{ height: '100%', width: '100%' }}>
-            <TileLayer url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png" attribution='&copy; OpenStreetMap' />
-            <MarkerClusterGroup chunkedLoading>
-              {locations.map(loc => (
-                <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-                  <Popup>
-                    <strong>{loc.name}</strong><br />{loc.description}
-                    {loc.link && <><br /><a href={loc.link} target="_blank" rel="noreferrer" style={{ color: '#0D9488' }}>More info</a></>}
-                  </Popup>
-                </Marker>
-              ))}
+        <div className={`${theme === 'modern' ? 'rounded-2xl' : theme === 'classic' ? 'border-2' : 'rounded-lg'} overflow-hidden shadow-lg h-[400px]`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
+          <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}>
+            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <MarkerClusterGroup>
+              {allLocations.map((loc, i) => (<Marker key={i} position={[loc.lat, loc.lng]}><Popup><strong>{loc.title || loc.name}</strong>{loc.description && <p>{loc.description}</p>}{loc.link && <a href={loc.link} target="_blank" rel="noreferrer" className="text-blue-500 underline">Visit</a>}</Popup></Marker>))}
             </MarkerClusterGroup>
           </MapContainer>
         </div>
-        {maps?.length > 0 && (
-          <div className="text-center mt-6">
-            <Link to={`/map/${maps[0].slug}`} className="inline-flex items-center gap-2 font-medium text-sm hover:underline" style={{ color: 'var(--color-link, #0D9488)' }}>
-              <MapPin className="w-4 h-4" /> View Map Details <ArrowRight className="w-4 h-4" />
-            </Link>
-          </div>
-        )}
       </div>
     </section>
   );
 }
 
-function PortfolioSection({ items }) {
-  const [filter, setFilter] = useState('all');
-  const allTags = useMemo(() => [...new Set(items.flatMap(i => i.tags || []))], [items]);
-  const filtered = useMemo(() => filter === 'all' ? items : items.filter(i => i.tags?.includes(filter)), [items, filter]);
+/* ==================== PORTFOLIO ==================== */
+function PortfolioSection({ items, theme }) {
   if (!items?.length) return null;
-  return (
-    <section className="py-20 md:py-28 bg-white" data-testid="portfolio-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>OUR WORK</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Featured Projects</h2>
+  if (theme === 'modern') return (
+    <section className="py-24 bg-white" id="portfolio" data-testid="portfolio-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-10">
+        <div className="text-center mb-16"><div className="w-12 h-0.5 mx-auto mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /><h2 className="text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {items.slice(0, 4).map(p => (
+            <div key={p.id} className="group relative rounded-2xl overflow-hidden shadow-lg">
+              {p.image && <img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />}
+              <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-8">
+                <div><h3 className="text-xl font-bold text-white mb-1">{p.title}</h3><p className="text-white/70 text-sm">{p.category}</p></div>
+                {p.link && <a href={p.link} target="_blank" rel="noreferrer" className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><ArrowUpRight className="w-4 h-4" /></a>}
+              </div>
+            </div>
+          ))}
         </div>
-        <div className="flex justify-center gap-3 mb-10 flex-wrap">
-          <button onClick={() => setFilter('all')} className="px-5 py-2 rounded-sm text-sm font-medium transition-colors border" style={filter === 'all' ? { backgroundColor: 'var(--color-tab-active-bg, #1a2332)', color: 'var(--color-tab-active-text, #fff)', borderColor: 'transparent' } : { borderColor: '#e2e8f0' }}>All</button>
-          {allTags.map(tag => <button key={tag} onClick={() => setFilter(tag)} className="px-5 py-2 rounded-sm text-sm font-medium capitalize transition-colors border" style={filter === tag ? { backgroundColor: 'var(--color-tab-active-bg, #1a2332)', color: 'var(--color-tab-active-text, #fff)', borderColor: 'transparent' } : { borderColor: '#e2e8f0' }}>{tag}</button>)}
-        </div>
+      </div>
+    </section>
+  );
+  if (theme === 'classic') return (
+    <section className="py-20 bg-[#faf9f6]" id="portfolio" data-testid="portfolio-section">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-14"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {filtered.map(item => (
-            <div key={item.id} className="relative group rounded-sm overflow-hidden h-[280px]">
-              <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent" />
-              <div className="absolute bottom-0 left-0 p-6">
-                <h3 className="text-xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>{item.title}</h3>
-                <p className="text-white/60 text-sm mt-1">{item.tags?.join(', ')}</p>
-              </div>
+          {items.slice(0, 4).map(p => (
+            <div key={p.id} className="border-2 group overflow-hidden" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
+              {p.image && <div className="h-52 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
+              <div className="p-6 bg-[#faf9f6]"><h3 className="font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p><p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p></div>
             </div>
           ))}
         </div>
       </div>
     </section>
   );
-}
-
-function GallerySection({ items }) {
-  const [tab, setTab] = useState('all');
-  const filtered = useMemo(() => tab === 'all' ? items : items.filter(i => i.category === tab), [items, tab]);
-  if (!items?.length) return null;
+  // Default
   return (
-    <section className="py-20 md:py-28 bg-[#F8FAFC]" data-testid="gallery-section">
+    <section className="py-20 bg-white" id="portfolio" data-testid="portfolio-section">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>PHOTO GALLERY</p>
-          <h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>Our Gallery</h2>
-        </div>
-        <div className="flex justify-center gap-3 mb-10">
-          {['all', 'professional', 'personal'].map(t => (
-            <button key={t} onClick={() => setTab(t)} className="px-5 py-2 rounded-sm text-sm font-medium capitalize transition-colors border" style={tab === t ? { backgroundColor: 'var(--color-tab-active-bg, #1a2332)', color: 'var(--color-tab-active-text, #fff)', borderColor: 'transparent' } : { borderColor: '#e2e8f0' }}>{t}</button>
-          ))}
-        </div>
+        <div className="text-center mb-14"><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>Our Work</p><h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filtered.slice(0, 6).map(item => (
-            <div key={item.id} className="relative group rounded-sm overflow-hidden h-[240px]">
-              <img src={item.image} alt={item.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/50 transition-colors" />
-              <div className="absolute bottom-0 left-0 p-4 opacity-0 group-hover:opacity-100 transition-opacity">
-                <h3 className="text-white font-semibold">{item.title}</h3>
-                <p className="text-white/70 text-sm">{item.summary}</p>
-              </div>
+          {items.slice(0, 6).map(p => (
+            <div key={p.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all border border-slate-100 group">
+              {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
+              <div className="p-5"><h3 className="font-bold mb-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p><p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p></div>
             </div>
           ))}
-        </div>
-        <div className="text-center mt-10">
-          <Link to="/gallery" className="inline-flex items-center gap-2 border px-6 py-2.5 rounded-sm text-sm font-medium transition-colors" style={{ borderColor: 'var(--color-primary, #1a2332)', color: 'var(--color-primary, #1a2332)' }}>View Full Gallery <ArrowRight className="w-4 h-4" /></Link>
         </div>
       </div>
     </section>
   );
 }
 
-function TestimonialsSection({ items }) {
+/* ==================== GALLERY ==================== */
+function GallerySection({ items, theme }) {
   if (!items?.length) return null;
+  const gridCls = theme === 'modern' ? 'grid-cols-2 md:grid-cols-3 gap-4' : theme === 'classic' ? 'grid-cols-2 md:grid-cols-4 gap-3' : 'grid-cols-2 md:grid-cols-3 gap-4';
+  const imgCls = theme === 'modern' ? 'rounded-xl' : theme === 'classic' ? 'border-2' : 'rounded-lg';
   return (
-    <section className="py-20 md:py-28" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} data-testid="testimonials-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-12">
-          <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>TESTIMONIALS</p>
-          <h2 className="text-3xl md:text-4xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>What Our Clients Say</h2>
+    <section className={`py-20 ${theme === 'classic' ? 'bg-white' : 'bg-slate-50'}`} id="gallery" data-testid="gallery-section">
+      <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6`}>
+        <div className="flex items-center justify-between mb-12">
+          <div>
+            {theme === 'modern' && <div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+            <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="gallery-title">Gallery</h2>
+            {theme === 'classic' && <div className="w-16 h-0.5 mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
+          </div>
+          <Link to="/gallery" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View All <ArrowRight className="w-4 h-4" /></Link>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {items.map(item => (
-            <div key={item.id} className="bg-white/5 backdrop-blur-sm p-8 rounded-sm border border-white/10">
-              <Quote className="w-8 h-8 mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} />
-              <p className="text-white/80 text-sm leading-relaxed">{item.content}</p>
-              <div className="flex items-center gap-3 mt-6 pt-6 border-t border-white/10">
-                <img src={item.image} alt={item.name} className="w-12 h-12 rounded-full object-cover" />
-                <div><p className="text-white font-semibold text-sm">{item.name}</p><p className="text-white/50 text-xs">{item.title}</p></div>
-                <div className="ml-auto flex gap-0.5">{Array.from({ length: item.rating || 5 }).map((_, i) => <Star key={i} className="w-3 h-3 text-yellow-400 fill-yellow-400" />)}</div>
-              </div>
+        <div className={`grid ${gridCls}`}>
+          {items.slice(0, theme === 'classic' ? 8 : 6).map(img => (
+            <div key={img.id} className={`group overflow-hidden ${imgCls} shadow-sm hover:shadow-lg transition-all`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
+              <img src={img.image?.startsWith('/api') ? `${API}${img.image}` : img.image} alt={img.title} className="w-full h-48 object-cover group-hover:scale-110 transition-transform duration-500" />
             </div>
           ))}
         </div>
@@ -357,46 +371,140 @@ function TestimonialsSection({ items }) {
   );
 }
 
-function ContactSection() {
-  const [form, setForm] = useState({ name: '', email: '', phone: '', subject: '', message: '' });
-  const [loading, setLoading] = useState(false);
-  const handleSubmit = async (e) => {
-    e.preventDefault(); setLoading(true);
-    try { await contactAPI.submit(form); toast.success('Message sent successfully!'); setForm({ name: '', email: '', phone: '', subject: '', message: '' }); }
-    catch { toast.error('Failed to send message'); }
-    finally { setLoading(false); }
-  };
-  return (
-    <section className="py-20 md:py-28 bg-white" id="contact" data-testid="contact-section">
-      <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16">
-          <div>
-            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>BUSINESS CONSULTANCY</p>
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>We know how to manage business globally</h2>
-            <div className="mt-8 space-y-6">
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent, #0D9488) 10%, transparent)' }}><Shield className="w-5 h-5" style={{ color: 'var(--color-icon, #0D9488)' }} /></div>
-                <div><h4 className="font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>Best Business Consulting</h4><p className="text-sm mt-1" style={{ color: 'var(--color-body-text, #475569)' }}>We specialize in helping businesses unlock their full potential.</p></div>
+/* ==================== TESTIMONIALS ==================== */
+function TestimonialsSection({ items, theme }) {
+  if (!items?.length) return null;
+  const [carouselIdx, setCarouselIdx] = useState(0);
+  const perPage = 3;
+  const totalPages = Math.ceil(items.length / perPage);
+
+  if (theme === 'modern') {
+    const visible = items.slice(carouselIdx * perPage, carouselIdx * perPage + perPage);
+    return (
+      <section className="py-24 bg-white" id="testimonials" data-testid="testimonials-section">
+        <div className="max-w-7xl mx-auto px-6 md:px-10">
+          <div className="flex items-center justify-between mb-16">
+            <div><div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /><h2 className="text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="testimonials-title">What People Say</h2></div>
+            {totalPages > 1 && (
+              <div className="flex gap-2" data-testid="testimonials-carousel-arrows">
+                <button onClick={() => setCarouselIdx(p => Math.max(0, p - 1))} disabled={carouselIdx === 0} className="w-10 h-10 rounded-full border-2 flex items-center justify-center disabled:opacity-30 transition-colors hover:bg-slate-50" style={{ borderColor: 'var(--color-primary, #1a2332)' }}><ChevronLeft className="w-4 h-4" style={{ color: 'var(--color-heading, #1a2332)' }} /></button>
+                <button onClick={() => setCarouselIdx(p => Math.min(totalPages - 1, p + 1))} disabled={carouselIdx >= totalPages - 1} className="w-10 h-10 rounded-full border-2 flex items-center justify-center disabled:opacity-30 transition-colors hover:bg-slate-50" style={{ borderColor: 'var(--color-primary, #1a2332)' }}><ChevronRight className="w-4 h-4" style={{ color: 'var(--color-heading, #1a2332)' }} /></button>
               </div>
-              <div className="flex items-start gap-4">
-                <div className="w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0" style={{ backgroundColor: 'color-mix(in srgb, var(--color-accent, #0D9488) 10%, transparent)' }}><Clock className="w-5 h-5" style={{ color: 'var(--color-icon, #0D9488)' }} /></div>
-                <div><h4 className="font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>24/7 Customer Support</h4><p className="text-sm mt-1" style={{ color: 'var(--color-body-text, #475569)' }}>Our dedicated support team is available anytime.</p></div>
-              </div>
-            </div>
+            )}
           </div>
-          <form onSubmit={handleSubmit} className="space-y-4" data-testid="contact-form">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" placeholder="Your Name" value={form.name} onChange={e => setForm({ ...form, name: e.target.value })} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none focus:border-[var(--color-accent,#0D9488)]" data-testid="contact-name-input" />
-              <input type="email" placeholder="Your Email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none focus:border-[var(--color-accent,#0D9488)]" data-testid="contact-email-input" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            {visible.map(t => (
+              <div key={t.id} className="bg-slate-50 rounded-2xl p-8 relative">
+                <Quote className="w-8 h-8 mb-4 opacity-20" style={{ color: 'var(--color-accent, #0D9488)' }} />
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{t.content}"</p>
+                <div className="flex items-center gap-3">
+                  {t.avatar && <img src={t.avatar?.startsWith('/api') ? `${API}${t.avatar}` : t.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />}
+                  <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{t.name}</p><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{t.role || t.company}</p></div>
+                </div>
+                <div className="flex gap-0.5 mt-4">{[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#e2e8f0', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
+              </div>
+            ))}
+          </div>
+          {totalPages > 1 && <div className="flex justify-center gap-2 mt-8">{Array.from({ length: totalPages }).map((_, i) => <button key={i} onClick={() => setCarouselIdx(i)} className="w-2.5 h-2.5 rounded-full transition-colors" style={{ backgroundColor: i === carouselIdx ? 'var(--color-accent, #0D9488)' : '#e2e8f0' }} />)}</div>}
+        </div>
+      </section>
+    );
+  }
+
+  if (theme === 'classic') return (
+    <section className="py-20 bg-[#faf9f6]" id="testimonials" data-testid="testimonials-section">
+      <div className="max-w-6xl mx-auto px-6">
+        <div className="text-center mb-14"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="testimonials-title">Testimonials</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+          {items.slice(0, 4).map(t => (
+            <div key={t.id} className="border-2 p-6 relative" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: '#faf9f6' }}>
+              <div className="absolute -top-4 left-6 w-8 h-8 flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Quote className="w-4 h-4 text-white" /></div>
+              <p className="text-sm leading-relaxed mt-4 mb-6" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif", fontStyle: 'italic' }}>"{t.content}"</p>
+              <div className="border-t pt-4" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
+                <p className="font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{t.name}</p>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{t.role || t.company}</p>
+                <div className="flex gap-0.5 mt-2">{[1,2,3,4,5].map(s => <Star key={s} className="w-3 h-3" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#d1d5db', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
+              </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <input type="text" placeholder="Phone Number" value={form.phone} onChange={e => setForm({ ...form, phone: e.target.value })} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none" data-testid="contact-phone-input" />
-              <input type="text" placeholder="Subject" value={form.subject} onChange={e => setForm({ ...form, subject: e.target.value })} required className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none" data-testid="contact-subject-input" />
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+
+  // Default
+  return (
+    <section className="py-20 bg-slate-50" id="testimonials" data-testid="testimonials-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="text-center mb-14"><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>Testimonials</p><h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="testimonials-title">What Our Clients Say</h2></div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          {items.slice(0, 3).map(t => (
+            <div key={t.id} className="bg-white rounded-lg p-8 shadow-sm border border-slate-100">
+              <Quote className="w-6 h-6 mb-4 opacity-30" style={{ color: 'var(--color-accent, #0D9488)' }} />
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{t.content}"</p>
+              <div className="flex items-center gap-3">
+                {t.avatar && <img src={t.avatar?.startsWith('/api') ? `${API}${t.avatar}` : t.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />}
+                <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{t.name}</p><p className="text-xs text-slate-400">{t.role || t.company}</p></div>
+              </div>
+              <div className="flex gap-0.5 mt-4">{[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#e2e8f0', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
             </div>
-            <textarea placeholder="Your Message" value={form.message} onChange={e => setForm({ ...form, message: e.target.value })} required rows={5} className="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-sm text-sm focus:outline-none resize-none" data-testid="contact-message-input" />
-            <button type="submit" disabled={loading} className="px-8 py-3 rounded-sm font-medium transition-colors flex items-center gap-2 text-sm disabled:opacity-50" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="contact-submit-btn">
-              <Send className="w-4 h-4" /> {loading ? 'Sending...' : 'Send Message'}
-            </button>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+/* ==================== CONTACT ==================== */
+function ContactSection({ theme }) {
+  const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [sending, setSending] = useState(false);
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSending(true);
+    try { await contactAPI.submit(form); toast.success('Message sent!'); setForm({ name: '', email: '', message: '' }); } catch { toast.error('Failed to send'); }
+    finally { setSending(false); }
+  };
+
+  if (theme === 'modern') return (
+    <section className="py-24 bg-slate-50" id="contact" data-testid="contact-section">
+      <div className="max-w-3xl mx-auto px-6 md:px-10 text-center">
+        <div className="w-12 h-0.5 mx-auto mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
+        <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">Get In Touch</h2>
+        <p className="mb-10" style={{ color: 'var(--color-body-text, #475569)' }}>We'd love to hear from you. Send us a message.</p>
+        <form onSubmit={handleSubmit} className="space-y-5">
+          <div className="grid grid-cols-2 gap-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /></div>
+          <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={5} className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" />
+          <button type="submit" disabled={sending} className="px-8 py-3.5 rounded-full text-white font-medium text-sm flex items-center gap-2 mx-auto disabled:opacity-50" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
+        </form>
+      </div>
+    </section>
+  );
+
+  if (theme === 'classic') return (
+    <section className="py-20 bg-white" id="contact" data-testid="contact-section">
+      <div className="max-w-3xl mx-auto px-6">
+        <div className="text-center mb-10"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">Contact Us</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
+        <form onSubmit={handleSubmit} className="border-2 p-10" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
+          <div className="grid grid-cols-2 gap-4 mb-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Full Name" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Email Address" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /></div>
+          <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your message..." rows={5} className="w-full px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none mb-4" style={{ borderColor: 'var(--color-primary, #1a2332)' }} />
+          <button type="submit" disabled={sending} className="px-8 py-3 text-white font-medium text-sm flex items-center gap-2 mx-auto disabled:opacity-50" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
+        </form>
+      </div>
+    </section>
+  );
+
+  // Default
+  return (
+    <section className="py-20 relative overflow-hidden" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} id="contact" data-testid="contact-section">
+      <div className="max-w-7xl mx-auto px-6 md:px-12">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>Contact</p><h2 className="text-3xl md:text-4xl font-bold text-white leading-tight" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="contact-title">Let's Work Together</h2><p className="text-white/60 mt-4 leading-relaxed">Have a project in mind? Let's discuss how we can help.</p></div>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
+            <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
+            <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={4} className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
+            <button type="submit" disabled={sending} className="w-full py-3 text-white font-medium rounded-sm text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
           </form>
         </div>
       </div>
@@ -404,59 +512,57 @@ function ContactSection() {
   );
 }
 
+/* ==================== HOME PAGE ==================== */
 export default function HomePage() {
-  const [hero, setHero] = useState({});
-  const [heroSlides, setHeroSlides] = useState([]);
-  const [about, setAbout] = useState({});
+  const settings = useSettings();
+  const theme = useTheme();
+  const [about, setAbout] = useState(null);
   const [services, setServices] = useState([]);
   const [posts, setPosts] = useState([]);
   const [books, setBooks] = useState([]);
   const [maps, setMaps] = useState([]);
   const [locations, setLocations] = useState([]);
-  const [gallery, setGallery] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
+  const [gallery, setGallery] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
-  const [sections, setSections] = useState({});
-  const [sectionOrder, setSectionOrder] = useState([]);
+  const [heroSlides, setHeroSlides] = useState([]);
 
   useEffect(() => {
-    Promise.all([
-      publicAPI.getHero(), publicAPI.getAbout(), publicAPI.getServices(),
-      publicAPI.getBlog(1, 3), publicAPI.getBooks(), publicAPI.getMaps(),
-      publicAPI.getMapLocations(), publicAPI.getGallery(), publicAPI.getPortfolio(),
-      publicAPI.getTestimonials(), publicAPI.getSections(), publicAPI.getHeroSlides('home')
-    ]).then(([h, a, s, b, bk, m, l, g, p, t, sec, hs]) => {
-      setHero(h.data); setAbout(a.data); setServices(s.data);
-      setPosts(b.data.posts || []); setBooks(bk.data); setMaps(m.data);
-      setLocations(l.data); setGallery(g.data); setPortfolio(p.data);
-      setTestimonials(t.data);
-      setSections(sec.data?.sections || sec.data || {});
-      setSectionOrder(sec.data?.section_order || ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]);
-      setHeroSlides(hs.data || []);
-    }).catch(console.error);
+    publicAPI.getAbout().then(r => setAbout(r.data)).catch(() => {});
+    publicAPI.getServices().then(r => setServices(r.data)).catch(() => {});
+    publicAPI.getBlogPosts().then(r => setPosts(r.data)).catch(() => {});
+    publicAPI.getBooks().then(r => setBooks(r.data)).catch(() => {});
+    publicAPI.getMaps().then(r => setMaps(r.data)).catch(() => {});
+    publicAPI.getMapLocations?.().then(r => setLocations(r.data)).catch(() => {});
+    publicAPI.getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
+    publicAPI.getGallery().then(r => setGallery(r.data)).catch(() => {});
+    publicAPI.getTestimonials().then(r => setTestimonials(r.data)).catch(() => {});
+    publicAPI.getHeroSlides().then(r => setHeroSlides(r.data)).catch(() => {});
   }, []);
 
-  const isOn = (key) => !sections[key] || sections[key].enabled !== false;
+  const sections = settings.sections || {};
+  const sectionOrder = settings.section_order || ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'portfolio', 'gallery', 'testimonials', 'contact'];
+  const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
-  const sectionComponents = {
-    hero: () => isOn('hero') && <HeroSection data={hero} slides={heroSlides} />,
-    about: () => isOn('about') && <AboutSection data={about} />,
-    services: () => isOn('services') && <ServicesSection services={services} />,
-    news: () => isOn('news') && <NewsSection posts={posts} />,
-    blog: () => isOn('blog') && <ExternalBlogSection />,
-    reading_list: () => isOn('reading_list') && <ReadingListSection books={books} />,
-    map: () => isOn('map') && <MapSection maps={maps} locations={locations} />,
-    portfolio: () => isOn('portfolio') && <PortfolioSection items={portfolio} />,
-    gallery: () => isOn('gallery') && <GallerySection items={gallery} />,
-    testimonials: () => isOn('testimonials') && <TestimonialsSection items={testimonials} />,
-    contact: () => isOn('contact') && <ContactSection />,
+  const sectionMap = {
+    hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
+    about: <AboutSection key="about" data={about} theme={theme} />,
+    services: <ServicesSection key="services" services={services} theme={theme} />,
+    news: <NewsSection key="news" posts={posts} theme={theme} />,
+    blog: <ExternalBlogSection key="blog" theme={theme} />,
+    reading_list: <ReadingListSection key="reading" books={books} theme={theme} />,
+    locations: <MapSection key="map" maps={maps} locations={locations} theme={theme} />,
+    portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
+    gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
+    testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
+    contact: <ContactSection key="contact" theme={theme} />,
   };
 
   return (
     <main data-testid="home-page">
       {sectionOrder.map(key => {
-        const render = sectionComponents[key];
-        return render ? <React.Fragment key={key}>{render()}</React.Fragment> : null;
+        const sec = sections[key];
+        return sec?.enabled !== false ? sectionMap[key] || null : null;
       })}
     </main>
   );

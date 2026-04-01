@@ -180,3 +180,64 @@ html {
 .animate-fade-in-up {
   animation: fadeInUp 0.6s ease-out forwards;
 }
+
+/* === MY ACCOUNT — Dynamic Color Overrides === */
+/* Accent backgrounds */
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\] { background-color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\]\/5 { background-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 5%, transparent) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\]\/10 { background-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 10%, transparent) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\]\/20 { background-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 20%, transparent) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#c9a84c\]\/30 { background-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 30%, transparent) !important; }
+/* Accent text */
+[data-testid="myaccount-layout"] .text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .text-\[\#c9a84c\]\/40 { color: color-mix(in srgb, var(--ma-accent, #c9a84c) 40%, transparent) !important; }
+[data-testid="myaccount-layout"] .text-\[\#c9a84c\]\/50 { color: color-mix(in srgb, var(--ma-accent, #c9a84c) 50%, transparent) !important; }
+/* Accent borders */
+[data-testid="myaccount-layout"] .border-\[\#c9a84c\] { border-color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] .border-\[\#c9a84c\]\/20 { border-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 20%, transparent) !important; }
+[data-testid="myaccount-layout"] .border-\[\#c9a84c\]\/30 { border-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 30%, transparent) !important; }
+/* Focus states */
+[data-testid="myaccount-layout"] .focus\:border-\[\#c9a84c\]:focus { border-color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="myaccount-layout"] input:focus, [data-testid="myaccount-layout"] select:focus { border-color: color-mix(in srgb, var(--ma-accent, #c9a84c) 50%, transparent) !important; }
+/* Card/input backgrounds */
+[data-testid="myaccount-layout"] .bg-\[\#13161e\] { background-color: var(--ma-card-bg, #13161e) !important; }
+[data-testid="myaccount-layout"] .bg-\[\#0d0f14\] { background-color: var(--ma-input-bg, #0d0f14) !important; }
+[data-testid="myaccount-layout"] .border-\[\#2a2d35\] { border-color: var(--ma-input-border, rgba(255,255,255,0.1)) !important; }
+/* Checkbox accent */
+[data-testid="myaccount-layout"] input[type="checkbox"] { accent-color: var(--ma-accent, #c9a84c); }
+/* Login page (outside layout) */
+[data-testid="member-login-page"] .bg-\[\#c9a84c\] { background-color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="member-login-page"] .text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="member-login-page"] .bg-\[\#13161e\] { background-color: var(--ma-card-bg, #13161e) !important; }
+[data-testid="member-login-page"] .bg-\[\#0d0f14\] { background-color: var(--ma-input-bg, #0d0f14) !important; }
+/* Registration */
+[data-testid="member-register-page"] .bg-\[\#c9a84c\] { background-color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="member-register-page"] .text-\[\#c9a84c\] { color: var(--ma-accent, #c9a84c) !important; }
+[data-testid="member-register-page"] .bg-\[\#13161e\] { background-color: var(--ma-card-bg, #13161e) !important; }
+[data-testid="member-register-page"] .bg-\[\#0d0f14\] { background-color: var(--ma-input-bg, #0d0f14) !important; }
+
+/* === ADMIN/CMS — Dynamic Color Overrides === */
+/* Accent backgrounds */
+[data-testid="admin-layout"] .bg-\[\#0D9488\] { background-color: var(--ad-accent, #0D9488) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/5 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 5%, transparent) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/10 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 10%, transparent) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/80 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 80%, transparent) !important; }
+[data-testid="admin-layout"] .bg-\[\#0D9488\]\/90 { background-color: color-mix(in srgb, var(--ad-accent, #0D9488) 90%, transparent) !important; }
+/* Accent text */
+[data-testid="admin-layout"] .text-\[\#0D9488\] { color: var(--ad-accent, #0D9488) !important; }
+/* Accent borders */
+[data-testid="admin-layout"] .border-\[\#0D9488\] { border-color: var(--ad-accent, #0D9488) !important; }
+/* Focus accent */
+[data-testid="admin-layout"] .focus\:border-\[\#0D9488\]:focus { border-color: var(--ad-accent, #0D9488) !important; }
+[data-testid="admin-layout"] .focus\:ring-\[\#0D9488\]:focus { --tw-ring-color: var(--ad-accent, #0D9488) !important; }
+/* Headings */
+[data-testid="admin-layout"] .text-\[\#1a2332\] { color: var(--ad-heading, #1a2332) !important; }
+/* Page backgrounds */
+[data-testid="admin-layout"] .bg-\[\#1a2332\] { background-color: var(--ad-heading, #1a2332) !important; }
+/* Spinner */
+[data-testid="admin-layout"] .border-\[\#0D9488\] { border-color: var(--ad-accent, #0D9488) !important; }
+/* Checkbox accent */
+[data-testid="admin-layout"] input[type="checkbox"] { accent-color: var(--ad-accent, #0D9488); }
+/* Switch component accent */
+[data-testid="admin-layout"] [role="switch"][data-state="checked"] { background-color: var(--ad-accent, #0D9488) !important; }
+

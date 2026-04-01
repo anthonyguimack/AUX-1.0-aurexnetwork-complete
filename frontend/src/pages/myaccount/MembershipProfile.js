@@ -215,7 +215,11 @@ export default function MembershipProfile() {
   // iOS-compatible native select style: font-size 16px prevents iOS zoom
   const selectCls = "w-full mt-1 px-3 py-2 bg-[#0d0f14] border border-white/10 text-white rounded-md text-base focus:outline-none focus:border-[#c9a84c]/50";
 
-  const progressColor = percentage >= 80 ? '#22c55e' : percentage >= 50 ? '#c9a84c' : '#ef4444';
+  const progressColor = percentage >= 80
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--ma-progress-high')?.trim() || '#22c55e')
+    : percentage >= 50
+    ? (getComputedStyle(document.documentElement).getPropertyValue('--ma-progress-mid')?.trim() || '#c9a84c')
+    : (getComputedStyle(document.documentElement).getPropertyValue('--ma-progress-low')?.trim() || '#ef4444');
 
   return (
     <div data-testid="membership-profile-page">

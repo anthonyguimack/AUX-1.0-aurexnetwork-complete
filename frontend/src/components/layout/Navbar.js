@@ -131,6 +131,7 @@ function ModernNavbar() {
   const { user, logout, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [hasHero, setHasHero] = useState(true);
 
   useEffect(() => {
     const onScroll = () => setScrolled(window.scrollY > 50);
@@ -138,25 +139,41 @@ function ModernNavbar() {
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
 
+  // Detect if page has a hero section
+  useEffect(() => {
+    const check = () => {
+      const hero = document.querySelector('[data-testid="hero-section"]');
+      setHasHero(!!hero);
+    };
+    check();
+    const observer = new MutationObserver(check);
+    observer.observe(document.body, { childList: true, subtree: true });
+    return () => observer.disconnect();
+  }, [location.pathname]);
+
   if (isAdmin) return null;
+
+  // If no hero, always show solid background
+  const showSolid = scrolled || !hasHero;
+  const textColor = showSolid ? 'var(--color-heading-color, #1a2332)' : '#ffffff';
 
   return (
     <>
-      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${scrolled ? 'shadow-lg' : ''}`}
-        style={{ backgroundColor: scrolled ? 'rgba(255,255,255,0.95)' : 'transparent', backdropFilter: scrolled ? 'blur(20px)' : 'none' }}
+      <header className={`fixed top-0 inset-x-0 z-50 transition-all duration-300 ${showSolid ? 'shadow-lg' : ''}`}
+        style={{ backgroundColor: showSolid ? 'var(--color-navbar-bg, rgba(255,255,255,0.95))' : 'transparent', backdropFilter: showSolid ? 'blur(20px)' : 'none' }}
         data-testid="main-navbar">
         <div className="max-w-7xl mx-auto px-6 md:px-10 flex items-center justify-between h-20">
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
             <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
               <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
             </div>
-            <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: scrolled ? 'var(--color-heading-color, #1a2332)' : '#ffffff' }}>Legacy</span>
+            <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>Legacy</span>
           </Link>
           <nav className="hidden md:flex items-center gap-8">
             {baseLinks.map(link => (
               <Link key={link.href} to={link.href}
                 className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70"
-                style={{ color: location.pathname === link.href ? 'var(--color-accent, #0D9488)' : (scrolled ? 'var(--color-heading-color, #1a2332)' : '#ffffff'), letterSpacing: '0.1em' }}
+                style={{ color: location.pathname === link.href ? 'var(--color-accent, #0D9488)' : textColor, letterSpacing: '0.1em' }}
                 data-testid={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
               >{link.label}</Link>
             ))}
@@ -165,19 +182,19 @@ function ModernNavbar() {
               const isExt = isExternal(page.url);
               const Comp = isExt ? 'a' : Link;
               const props = isExt ? { href, target: page.open_in_new_tab ? '_blank' : '_self', rel: 'noreferrer' } : { to: href, onClick: e => handlePageClick(page, e) };
-              return <Comp key={page.id} {...props} className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70" style={{ color: scrolled ? 'var(--color-heading-color, #1a2332)' : '#ffffff', letterSpacing: '0.1em' }}>{page.title}</Comp>;
+              return <Comp key={page.id} {...props} className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70" style={{ color: textColor, letterSpacing: '0.1em' }}>{page.title}</Comp>;
             })}
           </nav>
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2">
                 {user.role === 'admin' && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }}>Admin</Link>}
-                <button onClick={logout} className="p-2 hover:opacity-70" style={{ color: scrolled ? 'var(--color-heading-color, #1a2332)' : '#ffffff' }}><LogOut className="w-4 h-4" /></button>
+                <button onClick={logout} className="p-2 hover:opacity-70" style={{ color: textColor }}><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
               <button onClick={() => setLoginOpen(true)} className="text-sm font-medium px-5 py-2.5 rounded-full flex items-center gap-2 transition-colors" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#ffffff' }} data-testid="login-btn"><LogIn className="w-3.5 h-3.5" /> Login</button>
             )}
-            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2" style={{ color: scrolled ? 'var(--color-heading-color, #1a2332)' : '#ffffff' }}>
+            <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2" style={{ color: textColor }}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
           </div>

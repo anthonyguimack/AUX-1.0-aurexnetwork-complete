@@ -5,12 +5,26 @@ import { TrendingUp, Users, Mail, DollarSign, FileText, Images, BookOpen, Map, M
 
 const COLORS = ['#0D9488', '#1a2332', '#f59e0b', '#8b5cf6', '#ec4899', '#06b6d4'];
 
+function getAccent() {
+  return getComputedStyle(document.documentElement).getPropertyValue('--ad-accent')?.trim() || '#0D9488';
+}
+function getHeading() {
+  return getComputedStyle(document.documentElement).getPropertyValue('--ad-heading')?.trim() || '#1a2332';
+}
+
 export default function AnalyticsDashboard() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [accent, setAccent] = useState('#0D9488');
+  const [heading, setHeading] = useState('#1a2332');
 
   useEffect(() => {
     adminAPI.getAnalytics().then(r => setData(r.data)).catch(console.error).finally(() => setLoading(false));
+    // Read CSS variable values once mounted
+    setTimeout(() => {
+      setAccent(getAccent());
+      setHeading(getHeading());
+    }, 100);
   }, []);
 
   if (loading) return <div className="flex items-center justify-center h-64"><div className="animate-spin w-8 h-8 border-2 border-[#0D9488] border-t-transparent rounded-full"></div></div>;
@@ -27,7 +41,7 @@ export default function AnalyticsDashboard() {
         {[
           { label: 'Total Contacts', value: cs.total_contacts, icon: Mail, color: 'bg-amber-500' },
           { label: 'Unread', value: cs.unread_contacts, icon: Mail, color: 'bg-red-500' },
-          { label: 'Users', value: cs.total_users, icon: Users, color: 'bg-[#0D9488]' },
+          { label: 'Users', value: cs.total_users, icon: Users, color: '' },
           { label: 'Blog Posts', value: cs.blog_posts, icon: FileText, color: 'bg-blue-500' },
         ].map(m => (
           <div key={m.label} className="bg-white p-4 rounded-sm border border-slate-100" data-testid={`metric-${m.label.toLowerCase().replace(/\s/g, '-')}`}>
@@ -36,7 +50,7 @@ export default function AnalyticsDashboard() {
                 <p className="text-xs text-slate-400">{m.label}</p>
                 <p className="text-2xl font-bold text-[#1a2332] mt-1">{m.value || 0}</p>
               </div>
-              <div className={`w-9 h-9 ${m.color} rounded-sm flex items-center justify-center`}>
+              <div className={`w-9 h-9 rounded-sm flex items-center justify-center ${m.color}`} style={!m.color ? { backgroundColor: accent } : {}}>
                 <m.icon className="w-4 h-4 text-white" />
               </div>
             </div>
@@ -54,7 +68,7 @@ export default function AnalyticsDashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} />
               <Tooltip />
-              <Bar dataKey="contacts" fill="#0D9488" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="contacts" fill={accent} radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -68,7 +82,7 @@ export default function AnalyticsDashboard() {
               <XAxis dataKey="month" tick={{ fontSize: 12 }} />
               <YAxis tick={{ fontSize: 12 }} tickFormatter={v => `$${v}`} />
               <Tooltip formatter={v => `$${v}`} />
-              <Line type="monotone" dataKey="revenue" stroke="#1a2332" strokeWidth={2} dot={{ fill: '#0D9488' }} />
+              <Line type="monotone" dataKey="revenue" stroke={heading} strokeWidth={2} dot={{ fill: accent }} />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -86,7 +100,7 @@ export default function AnalyticsDashboard() {
                     <p className="text-sm font-medium text-[#1a2332]">{s.name}</p>
                     <p className="text-xs text-slate-400">{s.count} purchase{s.count !== 1 ? 's' : ''}</p>
                   </div>
-                  <span className="text-sm font-bold text-[#0D9488]">${s.revenue?.toFixed(2)}</span>
+                  <span className="text-sm font-bold" style={{ color: accent }}>${s.revenue?.toFixed(2)}</span>
                 </div>
               ))}
             </div>
@@ -106,7 +120,7 @@ export default function AnalyticsDashboard() {
               { label: 'Pages', value: cs.total_pages, icon: FileText },
             ].map(s => (
               <div key={s.label} className="flex items-center gap-3 p-3 bg-slate-50 rounded-sm">
-                <s.icon className="w-4 h-4 text-[#0D9488]" />
+                <s.icon className="w-4 h-4" style={{ color: accent }} />
                 <div>
                   <p className="text-lg font-bold text-[#1a2332]">{s.value || 0}</p>
                   <p className="text-xs text-slate-400">{s.label}</p>
