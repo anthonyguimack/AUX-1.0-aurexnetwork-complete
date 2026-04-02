@@ -208,6 +208,15 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Favicon**: Dynamic injection via App.js SettingsProvider from settings.favicon field.
 - Testing: 16/16 backend + 100% frontend verification (Iteration 25)
 
+### Footer Unification, Dynamic Title, Modal Scroll, Per-Page Layout System (Apr 2, 2026) - COMPLETE
+- **Footer**: All 3 themes now share unified 3-column structure (Logo+desc+social | Navigation+all pages | Stay Updated+email).
+- **Dynamic page title**: `<title>` tag uses Settings → Tagline field.
+- **CMS modal scrollability**: DialogContent has `max-h-[90vh] overflow-y-auto`.
+- **Per-page layout system**: 5 layouts (About/Bio, Services Grid, Gallery Albums, Sub-Gallery, Full Content) with visual selector in PagesManager.
+- **Gallery Albums**: New CRUD system for albums + photos. Admin manager at /admin/gallery-albums.
+- **Service detail pages**: /service/:serviceId with full_content. ServicesManager has short_description, full_content, image.
+- Testing: 23/23 backend + 100% frontend verification (Iteration 26)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
