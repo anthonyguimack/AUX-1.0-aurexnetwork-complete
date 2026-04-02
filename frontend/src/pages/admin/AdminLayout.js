@@ -18,6 +18,7 @@ const sidebarItems = [
   { label: 'Reading List', icon: BookOpen, href: '/admin/books' },
   { label: 'Maps', icon: Map, href: '/admin/maps' },
   { label: 'Gallery', icon: Images, href: '/admin/gallery' },
+  { label: 'Gallery Albums', icon: Images, href: '/admin/gallery-albums' },
   { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
   { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
   { label: 'Pages', icon: FileStack, href: '/admin/pages' },

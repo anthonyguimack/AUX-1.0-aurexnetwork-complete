@@ -204,3 +204,25 @@ async def search_content(q: str = Query("", min_length=0)):
     for p in pages:
         results.append({"type": "page", "title": p["title"], "summary": p.get("summary", "")[:150], "url": p.get("url", "/")})
     return {"results": results, "total": len(results)}
+
+# Public Gallery Albums & Photos
+@router.get("/public/gallery-albums")
+async def get_public_gallery_albums():
+    return await db.gallery_albums.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+@router.get("/public/gallery-albums/{album_id}/photos")
+async def get_public_album_photos(album_id: str):
+    album = await db.gallery_albums.find_one({"id": album_id}, {"_id": 0})
+    if not album:
+        raise HTTPException(status_code=404, detail="Album not found")
+    photos = await db.album_photos.find({"album_id": album_id}, {"_id": 0}).sort("order", 1).to_list(500)
+    return {"album": album, "photos": photos}
+
+# Public service detail
+@router.get("/public/services/{item_id}")
+async def get_public_service_detail(item_id: str):
+    service = await db.services.find_one({"id": item_id}, {"_id": 0})
+    if not service:
+        raise HTTPException(status_code=404, detail="Service not found")
+    return service
+

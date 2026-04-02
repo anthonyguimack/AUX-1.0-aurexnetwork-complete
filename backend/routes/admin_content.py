@@ -326,6 +326,53 @@ async def admin_update_nav_page(item_id: str, request: Request, user: dict = Dep
 async def admin_delete_nav_page(item_id: str, user: dict = Depends(require_admin)):
     return await crud_delete("nav_pages", item_id)
 
+# Gallery Albums (CRUD)
+@router.get("/admin/gallery-albums")
+async def admin_list_gallery_albums(user: dict = Depends(require_admin)):
+    return await db.gallery_albums.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+@router.post("/admin/gallery-albums")
+async def admin_create_gallery_album(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.setdefault("id", str(uuid.uuid4()))
+    body.setdefault("order", 0)
+    body.setdefault("cover_image", "")
+    body.setdefault("description", "")
+    return await crud_create("gallery_albums", body)
+
+@router.put("/admin/gallery-albums/{item_id}")
+async def admin_update_gallery_album(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    return await crud_update("gallery_albums", item_id, await request.json())
+
+@router.delete("/admin/gallery-albums/{item_id}")
+async def admin_delete_gallery_album(item_id: str, user: dict = Depends(require_admin)):
+    # Also delete all photos in this album
+    await db.album_photos.delete_many({"album_id": item_id})
+    return await crud_delete("gallery_albums", item_id)
+
+# Album Photos (CRUD)
+@router.get("/admin/album-photos/{album_id}")
+async def admin_list_album_photos(album_id: str, user: dict = Depends(require_admin)):
+    return await db.album_photos.find({"album_id": album_id}, {"_id": 0}).sort("order", 1).to_list(500)
+
+@router.post("/admin/album-photos")
+async def admin_create_album_photo(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.setdefault("id", str(uuid.uuid4()))
+    body.setdefault("order", 0)
+    body.setdefault("caption", "")
+    return await crud_create("album_photos", body)
+
+@router.put("/admin/album-photos/{item_id}")
+async def admin_update_album_photo(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    return await crud_update("album_photos", item_id, await request.json())
+
+@router.delete("/admin/album-photos/{item_id}")
+async def admin_delete_album_photo(item_id: str, user: dict = Depends(require_admin)):
+    return await crud_delete("album_photos", item_id)
+
+
+
 # Users
 @router.get("/admin/users")
 async def admin_list_users(user: dict = Depends(require_admin)):

@@ -7,8 +7,17 @@ import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Globe, Lock, ExternalLink, FileText, Home, Newspaper, Image, BookOpen } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
+import ImageUpload from '../../components/ImageUpload';
 
-const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '' };
+const LAYOUT_OPTIONS = [
+  { value: '', label: 'Default', desc: 'Standard page layout', icon: '📄' },
+  { value: 'layout_1', label: 'About / Bio', desc: 'Two-column: image left, text right + social links', icon: '👤' },
+  { value: 'layout_2', label: 'Services Grid', desc: 'Card grid linked to service details', icon: '🔧' },
+  { value: 'layout_3', label: 'Gallery Albums', desc: 'Album grid with cover images', icon: '🖼' },
+  { value: 'layout_5', label: 'Full Content', desc: 'Single centered text column', icon: '📝' },
+];
+
+const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '', layout: '', layout_image: '' };
 
 const SYSTEM_PAGES = [
   { id: '_sys_home', title: 'Home', url: '/', icon: Home, system: true, description: 'Main homepage' },
@@ -102,7 +111,10 @@ export default function PagesManager() {
                   </td>
                   <td className="p-3">
                     <div className="font-medium text-[#1a2332]">{item.title}</div>
-                    {item.page_type && <span className="text-xs text-slate-400">type: {item.page_type}</span>}
+                    <div className="flex gap-1 mt-0.5">
+                      {item.page_type && <span className="text-xs text-slate-400">type: {item.page_type}</span>}
+                      {item.layout && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{LAYOUT_OPTIONS.find(l => l.value === item.layout)?.label || item.layout}</span>}
+                    </div>
                   </td>
                   <td className="p-3 hidden md:table-cell">
                     <span className="text-slate-500 text-xs font-mono bg-slate-50 px-2 py-0.5 rounded">{item.url}</span>
@@ -201,6 +213,31 @@ export default function PagesManager() {
                 <Label className="text-xs text-slate-500">Content</Label>
                 <div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({ ...editing, content: val })} /></div>
               </div>
+
+              {/* Layout Selector */}
+              <div>
+                <Label className="text-xs text-slate-500 mb-2 block">Page Layout</Label>
+                <div className="grid grid-cols-3 gap-2" data-testid="layout-selector">
+                  {LAYOUT_OPTIONS.map(opt => (
+                    <button key={opt.value} type="button"
+                      onClick={() => setEditing({ ...editing, layout: opt.value })}
+                      className={`p-3 rounded-sm border-2 text-left transition-all ${editing.layout === opt.value ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
+                      data-testid={`layout-option-${opt.value || 'default'}`}>
+                      <span className="text-lg block mb-1">{opt.icon}</span>
+                      <span className="text-xs font-medium text-[#1a2332] block">{opt.label}</span>
+                      <span className="text-[10px] text-slate-400 block leading-tight">{opt.desc}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Layout 1 specific: Image */}
+              {editing.layout === 'layout_1' && (
+                <div>
+                  <Label className="text-xs text-slate-500">Layout Image (About/Bio)</Label>
+                  <ImageUpload value={editing.layout_image || ''} onChange={v => setEditing({ ...editing, layout_image: v })} />
+                </div>
+              )}
 
               {/* Toggle Grid */}
               <div className="grid grid-cols-2 gap-3">

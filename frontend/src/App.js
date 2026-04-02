@@ -15,6 +15,8 @@ import GalleryPage from './pages/GalleryPage';
 import MapDetailPage from './pages/MapDetailPage';
 import CheckoutSuccess from './pages/CheckoutSuccess';
 import DynamicPage from './pages/DynamicPage';
+import ServiceDetailPage from './pages/ServiceDetailPage';
+import LayoutSubGallery from './components/layouts/LayoutSubGallery';
 import AdminLayout from './pages/admin/AdminLayout';
 import AdminDashboard from './pages/admin/Dashboard';
 import HeroManager from './pages/admin/HeroManager';
@@ -25,6 +27,7 @@ import BlogManager from './pages/admin/BlogManager';
 import BooksManager from './pages/admin/BooksManager';
 import MapsManager from './pages/admin/MapsManager';
 import GalleryManager from './pages/admin/GalleryManager';
+import GalleryAlbumsManager from './pages/admin/GalleryAlbumsManager';
 import PortfolioManager from './pages/admin/PortfolioManager';
 import TestimonialsManager from './pages/admin/TestimonialsManager';
 import ContactsManager from './pages/admin/ContactsManager';
@@ -91,6 +94,15 @@ function SettingsProvider({ children }) {
     }
     link.href = src;
   }, [settings.favicon]);
+
+  // Dynamic page title from tagline
+  useEffect(() => {
+    if (settings.tagline) {
+      document.title = settings.tagline;
+    } else if (settings.brand_name) {
+      document.title = settings.brand_name;
+    }
+  }, [settings.tagline, settings.brand_name]);
 
   const activeTheme = settings.active_theme || 'default';
 
@@ -271,6 +283,8 @@ function AppRouter() {
         <Route path="/reading-list" element={<ReadingListPage />} />
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/map/:slug" element={<MapDetailPage />} />
+        <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+        <Route path="/album/:albumId" element={<LayoutSubGallery />} />
         <Route path="/terms" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/privacy" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/checkout/success" element={<CheckoutSuccess />} />
@@ -286,6 +300,7 @@ function AppRouter() {
           <Route path="books" element={<BooksManager />} />
           <Route path="maps" element={<MapsManager />} />
           <Route path="gallery" element={<GalleryManager />} />
+          <Route path="gallery-albums" element={<GalleryAlbumsManager />} />
           <Route path="portfolio" element={<PortfolioManager />} />
           <Route path="testimonials" element={<TestimonialsManager />} />
           <Route path="contacts" element={<ContactsManager />} />

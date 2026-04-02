@@ -27,6 +27,9 @@ export const publicAPI = {
   getNavPages: () => api.get('/public/nav-pages'),
   getSitePages: () => api.get('/public/site-pages'),
   getSeo: (path) => api.get(`/public/seo/${path}`),
+  getGalleryAlbums: () => api.get('/public/gallery-albums'),
+  getAlbumPhotos: (albumId) => api.get(`/public/gallery-albums/${albumId}/photos`),
+  getServiceDetail: (id) => api.get(`/public/services/${id}`),
 };
 
 export const searchAPI = {
@@ -111,6 +114,16 @@ export const adminAPI = {
   createNavPage: (data) => api.post('/admin/nav-pages', data),
   updateNavPage: (id, data) => api.put(`/admin/nav-pages/${id}`, data),
   deleteNavPage: (id) => api.delete(`/admin/nav-pages/${id}`),
+  // Gallery Albums
+  getGalleryAlbums: () => api.get('/admin/gallery-albums'),
+  createGalleryAlbum: (data) => api.post('/admin/gallery-albums', data),
+  updateGalleryAlbum: (id, data) => api.put(`/admin/gallery-albums/${id}`, data),
+  deleteGalleryAlbum: (id) => api.delete(`/admin/gallery-albums/${id}`),
+  // Album Photos
+  getAlbumPhotos: (albumId) => api.get(`/admin/album-photos/${albumId}`),
+  createAlbumPhoto: (data) => api.post('/admin/album-photos', data),
+  updateAlbumPhoto: (id, data) => api.put(`/admin/album-photos/${id}`, data),
+  deleteAlbumPhoto: (id) => api.delete(`/admin/album-photos/${id}`),
   // Users
   getUsers: () => api.get('/admin/users'),
   createUser: (data) => api.post('/admin/users', data),
