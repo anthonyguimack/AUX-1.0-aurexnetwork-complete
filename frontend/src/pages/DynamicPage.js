@@ -22,17 +22,32 @@ export default function DynamicPage() {
     publicAPI.getNavPages().then(r => {
       const pages = r.data || [];
       const currentPath = location.pathname;
-      const found = pages.find(p =>
+
+      // Find all matching pages, then pick the best one (prefer the one with layout set)
+      const candidates = pages.filter(p =>
         (pageId && p.id === pageId) ||
         (pageId && p.url === `/page/${pageId}`) ||
         (!pageId && p.url === currentPath)
       );
 
+      // Prefer the most recently created page, or the one with layout
+      const found = candidates.length > 1
+        ? candidates.sort((a, b) => {
+            // Prefer one with layout
+            if (a.layout && !b.layout) return -1;
+            if (!a.layout && b.layout) return 1;
+            // Then prefer newer (by created_at)
+            return (b.created_at || '').localeCompare(a.created_at || '');
+          })[0]
+        : candidates[0];
+
       if (found) {
         setPage(found);
+        // Fetch hero slides assigned to this page
         publicAPI.getHeroSlides(found.id).then(hs => {
           setHeroSlides(hs.data || []);
         }).catch(() => {});
+        // If page_type is set (for terms/privacy), fetch that content
         if (found.page_type) {
           publicAPI.getPage(found.page_type).then(res => {
             setPage(prev => ({ ...prev, ...res.data, title: found.title }));
@@ -62,7 +77,6 @@ export default function DynamicPage() {
       case 'layout_3': return <LayoutGalleryAlbums page={page} />;
       case 'layout_5': return <LayoutFullContent page={page} />;
       default:
-        // Default layout (no layout or layout_5-like)
         return (
           <div className={`max-w-4xl mx-auto px-6 md:px-12 py-16 ${!heroSlides.length ? 'pt-24 md:pt-28' : ''}`} style={{ overflowX: 'hidden', wordBreak: 'break-word' }}>
             <h1 className="text-3xl font-bold mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="page-title">{page.title}</h1>

@@ -23,23 +23,24 @@ function useFooterData() {
   return { settings, socialLinks, footerPages, isExternal, isAdmin };
 }
 
-// Shared 3-column footer structure for all themes
-function SharedFooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc, theme }) {
-  const baseLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'News', href: '/news' },
-    { label: 'Gallery', href: '/gallery' },
-    { label: 'Reading List', href: '/reading-list' },
-  ];
+const baseLinks = [
+  { label: 'Home', href: '/' },
+  { label: 'News', href: '/news' },
+  { label: 'Gallery', href: '/gallery' },
+  { label: 'Reading List', href: '/reading-list' },
+];
 
+function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc, theme }) {
   const isClassic = theme === 'classic';
   const fontFamily = isClassic ? "'Playfair Display', serif" : undefined;
+  const API = process.env.REACT_APP_BACKEND_URL;
 
   return (
     <>
       <div className="max-w-7xl mx-auto px-6 md:px-12 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-          {/* Column 1: Logo + Description + Social */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-10">
+
+          {/* Column 1: Logo + Description */}
           <div>
             <div className="flex items-center gap-3 mb-4">
               {logoSrc ? (
@@ -53,26 +54,14 @@ function SharedFooterContent({ settings, socialLinks, footerPages, isExternal, l
                 </>
               )}
             </div>
-            <p className="text-white/50 text-sm leading-relaxed mb-6" style={fontFamily ? { fontFamily } : {}}>
+            <p className="text-white/50 text-sm leading-relaxed" style={fontFamily ? { fontFamily } : {}}>
               {settings.footer_description || 'Strategic consulting for businesses seeking sustainable growth and lasting impact.'}
             </p>
-            <div className="flex items-center gap-2">
-              {socialLinks.map(link => {
-                const IconComp = socialIconMap[link.icon] || Facebook;
-                return (
-                  <a key={link.id} href={link.url} target="_blank" rel="noreferrer"
-                    className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:text-white hover:border-white/50 transition-all"
-                    data-testid={`footer-social-${link.icon}`}>
-                    <IconComp className="w-3.5 h-3.5" />
-                  </a>
-                );
-              })}
-            </div>
           </div>
 
-          {/* Column 2: Navigation (base links + all footer pages) */}
+          {/* Column 2: Site Map */}
           <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Navigation</h4>
+            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Site Map</h4>
             <ul className="space-y-2.5">
               {baseLinks.map(link => (
                 <li key={link.href}>
@@ -81,6 +70,13 @@ function SharedFooterContent({ settings, socialLinks, footerPages, isExternal, l
                   </Link>
                 </li>
               ))}
+            </ul>
+          </div>
+
+          {/* Column 3: Resources (created pages) */}
+          <div>
+            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Resources</h4>
+            <ul className="space-y-2.5">
               {footerPages.map(page => (
                 <li key={page.id}>
                   {isExternal(page.url) || page.open_in_new_tab ? (
@@ -94,20 +90,35 @@ function SharedFooterContent({ settings, socialLinks, footerPages, isExternal, l
                   )}
                 </li>
               ))}
+              {footerPages.length === 0 && <li className="text-white/30 text-sm">No pages yet</li>}
             </ul>
           </div>
 
-          {/* Column 3: Stay Updated */}
+          {/* Column 4: Connect (Social + Email) */}
           <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Stay Updated</h4>
-            <p className="text-white/50 text-sm mb-4">Get the latest insights delivered to your inbox.</p>
+            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Connect</h4>
+            <div className="flex items-center gap-2 mb-5">
+              {socialLinks.map(link => {
+                const IconComp = socialIconMap[link.icon] || Facebook;
+                return (
+                  <a key={link.id} href={link.url} target="_blank" rel="noreferrer"
+                    className="w-8 h-8 rounded-full border border-white/20 flex items-center justify-center text-white/50 hover:text-white hover:border-white/50 transition-all"
+                    data-testid={`footer-social-${link.icon}`}>
+                    <IconComp className="w-3.5 h-3.5" />
+                  </a>
+                );
+              })}
+            </div>
+            <p className="text-white/50 text-sm mb-3">Get the latest insights delivered to your inbox.</p>
             <div className="flex">
               <input type="email" placeholder="Email address"
-                className="flex-1 bg-white/5 border border-white/10 text-white text-sm px-4 py-3 rounded-l-md placeholder:text-white/30 focus:outline-none focus:border-white/30"
+                className="flex-1 bg-white/5 border border-white/10 text-white text-sm px-3 py-2.5 rounded-l-md placeholder:text-white/30 focus:outline-none focus:border-white/30"
                 data-testid="footer-email-input" />
-              <button className="px-5 py-3 rounded-r-md text-white text-sm font-medium"
+              <button className="px-4 py-2.5 rounded-r-md text-white text-sm font-medium flex items-center gap-1"
                 style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}
-                data-testid="footer-subscribe-btn">Subscribe</button>
+                data-testid="footer-subscribe-btn">
+                <Send className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
         </div>
@@ -130,7 +141,7 @@ function DefaultFooter() {
 
   return (
     <footer style={{ backgroundColor: 'var(--color-footer-bg, #1a2332)', color: 'var(--color-footer-text, #FFFFFF)' }} data-testid="site-footer">
-      <SharedFooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="default" />
+      <FooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="default" />
     </footer>
   );
 }
@@ -146,7 +157,7 @@ function ModernFooter() {
     <footer className="relative overflow-hidden" data-testid="site-footer">
       <div className="absolute inset-0" style={{ background: 'linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)' }} />
       <div className="relative">
-        <SharedFooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="modern" />
+        <FooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="modern" />
       </div>
     </footer>
   );
@@ -162,7 +173,7 @@ function ClassicFooter() {
   return (
     <footer data-testid="site-footer">
       <div style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
-        <SharedFooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="classic" />
+        <FooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="classic" />
       </div>
     </footer>
   );
