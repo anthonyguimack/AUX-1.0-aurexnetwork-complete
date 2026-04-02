@@ -217,6 +217,12 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - **Service detail pages**: /service/:serviceId with full_content. ServicesManager has short_description, full_content, image.
 - Testing: 23/23 backend + 100% frontend verification (Iteration 26)
 
+### Footer 4-Column, Hero+Layout Fix, Duplicate Page Resolution (Apr 2, 2026) - COMPLETE
+- **Footer**: Changed to 4-column structure: Logo+desc | Site Map (Home, News, Gallery, Reading List) | Resources (all created pages) | Connect (social icons + email form). Consistent across all 3 themes via shared FooterContent component.
+- **Hero+Layout**: Fixed hero slides not showing on dynamic pages with layouts. DynamicPage now correctly resolves duplicate pages by preferring those with layout field set.
+- **Layout 1 verified**: About/Bio layout (image left, content right, social links) working correctly with hero section on Events & Hospitality Group page.
+- Testing: 19/19 backend + 100% frontend verification (Iteration 27)
+
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
 
