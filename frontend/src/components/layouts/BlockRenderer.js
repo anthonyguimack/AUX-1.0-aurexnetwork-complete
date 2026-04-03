@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI } from '../../lib/api';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -66,7 +67,7 @@ function GalleryBlock() {
   return (
     <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="block-gallery">
       {albums.map(a => (
-        <Link key={a.id} to={`/gallery/${a.id}`} className="group">
+        <Link key={a.id} to={`/album/${a.id}`} className="group">
           <div className="aspect-square rounded-lg overflow-hidden bg-slate-100">
             {a.cover_image ? <img src={resolveSrc(a.cover_image)} alt={a.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center text-slate-400">No cover</div>}
           </div>
@@ -112,6 +113,62 @@ function CustomHtmlBlock({ config }) {
   return <div dangerouslySetInnerHTML={{ __html: config.html }} data-testid="block-custom-html" />;
 }
 
+function LegendsTestimonialsBlock() {
+  const [items, setItems] = useState([]);
+  const [current, setCurrent] = useState(0);
+
+  useEffect(() => {
+    publicAPI.getTestimonials().then(r => {
+      const data = (r.data || []).sort((a, b) => (a.order || 0) - (b.order || 0));
+      setItems(data);
+    }).catch(() => {});
+  }, []);
+
+  const next = useCallback(() => setCurrent(p => (p + 1) % items.length), [items.length]);
+  const prev = useCallback(() => setCurrent(p => (p - 1 + items.length) % items.length), [items.length]);
+
+  useEffect(() => {
+    if (items.length < 2) return;
+    const timer = setInterval(next, 5000);
+    return () => clearInterval(timer);
+  }, [items.length, next]);
+
+  if (!items.length) return null;
+  const item = items[current];
+  const src = resolveSrc(item?.image);
+
+  return (
+    <div className="relative bg-[#1a2332] rounded-xl p-8 md:p-12 lg:p-16 overflow-hidden" data-testid="block-legends-carousel">
+      <div className="absolute top-6 left-8 text-6xl font-serif leading-none" style={{ color: 'var(--color-accent, #0D9488)', opacity: 0.3 }}>&ldquo;</div>
+      <div className="relative z-10 text-center max-w-3xl mx-auto">
+        <p className="text-white/90 text-lg md:text-xl italic leading-relaxed mb-8 min-h-[80px]" data-testid="testimonial-quote">
+          {item?.content}
+        </p>
+        <div className="flex items-center justify-center gap-4">
+          {src && <img src={src} alt={item?.name} className="w-14 h-14 rounded-full object-cover border-2 border-white/20" data-testid="testimonial-author-img" />}
+          <div className="text-left">
+            <p className="text-white font-semibold text-sm" data-testid="testimonial-author-name">{item?.name}</p>
+            {item?.title && <p className="text-white/50 text-xs">{item?.title}</p>}
+          </div>
+        </div>
+      </div>
+      {items.length > 1 && (
+        <>
+          <button onClick={prev} className="absolute left-3 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-white/80 transition-colors" data-testid="testimonial-prev"><ChevronLeft className="w-6 h-6" /></button>
+          <button onClick={next} className="absolute right-3 top-1/2 -translate-y-1/2 p-2 text-white/30 hover:text-white/80 transition-colors" data-testid="testimonial-next"><ChevronRight className="w-6 h-6" /></button>
+          <div className="flex justify-center gap-2 mt-6 relative z-10">
+            {items.map((_, i) => (
+              <button key={i} onClick={() => setCurrent(i)}
+                className={`w-2 h-2 rounded-full transition-all ${i === current ? 'bg-[#0D9488] scale-125' : 'bg-white/20 hover:bg-white/40'}`}
+                data-testid={`testimonial-dot-${i}`} />
+            ))}
+          </div>
+        </>
+      )}
+    </div>
+  );
+}
+
 export default function BlockRenderer({ block }) {
   if (!block || !block.type) return null;
   const config = block.config || {};
@@ -125,6 +182,7 @@ export default function BlockRenderer({ block }) {
     case 'button': return <ButtonBlock config={config} />;
     case 'separator': return <SeparatorBlock config={config} />;
     case 'custom_html': return <CustomHtmlBlock config={config} />;
+    case 'legends_testimonials': return <LegendsTestimonialsBlock />;
     default: return null;
   }
 }

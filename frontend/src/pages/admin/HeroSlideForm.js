@@ -190,6 +190,22 @@ export default function HeroSlideForm() {
         )}
       </div>
 
+      {/* Media Dimensions */}
+      <div className={sectionCls}>
+        <h2 className={sectionTitle}>Media Dimensions</h2>
+        <p className="text-xs text-slate-400 mb-3">Set custom width and height for the photo or video. Leave empty for defaults (420px width).</p>
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Label className="text-xs text-slate-500">Width (px)</Label>
+            <Input type="number" value={form.media_width || ''} onChange={e => setForm(p => ({...p, media_width: parseInt(e.target.value) || 0}))} className="mt-1" placeholder="420" data-testid="slide-media-width" />
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Height (px)</Label>
+            <Input type="number" value={form.media_height || ''} onChange={e => setForm(p => ({...p, media_height: parseInt(e.target.value) || 0}))} className="mt-1" placeholder="Auto" data-testid="slide-media-height" />
+          </div>
+        </div>
+      </div>
+
       {/* Background */}
       <div className={sectionCls}>
         <h2 className={sectionTitle}>Background</h2>

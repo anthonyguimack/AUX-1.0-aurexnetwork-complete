@@ -244,6 +244,22 @@ function SystemPageHero() {
   return <HeroSection slides={heroSlides} />;
 }
 
+function ScrollToTop() {
+  const { pathname, hash } = useLocation();
+  useEffect(() => {
+    if (hash) {
+      const id = hash.substring(1);
+      setTimeout(() => {
+        const el = document.getElementById(id);
+        if (el) { el.scrollIntoView({ behavior: 'smooth' }); }
+      }, 150);
+    } else {
+      window.scrollTo(0, 0);
+    }
+  }, [pathname, hash]);
+  return null;
+}
+
 function AppRouter() {
   const location = useLocation();
   if (location.hash?.includes('session_id=')) return <AuthCallback />;
@@ -274,6 +290,7 @@ function AppRouter() {
 
   return (
     <>
+      <ScrollToTop />
       <Navbar />
       <SystemPageHero />
       <Routes>

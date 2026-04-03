@@ -3,7 +3,7 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import { LAYOUTS, BLOCK_TYPES, getDefaultBlockConfig } from '../../lib/layoutDefinitions';
-import { Plus, Trash2, Edit2, Type, Image, Video, Briefcase, Images, User, MousePointerClick, Minus, Code, GripVertical } from 'lucide-react';
+import { Plus, Trash2, Edit2, Type, Image, Video, Briefcase, Images, User, MousePointerClick, Minus, Code, GripVertical, Quote } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import BlockConfigModal from './BlockConfigModal';
 
@@ -12,6 +12,7 @@ const genId = () => Math.random().toString(36).substr(2, 9);
 const BLOCK_ICONS = {
   rich_text: Type, image: Image, video: Video, service_list: Briefcase,
   gallery: Images, profile_card: User, button: MousePointerClick, separator: Minus, custom_html: Code,
+  legends_testimonials: Quote,
 };
 
 function SortableBlock({ block, zoneId, onEdit, onDelete }) {
@@ -45,7 +46,7 @@ function SortableBlock({ block, zoneId, onEdit, onDelete }) {
         )}
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!['service_list', 'gallery'].includes(block.type) && (
+        {!['service_list', 'gallery', 'legends_testimonials'].includes(block.type) && (
           <button onClick={() => onEdit(block)} className="p-1 text-slate-300 hover:text-[#0D9488]" data-testid={`edit-block-${block.id}`}><Edit2 className="w-3.5 h-3.5" /></button>
         )}
         <button onClick={() => onDelete(block.id)} className="p-1 text-slate-300 hover:text-red-500" data-testid={`delete-block-${block.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
@@ -76,7 +77,7 @@ export default function PageBuilder({ zones, layout, onChange }) {
     newZones[zoneId] = [...newZones[zoneId], newBlock];
     onChange(newZones);
     setShowBlockPicker(null);
-    if (!['service_list', 'gallery', 'separator'].includes(blockType)) {
+    if (!['service_list', 'gallery', 'separator', 'legends_testimonials'].includes(blockType)) {
       setEditingBlock(newBlock);
       setEditingZone(zoneId);
     }

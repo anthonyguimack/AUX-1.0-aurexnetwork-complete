@@ -96,6 +96,7 @@ export const BLOCK_TYPES = {
   button: { label: 'Button', desc: 'Call-to-action button with link' },
   separator: { label: 'Separator', desc: 'Visual divider between content' },
   custom_html: { label: 'Custom HTML', desc: 'Raw HTML code block' },
+  legends_testimonials: { label: 'Legends & Testimonials', desc: 'Auto-sliding quote carousel' },
 };
 
 export const getDefaultBlockConfig = (type) => {
@@ -109,6 +110,7 @@ export const getDefaultBlockConfig = (type) => {
     button: { text: 'Click Here', url: '', style: 'primary', open_in_new_tab: false },
     separator: { style: 'line' },
     custom_html: { html: '' },
+    legends_testimonials: {},
   };
   return { ...(defaults[type] || {}) };
 };

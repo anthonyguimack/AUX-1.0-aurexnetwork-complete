@@ -38,7 +38,19 @@ function useNavData() {
   ];
 
   const handlePageClick = (page, e) => {
-    if (page.login_required && !user) { e.preventDefault(); setLoginOpen(true); }
+    if (page.login_required && !user) { e.preventDefault(); setLoginOpen(true); return; }
+    const url = page.url || '';
+    if (url.includes('#')) {
+      e.preventDefault();
+      const [pathPart, hashPart] = url.split('#');
+      const targetPath = pathPart || '/';
+      if (location.pathname === targetPath) {
+        const el = document.getElementById(hashPart);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      } else {
+        window.location.href = url;
+      }
+    }
   };
 
   const isExternal = (url) => url?.startsWith('http://') || url?.startsWith('https://');

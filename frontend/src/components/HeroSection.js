@@ -75,17 +75,17 @@ export default function HeroSection({ data, slides }) {
             <div className="relative w-full hidden lg:block" style={{ minHeight: '400px' }}>
               {slide.title && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.title_x || 100) / 7}%`, top: `${(slide.title_y || 50) / 3}%`, ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
-                  <div className="text-5xl xl:text-6xl font-bold text-white leading-tight [&_strong]:text-white [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                  <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.subtitle_x || 100) / 7}%`, top: `${(slide.subtitle_y || 80) / 3}%`, ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle-lg">
-                  <div className="text-xl font-semibold text-white [&_strong]:font-bold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                  <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
                 </div>
               )}
               {slide.description && (
                 <div className="absolute max-w-[45%]" style={{ left: `${(slide.description_x || 100) / 7}%`, top: `${(slide.description_y || 120) / 3}%`, ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description-lg">
-                  <div className="text-white/70 text-lg leading-relaxed [&_strong]:text-white/90" dangerouslySetInnerHTML={{ __html: slide.description }} />
+                  <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
                 </div>
               )}
               {slide.button_text && (
@@ -98,13 +98,13 @@ export default function HeroSection({ data, slides }) {
                 </div>
               )}
               {(slide.slide_type === 'video' && slide.video_embed) && (
-                <div className="absolute w-[420px]" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, ...effectStyle(slide.media_effect, slide.media_start) }}>
-                  <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
+                <div className="absolute" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
+                  <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" style={slide.media_height ? { height: `${slide.media_height}px`, aspectRatio: 'unset' } : {}} dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
                 </div>
               )}
               {(slide.slide_type === 'photo' && slide.photo) && (
-                <div className="absolute w-[420px]" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, ...effectStyle(slide.media_effect, slide.media_start) }}>
-                  <img src={slide.photo} alt="" className="rounded-lg shadow-2xl w-full object-cover max-h-[400px]" />
+                <div className="absolute" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
+                  <img src={slide.photo} alt="" className="rounded-lg shadow-2xl w-full object-cover" style={slide.media_height ? { maxHeight: `${slide.media_height}px` } : { maxHeight: '400px' }} />
                 </div>
               )}
             </div>
@@ -123,17 +123,17 @@ export default function HeroSection({ data, slides }) {
               )}
               {slide.title && (
                 <div style={effectStyle(slide.title_effect, slide.title_start)} data-testid="hero-title">
-                  <div className="text-3xl sm:text-4xl font-bold text-white leading-tight [&_strong]:text-white [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                  <div className="text-3xl sm:text-4xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
-                  <div className="text-base sm:text-lg font-semibold text-white [&_strong]:font-bold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                  <div className="text-base sm:text-lg font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
                 </div>
               )}
               {slide.description && (
                 <div style={effectStyle(slide.description_effect, slide.description_start)} data-testid="hero-description">
-                  <div className="text-white/70 text-sm sm:text-base leading-relaxed [&_strong]:text-white/90" dangerouslySetInnerHTML={{ __html: slide.description }} />
+                  <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
                 </div>
               )}
               {slide.button_text && (

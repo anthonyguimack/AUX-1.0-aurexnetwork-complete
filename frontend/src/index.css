@@ -64,6 +64,11 @@
 }
 
 /* Rich text content styling */
+.rich-text-content h1 {
+  @apply text-3xl font-bold mb-5 mt-8;
+  font-family: 'Playfair Display', serif;
+  color: var(--color-heading, #1a2332);
+}
 .rich-text-content h2 {
   @apply text-2xl font-semibold mb-4 mt-8;
   font-family: 'Playfair Display', serif;
@@ -80,6 +85,12 @@
 }
 .rich-text-content ol {
   @apply list-decimal pl-6 mb-4 space-y-2 text-slate-600;
+}
+.rich-text-content ul ul,
+.rich-text-content ol ol,
+.rich-text-content ul ol,
+.rich-text-content ol ul {
+  @apply mt-2 mb-0;
 }
 .rich-text-content blockquote {
   @apply border-l-4 border-teal-500 pl-4 italic text-slate-500 my-4;
@@ -269,7 +280,9 @@ html {
 /* === Rich Text Content — Prevent horizontal overflow === */
 .rich-text-content {
   overflow-x: hidden;
-  word-break: break-word;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: manual;
   max-width: 100%;
 }
 .rich-text-content img {
