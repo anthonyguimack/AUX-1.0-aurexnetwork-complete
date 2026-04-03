@@ -1,7 +1,7 @@
 # Legacy Consultant Website - PRD
 
 ## Original Problem Statement
-Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe payments, JWT + Google OAuth auth, interactive maps, blog, gallery, reading list, portfolio, testimonials, contact form. Membership system with invite codes, sponsor trees, portfolio management.
+Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe payments, JWT + Google OAuth auth, interactive maps, blog, gallery, reading list, portfolio, testimonials, contact form. Membership system with invite codes, sponsor trees, portfolio management. Visual Page Builder with 14 layouts and block-based content management.
 
 ## Architecture
 ```
@@ -18,25 +18,66 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
                          # sectors/industries/companies, geo, levels, member upload
 /app/frontend/src/
   components/
-    MemberImageUpload.js # Upload + URL combo for member-accessible image uploads
+    admin/
+      PageBuilder.js       # Zone-based block editor (add/edit/delete/reorder blocks)
+      BlockConfigModal.js  # Block configuration forms per block type
+    layouts/
+      BlockRenderer.js     # Renders individual blocks (9 types)
+      LayoutRenderer.js    # Renders 14 builder layouts with zone arrangements
+      LayoutAboutBio.js    # Legacy layout_1
+      LayoutServicesGrid.js # Legacy layout_2
+      LayoutGalleryAlbums.js # Legacy layout_3
+      LayoutFullContent.js  # Legacy layout_5
+  lib/
+    layoutDefinitions.js  # LAYOUTS (14), BLOCK_TYPES (9), zone/block configs
   pages/
     admin/
-      SettingsManager.js # Tabs: General, Colors, Sections, Social, Email/SMTP, Blog API, Membership, APIs
-      MemberLevelsManager.js # CRUD for member levels with permissions
-    myaccount/
-      MyAccountLayout.js    # Dynamic sidebar with route protection + loading state
-      MembershipProfile.js  # Cascading geo, editable email, avatar upload+URL
-      PortfolioForm.js      # Rank/Cost, sort by rank on load, MemberImageUpload for cover
-      PortfolioDetail.js    # CASH row, 4 charts, 9 columns (no Cost), date fix
-      PortfolioList.js      # HTML descriptions, timezone-safe dates
+      PagesManager.js     # Tabs (Settings/Content), layout selector, PageBuilder
+    DynamicPage.js        # Routes to LayoutRenderer or legacy layouts
 ```
 
 ## DB Schema
 - `members`: ALL users. Fields: member_id, membership_id, email, password_hash, role, level_id, is_mentor, sponsor_id, mentor_id, country, state, city
-- `portfolios`: {id, owner_member_id, title, holdings[{symbol, security, sector, industry, price, cost, shares, rank}], status, shared_mode, shared_with[], cash_balance}
-- `member_levels`: {id, name, permissions[], order}
-- `countries`, `states`, `cities`: Hierarchical location collections
-- `sectors`, `industries`, `companies`: Stock reference data
+- `nav_pages`: { id, title, url, layout, zones: { zoneName: [{ id, type, order, config }] }, show_in_header, show_in_footer, login_required, open_in_new_tab, order, summary, content, page_type, layout_image }
+- `portfolios`: {id, owner_member_id, title, holdings[], status, shared_mode, shared_with[], cash_balance}
+- `member_levels`, `member_types`, `countries`, `states`, `cities`, `sectors`, `industries`, `companies`
+
+## Page Builder Architecture
+
+### 14 Visual Builder Layouts
+Each layout defines zones (content areas) where blocks are placed:
+1. **Full Width** — zones: [main]
+2. **Boxed** — zones: [main]
+3. **Split Screen** — zones: [left, right]
+4. **Grid 2x2** — zones: [cell_1, cell_2, cell_3, cell_4]
+5. **Masonry** — zones: [main]
+6. **List** — zones: [main]
+7. **Carousel** — zones: [main]
+8. **Two Column** — zones: [main, sidebar]
+9. **Three Column** — zones: [col_1, col_2, col_3]
+10. **Profile** — zones: [sidebar, main]
+11. **Card Based** — zones: [main]
+12. **Hero Banner** — zones: [hero, main]
+13. **Sidebar** — zones: [sidebar, main]
+14. **Landing Page** — zones: [hero, features, cta]
+
+### 9 Block Types
+1. Rich Text — WYSIWYG content
+2. Image — Upload/URL with alt, caption, link
+3. Video — YouTube/Vimeo embed
+4. Service List — Auto-fetches all services
+5. Gallery — Auto-fetches gallery albums
+6. Profile Card — Name, title, photo, bio
+7. Button — CTA with text, URL, style (primary/outline)
+8. Separator — Line, dots, or space
+9. Custom HTML — Raw HTML injection
+
+### 5 Legacy/Preset Layouts (backward compat)
+- Default — RichTextEditor content
+- About/Bio (layout_1) — Image + text + social
+- Services Grid (layout_2) — Auto-populates services
+- Gallery Albums (layout_3) — Auto-populates albums
+- Full Content (layout_5) — Centered text
 
 ## Completed Features
 
@@ -46,35 +87,25 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 ### Phase 3 (Membership System) - COMPLETE
 - Member portal, invite codes, sponsor tree, portfolios, admin Members Manager
 
-### Phase A (Auth Unification) - COMPLETE
-- Unified users/members into single `members` collection, single login
+### Phase A-E (Auth, Profile, Portfolio, Community) - COMPLETE
+- Unified auth, membership profile, portfolio overhaul, community tree, member levels
 
-### Phase B-E (Profile, Portfolio, Community) - COMPLETE
-- Membership Profile with tabs, Bio modal, cascading geo selects
-- Portfolio overhaul with sectors/industries/companies, shared members
-- Community tree with searchable results
+### Theme Engine & Color Management - COMPLETE
+- 3 themes (Default, Modern, Classic), 67-color management system, per-theme homepage sections
 
-### Phase C (Member Levels & Permissions) - COMPLETE
-- CMS Member Levels Manager, dynamic sidebar filtering, route protection
+### Logo/Favicon, Footer CMS, Per-Page Layout System - COMPLETE
+- Dual logo system, dynamic footer, per-page layouts, gallery albums
 
-### CMS Settings APIs Tab - COMPLETE
-- Lists 6 integrations (Stripe, Google OAuth, SMTP, Blog API, Leaflet, MongoDB) with Active/Inactive status
-
-### Bug Fixes & UX Improvements (Mar 27, 2026) - COMPLETE
-- **Sidebar route protection**: Members can't access restricted sections via URL
-- **Sidebar flash fix**: Loading spinner shown while permissions load (no flash)
-- **Default Level 1**: New members auto-assigned lowest-order level on registration
-- **Email editable**: Members can change email (syncs username)
-- **Avatar upload + URL**: MemberImageUpload component supports both file upload and URL input
-- **Member upload endpoint**: POST /api/member/upload accessible to any authenticated member
-- **Date timezone fix**: Dates parsed as YYYY-MM-DD directly (no Date object timezone shift)
-- **Portfolio list**: HTML description rendering (bold/italic visible), correct dates
-- **Portfolio view**: "Price" column (renamed from "Share Price"), Cost column hidden
-- **CASH row**: Added at rank 0 with cash_balance as price, 1 share, CASH for all text fields
-- **Total includes CASH**: Grand total = stocks + cash
-- **4 charts**: Current Stock Holdings, By Sector, By Industry, Portfolio Balance (2x2 grid, 280px height)
-- **Portfolio edit sort**: Holdings sorted by rank on load
-- **Portfolio form columns**: Symbol narrower, Security wider for readability
+### Visual Page Builder (Apr 3, 2026) - COMPLETE
+- **14 Visual Builder Layouts**: Full Width, Boxed, Split Screen, Grid 2x2, Masonry, List, Carousel, Two Column, Three Column, Profile, Card Based, Hero Banner, Sidebar, Landing Page
+- **9 Block Types**: Rich Text, Image, Video, Service List, Gallery, Profile Card, Button, Separator, Custom HTML
+- **Zone-based editing**: Each layout defines zones, blocks added/edited/reordered/deleted per zone
+- **PagesManager overhaul**: Two tabs (Settings / Content & Layout), visual layout selector with thumbnail previews
+- **LayoutRenderer**: Public rendering of all 14 layouts with correct zone arrangements
+- **BlockRenderer**: Renders all 9 block types with proper styling
+- **Backward compatible**: Legacy layouts (layout_1 through layout_5) still work
+- **Homepage Service Links**: "Read More" links on service cards navigate to /service/:id across all 3 themes
+- Testing: 39/39 backend + 100% frontend verification (Iteration 28)
 
 ## Testing History
 - Phase 1: 35/35 backend
@@ -85,143 +116,25 @@ Multi-page consultant website ("Legacy") with login, CMS admin panel, Stripe pay
 - Phases A-E: 13/13 + 19/19
 - Phase F UI/UX: 11/11 + 26/26
 - Phase C + APIs: 9/9 + 19/19
-- Bug fixes: 7/7 backend + visual verification
-
-### Bug Fixes Round 2 (Mar 28, 2026) - COMPLETE
-- Route protection instant block: Unauthorized routes show spinner immediately (no content flash before redirect)
-- Registration form: Removed Avatar section
-- Portfolio charts CASH inclusion: CASH added to Current Stock Holdings, By Sector, and By Industry charts so percentages sum to 100%
-
-### Hero Slides CRUD (Mar 28, 2026) - COMPLETE
-- Full CRUD: List table (Title, Subtitle, Type, Dates, Actions), Add/Edit form, Delete with confirmation
-- Form sections: Timer (date start/end), WYSIWYG (title/subtitle/desc), Links (button text/url/window), Slide Type (photo/video), Background, Animation Effects (5 selects), X/Y Coordinates (5 pairs), Revolution Slider Params (transition, speed, delays)
-- Frontend hero renders multiple slides with layer animations, auto-rotation, and indicator dots
-- Backward compatible: Falls back to legacy single-doc hero if no slides exist
-
-### Hero Slides Improvements (Mar 28, 2026) - COMPLETE
-- Timer filtering: Public endpoint only returns slides within their date_start/date_end range
-- Visual drag-and-drop canvas: Replaced manual X/Y inputs with interactive canvas editor
-- Subtitle color: Changed to white to match title styling
-- Expired slides properly excluded from public website
-- Layer Positioning affects homepage: All layers use absolute positioning with X/Y coordinates from CMS
-- Canvas background: Admin canvas shows the slide's background image with dark overlay for context
-
-### Hero Responsive Layout Fix (Mar 30, 2026) - COMPLETE
-- Desktop (lg+): Absolute positioning from CMS X/Y coordinates via `hidden lg:block` container
-- Mobile & Tablet (<1024px): Stacked flex column layout via `lg:hidden` container - no text overlap
-- Slide navigation indicator dots working across all viewports
-- Testing: 17/17 backend + 100% frontend verification (Iteration 13)
-
-### CMS Pages & Hero Improvements (Mar 30, 2026) - COMPLETE
-- **Hero per-page assignment**: Each hero slide has `assigned_pages` array. Admin form shows checklist of all site pages. Public endpoint accepts `?page=X` to filter slides by page.
-- **Pages content dynamic**: Backend syncs nav_pages to `pages` collection when `page_type` is set, so TermsPage/PrivacyPage always show latest CMS content.
-- **Login Required URL protection**: New `PageProtectedRoute` in App.js checks nav_pages `login_required` field before rendering /terms, /privacy, /page/:pageId. Shows "Login Required" screen for unauthenticated users.
-- **Open in New Tab fix**: Navbar and Footer use `<a target="_blank">` instead of `<Link>` for pages with `open_in_new_tab: true`.
-- **Pages Manager reorganized**: Two tabs — Custom Pages (editable, deletable) and System Pages (built-in, read-only info display).
-### Hero Per-Page Assignment & Custom Page Routing Fix (Mar 30, 2026) - COMPLETE
-- **Hero on all pages**: Extracted HeroSection into shared component (`/components/HeroSection.js`). System pages (News, Gallery, Reading List) show hero slides via `SystemPageHero` in App.js. Custom pages (KLS, Terms, etc.) show hero slides via DynamicPage.
-- **Custom page URL routing**: Added catch-all route `*` in App.js. DynamicPage now looks up pages by URL path (not just by ID). Custom pages like `/kls` now load correctly.
-- **Terms/Privacy unified**: Both now route through DynamicPage for consistent hero + content rendering.
-- Testing: 20/20 backend + 100% frontend verification (Iteration 15)
-
-### Banner Image Removal & Member Types Module (Mar 30, 2026) - COMPLETE
-- **Banner Image removed**: Removed from PagesManager form, DynamicPage, and all system pages (News, Gallery, ReadingList). Hero carousel is now the sole visual header system.
-- **Member Types CRUD**: New `/api/admin/member-types` endpoints + `MemberTypesManager` admin page with full CRUD. Feeds the Member Type dropdown in Members form.
-- **Extended Membership Info**: Added 14 fields to membership tab: Membership Ranking, Status (Free/Professional), Active Date, Expiration Date, Membership Fee, Member Type (dropdown from member_types), Corporate, Application Reviewer, Opportunities Development/Reviewer, Project Development/Reviewer/Management, Content Operator.
-- Testing: 17/17 backend + 100% frontend verification (Iteration 16)
-
-### Permissions Moved to Member Types + Page Access Control (Mar 30, 2026) - COMPLETE
-- **Permissions on Member Types**: Moved all 10 role permission radio buttons (Corporate, Mentor, Portfolio Dev, Application Reviewer, Opportunities Dev/Reviewer, Project Dev/Reviewer/Management, Content Operator) from the Members form to the Member Types module. Types now have 3 tabs: General, Permissions, Page Access.
-- **Page Access Checklist**: Each Member Type has a page access checklist (all site pages). Controls which pages members of that type can access.
-- **Inherited Permissions**: When editing a member and selecting a type, inherited permissions + page count shown as read-only badges.
-- **Page Access Enforcement**: PageProtectedRoute in App.js checks member's type `allowed_pages` before granting access to login-required pages. Admins bypass all restrictions.
-- **Backend enrichment**: `/auth/me` and `/member/me` now return `_member_type` with `allowed_pages` and `permissions` dict.
-- Testing: 12/12 backend + 100% frontend verification (Iteration 17)
-
-### Mentor System Migrated to Member Types (Mar 30, 2026) - COMPLETE
-- **Mentor dropdown now uses Member Types**: Admin Members form mentor dropdown populated from `GET /api/admin/mentors` which queries member types with `is_mentor: true`. Old per-member `is_mentor` flag no longer used for filtering.
-- **New endpoints**: `GET /api/admin/mentors` and `GET /api/member/available-mentors` for type-based mentor lists.
-- **My Account updated**: MentorshipProfile and MembershipProfile show mentor badge from `_member_type.permissions.is_mentor`.
-- Testing: 11/11 backend + 100% frontend verification (Iteration 18)
-
-### Ebank, Business Card QR, New Member Fields (Mar 30, 2026) - COMPLETE
-- **New Personal Info fields**: HTTP Access (read-only, auto-captured from registration domain), Passport ID#, Zelle #
-- **Ebank tab (Admin)**: Read-only display of 16 financial fields per member, populated from My Account
-- **Business Card tab (Admin)**: Generate QR code for sponsor-based registration, "Click Here"/"View QR" toggle
-- **My Ebank (My Account)**: Editable form for all 16 financial fields + Activities tab (auto-logs each field change with timestamp)
-- **QR/Sponsor Registration**: New registration method via `?sponsor=X` param, independent from invite codes. QR URL built dynamically.
-- **Passport ID#**: Added to My Account Membership Profile (edit + view modes)
-- Testing: 14/14 backend + 100% frontend verification (Iteration 19)
-
-### Membership Settings & Profile Action Buttons (Mar 31, 2026) - COMPLETE
-- **Admin Membership Settings**: New CMS page (`/admin/membership-settings`) with checkbox grid for 16 profile + 16 ebank fields. Admin selects which fields are "mandatory" for profile completion.
-- **Profile Completion Progress Bar**: Calculates % based only on admin-defined mandatory fields. Color-coded: red (<50%), gold (50-79%), green (80%+).
-- **Change Password Modal**: Wired to `PUT /api/member/change-password` with min 8-char and match validation.
-- **View Full Bio Modal**: Read-only display of member's formatted Summary & Biography HTML.
-- **Steps to Complete Profile Modal**: Lists missing mandatory fields (red) and missing optional fields (gray) separately.
-- **Backend endpoints**: `GET/PUT /api/admin/membership-settings`, `GET /api/public/membership-settings`, `PUT /api/member/change-password`
-- Testing: 11/11 backend + 100% frontend verification (Iteration 20)
-
-### Profile & Ebank Fixes (Mar 31, 2026) - COMPLETE
-- **Passport ID# field bug fix**: Added `passport_id` to allowed update fields in backend. Label changed to "ID# (Passport or DNI or etc.)".
-- **Bio Modal overhaul**: Close button (X) visible on dark bg, vertical-only scrolling (no horizontal overflow), proper WYSIWYG rendering (h1=2rem, h2=1.5rem, bold, italic, lists, blockquotes via `.bio-rich-content` CSS).
-- **Profile Activities tab**: New detailed field-level activity log (like MyEbank), tracks old/new values with timestamps via `GET /api/member/profile-activities`.
-- **iOS select fix**: Country/State/City/Gender selects use `text-base` (16px) + `colorScheme: 'dark'` to prevent iOS Safari zoom and picker issues.
-- **Ebank date calendar**: Deposit Date & Target Date inputs get `colorScheme: 'dark'` for native calendar picker styling.
-- Testing: 9/9 backend + 100% frontend verification (Iteration 21)
-
-### Color Management System & Theme Switcher (Apr 1, 2026) - COMPLETE
-- **Color Management (Settings > Colors)**: Reorganized into 3 groups — Website (16 colors), My Account (26 colors), CMS Admin Panel (25 colors). Each color has a color picker + text input. Colors are stored in `settings.theme_colors` and applied via CSS custom properties (`--color-*`, `--ma-*`, `--ad-*`) injected at the root level.
-- **Theme Switcher (Settings > Themes)**: 3 themes with visual preview thumbnails: Default (current design), Modern (transparent header, uppercase nav, rounded buttons), Classic (teal accent, serif nav, social bar). Active theme stored in `settings.active_theme`. Only affects public frontend — Admin Panel and My Account are unaffected.
-- **Layout Components Updated**: `MyAccountLayout.js` uses `--ma-*` variables. `AdminLayout.js` uses `--ad-*` variables. `Navbar.js` switches between Default/Modern/Classic variants. `Footer.js` has 3 layout variants. `HeroSection.js` adjusts height/overlay by theme.
-- Testing: 11/11 backend + 100% frontend verification (Iteration 22)
-
-### Theme-Specific HomePage Sections (Apr 1, 2026) - COMPLETE
-- **HomePage.js rewritten**: All homepage sections (About, Services, News, Blog, Reading List, Map, Portfolio, Gallery, Testimonials, Contact) now render with distinct layouts per theme (Default, Modern, Classic).
-- **Classic theme**: Cream backgrounds (#faf9f6), bordered cards, serif fonts (Playfair Display), teal accents.
-- **Modern theme**: Clean white backgrounds, rounded corners, decorative accent bars, 3-item carousel for testimonials.
-- **Default theme**: Original design with slate backgrounds and standard layouts.
-- **Navbar hero-less detection**: Modern navbar uses MutationObserver to detect if page has `.hero-section`, applies solid background on hero-less pages (fixes white-on-white text on /membership_services).
-- **CSS variable overrides in index.css**: Maps hardcoded Tailwind colors to CSS variables for My Account and CMS color management.
-- **Bug fixes**: React hooks violation in TestimonialsSection (useState after early return), publicAPI.getBlogPosts renamed to getBlog, map section key mismatch (locations vs map in sectionMap).
-- Testing: 22/22 backend + 100% frontend verification (Iteration 23)
-
-### Hardcoded Color Fixes & Logo/Favicon Feature (Apr 1, 2026) - COMPLETE
-- **My Account color fixes**: Radio buttons (MyCommunity, PortfolioForm), Change Password button, Bio modal headings, Ebank range sliders/tabs/save button — all converted from hardcoded `#c9a84c` to `var(--ma-*)` CSS variables.
-- **Logout button**: Changed from hardcoded red to sidebar text color CSS variable.
-- **CMS Admin color fixes**: Comprehensive CSS overrides in `index.css` map all `bg-[#0D9488]` button classes to `var(--ad-button-bg)` and text to `var(--ad-button-text)` within `[data-testid="admin-layout"]` scope. Includes hover states, badges, checkboxes, switches.
-- **My Account CSS overrides**: Added `[data-testid="myaccount-layout"]` scoped rules for remaining Tailwind classes (`.bg-[#c9a84c]`, `.text-[#c9a84c]`, borders, hover states).
-- **Logo On/Off/Favicon**: Three new fields in Settings > General tab, each with ImageUpload (upload or URL). Logo On displayed in Navbar (all 3 themes) + My Account sidebar. Logo Off displayed in Footer (all 3 themes). Favicon dynamically injected via `<link>` element in App.js SettingsProvider.
-- **Backend**: Settings collection updated with `logo_on`, `logo_off`, `favicon` fields. Public API exposes them.
-- Testing: 12/12 backend + 100% frontend verification (Iteration 24)
-
-### Dual Logo System, Footer CMS, CMS Fixes, Internal Page Layout (Apr 1, 2026) - COMPLETE
-- **Dual Logo ON**: Logo ON #1 (hero/initial load state) + Logo ON #2 (scrolled/solid header). Both accept upload or URL. Modern navbar swaps logos on scroll; Default/Classic always use Logo ON #2.
-- **Logo OFF**: Now used in Footer, Admin sidebar, and My Account sidebar (was previously Logo ON).
-- **Logo flash fix**: Text fallback only shows after settings are confirmed loaded; empty placeholder div shown during load.
-- **Footer CMS**: Footer description and copyright text are now editable fields in Settings > General tab. All 3 theme footers use these dynamic values.
-- **Modern Footer pages**: Internal pages now display in the Modern footer's Navigation section.
-- **My Account link**: Added to all 3 theme navbars (desktop + mobile) for logged-in users.
-- **Internal page fixes**: DynamicPage always shows title (even with hero), has top padding for hero-less pages, overflow-x hidden for rich-text content. Gallery/ReadingList/News pages also have proper top padding.
-- **CMS modal buttons**: CSS overrides for `[role="dialog"]` ensure portal-rendered modals follow admin color settings.
-- **ImageUpload**: BooksManager (cover image) and AboutManager (image) now use ImageUpload component (upload or URL).
-- **Favicon**: Dynamic injection via App.js SettingsProvider from settings.favicon field.
-- Testing: 16/16 backend + 100% frontend verification (Iteration 25)
-
-### Footer Unification, Dynamic Title, Modal Scroll, Per-Page Layout System (Apr 2, 2026) - COMPLETE
-- **Footer**: All 3 themes now share unified 3-column structure (Logo+desc+social | Navigation+all pages | Stay Updated+email).
-- **Dynamic page title**: `<title>` tag uses Settings → Tagline field.
-- **CMS modal scrollability**: DialogContent has `max-h-[90vh] overflow-y-auto`.
-- **Per-page layout system**: 5 layouts (About/Bio, Services Grid, Gallery Albums, Sub-Gallery, Full Content) with visual selector in PagesManager.
-- **Gallery Albums**: New CRUD system for albums + photos. Admin manager at /admin/gallery-albums.
-- **Service detail pages**: /service/:serviceId with full_content. ServicesManager has short_description, full_content, image.
-- Testing: 23/23 backend + 100% frontend verification (Iteration 26)
-
-### Footer 4-Column, Hero+Layout Fix, Duplicate Page Resolution (Apr 2, 2026) - COMPLETE
-- **Footer**: Changed to 4-column structure: Logo+desc | Site Map (Home, News, Gallery, Reading List) | Resources (all created pages) | Connect (social icons + email form). Consistent across all 3 themes via shared FooterContent component.
-- **Hero+Layout**: Fixed hero slides not showing on dynamic pages with layouts. DynamicPage now correctly resolves duplicate pages by preferring those with layout field set.
-- **Layout 1 verified**: About/Bio layout (image left, content right, social links) working correctly with hero section on Events & Hospitality Group page.
-- Testing: 19/19 backend + 100% frontend verification (Iteration 27)
+- Bug fixes: 7/7 + visual
+- Bug fixes R2: tested
+- Hero Slides: 17/17 + 100%
+- Hero Improvements: tested
+- Hero Responsive: 17/17 + 100%
+- CMS Pages & Hero: 20/20 + 100%
+- Banner/Member Types: 17/17 + 100%
+- Permissions/Page Access: 12/12 + 100%
+- Mentor Migration: 11/11 + 100%
+- Ebank/QR: 14/14 + 100%
+- Membership Settings: 11/11 + 100%
+- Profile/Ebank Fixes: 9/9 + 100%
+- Colors/Themes: 11/11 + 100%
+- Theme HomePage: 22/22 + 100%
+- Colors/Logos: 12/12 + 100%
+- Logos/Footer: 16/16 + 100%
+- Footer/Layout System: 23/23 + 100%
+- Footer 4-Col/Hero Fix: 19/19 + 100%
+- **Visual Page Builder: 39/39 + 100% (Iteration 28)**
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
