@@ -99,7 +99,7 @@ Each layout defines zones (content areas) where blocks are placed:
 ### Visual Page Builder (Apr 3, 2026) - COMPLETE
 - **14 Visual Builder Layouts**: Full Width, Boxed, Split Screen, Grid 2x2, Masonry, List, Carousel, Two Column, Three Column, Profile, Card Based, Hero Banner, Sidebar, Landing Page
 - **9 Block Types**: Rich Text, Image, Video, Service List, Gallery, Profile Card, Button, Separator, Custom HTML
-- **Zone-based editing**: Each layout defines zones, blocks added/edited/reordered/deleted per zone
+- **Zone-based editing**: Each layout defines zones, blocks added/edited/reordered/deleted per zone with **drag-and-drop reordering** (@dnd-kit/sortable v10)
 - **PagesManager overhaul**: Two tabs (Settings / Content & Layout), visual layout selector with thumbnail previews
 - **LayoutRenderer**: Public rendering of all 14 layouts with correct zone arrangements
 - **BlockRenderer**: Renders all 9 block types with proper styling
