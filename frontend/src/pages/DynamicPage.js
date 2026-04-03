@@ -6,6 +6,8 @@ import LayoutAboutBio from '../components/layouts/LayoutAboutBio';
 import LayoutServicesGrid from '../components/layouts/LayoutServicesGrid';
 import LayoutGalleryAlbums from '../components/layouts/LayoutGalleryAlbums';
 import LayoutFullContent from '../components/layouts/LayoutFullContent';
+import LayoutRenderer from '../components/layouts/LayoutRenderer';
+import { LAYOUTS } from '../lib/layoutDefinitions';
 
 export default function DynamicPage() {
   const { pageId } = useParams();
@@ -23,31 +25,25 @@ export default function DynamicPage() {
       const pages = r.data || [];
       const currentPath = location.pathname;
 
-      // Find all matching pages, then pick the best one (prefer the one with layout set)
       const candidates = pages.filter(p =>
         (pageId && p.id === pageId) ||
         (pageId && p.url === `/page/${pageId}`) ||
         (!pageId && p.url === currentPath)
       );
 
-      // Prefer the most recently created page, or the one with layout
       const found = candidates.length > 1
         ? candidates.sort((a, b) => {
-            // Prefer one with layout
             if (a.layout && !b.layout) return -1;
             if (!a.layout && b.layout) return 1;
-            // Then prefer newer (by created_at)
             return (b.created_at || '').localeCompare(a.created_at || '');
           })[0]
         : candidates[0];
 
       if (found) {
         setPage(found);
-        // Fetch hero slides assigned to this page
         publicAPI.getHeroSlides(found.id).then(hs => {
           setHeroSlides(hs.data || []);
         }).catch(() => {});
-        // If page_type is set (for terms/privacy), fetch that content
         if (found.page_type) {
           publicAPI.getPage(found.page_type).then(res => {
             setPage(prev => ({ ...prev, ...res.data, title: found.title }));
@@ -69,22 +65,29 @@ export default function DynamicPage() {
     </div>
   );
 
-  // Render layout-specific component
   const renderLayout = () => {
+    // Legacy preset layouts
     switch (page.layout) {
       case 'layout_1': return <LayoutAboutBio page={page} />;
       case 'layout_2': return <LayoutServicesGrid page={page} />;
       case 'layout_3': return <LayoutGalleryAlbums page={page} />;
       case 'layout_5': return <LayoutFullContent page={page} />;
-      default:
-        return (
-          <div className={`max-w-4xl mx-auto px-6 md:px-12 py-16 ${!heroSlides.length ? 'pt-24 md:pt-28' : ''}`} style={{ overflowX: 'hidden', wordBreak: 'break-word' }}>
-            <h1 className="text-3xl font-bold mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="page-title">{page.title}</h1>
-            {page.summary && <p className="text-slate-500 mb-6">{page.summary}</p>}
-            {page.content && <div className="rich-text-content" style={{ overflowX: 'hidden', maxWidth: '100%' }} dangerouslySetInnerHTML={{ __html: page.content }} />}
-          </div>
-        );
+      default: break;
     }
+
+    // New builder layouts with zones
+    if (page.layout && LAYOUTS[page.layout]) {
+      return <LayoutRenderer page={page} hasHero={heroSlides.length > 0} />;
+    }
+
+    // Default: render content HTML
+    return (
+      <div className={`max-w-4xl mx-auto px-6 md:px-12 py-16 ${!heroSlides.length ? 'pt-24 md:pt-28' : ''}`} style={{ overflowX: 'hidden', wordBreak: 'break-word' }}>
+        <h1 className="text-3xl font-bold mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="page-title">{page.title}</h1>
+        {page.summary && <p className="text-slate-500 mb-6">{page.summary}</p>}
+        {page.content && <div className="rich-text-content" style={{ overflowX: 'hidden', maxWidth: '100%' }} dangerouslySetInnerHTML={{ __html: page.content }} />}
+      </div>
+    );
   };
 
   return (

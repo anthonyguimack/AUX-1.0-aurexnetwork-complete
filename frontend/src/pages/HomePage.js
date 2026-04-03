@@ -107,7 +107,8 @@ function ServicesSection({ services, theme }) {
               <div key={s.id} className="bg-white rounded-2xl p-8 hover:shadow-xl transition-all duration-300 group border border-slate-100">
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors group-hover:scale-110" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-6 h-6 text-white" /></div>
                 <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
-                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--color-body-text, #475569)' }}>{s.short_description || s.description}</p>
+                <Link to={`/service/${s.id}`} className="inline-flex items-center gap-1 text-sm font-medium mb-4 hover:gap-2 transition-all" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid={`service-link-${s.id}`}>Read More <ArrowRight className="w-3.5 h-3.5" /></Link>
                 {s.price > 0 && <div className="flex items-center justify-between pt-4 border-t border-slate-100"><span className="text-2xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 rounded-full text-sm font-medium text-white transition-colors" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>Get Started</button></div>}
               </div>
             );
@@ -132,7 +133,8 @@ function ServicesSection({ services, theme }) {
                 <Icon className="w-8 h-8 mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} />
                 <h3 className="text-lg font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
                 <div className="w-10 h-0.5 mb-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
-                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--color-body-text, #475569)' }}>{s.short_description || s.description}</p>
+                <Link to={`/service/${s.id}`} className="inline-flex items-center gap-1 text-sm font-medium mb-4 hover:opacity-80 transition-opacity" style={{ color: 'var(--color-heading, #1a2332)' }} data-testid={`service-link-${s.id}`}>Read More <ArrowRight className="w-3.5 h-3.5" /></Link>
                 {s.price > 0 && <div className="flex items-center justify-between"><span className="text-lg font-bold" style={{ color: 'var(--color-heading, #1a2332)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>Purchase</button></div>}
               </div>
             );
@@ -154,7 +156,8 @@ function ServicesSection({ services, theme }) {
               <div key={s.id} className="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition-all border border-slate-100 group">
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-5 h-5 text-white" /></div>
                 <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
-                <p className="text-sm leading-relaxed mb-4" style={{ color: 'var(--color-body-text, #475569)' }}>{s.description}</p>
+                <p className="text-sm leading-relaxed mb-3" style={{ color: 'var(--color-body-text, #475569)' }}>{s.short_description || s.description}</p>
+                <Link to={`/service/${s.id}`} className="inline-flex items-center gap-1 text-sm font-medium mb-4 group-hover:gap-2 transition-all" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid={`service-link-${s.id}`}>Read More <ArrowRight className="w-3.5 h-3.5" /></Link>
                 {s.price > 0 && <div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="text-sm font-medium px-4 py-2 rounded-sm text-white" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)' }}>Purchase</button></div>}
               </div>
             );
