@@ -249,10 +249,12 @@ function ScrollToTop() {
   useEffect(() => {
     if (hash) {
       const id = hash.substring(1);
-      setTimeout(() => {
+      const tryScroll = (attempts) => {
         const el = document.getElementById(id);
         if (el) { el.scrollIntoView({ behavior: 'smooth' }); }
-      }, 150);
+        else if (attempts > 0) { setTimeout(() => tryScroll(attempts - 1), 200); }
+      };
+      setTimeout(() => tryScroll(5), 100);
     } else {
       window.scrollTo(0, 0);
     }

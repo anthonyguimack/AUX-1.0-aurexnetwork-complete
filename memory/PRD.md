@@ -61,7 +61,7 @@ Each layout defines zones (content areas) where blocks are placed:
 13. **Sidebar** — zones: [sidebar, main]
 14. **Landing Page** — zones: [hero, features, cta]
 
-### 9 Block Types
+### 10 Block Types
 1. Rich Text — WYSIWYG content
 2. Image — Upload/URL with alt, caption, link
 3. Video — YouTube/Vimeo embed
@@ -71,6 +71,7 @@ Each layout defines zones (content areas) where blocks are placed:
 7. Button — CTA with text, URL, style (primary/outline)
 8. Separator — Line, dots, or space
 9. Custom HTML — Raw HTML injection
+10. Legends & Testimonials — Auto-sliding quote carousel
 
 ### 5 Legacy/Preset Layouts (backward compat)
 - Default — RichTextEditor content
@@ -107,6 +108,20 @@ Each layout defines zones (content areas) where blocks are placed:
 - **Homepage Service Links**: "Read More" links on service cards navigate to /service/:id across all 3 themes
 - Testing: 39/39 backend + 100% frontend verification (Iteration 28)
 
+### CMS Bug Fixes & Legends Block (Apr 3, 2026) - COMPLETE
+- **Gallery block URL fix**: Changed `/gallery/:id` to `/album/:id` in BlockRenderer
+- **Scroll to top**: Added ScrollToTop component with retry-based hash anchor scrolling
+- **Hyphen word-break**: CSS `word-break: normal; hyphens: manual; overflow-wrap: break-word`
+- **H1 headings**: Added `.rich-text-content h1` CSS rule with Playfair Display
+- **Nested lists**: Added indent/outdent buttons + CSS for nested ul/ol in RichTextEditor
+- **Short description HTML**: Service cards now render `short_description` as rich text HTML
+- **Hero text colors**: Removed `[&_strong]:text-white` forced selectors, preserved Quill inline styles; added predefined color palette with explicit #000000 (black)
+- **Hero media dimensions**: Admin can set custom `media_width` and `media_height` for hero images/videos
+- **Service external URL**: Services can have `external_url` + `open_in_new_tab` for custom links when no full_content
+- **Anchor scrolling**: Hash URLs like `/#services` scroll to the correct homepage section via Navbar + ScrollToTop
+- **Legends & Testimonials block**: New block type with auto-sliding carousel (5s), arrow nav, dot indicators. Enhanced TestimonialsManager with image upload + ordering
+- Testing: 16/16 backend + 95% frontend (Iteration 29)
+
 ## Testing History
 - Phase 1: 35/35 backend
 - Phase 2: 22/22 + 16/16 frontend
@@ -135,6 +150,7 @@ Each layout defines zones (content areas) where blocks are placed:
 - Footer/Layout System: 23/23 + 100%
 - Footer 4-Col/Hero Fix: 19/19 + 100%
 - **Visual Page Builder: 39/39 + 100% (Iteration 28)**
+- **CMS Bug Fixes & Legends: 16/16 + 95% (Iteration 29)**
 
 ## Key Credentials
 - **Admin**: admin@consultant.com / Admin123!
