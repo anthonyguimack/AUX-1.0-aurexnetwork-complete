@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2, DollarSign } from 'lucide-react';
 
 import ImageUpload from '../../components/ImageUpload';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const emptyService = { title: '', description: '', short_description: '', full_content: '', icon: 'briefcase', image: '', price: 0, currency: 'usd', type: 'service' };
 
@@ -72,8 +73,8 @@ export default function ServicesManager() {
           {editing && (
             <div className="space-y-4">
               <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" data-testid="service-title-input" /></div>
-              <div><Label>Short Description <span className="text-xs text-slate-400 font-normal">(Card view)</span></Label><textarea value={editing.short_description || editing.description || ''} onChange={e => setEditing({...editing, short_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="service-short-desc-input" /></div>
-              <div><Label>Full Content <span className="text-xs text-slate-400 font-normal">(Detail page - HTML)</span></Label><textarea value={editing.full_content || ''} onChange={e => setEditing({...editing, full_content: e.target.value})} rows={5} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1 font-mono" placeholder="Rich text / HTML content for the service detail page" data-testid="service-full-content-input" /></div>
+              <div><Label>Short Description <span className="text-xs text-slate-400 font-normal">(Card view)</span></Label><RichTextEditor value={editing.short_description || editing.description || ''} onChange={v => setEditing({...editing, short_description: v})} /></div>
+              <div><Label>Full Content <span className="text-xs text-slate-400 font-normal">(Detail page)</span></Label><RichTextEditor value={editing.full_content || ''} onChange={v => setEditing({...editing, full_content: v})} placeholder="Full service description..." /></div>
               <div><Label>Image</Label><ImageUpload value={editing.image || ''} onChange={v => setEditing({...editing, image: v})} /></div>
               <div className="grid grid-cols-3 gap-4">
                 <div><Label>Price ($)</Label><Input type="number" step="0.01" value={editing.price} onChange={e => setEditing({...editing, price: parseFloat(e.target.value) || 0})} className="mt-1" data-testid="service-price-input" /></div>

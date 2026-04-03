@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Image, FolderOpen } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -132,7 +133,7 @@ export default function GalleryAlbumsManager() {
           {editing && (
             <div className="space-y-4">
               <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" data-testid="album-title-input" /></div>
-              <div><Label>Description</Label><textarea value={editing.description || ''} onChange={e => setEditing({...editing, description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+              <div><Label>Description</Label><RichTextEditor value={editing.description || ''} onChange={v => setEditing({...editing, description: v})} /></div>
               <div><Label>Cover Image</Label><ImageUpload value={editing.cover_image || ''} onChange={v => setEditing({...editing, cover_image: v})} /></div>
               <div><Label>Order</Label><Input type="number" value={editing.order || 0} onChange={e => setEditing({...editing, order: parseInt(e.target.value) || 0})} className="mt-1" /></div>
               <button onClick={handleSaveAlbum} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" data-testid="album-save-btn">
@@ -150,7 +151,7 @@ export default function GalleryAlbumsManager() {
           {editPhoto && (
             <div className="space-y-4">
               <div><Label>Image</Label><ImageUpload value={editPhoto.image || ''} onChange={v => setEditPhoto({...editPhoto, image: v})} /></div>
-              <div><Label>Caption</Label><Input value={editPhoto.caption || ''} onChange={e => setEditPhoto({...editPhoto, caption: e.target.value})} className="mt-1" data-testid="photo-caption-input" /></div>
+              <div><Label>Caption</Label><RichTextEditor value={editPhoto.caption || ''} onChange={v => setEditPhoto({...editPhoto, caption: v})} /></div>
               <div><Label>Order</Label><Input type="number" value={editPhoto.order || 0} onChange={e => setEditPhoto({...editPhoto, order: parseInt(e.target.value) || 0})} className="mt-1" /></div>
               <button onClick={handleSavePhoto} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" data-testid="photo-save-btn">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
