@@ -254,3 +254,48 @@ async def import_content(request: Request, user: dict = Depends(require_admin)):
         except Exception as e:
             results[col] = {"status": "error", "message": str(e)}
     return {"success": True, "results": results}
+
+
+# ──────────── Backup Snapshots ────────────
+
+@router.get("/admin/backup-settings")
+async def get_backup_settings(user: dict = Depends(require_admin)):
+    settings = await db.settings.find_one({}, {"_id": 0})
+    return (settings or {}).get("backup_settings", {"enabled": False, "frequency": "daily", "max_snapshots": 5})
+
+@router.put("/admin/backup-settings")
+async def update_backup_settings(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    bs = {"enabled": body.get("enabled", False), "frequency": body.get("frequency", "daily"), "max_snapshots": body.get("max_snapshots", 5)}
+    await db.settings.update_one({}, {"$set": {"backup_settings": bs, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
+    return bs
+
+@router.get("/admin/backups")
+async def list_backups(user: dict = Depends(require_admin)):
+    backups = await db.backups.find({}, {"_id": 0, "data": 0}).sort("created_at", -1).to_list(100)
+    return backups
+
+@router.get("/admin/backups/{backup_id}")
+async def get_backup(backup_id: str, user: dict = Depends(require_admin)):
+    backup = await db.backups.find_one({"id": backup_id}, {"_id": 0})
+    if not backup:
+        raise HTTPException(status_code=404, detail="Backup not found")
+    return backup.get("data", {})
+
+@router.post("/admin/backups/create-now")
+async def create_backup_now(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json() if (await request.body()) else {}
+    label = body.get("label", "manual")
+    from scheduler import create_backup_snapshot, cleanup_old_backups
+    backup_id = await create_backup_snapshot(label=label)
+    settings = await db.settings.find_one({}, {"_id": 0})
+    max_s = (settings or {}).get("backup_settings", {}).get("max_snapshots", 5)
+    await cleanup_old_backups(max_s)
+    return {"success": True, "backup_id": backup_id}
+
+@router.delete("/admin/backups/{backup_id}")
+async def delete_backup(backup_id: str, user: dict = Depends(require_admin)):
+    result = await db.backups.delete_one({"id": backup_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Backup not found")
+    return {"message": "Backup deleted"}

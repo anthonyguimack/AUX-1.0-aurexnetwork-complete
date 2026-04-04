@@ -40,9 +40,13 @@ from seed import seed_data
 @app.on_event("startup")
 async def startup():
     await seed_data()
+    from scheduler import start_scheduler
+    start_scheduler()
 
 @app.on_event("shutdown")
 async def shutdown_db_client():
+    from scheduler import stop_scheduler
+    stop_scheduler()
     from models.database import client
     client.close()
 

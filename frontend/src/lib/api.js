@@ -173,6 +173,13 @@ export const adminAPI = {
   // Backup & Restore
   exportContent: (collections) => api.get(`/admin/export-content${collections ? `?collections=${collections}` : ''}`),
   importContent: (data) => api.post('/admin/import-content', data),
+  // Backup Snapshots
+  getBackupSettings: () => api.get('/admin/backup-settings'),
+  updateBackupSettings: (data) => api.put('/admin/backup-settings', data),
+  listBackups: () => api.get('/admin/backups'),
+  getBackup: (id) => api.get(`/admin/backups/${id}`),
+  createBackupNow: (label) => api.post('/admin/backups/create-now', { label: label || 'manual' }),
+  deleteBackup: (id) => api.delete(`/admin/backups/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
