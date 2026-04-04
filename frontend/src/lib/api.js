@@ -170,6 +170,9 @@ export const adminAPI = {
   // Membership Settings
   getMembershipSettings: () => api.get('/admin/membership-settings'),
   updateMembershipSettings: (data) => api.put('/admin/membership-settings', data),
+  // Backup & Restore
+  exportContent: (collections) => api.get(`/admin/export-content${collections ? `?collections=${collections}` : ''}`),
+  importContent: (data) => api.post('/admin/import-content', data),
 };
 
 // Member API (unified - uses same auth_token)

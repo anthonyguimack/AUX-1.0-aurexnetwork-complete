@@ -173,3 +173,84 @@ async def test_smtp_email(request: Request, user: dict = Depends(require_admin))
         return {"success": True, "message": f"Test email sent to {to_email}!"}
     except Exception as e:
         return {"success": False, "message": f"Failed to send: {str(e)}"}
+
+
+# ──────────── Backup & Restore ────────────
+
+EXPORTABLE_COLLECTIONS = {
+    "hero_slides": "Hero Slides",
+    "about": "About",
+    "services": "Services",
+    "blog_posts": "Blog Posts",
+    "books": "Reading List",
+    "maps": "Maps",
+    "map_locations": "Map Locations",
+    "gallery": "Gallery",
+    "gallery_albums": "Gallery Albums",
+    "album_photos": "Album Photos",
+    "portfolio": "Portfolio",
+    "testimonials": "Testimonials",
+    "nav_pages": "Pages",
+    "pages": "System Pages",
+    "settings": "Settings",
+    "member_types": "Member Types",
+}
+
+@router.get("/admin/export-content")
+async def export_content(request: Request, user: dict = Depends(require_admin)):
+    collections = request.query_params.get("collections", "")
+    selected = [c.strip() for c in collections.split(",") if c.strip()] if collections else list(EXPORTABLE_COLLECTIONS.keys())
+    export_data = {"_meta": {"exported_at": datetime.now(timezone.utc).isoformat(), "version": "1.0", "collections": selected}}
+    for col in selected:
+        if col not in EXPORTABLE_COLLECTIONS:
+            continue
+        if col in ("about", "settings"):
+            doc = await db[col].find_one({}, {"_id": 0})
+            export_data[col] = doc
+        else:
+            docs = await db[col].find({}, {"_id": 0}).to_list(10000)
+            export_data[col] = docs
+    return export_data
+
+@router.post("/admin/import-content")
+async def import_content(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    mode = body.pop("_mode", "merge")
+    imported = body.pop("_meta", None)
+    results = {}
+    for col, data in body.items():
+        if col not in EXPORTABLE_COLLECTIONS or data is None:
+            continue
+        try:
+            if col in ("about", "settings"):
+                if isinstance(data, dict):
+                    data.pop("_id", None)
+                    data["updated_at"] = datetime.now(timezone.utc).isoformat()
+                    if mode == "replace":
+                        await db[col].delete_many({})
+                        await db[col].insert_one(data)
+                    else:
+                        await db[col].update_one({}, {"$set": data}, upsert=True)
+                    results[col] = {"status": "ok", "count": 1}
+            elif isinstance(data, list):
+                if mode == "replace":
+                    await db[col].delete_many({})
+                    if data:
+                        clean = [{k: v for k, v in doc.items() if k != "_id"} for doc in data]
+                        await db[col].insert_many(clean)
+                    results[col] = {"status": "ok", "count": len(data)}
+                else:
+                    upserted = 0
+                    for doc in data:
+                        doc.pop("_id", None)
+                        doc_id = doc.get("id")
+                        if doc_id:
+                            await db[col].update_one({"id": doc_id}, {"$set": doc}, upsert=True)
+                        else:
+                            doc["id"] = str(uuid.uuid4())
+                            await db[col].insert_one(doc)
+                        upserted += 1
+                    results[col] = {"status": "ok", "count": upserted}
+        except Exception as e:
+            results[col] = {"status": "error", "message": str(e)}
+    return {"success": True, "results": results}
