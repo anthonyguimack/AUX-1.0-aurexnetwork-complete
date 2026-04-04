@@ -10,54 +10,59 @@ A multi-page website with a login, modern and production-ready, for a consultant
 - **Auth**: JWT + Emergent-managed Google OAuth
 - **Payments**: Stripe (test key)
 
-## Core Architecture
+## Code Architecture (Post-Refactor)
 ```
 /app
 ├── backend/
-│   ├── routes/               
-│   │   ├── admin_content.py  
-│   │   ├── public.py         
-│   │   └── ...
-│   └── server.py             
+│   ├── server.py             # App entry point (52 lines) - mounts routes, CORS, startup
+│   ├── seed.py               # Seed data function (407 lines) - extracted from server.py
+│   ├── models/
+│   │   └── database.py       # DB connection, helpers, constants
+│   └── routes/
+│       ├── auth.py            # JWT & Google OAuth
+│       ├── public.py          # Public-facing APIs
+│       ├── admin_content.py   # Admin CRUD
+│       ├── admin_tools.py     # Settings, SMTP, uploads
+│       ├── payments.py        # Stripe checkout
+│       └── membership.py      # Member area
 └── frontend/
     └── src/
-        ├── admin/            # PagesManager.js, HeroSlideForm.js, TestimonialsManager.js
-        ├── components/       
-        │   ├── admin/        # PageBuilder.js, BlockConfigModal.js
-        │   └── layouts/      # LayoutRenderer.js, BlockRenderer.js, LayoutServicesGrid.js
-        ├── lib/              # layoutDefinitions.js, api.js
-        ├── pages/            # DynamicPage.js, HomePage.js
-        └── App.js            
+        ├── components/
+        │   ├── admin/
+        │   │   ├── PageBuilder.js       # Zone management + DnD context (141 lines)
+        │   │   ├── SortableBlock.js     # Draggable block component (51 lines) - extracted
+        │   │   ├── LayoutPreview.js     # Layout thumbnails + constants (51 lines) - extracted
+        │   │   ├── PageEditorDialog.js  # Page edit dialog (187 lines) - extracted
+        │   │   └── BlockConfigModal.js
+        │   ├── layouts/
+        │   └── ui/
+        ├── pages/
+        │   └── admin/
+        │       └── PagesManager.js      # Pages list/table (185 lines) - refactored
+        └── App.js
 ```
 
 ## What's Been Implemented
 
 ### Phase 1 (Complete)
-- Public website: Homepage with Hero, About, Services (Stripe), News/Blog, Reading List, Maps, Portfolio, Gallery, Testimonials, Contact
-- Admin Panel: Full CRUD for all content sections
-- JWT & Google OAuth authentication
-- Responsive design with 3 themes (default, modern, classic)
+- Public website with Hero, About, Services, News/Blog, Reading List, Maps, Portfolio, Gallery, Testimonials, Contact
+- Admin Panel with full CRUD, JWT & Google OAuth, responsive design with 3 themes
 
 ### Phase 2 (Complete)
-- Visual Page Builder with 14 layouts and zones
-- Drag-and-drop block reordering (@dnd-kit)
-- Theme Engine with 3-tier Color Management (website, admin, member area)
-- Dynamic Pages module
-- Separate admin/user login flows
-- User management in admin
-- SMTP configuration with test connection
-- External Blog API integration
-- Legends & Testimonials carousel block
+- Visual Page Builder with 14 layouts, drag-and-drop, Theme Engine, Dynamic Pages
+- Legends & Testimonials carousel, SMTP config, External Blog API
 
 ### Bug Fixes (Feb 4, 2026)
-- Service description HTML rendering (dangerouslySetInnerHTML + cleanHtml for &nbsp;)
-- Word-break CSS fix (word-break: break-word, hyphens: auto)
-- Service fallback link logic (always show /service/{id} if no external_url)
-- Hero video input changed from iframe textarea to URL input
-- HeroSection auto-detects YouTube/Vimeo URLs for embedding
+- Service HTML rendering with cleanHtml, word-break CSS, service fallback links
+- Hero video URL input (iframe → URL), HeroSection YouTube/Vimeo auto-embed
 
-### New Feature (Feb 4, 2026)
-- **Hero Slide Live Preview**: Added a collapsible live preview panel to the Hero Slide Form in the admin CMS. Shows real-time rendering of background, title, subtitle, description, button, and media (video/photo) at their positioned X/Y coordinates. Supports YouTube/Vimeo auto-embed, rich text formatting, and updates instantly as the admin types.
+### Features (Feb 4, 2026)
+- Hero Slide Live Preview panel in admin CMS
+
+### Refactoring (Feb 4, 2026)
+- Backend: Extracted `seed_data()` from `server.py` → `seed.py` (455 → 52 lines)
+- Frontend: Extracted `SortableBlock`, `LayoutPreview`, `PageEditorDialog` from PageBuilder/PagesManager
+- All tests pass at 100% with zero regressions (Iteration 32)
 
 ## Credentials
 - Admin: admin@consultant.com / Admin123!
@@ -65,8 +70,6 @@ A multi-page website with a login, modern and production-ready, for a consultant
 ## Pending/Backlog (P2)
 - Real S3/Cloud Image Storage migration
 - Production SMTP Configuration
-- Split PageBuilder.js / PagesManager.js into smaller components
-- Backend server.py modularization with APIRouter
 
 ## Mocked/Placeholder
 - S3/Cloud Storage (using local container uploads)
