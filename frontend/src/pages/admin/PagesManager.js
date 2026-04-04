@@ -41,8 +41,11 @@ export default function PagesManager() {
     finally { setLoading(false); }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm('Delete this page?')) return;
+  const handleDelete = async (id, isSystem) => {
+    const msg = isSystem
+      ? 'This is a SYSTEM page. Deleting it will remove it from navigation. It can be re-created by reloading. Continue?'
+      : 'Delete this page?';
+    if (!window.confirm(msg)) return;
     try { await adminAPI.deleteNavPage(id); toast.success('Deleted'); load(); }
     catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
   };
@@ -120,9 +123,7 @@ export default function PagesManager() {
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => openEditor({ ...item })} className="p-1.5 text-slate-400 hover:text-[#0D9488] transition-colors" data-testid={`edit-page-${item.id}`}><Edit2 className="w-4 h-4" /></button>
-                      {!isSystem && (
-                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors" data-testid={`delete-page-${item.id}`}><Trash2 className="w-4 h-4" /></button>
-                      )}
+                      <button onClick={() => handleDelete(item.id, isSystem)} className={`p-1.5 transition-colors ${isSystem ? 'text-slate-300 hover:text-amber-500' : 'text-slate-400 hover:text-red-500'}`} data-testid={`delete-page-${item.id}`}><Trash2 className="w-4 h-4" /></button>
                     </div>
                   </td>
                 </tr>

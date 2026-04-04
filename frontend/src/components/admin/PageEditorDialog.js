@@ -5,10 +5,9 @@ import { Label } from '../ui/label';
 import { Switch } from '../ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../ui/dialog';
 import RichTextEditor from '../RichTextEditor';
-import ImageUpload from '../ImageUpload';
 import PageBuilder from './PageBuilder';
 import { LAYOUTS, LEGACY_LAYOUTS } from '../../lib/layoutDefinitions';
-import { LayoutPreview, LAYOUT_ICONS, LEGACY_LAYOUT_META, getLayoutLabel } from './LayoutPreview';
+import { LayoutPreview, LAYOUT_ICONS } from './LayoutPreview';
 
 const isBuilderLayout = (layout) => layout && LAYOUTS[layout];
 const isLegacyLayout = (layout) => LEGACY_LAYOUTS.includes(layout);
@@ -91,53 +90,29 @@ export default function PageEditorDialog({ editing, setEditing, open, setOpen, o
                 {/* Layout Selector */}
                 <div>
                   <Label className="text-xs text-slate-500 mb-3 block">Page Layout</Label>
-
-                  {/* Builder Layouts */}
-                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Visual Builder Layouts</p>
-                  <div className="grid grid-cols-5 gap-2 mb-4" data-testid="layout-selector-builder">
-                    {Object.entries(LAYOUTS).map(([key, def]) => {
-                      const Icon = LAYOUT_ICONS[key] || Layout;
-                      return (
-                        <button key={key} type="button"
-                          onClick={() => setEditing({ ...editing, layout: key })}
-                          className={`p-2.5 rounded-sm border-2 text-left transition-all ${editing.layout === key ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                          data-testid={`layout-option-${key}`}>
-                          <LayoutPreview layoutKey={key} />
-                          <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5 leading-tight">{def.label}</span>
-                          <span className="text-[9px] text-slate-400 block leading-tight">{def.desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-
-                  {/* Default + Legacy Layouts */}
-                  <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Simple & Preset Layouts</p>
-                  <div className="grid grid-cols-5 gap-2" data-testid="layout-selector-legacy">
-                    <button type="button"
-                      onClick={() => setEditing({ ...editing, layout: '' })}
-                      className={`p-2.5 rounded-sm border-2 text-left transition-all ${!editing.layout ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                      data-testid="layout-option-default">
-                      <LayoutPreview layoutKey="" />
-                      <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5">Default</span>
-                      <span className="text-[9px] text-slate-400 block leading-tight">Basic content page</span>
-                    </button>
-                    {Object.entries(LEGACY_LAYOUT_META).map(([key, meta]) => {
-                      const Icon = LAYOUT_ICONS[key] || FileText;
-                      return (
-                        <button key={key} type="button"
-                          onClick={() => setEditing({ ...editing, layout: key })}
-                          className={`p-2.5 rounded-sm border-2 text-left transition-all ${editing.layout === key ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                          data-testid={`layout-option-${key}`}>
-                          <LayoutPreview layoutKey={key} />
-                          <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5">{meta.label}</span>
-                          <span className="text-[9px] text-slate-400 block leading-tight">{meta.desc}</span>
-                        </button>
-                      );
-                    })}
+                  <div className="grid grid-cols-5 gap-2" data-testid="layout-selector-builder">
+                    {Object.entries(LAYOUTS).map(([key, def]) => (
+                      <button key={key} type="button"
+                        onClick={() => setEditing({ ...editing, layout: key })}
+                        className={`p-2.5 rounded-sm border-2 text-left transition-all ${editing.layout === key ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
+                        data-testid={`layout-option-${key}`}>
+                        <LayoutPreview layoutKey={key} />
+                        <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5 leading-tight">{def.label}</span>
+                        <span className="text-[9px] text-slate-400 block leading-tight">{def.desc}</span>
+                      </button>
+                    ))}
                   </div>
                 </div>
 
-                {/* Content Area — conditional on layout type */}
+                {/* Legacy layout migration notice */}
+                {isLegacyLayout(editing.layout) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
+                    <p className="text-sm text-amber-700 font-medium">This page uses a legacy layout.</p>
+                    <p className="text-xs text-amber-600 mt-1">Select a Visual Builder layout above to upgrade this page. Your content will be preserved.</p>
+                  </div>
+                )}
+
+                {/* Content Area */}
                 {isBuilderLayout(editing.layout) && (
                   <div>
                     <Label className="text-xs text-slate-500 mb-2 block">Content Blocks</Label>
@@ -149,24 +124,7 @@ export default function PageEditorDialog({ editing, setEditing, open, setOpen, o
                   </div>
                 )}
 
-                {isLegacyLayout(editing.layout) && (
-                  <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                    <p className="text-sm text-slate-600 mb-2 font-medium">Preset Layout: {LEGACY_LAYOUT_META[editing.layout]?.label}</p>
-                    <p className="text-xs text-slate-400">This layout auto-populates content. You can still set a page title and summary above.</p>
-                    {editing.layout === 'layout_1' && (
-                      <div className="mt-3">
-                        <Label className="text-xs text-slate-500">Layout Image</Label>
-                        <ImageUpload value={editing.layout_image || ''} onChange={v => setEditing({ ...editing, layout_image: v })} />
-                      </div>
-                    )}
-                    <div className="mt-3">
-                      <Label className="text-xs text-slate-500">Additional Content (optional)</Label>
-                      <div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({ ...editing, content: val })} /></div>
-                    </div>
-                  </div>
-                )}
-
-                {!editing.layout && (
+                {(!editing.layout || isLegacyLayout(editing.layout)) && (
                   <div>
                     <Label className="text-xs text-slate-500">Page Content</Label>
                     <div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({ ...editing, content: val })} /></div>

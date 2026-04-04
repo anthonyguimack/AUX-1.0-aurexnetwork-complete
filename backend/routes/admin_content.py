@@ -324,9 +324,6 @@ async def admin_update_nav_page(item_id: str, request: Request, user: dict = Dep
 
 @router.delete("/admin/nav-pages/{item_id}")
 async def admin_delete_nav_page(item_id: str, user: dict = Depends(require_admin)):
-    page = await db.nav_pages.find_one({"id": item_id}, {"_id": 0})
-    if page and page.get("system"):
-        raise HTTPException(status_code=400, detail="System pages cannot be deleted")
     return await crud_delete("nav_pages", item_id)
 
 @router.post("/admin/seed-system-pages")
