@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { adminAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Save, Loader2, ArrowLeft } from 'lucide-react';
+import { Save, Loader2, ArrowLeft, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
@@ -11,6 +11,84 @@ import ImageUpload from '../../components/ImageUpload';
 import HeroCanvasEditor from '../../components/HeroCanvasEditor';
 
 const effectOptions = ['top', 'right', 'bottom', 'left'];
+const API_URL = process.env.REACT_APP_BACKEND_URL;
+const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API_URL}${v}` : v) : null;
+
+function resolveVideoUrl(url) {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  if (url.startsWith('<iframe')) {
+    const srcMatch = url.match(/src=["']([^"']+)["']/);
+    if (srcMatch) return srcMatch[1];
+  }
+  return url;
+}
+
+function HeroSlidePreview({ form }) {
+  const bg = resolveSrc(form.background);
+  const photoSrc = resolveSrc(form.photo);
+  const videoEmbedUrl = resolveVideoUrl(form.video_embed);
+
+  const hasContent = form.title || form.subtitle || form.description || form.button_text ||
+    (form.slide_type === 'photo' && form.photo) || (form.slide_type === 'video' && form.video_embed);
+
+  if (!hasContent) return (
+    <div className="bg-[#0f172a] rounded-lg flex items-center justify-center text-white/30 text-sm" style={{ aspectRatio: '16/7' }}>
+      Start editing the form below to see a live preview
+    </div>
+  );
+
+  return (
+    <div className="relative rounded-lg overflow-hidden" style={{ aspectRatio: '16/7' }} data-testid="hero-live-preview">
+      {bg ? (
+        <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bg})` }} />
+      ) : (
+        <div className="absolute inset-0 bg-[#0f172a]" />
+      )}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(26,35,50,0.93), rgba(26,35,50,0.6))' }} />
+
+      <div className="relative w-full h-full">
+        {form.title && (
+          <div className="absolute max-w-[55%] px-1" style={{ left: `${(form.title_x || 100) / 7}%`, top: `${(form.title_y || 50) / 3}%` }}>
+            <div className="text-lg md:text-xl xl:text-2xl font-bold leading-tight [&_em]:italic [&_p]:m-0" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: form.title }} />
+          </div>
+        )}
+        {form.subtitle && (
+          <div className="absolute max-w-[55%] px-1" style={{ left: `${(form.subtitle_x || 100) / 7}%`, top: `${(form.subtitle_y || 80) / 3}%` }}>
+            <div className="text-xs md:text-sm font-semibold [&_em]:italic [&_p]:m-0" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: form.subtitle }} />
+          </div>
+        )}
+        {form.description && (
+          <div className="absolute max-w-[45%] px-1" style={{ left: `${(form.description_x || 100) / 7}%`, top: `${(form.description_y || 120) / 3}%` }}>
+            <div className="text-[10px] md:text-xs leading-relaxed [&_p]:m-0" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: form.description }} />
+          </div>
+        )}
+        {form.button_text && (
+          <div className="absolute px-1" style={{ left: `${(form.button_x || 100) / 7}%`, top: `${(form.button_y || 180) / 3}%` }}>
+            <span className="inline-flex items-center gap-1 bg-white px-3 py-1 md:px-4 md:py-1.5 rounded-sm font-medium text-[10px] md:text-xs" style={{ color: '#1a2332' }}>
+              {form.button_text} <ArrowRight className="w-2.5 h-2.5" />
+            </span>
+          </div>
+        )}
+        {form.slide_type === 'video' && videoEmbedUrl && (
+          <div className="absolute" style={{ left: `${(form.media_x || 400) / 7}%`, top: `${(form.media_y || 50) / 3}%`, width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
+            <div className="rounded-md overflow-hidden shadow-2xl aspect-video border border-white/10">
+              <iframe src={videoEmbedUrl} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Preview" />
+            </div>
+          </div>
+        )}
+        {form.slide_type === 'photo' && photoSrc && (
+          <div className="absolute" style={{ left: `${(form.media_x || 400) / 7}%`, top: `${(form.media_y || 50) / 3}%`, width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
+            <img src={photoSrc} alt="" className="rounded-md shadow-2xl w-full object-cover border border-white/10" style={form.media_height ? { maxHeight: `${Math.min(form.media_height * 0.45, 200)}px` } : { maxHeight: '180px' }} />
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
 
 const defaultSlide = {
   date_start: '', date_end: '',
@@ -42,6 +120,7 @@ export default function HeroSlideForm() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [sitePages, setSitePages] = useState([]);
+  const [showPreview, setShowPreview] = useState(true);
 
   useEffect(() => {
     publicAPI.getSitePages().then(r => setSitePages(r.data || [])).catch(() => {});
@@ -101,6 +180,25 @@ export default function HeroSlideForm() {
           data-testid="save-slide-btn">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isEdit ? 'Update' : 'Create'} Slide
         </button>
+      </div>
+
+      {/* Live Preview */}
+      <div className="bg-white border border-slate-100 rounded-sm mb-5 overflow-hidden" data-testid="hero-preview-section">
+        <button onClick={() => setShowPreview(p => !p)}
+          className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-[#1a2332] hover:bg-slate-50 transition-colors"
+          data-testid="toggle-preview-btn">
+          <div className="flex items-center gap-2">
+            {showPreview ? <Eye className="w-4 h-4 text-[#0D9488]" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+            <span>Live Preview</span>
+            <span className="text-[10px] font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Updates in real-time</span>
+          </div>
+          <span className="text-xs text-slate-400">{showPreview ? 'Hide' : 'Show'}</span>
+        </button>
+        {showPreview && (
+          <div className="px-5 pb-5">
+            <HeroSlidePreview form={form} />
+          </div>
+        )}
       </div>
 
       {/* Timer */}
