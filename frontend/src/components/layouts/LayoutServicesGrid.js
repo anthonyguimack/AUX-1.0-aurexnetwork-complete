@@ -4,6 +4,7 @@ import { publicAPI } from '../../lib/api';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
+const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') : '';
 
 export default function LayoutServicesGrid({ page }) {
   const [services, setServices] = useState([]);
@@ -32,18 +33,27 @@ export default function LayoutServicesGrid({ page }) {
               )}
               <div className="p-5 flex flex-col flex-1">
                 <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{svc.title}</h3>
-                <p className="text-slate-500 text-sm flex-1 mb-4 line-clamp-3">{svc.short_description || svc.description}</p>
+                <div className="text-slate-500 text-sm flex-1 mb-4 line-clamp-3 rich-text-content" dangerouslySetInnerHTML={{ __html: cleanHtml(svc.short_description || svc.description || '') }} />
                 {svc.price > 0 && (
                   <p className="text-sm font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>
                     ${Number(svc.price).toFixed(2)}
                   </p>
                 )}
-                <Link to={`/service/${svc.id}`}
-                  className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
-                  style={{ color: 'var(--color-heading, #1a2332)' }}
-                  data-testid={`service-learn-more-${svc.id}`}>
-                  Learn more →
-                </Link>
+                {svc.external_url ? (
+                  <a href={svc.external_url} target={svc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer"
+                    className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                    style={{ color: 'var(--color-heading, #1a2332)' }}
+                    data-testid={`service-learn-more-${svc.id}`}>
+                    Learn more →
+                  </a>
+                ) : (
+                  <Link to={`/service/${svc.id}`}
+                    className="text-sm font-medium flex items-center gap-1 hover:opacity-80 transition-opacity"
+                    style={{ color: 'var(--color-heading, #1a2332)' }}
+                    data-testid={`service-learn-more-${svc.id}`}>
+                    Learn more →
+                  </Link>
+                )}
               </div>
             </div>
           );

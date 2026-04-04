@@ -176,11 +176,11 @@ export default function HeroSlideForm() {
         </div>
         {form.slide_type === 'video' ? (
           <div>
-            <Label className="text-xs text-slate-500 mb-1 block">Video (paste iframe / YouTube embed code)</Label>
-            <textarea value={form.video_embed} onChange={set('video_embed')} rows={4}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm font-mono"
-              placeholder='<iframe src="https://youtube.com/embed/..." ...></iframe>'
+            <Label className="text-xs text-slate-500 mb-1 block">Video URL (YouTube, Vimeo, or direct video link)</Label>
+            <Input value={form.video_embed} onChange={set('video_embed')}
+              placeholder="https://www.youtube.com/watch?v=dQw4w9WgXcQ"
               data-testid="slide-video-embed" />
+            <p className="text-xs text-slate-400 mt-1">Paste a YouTube, Vimeo, or direct video URL. It will be embedded automatically.</p>
           </div>
         ) : (
           <div>

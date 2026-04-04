@@ -2,6 +2,29 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTheme } from '../App';
 
+function resolveVideoEmbed(url) {
+  if (!url) return null;
+  const ytMatch = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
+  if (ytMatch) return `https://www.youtube.com/embed/${ytMatch[1]}`;
+  const vimeoMatch = url.match(/vimeo\.com\/(\d+)/);
+  if (vimeoMatch) return `https://player.vimeo.com/video/${vimeoMatch[1]}`;
+  if (url.startsWith('<iframe')) {
+    const srcMatch = url.match(/src=["']([^"']+)["']/);
+    if (srcMatch) return srcMatch[1];
+  }
+  return url;
+}
+
+function VideoEmbed({ url, style, className }) {
+  const embedUrl = resolveVideoEmbed(url);
+  if (!embedUrl) return null;
+  return (
+    <div className={className} style={style}>
+      <iframe src={embedUrl} className="w-full h-full" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen frameBorder="0" title="Hero Video" />
+    </div>
+  );
+}
+
 export default function HeroSection({ data, slides }) {
   const theme = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -99,7 +122,7 @@ export default function HeroSection({ data, slides }) {
               )}
               {(slide.slide_type === 'video' && slide.video_embed) && (
                 <div className="absolute" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
-                  <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" style={slide.media_height ? { height: `${slide.media_height}px`, aspectRatio: 'unset' } : {}} dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
+                  <VideoEmbed url={slide.video_embed} className="rounded-lg overflow-hidden shadow-2xl aspect-video" style={slide.media_height ? { height: `${slide.media_height}px`, aspectRatio: 'unset' } : {}} />
                 </div>
               )}
               {(slide.slide_type === 'photo' && slide.photo) && (
@@ -118,7 +141,7 @@ export default function HeroSection({ data, slides }) {
               )}
               {(slide.slide_type === 'video' && slide.video_embed) && (
                 <div className="w-full max-w-sm mx-auto mb-2" style={effectStyle(slide.media_effect, slide.media_start)}>
-                  <div className="rounded-lg overflow-hidden shadow-2xl aspect-video" dangerouslySetInnerHTML={{ __html: slide.video_embed }} />
+                  <VideoEmbed url={slide.video_embed} className="rounded-lg overflow-hidden shadow-2xl aspect-video" />
                 </div>
               )}
               {slide.title && (

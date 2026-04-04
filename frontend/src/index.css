@@ -281,8 +281,8 @@ html {
 .rich-text-content {
   overflow-x: hidden;
   overflow-wrap: break-word;
-  word-break: normal;
-  hyphens: manual;
+  word-break: break-word;
+  hyphens: auto;
   max-width: 100%;
 }
 .rich-text-content img {
