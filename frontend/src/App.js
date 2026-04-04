@@ -43,6 +43,7 @@ import MemberLevelsManager from './pages/admin/MemberLevelsManager';
 import MemberTypesManager from './pages/admin/MemberTypesManager';
 import MembershipSettingsManager from './pages/admin/MembershipSettingsManager';
 import BackupManager from './pages/admin/BackupManager';
+import ContactSettingsManager from './pages/admin/ContactSettingsManager';
 // Membership / My Account
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
@@ -324,6 +325,7 @@ function AppRouter() {
           <Route path="portfolio" element={<PortfolioManager />} />
           <Route path="testimonials" element={<TestimonialsManager />} />
           <Route path="contacts" element={<ContactsManager />} />
+          <Route path="contact-settings" element={<ContactSettingsManager />} />
           <Route path="purchases" element={<PurchasesManager />} />
           <Route path="settings" element={<SettingsManager />} />
           <Route path="pages" element={<PagesManager />} />

@@ -180,6 +180,11 @@ export const adminAPI = {
   getBackup: (id) => api.get(`/admin/backups/${id}`),
   createBackupNow: (label) => api.post('/admin/backups/create-now', { label: label || 'manual' }),
   deleteBackup: (id) => api.delete(`/admin/backups/${id}`),
+  // Contact Settings
+  getContactSettings: () => api.get('/admin/contact-settings'),
+  updateContactSettings: (data) => api.put('/admin/contact-settings', data),
+  // System Pages
+  seedSystemPages: () => api.post('/admin/seed-system-pages'),
 };
 
 // Member API (unified - uses same auth_token)

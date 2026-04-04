@@ -27,6 +27,7 @@ const sidebarItems = [
   { label: 'Member Types', icon: Users, href: '/admin/member-types' },
   { label: 'Membership Settings', icon: ClipboardCheck, href: '/admin/membership-settings' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
+  { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
   { label: 'Sections', icon: Layers, href: '/admin/section-order' },
   { label: 'SEO', icon: Globe, href: '/admin/seo' },

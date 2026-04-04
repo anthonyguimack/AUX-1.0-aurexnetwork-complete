@@ -324,7 +324,36 @@ async def admin_update_nav_page(item_id: str, request: Request, user: dict = Dep
 
 @router.delete("/admin/nav-pages/{item_id}")
 async def admin_delete_nav_page(item_id: str, user: dict = Depends(require_admin)):
+    page = await db.nav_pages.find_one({"id": item_id}, {"_id": 0})
+    if page and page.get("system"):
+        raise HTTPException(status_code=400, detail="System pages cannot be deleted")
     return await crud_delete("nav_pages", item_id)
+
+@router.post("/admin/seed-system-pages")
+async def seed_system_pages(user: dict = Depends(require_admin)):
+    system_pages = [
+        {"title": "Home", "url": "/", "system": True, "system_key": "home", "show_in_header": True, "show_in_footer": False, "order": -100},
+        {"title": "News", "url": "/news", "system": True, "system_key": "news", "show_in_header": False, "show_in_footer": False, "order": -90},
+        {"title": "Gallery", "url": "/gallery", "system": True, "system_key": "gallery", "show_in_header": False, "show_in_footer": False, "order": -80},
+        {"title": "Reading List", "url": "/reading-list", "system": True, "system_key": "reading_list", "show_in_header": False, "show_in_footer": False, "order": -70},
+    ]
+    seeded = 0
+    for sp in system_pages:
+        existing = await db.nav_pages.find_one({"system_key": sp["system_key"]}, {"_id": 0})
+        if not existing:
+            sp["id"] = str(uuid.uuid4())
+            sp["open_in_new_tab"] = False
+            sp["login_required"] = False
+            sp["banner_image"] = ""
+            sp["summary"] = ""
+            sp["content"] = ""
+            sp["page_type"] = ""
+            sp["layout"] = ""
+            sp["zones"] = {}
+            sp["created_at"] = datetime.now(timezone.utc).isoformat()
+            await db.nav_pages.insert_one(sp)
+            seeded += 1
+    return {"seeded": seeded}
 
 # Gallery Albums (CRUD)
 @router.get("/admin/gallery-albums")

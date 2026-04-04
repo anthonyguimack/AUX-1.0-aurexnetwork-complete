@@ -1,18 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Plus, Edit2, Trash2, ArrowUp, ArrowDown, Globe, Lock, ExternalLink, FileText, Home, Newspaper, Image, BookOpen } from 'lucide-react';
+import { Plus, Edit2, Trash2, ArrowUp, ArrowDown, Lock, ExternalLink, Home, Newspaper, Image, BookOpen, Loader2 } from 'lucide-react';
 import { getLayoutLabel } from '../../components/admin/LayoutPreview';
 import PageEditorDialog from '../../components/admin/PageEditorDialog';
 
 const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '', layout: '', layout_image: '', zones: {} };
 
-const SYSTEM_PAGES = [
-  { id: '_sys_home', title: 'Home', url: '/', icon: Home, system: true, description: 'Main homepage' },
-  { id: '_sys_news', title: 'News', url: '/news', icon: Newspaper, system: true, description: 'Blog & news listing' },
-  { id: '_sys_gallery', title: 'Gallery', url: '/gallery', icon: Image, system: true, description: 'Photo gallery' },
-  { id: '_sys_reading', title: 'Reading List', url: '/reading-list', icon: BookOpen, system: true, description: 'Book recommendations' },
-];
+const SYSTEM_ICONS = { home: Home, news: Newspaper, gallery: Image, reading_list: BookOpen };
 
 function StatusBadge({ active, label }) {
   return (
@@ -27,10 +22,14 @@ export default function PagesManager() {
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('custom');
+  const [seeding, setSeeding] = useState(false);
 
   const load = () => adminAPI.getNavPages().then(r => setItems((r.data || []).sort((a, b) => (a.order || 0) - (b.order || 0)))).catch(console.error);
-  useEffect(() => { load(); }, []);
+
+  useEffect(() => {
+    // Seed system pages on first load, then load all
+    adminAPI.seedSystemPages().then(() => load()).catch(() => load());
+  }, []);
 
   const handleSave = async () => {
     setLoading(true);
@@ -45,7 +44,7 @@ export default function PagesManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this page?')) return;
     try { await adminAPI.deleteNavPage(id); toast.success('Deleted'); load(); }
-    catch { toast.error('Error'); }
+    catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
   };
 
   const moveOrder = async (item, direction) => {
@@ -54,12 +53,7 @@ export default function PagesManager() {
     load();
   };
 
-  const openEditor = (page) => {
-    setEditing({ ...page });
-    setOpen(true);
-  };
-
-  const tabCls = (t) => `px-4 py-2 text-sm font-medium rounded-t-sm transition-colors ${activeTab === t ? 'bg-white border border-b-0 border-slate-200 text-[#1a2332]' : 'text-slate-400 hover:text-slate-600'}`;
+  const openEditor = (page) => { setEditing({ ...page }); setOpen(true); };
 
   return (
     <div data-testid="pages-manager">
@@ -70,30 +64,21 @@ export default function PagesManager() {
         </button>
       </div>
 
-      {/* Tabs */}
-      <div className="flex gap-1 mb-0" data-testid="pages-tabs">
-        <button onClick={() => setActiveTab('custom')} className={tabCls('custom')} data-testid="tab-custom">
-          <FileText className="w-3.5 h-3.5 inline mr-1.5" />Custom Pages ({items.length})
-        </button>
-        <button onClick={() => setActiveTab('system')} className={tabCls('system')} data-testid="tab-system">
-          <Globe className="w-3.5 h-3.5 inline mr-1.5" />System Pages ({SYSTEM_PAGES.length})
-        </button>
-      </div>
-
-      {/* Custom Pages Tab */}
-      {activeTab === 'custom' && (
-        <div className="bg-white rounded-sm rounded-tl-none border border-slate-200">
-          <table className="w-full text-sm" data-testid="custom-pages-table">
-            <thead><tr className="border-b bg-slate-50/80">
-              <th className="text-left p-3 font-medium text-slate-500 w-16">Order</th>
-              <th className="text-left p-3 font-medium text-slate-500">Page</th>
-              <th className="text-left p-3 font-medium text-slate-500 hidden md:table-cell">URL</th>
-              <th className="text-center p-3 font-medium text-slate-500 w-20">Visibility</th>
-              <th className="text-center p-3 font-medium text-slate-500 w-20">Access</th>
-              <th className="text-right p-3 font-medium text-slate-500 w-24">Actions</th>
-            </tr></thead>
-            <tbody>
-              {items.map((item, idx) => (
+      <div className="bg-white rounded-sm border border-slate-200">
+        <table className="w-full text-sm" data-testid="pages-table">
+          <thead><tr className="border-b bg-slate-50/80">
+            <th className="text-left p-3 font-medium text-slate-500 w-16">Order</th>
+            <th className="text-left p-3 font-medium text-slate-500">Page</th>
+            <th className="text-left p-3 font-medium text-slate-500 hidden md:table-cell">URL</th>
+            <th className="text-center p-3 font-medium text-slate-500 w-20">Visibility</th>
+            <th className="text-center p-3 font-medium text-slate-500 w-20">Access</th>
+            <th className="text-right p-3 font-medium text-slate-500 w-24">Actions</th>
+          </tr></thead>
+          <tbody>
+            {items.map((item, idx) => {
+              const isSystem = !!item.system;
+              const SysIcon = SYSTEM_ICONS[item.system_key];
+              return (
                 <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50 group" data-testid={`page-row-${item.id}`}>
                   <td className="p-3">
                     <div className="flex items-center gap-1">
@@ -103,10 +88,16 @@ export default function PagesManager() {
                     </div>
                   </td>
                   <td className="p-3">
-                    <div className="font-medium text-[#1a2332]">{item.title}</div>
-                    <div className="flex gap-1 mt-0.5">
-                      {item.layout && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{getLayoutLabel(item.layout)}</span>}
-                      {item.zones && Object.values(item.zones).some(z => z?.length > 0) && <span className="text-xs px-1.5 py-0.5 rounded bg-green-50 text-green-600">Builder</span>}
+                    <div className="flex items-center gap-2">
+                      {SysIcon && <SysIcon className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />}
+                      <div>
+                        <div className="font-medium text-[#1a2332]">{item.title}</div>
+                        <div className="flex gap-1 mt-0.5">
+                          {isSystem && <span className="text-[10px] px-1.5 py-0.5 rounded bg-slate-100 text-slate-500 font-medium">System</span>}
+                          {item.layout && <span className="text-xs px-1.5 py-0.5 rounded bg-blue-50 text-blue-600">{getLayoutLabel(item.layout)}</span>}
+                          {item.zones && Object.values(item.zones).some(z => z?.length > 0) && <span className="text-xs px-1.5 py-0.5 rounded bg-green-50 text-green-600">Builder</span>}
+                        </div>
+                      </div>
                     </div>
                   </td>
                   <td className="p-3 hidden md:table-cell">
@@ -129,57 +120,20 @@ export default function PagesManager() {
                   <td className="p-3 text-right">
                     <div className="flex items-center justify-end gap-1">
                       <button onClick={() => openEditor({ ...item })} className="p-1.5 text-slate-400 hover:text-[#0D9488] transition-colors" data-testid={`edit-page-${item.id}`}><Edit2 className="w-4 h-4" /></button>
-                      <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors" data-testid={`delete-page-${item.id}`}><Trash2 className="w-4 h-4" /></button>
+                      {!isSystem && (
+                        <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors" data-testid={`delete-page-${item.id}`}><Trash2 className="w-4 h-4" /></button>
+                      )}
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-          {items.length === 0 && <div className="p-12 text-center text-slate-400 text-sm">No custom pages yet. Click "Add Page" to create one.</div>}
-        </div>
-      )}
-
-      {/* System Pages Tab */}
-      {activeTab === 'system' && (
-        <div className="bg-white rounded-sm rounded-tl-none border border-slate-200">
-          <div className="p-4 bg-slate-50/50 border-b border-slate-100">
-            <p className="text-xs text-slate-500">System pages are built-in and cannot be deleted. They are always accessible at their fixed URLs.</p>
-          </div>
-          <div className="divide-y divide-slate-50">
-            {SYSTEM_PAGES.map(sp => {
-              const IconComp = sp.icon;
-              return (
-                <div key={sp.id} className="flex items-center justify-between p-4 hover:bg-slate-50/50 transition-colors" data-testid={`system-page-${sp.id}`}>
-                  <div className="flex items-center gap-3">
-                    <div className="w-9 h-9 rounded-sm bg-[#1a2332]/5 flex items-center justify-center">
-                      <IconComp className="w-4 h-4 text-[#1a2332]/60" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-[#1a2332] text-sm">{sp.title}</div>
-                      <div className="text-xs text-slate-400">{sp.description}</div>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="text-xs font-mono text-slate-400 bg-slate-50 px-2 py-0.5 rounded">{sp.url}</span>
-                    <span className="text-xs text-[#0D9488] font-medium">Active</span>
-                  </div>
-                </div>
               );
             })}
-          </div>
-        </div>
-      )}
+          </tbody>
+        </table>
+        {items.length === 0 && <div className="p-12 text-center text-slate-400 text-sm">No pages yet. Click "Add Page" to create one.</div>}
+      </div>
 
-      {/* Edit/Create Dialog */}
-      <PageEditorDialog
-        editing={editing}
-        setEditing={setEditing}
-        open={open}
-        setOpen={setOpen}
-        onSave={handleSave}
-        loading={loading}
-      />
+      <PageEditorDialog editing={editing} setEditing={setEditing} open={open} setOpen={setOpen} onSave={handleSave} loading={loading} />
     </div>
   );
 }

@@ -479,7 +479,11 @@ function TestimonialsSection({ items, theme }) {
 }
 
 /* ==================== CONTACT ==================== */
-function ContactSection({ theme }) {
+function ContactSection({ theme, contactSettings }) {
+  const cs = contactSettings || {};
+  const csTitle = cs.title || 'Contact';
+  const csSubtitle = cs.subtitle || "Let's Work Together";
+  const csDescription = cs.description || 'Have a project in mind? Let\'s discuss how we can help';
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
   const handleSubmit = async (e) => {
@@ -493,8 +497,8 @@ function ContactSection({ theme }) {
     <section className="py-24 bg-slate-50" id="contact" data-testid="contact-section">
       <div className="max-w-3xl mx-auto px-6 md:px-10 text-center">
         <div className="w-12 h-0.5 mx-auto mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
-        <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">Get In Touch</h2>
-        <p className="mb-10" style={{ color: 'var(--color-body-text, #475569)' }}>We'd love to hear from you. Send us a message.</p>
+        <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">{csSubtitle}</h2>
+        <p className="mb-10" style={{ color: 'var(--color-body-text, #475569)' }}>{csDescription}</p>
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /></div>
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={5} className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" />
@@ -507,7 +511,7 @@ function ContactSection({ theme }) {
   if (theme === 'classic') return (
     <section className="py-20 bg-white" id="contact" data-testid="contact-section">
       <div className="max-w-3xl mx-auto px-6">
-        <div className="text-center mb-10"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">Contact Us</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
+        <div className="text-center mb-10"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">{csSubtitle}</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
         <form onSubmit={handleSubmit} className="border-2 p-10" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
           <div className="grid grid-cols-2 gap-4 mb-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Full Name" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Email Address" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /></div>
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your message..." rows={5} className="w-full px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none mb-4" style={{ borderColor: 'var(--color-primary, #1a2332)' }} />
@@ -522,7 +526,7 @@ function ContactSection({ theme }) {
     <section className="py-20 relative overflow-hidden" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} id="contact" data-testid="contact-section">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>Contact</p><h2 className="text-3xl md:text-4xl font-bold text-white leading-tight" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="contact-title">Let's Work Together</h2><p className="text-white/60 mt-4 leading-relaxed">Have a project in mind? Let's discuss how we can help.</p></div>
+          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{csTitle}</p><h2 className="text-3xl md:text-4xl font-bold text-white leading-tight" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="contact-title">{csSubtitle}</h2><p className="text-white/60 mt-4 leading-relaxed">{csDescription}</p></div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
             <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
@@ -579,7 +583,7 @@ export default function HomePage() {
     portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
     gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
     testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
-    contact: <ContactSection key="contact" theme={theme} />,
+    contact: <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
   };
 
   return (

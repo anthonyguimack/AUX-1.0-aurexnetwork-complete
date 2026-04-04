@@ -48,7 +48,7 @@ function HeroSlidePreview({ form }) {
       ) : (
         <div className="absolute inset-0 bg-[#0f172a]" />
       )}
-      <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(26,35,50,0.93), rgba(26,35,50,0.6))' }} />
+      {!bg && <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(26,35,50,0.93), rgba(26,35,50,0.6))' }} />}
 
       <div className="relative w-full h-full">
         {form.title && (
@@ -180,25 +180,6 @@ export default function HeroSlideForm() {
           data-testid="save-slide-btn">
           {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />} {isEdit ? 'Update' : 'Create'} Slide
         </button>
-      </div>
-
-      {/* Live Preview */}
-      <div className="bg-white border border-slate-100 rounded-sm mb-5 overflow-hidden" data-testid="hero-preview-section">
-        <button onClick={() => setShowPreview(p => !p)}
-          className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-[#1a2332] hover:bg-slate-50 transition-colors"
-          data-testid="toggle-preview-btn">
-          <div className="flex items-center gap-2">
-            {showPreview ? <Eye className="w-4 h-4 text-[#0D9488]" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
-            <span>Live Preview</span>
-            <span className="text-[10px] font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Updates in real-time</span>
-          </div>
-          <span className="text-xs text-slate-400">{showPreview ? 'Hide' : 'Show'}</span>
-        </button>
-        {showPreview && (
-          <div className="px-5 pb-5">
-            <HeroSlidePreview form={form} />
-          </div>
-        )}
       </div>
 
       {/* Timer */}
@@ -337,6 +318,25 @@ export default function HeroSlideForm() {
         <h2 className={sectionTitle}>Layer Positioning</h2>
         <p className="text-xs text-slate-400 mb-4">Drag each layer to position it on the slide canvas (700 x 300). Coordinates are saved automatically.</p>
         <HeroCanvasEditor coords={canvasCoords} onChange={handleCanvasChange} backgroundImage={form.background} />
+      </div>
+
+      {/* Live Preview */}
+      <div className="bg-white border border-slate-100 rounded-sm mb-5 overflow-hidden" data-testid="hero-preview-section">
+        <button onClick={() => setShowPreview(p => !p)}
+          className="w-full flex items-center justify-between px-5 py-3 text-sm font-semibold text-[#1a2332] hover:bg-slate-50 transition-colors"
+          data-testid="toggle-preview-btn">
+          <div className="flex items-center gap-2">
+            {showPreview ? <Eye className="w-4 h-4 text-[#0D9488]" /> : <EyeOff className="w-4 h-4 text-slate-400" />}
+            <span>Live Preview</span>
+            <span className="text-[10px] font-normal text-slate-400 bg-slate-100 px-2 py-0.5 rounded-full">Updates in real-time</span>
+          </div>
+          <span className="text-xs text-slate-400">{showPreview ? 'Hide' : 'Show'}</span>
+        </button>
+        {showPreview && (
+          <div className="px-5 pb-5">
+            <HeroSlidePreview form={form} />
+          </div>
+        )}
       </div>
 
       {/* Page Assignment */}
