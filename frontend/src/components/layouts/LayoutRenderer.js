@@ -56,6 +56,21 @@ export default function LayoutRenderer({ page, hasHero }) {
         </div>
       );
 
+    case 'about_bio':
+      return (
+        <div className={`max-w-6xl mx-auto px-6 md:px-12 ${topPad}`} data-testid="layout-renderer">
+          <Title />
+          <div className="grid grid-cols-1 lg:grid-cols-5 gap-10">
+            <div className="lg:col-span-2">
+              <Zone blocks={zones.sidebar} />
+            </div>
+            <div className="lg:col-span-3">
+              <Zone blocks={zones.main} />
+            </div>
+          </div>
+        </div>
+      );
+
     case 'grid':
       return (
         <div className={`max-w-6xl mx-auto px-6 md:px-12 ${topPad}`} data-testid="layout-renderer">

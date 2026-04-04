@@ -18,6 +18,12 @@ export const LAYOUTS = {
     zones: ['left', 'right'],
     zoneLabels: { left: 'Left Column', right: 'Right Column' },
   },
+  about_bio: {
+    label: 'About / Bio',
+    desc: 'Image + text + social links',
+    zones: ['sidebar', 'main'],
+    zoneLabels: { sidebar: 'Photo & Links', main: 'Bio & Content' },
+  },
   grid: {
     label: 'Grid 2x2',
     desc: 'Four cells in a 2x2 grid',
@@ -91,7 +97,8 @@ export const BLOCK_TYPES = {
   image: { label: 'Image', desc: 'Upload or URL image with caption' },
   video: { label: 'Video', desc: 'YouTube or Vimeo embed' },
   service_list: { label: 'Service List', desc: 'Auto-displays all services' },
-  gallery: { label: 'Gallery', desc: 'Auto-displays gallery albums' },
+  gallery: { label: 'Gallery', desc: 'Auto-displays simple photo gallery' },
+  gallery_albums: { label: 'Gallery Albums', desc: 'Auto-displays album-based gallery' },
   profile_card: { label: 'Profile Card', desc: 'Name, photo, title & bio card' },
   button: { label: 'Button', desc: 'Call-to-action button with link' },
   separator: { label: 'Separator', desc: 'Visual divider between content' },
@@ -106,6 +113,7 @@ export const getDefaultBlockConfig = (type) => {
     video: { url: '' },
     service_list: {},
     gallery: {},
+    gallery_albums: {},
     profile_card: { name: '', title: '', image: '', bio: '' },
     button: { text: 'Click Here', url: '', style: 'primary', open_in_new_tab: false },
     separator: { style: 'line' },
@@ -115,5 +123,5 @@ export const getDefaultBlockConfig = (type) => {
   return { ...(defaults[type] || {}) };
 };
 
-// Legacy layout values for backward compatibility
+// Legacy layout values for backward compatibility (kept for existing pages)
 export const LEGACY_LAYOUTS = ['layout_1', 'layout_2', 'layout_3', 'layout_5'];

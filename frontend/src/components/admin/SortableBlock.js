@@ -6,7 +6,7 @@ import { BLOCK_TYPES } from '../../lib/layoutDefinitions';
 
 export const BLOCK_ICONS = {
   rich_text: Type, image: Image, video: Video, service_list: Briefcase,
-  gallery: Images, profile_card: User, button: MousePointerClick, separator: Minus, custom_html: Code,
+  gallery: Images, gallery_albums: Images, profile_card: User, button: MousePointerClick, separator: Minus, custom_html: Code,
   legends_testimonials: Quote,
 };
 
@@ -41,7 +41,7 @@ export function SortableBlock({ block, zoneId, onEdit, onDelete }) {
         )}
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!['service_list', 'gallery', 'legends_testimonials'].includes(block.type) && (
+        {!['service_list', 'gallery', 'gallery_albums', 'legends_testimonials'].includes(block.type) && (
           <button onClick={() => onEdit(block)} className="p-1 text-slate-300 hover:text-[#0D9488]" data-testid={`edit-block-${block.id}`}><Edit2 className="w-3.5 h-3.5" /></button>
         )}
         <button onClick={() => onDelete(block.id)} className="p-1 text-slate-300 hover:text-red-500" data-testid={`delete-block-${block.id}`}><Trash2 className="w-3.5 h-3.5" /></button>

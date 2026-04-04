@@ -66,12 +66,36 @@ function ServiceListBlock() {
   );
 }
 
+/* Gallery block - Simple photo gallery (from gallery collection) */
 function GalleryBlock() {
+  const [items, setItems] = useState([]);
+  useEffect(() => { publicAPI.getGallery().then(r => setItems(r.data || [])).catch(() => {}); }, []);
+  if (!items.length) return null;
+  return (
+    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" data-testid="block-gallery">
+      {items.map(item => {
+        const src = resolveSrc(item.image);
+        return (
+          <div key={item.id} className="group aspect-square rounded-lg overflow-hidden bg-slate-100">
+            {src ? (
+              <img src={src} alt={item.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No image</div>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Gallery Albums block - Album-based gallery (from gallery_albums collection) */
+function GalleryAlbumsBlock() {
   const [albums, setAlbums] = useState([]);
   useEffect(() => { publicAPI.getGalleryAlbums().then(r => setAlbums(r.data || [])).catch(() => {}); }, []);
   if (!albums.length) return null;
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="block-gallery">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-6" data-testid="block-gallery-albums">
       {albums.map(a => (
         <Link key={a.id} to={`/album/${a.id}`} className="group">
           <div className="aspect-square rounded-lg overflow-hidden bg-slate-100">
@@ -184,6 +208,7 @@ export default function BlockRenderer({ block }) {
     case 'video': return <VideoBlock config={config} />;
     case 'service_list': return <ServiceListBlock />;
     case 'gallery': return <GalleryBlock />;
+    case 'gallery_albums': return <GalleryAlbumsBlock />;
     case 'profile_card': return <ProfileCardBlock config={config} />;
     case 'button': return <ButtonBlock config={config} />;
     case 'separator': return <SeparatorBlock config={config} />;
