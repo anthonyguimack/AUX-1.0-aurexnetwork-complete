@@ -1,7 +1,7 @@
 # Consultant CMS - Product Requirements Document
 
 ## Original Problem Statement
-A multi-page website with a login that will lock certain sections, modern and production-ready, for a consultant, with a complete CMS admin panel and Stripe payment integration. Includes Theme Switcher, 3-tier global Color Management, and a Phase 2 Visual Page Builder architecture allowing per-page layouts, block-based content zones, drag-and-drop block reordering, and 14 distinct layout types.
+A multi-page website with a login, modern and production-ready, for a consultant. It includes a complete CMS admin panel, Stripe payment integration, Theme Switcher, 3-tier global Color Management, and a Phase 2 Visual Page Builder architecture allowing per-page layouts, block-based content zones, drag-and-drop block reordering, and 14 distinct layout types.
 
 ## Tech Stack
 - **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit (Drag & Drop), Framer Motion, Leaflet, React-Quill
@@ -49,12 +49,15 @@ A multi-page website with a login that will lock certain sections, modern and pr
 - External Blog API integration
 - Legends & Testimonials carousel block
 
-### Bug Fixes (Latest - Feb 2026)
+### Bug Fixes (Feb 4, 2026)
 - Service description HTML rendering (dangerouslySetInnerHTML + cleanHtml for &nbsp;)
 - Word-break CSS fix (word-break: break-word, hyphens: auto)
 - Service fallback link logic (always show /service/{id} if no external_url)
 - Hero video input changed from iframe textarea to URL input
 - HeroSection auto-detects YouTube/Vimeo URLs for embedding
+
+### New Feature (Feb 4, 2026)
+- **Hero Slide Live Preview**: Added a collapsible live preview panel to the Hero Slide Form in the admin CMS. Shows real-time rendering of background, title, subtitle, description, button, and media (video/photo) at their positioned X/Y coordinates. Supports YouTube/Vimeo auto-embed, rich text formatting, and updates instantly as the admin types.
 
 ## Credentials
 - Admin: admin@consultant.com / Admin123!

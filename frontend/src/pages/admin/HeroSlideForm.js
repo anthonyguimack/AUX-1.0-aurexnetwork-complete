@@ -36,7 +36,7 @@ function HeroSlidePreview({ form }) {
     (form.slide_type === 'photo' && form.photo) || (form.slide_type === 'video' && form.video_embed);
 
   if (!hasContent) return (
-    <div className="bg-[#0f172a] rounded-lg flex items-center justify-center text-white/30 text-sm" style={{ aspectRatio: '16/7' }}>
+    <div className="bg-[#0f172a] rounded-lg flex items-center justify-center text-white/50 text-sm italic" style={{ aspectRatio: '16/7' }}>
       Start editing the form below to see a live preview
     </div>
   );
