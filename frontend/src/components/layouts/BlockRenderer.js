@@ -6,12 +6,14 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
 
+const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') : '';
+
 function RichTextBlock({ config }) {
   if (!config.content) return null;
   return (
     <div className="rich-text-content prose max-w-none"
       style={{ color: 'var(--color-body-text, #475569)' }}
-      dangerouslySetInnerHTML={{ __html: config.content }} />
+      dangerouslySetInnerHTML={{ __html: cleanHtml(config.content) }} />
   );
 }
 
@@ -51,9 +53,13 @@ function ServiceListBlock() {
       {services.map(s => (
         <div key={s.id} className="bg-white rounded-lg border border-slate-100 p-5 hover:shadow-md transition-shadow">
           <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
-          <p className="text-sm mb-3" style={{ color: 'var(--color-body-text, #475569)' }}>{s.short_description || s.description}</p>
+          <div className="text-sm mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(s.short_description || s.description || '') }} />
           {s.price > 0 && <p className="text-sm font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>${Number(s.price).toFixed(2)}</p>}
-          <Link to={`/service/${s.id}`} className="text-sm font-medium hover:opacity-80" style={{ color: 'var(--color-accent, #0D9488)' }}>Learn more &rarr;</Link>
+          {s.external_url ? (
+            <a href={s.external_url} target={s.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-sm font-medium hover:opacity-80" style={{ color: 'var(--color-accent, #0D9488)' }}>Learn more &rarr;</a>
+          ) : (
+            <Link to={`/service/${s.id}`} className="text-sm font-medium hover:opacity-80" style={{ color: 'var(--color-accent, #0D9488)' }}>Learn more &rarr;</Link>
+          )}
         </div>
       ))}
     </div>
