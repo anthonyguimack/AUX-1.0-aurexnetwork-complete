@@ -10,49 +10,44 @@ A multi-page website with a login, modern and production-ready, for a consultant
 - **Auth**: JWT + Emergent-managed Google OAuth
 - **Payments**: Stripe (test key)
 
-## Code Architecture (Post-Refactor)
+## Code Architecture
 ```
 /app
 ├── backend/
-│   ├── server.py             # App entry point (52 lines)
-│   ├── seed.py               # Seed data function (407 lines)
-│   ├── models/database.py    # DB connection, helpers
+│   ├── server.py             # App entry point (55 lines)
+│   ├── seed.py               # Seed data (407 lines)
+│   ├── scheduler.py          # Background backup scheduler (NEW)
+│   ├── models/database.py
 │   └── routes/
 │       ├── auth.py, public.py, admin_content.py
-│       ├── admin_tools.py    # Uploads, SMTP, Backup & Restore
+│       ├── admin_tools.py    # Uploads, SMTP, Backup & Restore, Snapshots
 │       ├── payments.py, membership.py
 └── frontend/src/
-    ├── components/admin/     # PageBuilder, SortableBlock, LayoutPreview, PageEditorDialog, BlockConfigModal
-    ├── components/layouts/   # LayoutRenderer, BlockRenderer, LayoutServicesGrid
-    ├── pages/admin/          # All admin managers + BackupManager (NEW)
-    └── lib/api.js            # API client
+    ├── components/admin/     # PageBuilder, SortableBlock, LayoutPreview, PageEditorDialog
+    ├── pages/admin/          # All managers + BackupManager
+    └── lib/api.js
 ```
 
 ## What's Been Implemented
 
-### Phase 1 (Complete)
-- Public website with Hero, About, Services, News/Blog, Reading List, Maps, Portfolio, Gallery, Testimonials, Contact
-- Admin Panel with full CRUD, JWT & Google OAuth, responsive 3-theme design
+### Phase 1 & 2 (Complete)
+- Full public website, admin CMS, Visual Page Builder, Theme Engine, Dynamic Pages
 
-### Phase 2 (Complete)
-- Visual Page Builder (14 layouts, zones, drag-and-drop), Theme Engine, Dynamic Pages
-- Legends & Testimonials carousel, SMTP config, External Blog API
+### Features Added (Feb 4, 2026 Session)
+1. **Hero Slide Live Preview** — Real-time preview panel in admin
+2. **Code Refactoring** — server.py (455→52 lines), PageBuilder/PagesManager split into 3 sub-components
+3. **Backup & Restore** — Manual export/import with 16 selectable collections, merge/replace modes
+4. **Scheduled Automatic Backups** — Background scheduler with:
+   - Enable/disable toggle, frequency (daily/weekly/monthly), max snapshots (3-20)
+   - Background asyncio loop checking every 5 minutes
+   - Auto-cleanup of old backups beyond max_snapshots limit
+   - Snapshot list with Download, Restore (replace import), Delete actions
+   - Manual "Create Backup Now" button
+   - API: GET/PUT /api/admin/backup-settings, GET/POST/DELETE /api/admin/backups
 
 ### Bug Fixes (Feb 4, 2026)
 - Service HTML rendering (cleanHtml), word-break CSS, service fallback links
 - Hero video URL input (iframe → URL), YouTube/Vimeo auto-embed
-
-### Features (Feb 4, 2026)
-- Hero Slide Live Preview panel in admin CMS
-- **Backup & Restore** — Full CMS content export/import as JSON:
-  - Export: Select from 16 collections, download as timestamped JSON file
-  - Import: Upload JSON backup, preview contents, choose Merge (safe upsert) or Replace (clear + insert) mode
-  - Results panel shows per-collection item counts
-  - Backend: `GET /api/admin/export-content`, `POST /api/admin/import-content`
-
-### Refactoring (Feb 4, 2026)
-- Backend: Extracted seed_data() → seed.py (server.py: 455→52 lines)
-- Frontend: Extracted SortableBlock, LayoutPreview, PageEditorDialog from PageBuilder/PagesManager
 
 ## Credentials
 - Admin: admin@consultant.com / Admin123!
