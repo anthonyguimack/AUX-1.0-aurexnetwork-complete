@@ -1,56 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Input } from '../../components/ui/input';
-import { Label } from '../../components/ui/label';
-import { Switch } from '../../components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Globe, Lock, ExternalLink, FileText, Home, Newspaper, Image, BookOpen, Layout, Square, Columns2, LayoutGrid, Layers, List, SlidersHorizontal, PanelRight, User, CreditCard, Sidebar, Rocket, PanelLeft } from 'lucide-react';
-import RichTextEditor from '../../components/RichTextEditor';
-import ImageUpload from '../../components/ImageUpload';
-import PageBuilder from '../../components/admin/PageBuilder';
-import { LAYOUTS, LEGACY_LAYOUTS } from '../../lib/layoutDefinitions';
-
-const LAYOUT_ICONS = {
-  '': FileText, full_width: Layout, boxed: Square, split_screen: Columns2,
-  grid: LayoutGrid, masonry: Layers, list: List, carousel: SlidersHorizontal,
-  two_column: PanelRight, three_column: Columns2, profile: User,
-  card_based: CreditCard, hero_banner: Image, sidebar_layout: Sidebar, landing: Rocket,
-  layout_1: User, layout_2: LayoutGrid, layout_3: Image, layout_5: FileText,
-};
-
-const LEGACY_LAYOUT_META = {
-  layout_1: { label: 'About / Bio', desc: 'Image + text + social links' },
-  layout_2: { label: 'Services Grid', desc: 'Auto-displays service cards' },
-  layout_3: { label: 'Gallery Albums', desc: 'Auto-displays album grid' },
-  layout_5: { label: 'Full Content', desc: 'Centered text column' },
-};
-
-function LayoutPreview({ layoutKey }) {
-  const z1 = "bg-[#0D9488]/25", z2 = "bg-blue-200/60", z3 = "bg-amber-200/60", z4 = "bg-purple-200/60";
-  const previews = {
-    '': <div className="w-full h-full flex flex-col gap-[2px] p-1"><div className={`h-1.5 w-3/4 ${z1} rounded-[1px]`}/><div className={`flex-1 ${z1} rounded-[1px]`}/></div>,
-    full_width: <div className={`w-full h-full ${z1} rounded-[1px]`}/>,
-    boxed: <div className="w-full h-full flex justify-center items-center"><div className={`w-3/4 h-4/5 ${z1} rounded-[1px]`}/></div>,
-    split_screen: <div className="w-full h-full flex gap-[2px]"><div className={`w-1/2 ${z1} rounded-[1px]`}/><div className={`w-1/2 ${z2} rounded-[1px]`}/></div>,
-    grid: <div className="w-full h-full grid grid-cols-2 gap-[2px]"><div className={`${z1} rounded-[1px]`}/><div className={`${z2} rounded-[1px]`}/><div className={`${z3} rounded-[1px]`}/><div className={`${z4} rounded-[1px]`}/></div>,
-    masonry: <div className="w-full h-full flex gap-[2px]"><div className="w-1/3 flex flex-col gap-[2px]"><div className={`h-3/5 ${z1} rounded-[1px]`}/><div className={`h-2/5 ${z2} rounded-[1px]`}/></div><div className="w-1/3 flex flex-col gap-[2px]"><div className={`h-2/5 ${z2} rounded-[1px]`}/><div className={`h-3/5 ${z1} rounded-[1px]`}/></div><div className="w-1/3 flex flex-col gap-[2px]"><div className={`h-1/2 ${z1} rounded-[1px]`}/><div className={`h-1/2 ${z2} rounded-[1px]`}/></div></div>,
-    list: <div className="w-full h-full flex flex-col gap-[2px]"><div className={`h-1/3 ${z1} rounded-[1px]`}/><div className={`h-1/3 ${z1} rounded-[1px]`}/><div className={`h-1/3 ${z1} rounded-[1px]`}/></div>,
-    carousel: <div className="w-full h-full flex items-center gap-[2px]"><div className={`w-1/3 h-4/5 ${z1} rounded-[1px]`}/><div className={`w-1/3 h-4/5 ${z1} rounded-[1px]`}/><div className={`w-1/3 h-4/5 ${z1} rounded-[1px]`}/></div>,
-    two_column: <div className="w-full h-full flex gap-[2px]"><div className={`w-2/3 ${z1} rounded-[1px]`}/><div className={`w-1/3 ${z2} rounded-[1px]`}/></div>,
-    three_column: <div className="w-full h-full flex gap-[2px]"><div className={`w-1/3 ${z1} rounded-[1px]`}/><div className={`w-1/3 ${z2} rounded-[1px]`}/><div className={`w-1/3 ${z3} rounded-[1px]`}/></div>,
-    profile: <div className="w-full h-full flex gap-[2px]"><div className={`w-1/4 ${z2} rounded-[1px]`}/><div className={`w-3/4 ${z1} rounded-[1px]`}/></div>,
-    card_based: <div className="w-full h-full grid grid-cols-3 gap-[2px]">{[1,2,3,4,5,6].map(i=><div key={i} className={`${z1} rounded-[1px]`}/>)}</div>,
-    hero_banner: <div className="w-full h-full flex flex-col gap-[2px]"><div className={`h-2/5 ${z2} rounded-[1px]`}/><div className={`h-3/5 ${z1} rounded-[1px]`}/></div>,
-    sidebar_layout: <div className="w-full h-full flex gap-[2px]"><div className={`w-1/4 ${z2} rounded-[1px]`}/><div className={`w-3/4 ${z1} rounded-[1px]`}/></div>,
-    landing: <div className="w-full h-full flex flex-col gap-[2px]"><div className={`h-1/3 ${z2} rounded-[1px]`}/><div className={`h-1/3 ${z1} rounded-[1px]`}/><div className={`h-1/3 ${z3} rounded-[1px]`}/></div>,
-    layout_1: <div className="w-full h-full flex gap-[2px]"><div className={`w-2/5 ${z2} rounded-[1px]`}/><div className={`w-3/5 ${z1} rounded-[1px]`}/></div>,
-    layout_2: <div className="w-full h-full grid grid-cols-2 gap-[2px]">{[1,2,3,4].map(i=><div key={i} className={`${z1} rounded-[1px]`}/>)}</div>,
-    layout_3: <div className="w-full h-full grid grid-cols-3 gap-[2px]">{[1,2,3].map(i=><div key={i} className={`${z1} rounded-[1px]`}/>)}</div>,
-    layout_5: <div className="w-full h-full flex justify-center"><div className={`w-3/4 h-full ${z1} rounded-[1px]`}/></div>,
-  };
-  return <div className="w-full h-10 bg-slate-100 rounded overflow-hidden">{previews[layoutKey] || <div className={`w-full h-full ${z1}`}/>}</div>;
-}
+import { Plus, Edit2, Trash2, ArrowUp, ArrowDown, Globe, Lock, ExternalLink, FileText, Home, Newspaper, Image, BookOpen } from 'lucide-react';
+import { getLayoutLabel } from '../../components/admin/LayoutPreview';
+import PageEditorDialog from '../../components/admin/PageEditorDialog';
 
 const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '', layout: '', layout_image: '', zones: {} };
 
@@ -75,7 +28,6 @@ export default function PagesManager() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [activeTab, setActiveTab] = useState('custom');
-  const [editorTab, setEditorTab] = useState('settings');
 
   const load = () => adminAPI.getNavPages().then(r => setItems((r.data || []).sort((a, b) => (a.order || 0) - (b.order || 0)))).catch(console.error);
   useEffect(() => { load(); }, []);
@@ -104,21 +56,10 @@ export default function PagesManager() {
 
   const openEditor = (page) => {
     setEditing({ ...page });
-    setEditorTab('settings');
     setOpen(true);
   };
 
-  const isBuilderLayout = (layout) => layout && LAYOUTS[layout];
-  const isLegacyLayout = (layout) => LEGACY_LAYOUTS.includes(layout);
-  const getLayoutLabel = (layout) => {
-    if (!layout) return 'Default';
-    if (LAYOUTS[layout]) return LAYOUTS[layout].label;
-    if (LEGACY_LAYOUT_META[layout]) return LEGACY_LAYOUT_META[layout].label;
-    return layout;
-  };
-
   const tabCls = (t) => `px-4 py-2 text-sm font-medium rounded-t-sm transition-colors ${activeTab === t ? 'bg-white border border-b-0 border-slate-200 text-[#1a2332]' : 'text-slate-400 hover:text-slate-600'}`;
-  const edTabCls = (t) => `px-4 py-2 text-sm font-medium transition-colors ${editorTab === t ? 'text-[#0D9488] border-b-2 border-[#0D9488]' : 'text-slate-400 hover:text-slate-600'}`;
 
   return (
     <div data-testid="pages-manager">
@@ -231,170 +172,14 @@ export default function PagesManager() {
       )}
 
       {/* Edit/Create Dialog */}
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[900px] max-h-[90vh] overflow-y-auto" data-testid="page-dialog">
-          <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Page</DialogTitle></DialogHeader>
-          {editing && (
-            <div>
-              {/* Editor Tabs */}
-              <div className="flex border-b border-slate-200 mb-4" data-testid="editor-tabs">
-                <button onClick={() => setEditorTab('settings')} className={edTabCls('settings')} data-testid="editor-tab-settings">Settings</button>
-                <button onClick={() => setEditorTab('content')} className={edTabCls('content')} data-testid="editor-tab-content">Content & Layout</button>
-              </div>
-
-              {/* Settings Tab */}
-              {editorTab === 'settings' && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-slate-500">Title</Label>
-                      <Input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} className="mt-1" data-testid="page-title-input" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-500">URL</Label>
-                      <Input value={editing.url} onChange={e => setEditing({ ...editing, url: e.target.value })} className="mt-1" placeholder="/terms, https://..." data-testid="page-url-input" />
-                    </div>
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label className="text-xs text-slate-500">Page Type (optional)</Label>
-                      <Input value={editing.page_type || ''} onChange={e => setEditing({ ...editing, page_type: e.target.value })} className="mt-1" placeholder="terms, privacy..." />
-                      <p className="text-xs text-slate-400 mt-0.5">Links to a system template.</p>
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-500">Display Order</Label>
-                      <Input type="number" value={editing.order || 0} onChange={e => setEditing({ ...editing, order: parseInt(e.target.value) || 0 })} className="mt-1 w-24" />
-                    </div>
-                  </div>
-                  <div>
-                    <Label className="text-xs text-slate-500">Summary</Label>
-                    <textarea value={editing.summary || ''} onChange={e => setEditing({ ...editing, summary: e.target.value })} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
-                      <Switch checked={editing.show_in_header} onCheckedChange={v => setEditing({ ...editing, show_in_header: v })} data-testid="page-header-toggle" />
-                      <Label className="text-sm">Show in Header</Label>
-                    </div>
-                    <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
-                      <Switch checked={editing.show_in_footer} onCheckedChange={v => setEditing({ ...editing, show_in_footer: v })} data-testid="page-footer-toggle" />
-                      <Label className="text-sm">Show in Footer</Label>
-                    </div>
-                    <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
-                      <Switch checked={editing.open_in_new_tab} onCheckedChange={v => setEditing({ ...editing, open_in_new_tab: v })} data-testid="page-newtab-toggle" />
-                      <div>
-                        <Label className="text-sm">Open in New Tab</Label>
-                        <p className="text-xs text-slate-400">Link opens in a new browser tab</p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
-                      <Switch checked={editing.login_required} onCheckedChange={v => setEditing({ ...editing, login_required: v })} data-testid="page-login-toggle" />
-                      <div>
-                        <Label className="text-sm">Login Required</Label>
-                        <p className="text-xs text-slate-400">Restricts access to logged-in users</p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* Content & Layout Tab */}
-              {editorTab === 'content' && (
-                <div className="space-y-6">
-                  {/* Layout Selector */}
-                  <div>
-                    <Label className="text-xs text-slate-500 mb-3 block">Page Layout</Label>
-
-                    {/* Builder Layouts */}
-                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Visual Builder Layouts</p>
-                    <div className="grid grid-cols-5 gap-2 mb-4" data-testid="layout-selector-builder">
-                      {Object.entries(LAYOUTS).map(([key, def]) => {
-                        const Icon = LAYOUT_ICONS[key] || Layout;
-                        return (
-                          <button key={key} type="button"
-                            onClick={() => setEditing({ ...editing, layout: key })}
-                            className={`p-2.5 rounded-sm border-2 text-left transition-all ${editing.layout === key ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                            data-testid={`layout-option-${key}`}>
-                            <LayoutPreview layoutKey={key} />
-                            <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5 leading-tight">{def.label}</span>
-                            <span className="text-[9px] text-slate-400 block leading-tight">{def.desc}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-
-                    {/* Default + Legacy Layouts */}
-                    <p className="text-[10px] uppercase tracking-widest text-slate-400 font-semibold mb-2">Simple & Preset Layouts</p>
-                    <div className="grid grid-cols-5 gap-2" data-testid="layout-selector-legacy">
-                      <button type="button"
-                        onClick={() => setEditing({ ...editing, layout: '' })}
-                        className={`p-2.5 rounded-sm border-2 text-left transition-all ${!editing.layout ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                        data-testid="layout-option-default">
-                        <LayoutPreview layoutKey="" />
-                        <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5">Default</span>
-                        <span className="text-[9px] text-slate-400 block leading-tight">Basic content page</span>
-                      </button>
-                      {Object.entries(LEGACY_LAYOUT_META).map(([key, meta]) => {
-                        const Icon = LAYOUT_ICONS[key] || FileText;
-                        return (
-                          <button key={key} type="button"
-                            onClick={() => setEditing({ ...editing, layout: key })}
-                            className={`p-2.5 rounded-sm border-2 text-left transition-all ${editing.layout === key ? 'border-[#0D9488] bg-[#0D9488]/5' : 'border-slate-200 hover:border-slate-300'}`}
-                            data-testid={`layout-option-${key}`}>
-                            <LayoutPreview layoutKey={key} />
-                            <span className="text-[11px] font-medium text-[#1a2332] block mt-1.5">{meta.label}</span>
-                            <span className="text-[9px] text-slate-400 block leading-tight">{meta.desc}</span>
-                          </button>
-                        );
-                      })}
-                    </div>
-                  </div>
-
-                  {/* Content Area — conditional on layout type */}
-                  {isBuilderLayout(editing.layout) && (
-                    <div>
-                      <Label className="text-xs text-slate-500 mb-2 block">Content Blocks</Label>
-                      <PageBuilder
-                        zones={editing.zones || {}}
-                        layout={editing.layout}
-                        onChange={zones => setEditing({ ...editing, zones })}
-                      />
-                    </div>
-                  )}
-
-                  {isLegacyLayout(editing.layout) && (
-                    <div className="bg-slate-50 border border-slate-200 rounded-lg p-4">
-                      <p className="text-sm text-slate-600 mb-2 font-medium">Preset Layout: {LEGACY_LAYOUT_META[editing.layout]?.label}</p>
-                      <p className="text-xs text-slate-400">This layout auto-populates content. You can still set a page title and summary above.</p>
-                      {editing.layout === 'layout_1' && (
-                        <div className="mt-3">
-                          <Label className="text-xs text-slate-500">Layout Image</Label>
-                          <ImageUpload value={editing.layout_image || ''} onChange={v => setEditing({ ...editing, layout_image: v })} />
-                        </div>
-                      )}
-                      <div className="mt-3">
-                        <Label className="text-xs text-slate-500">Additional Content (optional)</Label>
-                        <div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({ ...editing, content: val })} /></div>
-                      </div>
-                    </div>
-                  )}
-
-                  {!editing.layout && (
-                    <div>
-                      <Label className="text-xs text-slate-500">Page Content</Label>
-                      <div className="mt-1"><RichTextEditor value={editing.content || ''} onChange={val => setEditing({ ...editing, content: val })} /></div>
-                    </div>
-                  )}
-                </div>
-              )}
-
-              {/* Save Button */}
-              <button onClick={handleSave} disabled={loading} className="w-full bg-[#0D9488] text-white py-2.5 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 hover:bg-[#0D9488]/80 transition-colors mt-6" data-testid="page-save-btn">
-                {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save Page
-              </button>
-            </div>
-          )}
-        </DialogContent>
-      </Dialog>
+      <PageEditorDialog
+        editing={editing}
+        setEditing={setEditing}
+        open={open}
+        setOpen={setOpen}
+        onSave={handleSave}
+        loading={loading}
+      />
     </div>
   );
 }
