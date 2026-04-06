@@ -17,8 +17,10 @@ A multi-page website with a login, modern and production-ready, for a consultant
 
 /app/frontend/src/
   components/admin/ (PageBuilder, SortableBlock, LayoutPreview, PageEditorDialog, BlockConfigModal)
-  components/layouts/ (LayoutRenderer, BlockRenderer, LayoutAboutBio, LayoutServicesGrid, LayoutGalleryAlbums, LayoutFullContent)
-  pages/admin/ (All managers + BackupManager, ContactSettingsManager)
+  components/layouts/ (LayoutRenderer, BlockRenderer)
+  components/layout/ (Navbar, Footer)
+  pages/admin/ (All managers + BackupManager, ContactSettingsManager, GalleryManager)
+  pages/ (GalleryPage, HomePage, DynamicPage, etc.)
   lib/ (api.js, layoutDefinitions.js)
 ```
 
@@ -29,36 +31,40 @@ A multi-page website with a login, modern and production-ready, for a consultant
 - Legends & Testimonials carousel, SMTP config, External Blog API
 
 ### Session: Feb 4, 2026
-1. Bug Fixes: Service HTML rendering, word-break CSS, service fallback links, Hero video URL input
-2. Hero Slide Live Preview with background logic
-3. Code Refactoring: server.py modularized with APIRouter, PageBuilder/PagesManager split
-4. Backup & Restore: Manual export/import (16 collections, merge/replace modes)
-5. Scheduled Automatic Backups: Background scheduler
-6. Unified Pages Manager: System + Custom pages in single table
-7. Contact Section CMS: Editable via admin
+1. Bug Fixes, Hero Slide Live Preview, Code Refactoring
+2. Backup & Restore (manual + scheduled), Unified Pages Manager
+3. Contact Section CMS
 
 ### Session: Apr 4, 2026
-1. Removed "Simple & Preset Layouts" from page editor - only Visual Builder Layouts remain (15 layouts)
-2. System page deletion enabled - backend restriction removed, frontend delete button visible for all pages
-3. Gallery Albums block type confirmed as Content Block in Visual Builder
-4. About Bio already migrated as Visual Builder Layout
+1. Removed "Simple & Preset Layouts" — only 15 Visual Builder Layouts remain
+2. System page deletion enabled
+3. `hyphens: none` CSS fix for rich text content
+
+### Session: Apr 6, 2026
+1. **Blog/News Content Block** — New auto-content block for Visual Builder displaying latest blog posts
+2. **Reading List Content Block** — New auto-content block displaying books collection
+3. **Gallery Categories CRUD** — Admin interface with categories management dialog (create/edit/delete). Dynamic categories replace hardcoded "professional"/"personal"
+4. **Gallery open_in_new_tab** — Toggle in photo edit dialog when link is present
+5. **Gallery Page Redesign** — Dynamic category tabs, 3-column grid with title/category overlay, fullscreen lightbox with dark background, arrow navigation, keyboard support, title/summary in lightbox
+6. **Gallery Block with Tabs** — Visual Builder gallery block shows category tabs and lightbox
+7. **Footer Sitemap** — Dynamic two-column sitemap from CMS pages with show_in_footer=true, sorted by order. Removed hardcoded links.
 
 ## Visual Builder Layouts (15)
 Full Width, Boxed, Split Screen, About/Bio, Grid 2x2, Masonry, List, Carousel, Two Column, Three Column, Profile, Card Based, Hero Banner, Sidebar, Landing Page
 
-## Content Block Types (11)
-Rich Text, Image, Video, Service List, Gallery, Gallery Albums, Profile Card, Button, Separator, Custom HTML, Legends & Testimonials
+## Content Block Types (13)
+Rich Text, Image, Video, Service List, Gallery, Gallery Albums, Blog/News, Reading List, Profile Card, Button, Separator, Custom HTML, Legends & Testimonials
 
 ## Credentials
 - Admin: admin@consultant.com / Admin123!
 
-## Key API Endpoints
-- GET/PUT /api/admin/contact-settings
-- POST /api/admin/seed-system-pages
-- GET/PUT /api/admin/backup-settings
-- GET/POST/DELETE /api/admin/backups
-- GET/POST /api/admin/export-content, POST /api/admin/import-content
-- GET/POST/PUT/DELETE /api/admin/nav-pages (system pages now deletable)
+## Key DB Collections
+- `gallery_categories`: `{ name, slug, order }`
+- `gallery`: `{ title, summary, image, category, link, open_in_new_tab }`
+
+## Key API Endpoints (New)
+- GET/POST/PUT/DELETE /api/admin/gallery-categories
+- GET /api/public/gallery-categories
 
 ## Pending/Backlog
 - (P2) Real S3/Cloud Image Storage migration
