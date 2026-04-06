@@ -3,9 +3,17 @@ import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, Edit2, Trash2, Loader2, MapPin } from 'lucide-react';
+import ImageUpload from '../../components/ImageUpload';
+
+const MAP_TYPES = [
+  { value: 'global_business', label: 'Global Business Presence' },
+  { value: 'conferences', label: 'Conferences' },
+  { value: 'recommended_sites', label: 'Recommended Sites' },
+];
 
 export default function MapsManager() {
   const [maps, setMaps] = useState([]);
@@ -41,11 +49,38 @@ export default function MapsManager() {
   return (
     <div data-testid="maps-manager">
       <h1 className="text-2xl font-bold text-[#1a2332] mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Maps Manager</h1>
-      <Tabs defaultValue="maps">
-        <TabsList className="mb-4"><TabsTrigger value="maps">Map Pages</TabsTrigger><TabsTrigger value="locations">Locations</TabsTrigger></TabsList>
+      <Tabs defaultValue="locations">
+        <TabsList className="mb-4"><TabsTrigger value="locations" data-testid="locations-tab">Locations</TabsTrigger><TabsTrigger value="maps" data-testid="maps-tab">Map Pages</TabsTrigger></TabsList>
+        <TabsContent value="locations">
+          <div className="flex justify-end mb-4">
+            <button onClick={() => { setEditLoc({ name: '', lat: 0, lng: 0, description: '', map_type: 'global_business', link: '', open_in_new_tab: false }); setOpenLoc(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-location-btn"><Plus className="w-4 h-4" /> New Location</button>
+          </div>
+          <div className="bg-white rounded-sm border border-slate-100">
+            <table className="w-full text-sm">
+              <thead><tr className="border-b bg-slate-50"><th className="text-left p-3">Name</th><th className="text-left p-3">Lat</th><th className="text-left p-3">Lng</th><th className="text-left p-3">Map Type</th><th className="text-left p-3">Link</th><th className="text-right p-3">Actions</th></tr></thead>
+              <tbody>{locations.map(l => {
+                const typeLabel = MAP_TYPES.find(t => t.value === l.map_type)?.label || l.map_type || l.category || '—';
+                return (
+                  <tr key={l.id} className="border-b border-slate-50" data-testid={`location-row-${l.id}`}>
+                    <td className="p-3 font-medium flex items-center gap-2"><MapPin className="w-3 h-3 text-[#0D9488]" />{l.name}</td>
+                    <td className="p-3 text-slate-500">{l.lat}</td>
+                    <td className="p-3 text-slate-500">{l.lng}</td>
+                    <td className="p-3"><span className="text-xs px-2 py-0.5 rounded-sm bg-slate-100 text-slate-600">{typeLabel}</span></td>
+                    <td className="p-3 text-blue-500 text-xs truncate max-w-[150px]">{l.link || '—'}</td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => { setEditLoc({...l, map_type: l.map_type || l.category || 'global_business'}); setOpenLoc(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-location-${l.id}`}><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={async () => { if (window.confirm('Delete?')) { await adminAPI.deleteMapLocation(l.id); toast.success('Deleted'); loadLocs(); }}} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-location-${l.id}`}><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                );
+              })}</tbody>
+            </table>
+            {locations.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No locations yet</div>}
+          </div>
+        </TabsContent>
         <TabsContent value="maps">
           <div className="flex justify-end mb-4">
-            <button onClick={() => { setEditMap({ title: '', description: '', cover_image: '', tags: [], published: true }); setOpenMap(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> New Map</button>
+            <button onClick={() => { setEditMap({ title: '', description: '', cover_image: '', tags: [], published: true }); setOpenMap(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-map-btn"><Plus className="w-4 h-4" /> New Map</button>
           </div>
           <div className="bg-white rounded-sm border border-slate-100">
             <table className="w-full text-sm">
@@ -56,28 +91,7 @@ export default function MapsManager() {
                   <td className="p-3">{m.published ? <span className="text-xs text-[#0D9488]">Published</span> : <span className="text-xs text-slate-400">Draft</span>}</td>
                   <td className="p-3 text-right">
                     <button onClick={() => { setEditMap({...m}); setOpenMap(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={async () => { if (window.confirm('Delete?')) { await adminAPI.deleteMap(m.id); loadMaps(); }}} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
-                  </td>
-                </tr>
-              ))}</tbody>
-            </table>
-          </div>
-        </TabsContent>
-        <TabsContent value="locations">
-          <div className="flex justify-end mb-4">
-            <button onClick={() => { setEditLoc({ name: '', lat: 0, lng: 0, description: '', category: 'office' }); setOpenLoc(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> New Location</button>
-          </div>
-          <div className="bg-white rounded-sm border border-slate-100">
-            <table className="w-full text-sm">
-              <thead><tr className="border-b bg-slate-50"><th className="text-left p-3">Name</th><th className="text-left p-3">Lat</th><th className="text-left p-3">Lng</th><th className="text-left p-3">Category</th><th className="text-right p-3">Actions</th></tr></thead>
-              <tbody>{locations.map(l => (
-                <tr key={l.id} className="border-b border-slate-50">
-                  <td className="p-3 font-medium flex items-center gap-2"><MapPin className="w-3 h-3 text-[#0D9488]" />{l.name}</td>
-                  <td className="p-3 text-slate-500">{l.lat}</td><td className="p-3 text-slate-500">{l.lng}</td>
-                  <td className="p-3 text-slate-500">{l.category}</td>
-                  <td className="p-3 text-right">
-                    <button onClick={() => { setEditLoc({...l}); setOpenLoc(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
-                    <button onClick={async () => { if (window.confirm('Delete?')) { await adminAPI.deleteMapLocation(l.id); loadLocs(); }}} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    <button onClick={async () => { if (window.confirm('Delete?')) { await adminAPI.deleteMap(m.id); toast.success('Deleted'); loadMaps(); }}} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
               ))}</tbody>
@@ -85,31 +99,42 @@ export default function MapsManager() {
           </div>
         </TabsContent>
       </Tabs>
-      {/* Map Dialog */}
+
+      {/* Map Page Dialog */}
       <Dialog open={openMap} onOpenChange={setOpenMap}>
-        <DialogContent className="sm:max-w-[500px]"><DialogHeader><DialogTitle>{editMap?.id ? 'Edit' : 'New'} Map</DialogTitle></DialogHeader>
+        <DialogContent className="sm:max-w-[500px]"><DialogHeader><DialogTitle>{editMap?.id ? 'Edit' : 'New'} Map Page</DialogTitle></DialogHeader>
           {editMap && <div className="space-y-4">
-            <div><Label>Title</Label><Input value={editMap.title} onChange={e => setEditMap({...editMap, title: e.target.value})} className="mt-1" /></div>
-            <div><Label>Description (HTML)</Label><textarea value={editMap.description} onChange={e => setEditMap({...editMap, description: e.target.value})} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-            <div><Label>Cover Image URL</Label><Input value={editMap.cover_image} onChange={e => setEditMap({...editMap, cover_image: e.target.value})} className="mt-1" /></div>
-            <div><Label>Tags (comma separated)</Label><Input value={(editMap.tags || []).join(', ')} onChange={e => setEditMap({...editMap, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)})} className="mt-1" /></div>
-            <button onClick={saveMap} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50">Save</button>
+            <div><Label>Title</Label><Input value={editMap.title} onChange={e => setEditMap({...editMap, title: e.target.value})} className="mt-1" data-testid="map-title-input" /></div>
+            <div><Label>Description</Label><textarea value={editMap.description} onChange={e => setEditMap({...editMap, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+            <div><Label>Cover Image</Label><ImageUpload value={editMap.cover_image} onChange={v => setEditMap({...editMap, cover_image: v})} className="mt-1" /></div>
+            <button onClick={saveMap} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2" data-testid="save-map-btn">{loading && <Loader2 className="w-4 h-4 animate-spin" />} Save</button>
           </div>}
         </DialogContent>
       </Dialog>
+
       {/* Location Dialog */}
       <Dialog open={openLoc} onOpenChange={setOpenLoc}>
         <DialogContent className="sm:max-w-[500px]"><DialogHeader><DialogTitle>{editLoc?.id ? 'Edit' : 'New'} Location</DialogTitle></DialogHeader>
           {editLoc && <div className="space-y-4">
-            <div><Label>Name</Label><Input value={editLoc.name} onChange={e => setEditLoc({...editLoc, name: e.target.value})} className="mt-1" /></div>
+            <div><Label>Name</Label><Input value={editLoc.name} onChange={e => setEditLoc({...editLoc, name: e.target.value})} className="mt-1" data-testid="location-name-input" /></div>
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Latitude</Label><Input type="number" step="any" value={editLoc.lat} onChange={e => setEditLoc({...editLoc, lat: parseFloat(e.target.value) || 0})} className="mt-1" /></div>
-              <div><Label>Longitude</Label><Input type="number" step="any" value={editLoc.lng} onChange={e => setEditLoc({...editLoc, lng: parseFloat(e.target.value) || 0})} className="mt-1" /></div>
+              <div><Label>Latitude</Label><Input type="number" step="any" value={editLoc.lat} onChange={e => setEditLoc({...editLoc, lat: parseFloat(e.target.value) || 0})} className="mt-1" data-testid="location-lat-input" /></div>
+              <div><Label>Longitude</Label><Input type="number" step="any" value={editLoc.lng} onChange={e => setEditLoc({...editLoc, lng: parseFloat(e.target.value) || 0})} className="mt-1" data-testid="location-lng-input" /></div>
             </div>
-            <div><Label>Description</Label><textarea value={editLoc.description} onChange={e => setEditLoc({...editLoc, description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-            <div><Label>Category</Label><Input value={editLoc.category} onChange={e => setEditLoc({...editLoc, category: e.target.value})} className="mt-1" /></div>
-            <div><Label>Link (optional URL)</Label><Input value={editLoc.link || ''} onChange={e => setEditLoc({...editLoc, link: e.target.value})} className="mt-1" placeholder="https://..." /></div>
-            <button onClick={saveLoc} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50">Save</button>
+            <div><Label>Description</Label><textarea value={editLoc.description} onChange={e => setEditLoc({...editLoc, description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="location-desc-input" /></div>
+            <div><Label>Map Type</Label>
+              <select value={editLoc.map_type || ''} onChange={e => setEditLoc({...editLoc, map_type: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="location-maptype-select">
+                {MAP_TYPES.map(t => <option key={t.value} value={t.value}>{t.label}</option>)}
+              </select>
+            </div>
+            <div><Label>Link (optional URL)</Label><Input value={editLoc.link || ''} onChange={e => setEditLoc({...editLoc, link: e.target.value})} className="mt-1" placeholder="https://..." data-testid="location-link-input" /></div>
+            {editLoc.link && (
+              <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
+                <Switch checked={editLoc.open_in_new_tab || false} onCheckedChange={v => setEditLoc({...editLoc, open_in_new_tab: v})} data-testid="location-newtab-toggle" />
+                <Label className="text-sm">Open link in new tab</Label>
+              </div>
+            )}
+            <button onClick={saveLoc} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2" data-testid="save-location-btn">{loading && <Loader2 className="w-4 h-4 animate-spin" />} Save</button>
           </div>}
         </DialogContent>
       </Dialog>

@@ -96,6 +96,16 @@
   @apply border-l-4 border-teal-500 pl-4 italic text-slate-500 my-4;
 }
 
+/* Quill alignment classes */
+.rich-text-content .ql-align-center,
+.ql-editor .ql-align-center { text-align: center; }
+.rich-text-content .ql-align-right,
+.ql-editor .ql-align-right { text-align: right; }
+.rich-text-content .ql-align-justify,
+.ql-editor .ql-align-justify { text-align: justify; }
+.rich-text-content .ql-align-left,
+.ql-editor .ql-align-left { text-align: left; }
+
 /* Bio modal rich text content (dark background) */
 .bio-rich-content {
   word-break: break-word;

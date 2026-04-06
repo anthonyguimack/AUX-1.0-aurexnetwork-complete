@@ -375,6 +375,42 @@ function LegendsTestimonialsBlock() {
   );
 }
 
+/* Map Block - renders a react-leaflet map for a given map type (map-only, no list) */
+function MapBlock({ mapType }) {
+  const [locations, setLocations] = useState([]);
+  useEffect(() => {
+    publicAPI.getMapLocations(mapType).then(r => setLocations(r.data || [])).catch(() => {});
+  }, [mapType]);
+
+  if (!locations.length) return <div className="text-center py-8 text-slate-400 text-sm">No locations for this map.</div>;
+
+  // Lazy import to avoid SSR issues
+  const MapContainerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.MapContainer })));
+  const TileLayerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.TileLayer })));
+  const MarkerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Marker })));
+  const PopupLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Popup })));
+
+  const center = [locations[0].lat, locations[0].lng];
+  return (
+    <React.Suspense fallback={<div className="h-[400px] bg-slate-100 animate-pulse rounded-lg" />}>
+      <div className="rounded-lg overflow-hidden" style={{ height: '400px' }} data-testid={`block-map-${mapType}`}>
+        <MapContainerLazy center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
+          <TileLayerLazy url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+          {locations.map(loc => (
+            <MarkerLazy key={loc.id} position={[loc.lat, loc.lng]}>
+              <PopupLazy>
+                <strong>{loc.name}</strong>
+                {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
+                {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
+              </PopupLazy>
+            </MarkerLazy>
+          ))}
+        </MapContainerLazy>
+      </div>
+    </React.Suspense>
+  );
+}
+
 export default function BlockRenderer({ block }) {
   if (!block || !block.type) return null;
   const config = block.config || {};
@@ -392,6 +428,9 @@ export default function BlockRenderer({ block }) {
     case 'separator': return <SeparatorBlock config={config} />;
     case 'custom_html': return <CustomHtmlBlock config={config} />;
     case 'legends_testimonials': return <LegendsTestimonialsBlock />;
+    case 'map_global': return <MapBlock mapType="global_business" />;
+    case 'map_conferences': return <MapBlock mapType="conferences" />;
+    case 'map_recommended': return <MapBlock mapType="recommended_sites" />;
     default: return null;
   }
 }

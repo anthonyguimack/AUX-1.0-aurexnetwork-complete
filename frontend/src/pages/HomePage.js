@@ -287,16 +287,17 @@ function ReadingListSection({ books, theme }) {
 }
 
 /* ==================== MAP ==================== */
-function MapSection({ maps, locations, theme }) {
+function MapSection({ maps, locations, theme, title }) {
   const allLocations = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
   if (!allLocations.length) return null;
   const center = [allLocations[0].lat, allLocations[0].lng];
+  const sectionTitle = title || 'Our Locations';
   return (
     <section className={`py-20 ${theme === 'classic' ? 'bg-white' : 'bg-slate-50'}`} id="locations" data-testid="map-section">
       <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6`}>
         <div className="text-center mb-10">
           {theme === 'modern' && <div className="w-12 h-0.5 mx-auto mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
-          <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="map-title">Our Locations</h2>
+          <h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="map-title">{sectionTitle}</h2>
           {theme === 'classic' && <div className="w-16 h-0.5 mx-auto mt-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />}
         </div>
         <div className={`${theme === 'modern' ? 'rounded-2xl' : theme === 'classic' ? 'border-2' : 'rounded-lg'} overflow-hidden shadow-lg h-[400px]`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
@@ -318,14 +319,17 @@ function PortfolioSection({ items, theme }) {
   if (theme === 'modern') return (
     <section className="py-24 bg-white" id="portfolio" data-testid="portfolio-section">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
-        <div className="text-center mb-16"><div className="w-12 h-0.5 mx-auto mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /><h2 className="text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
+        <div className="flex items-center justify-between mb-16">
+          <div><div className="w-12 h-0.5 mb-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /><h2 className="text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
+          <Link to="/featured-projects" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="portfolio-view-all">View All <ArrowRight className="w-4 h-4" /></Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
           {items.slice(0, 4).map(p => (
             <div key={p.id} className="group relative rounded-2xl overflow-hidden shadow-lg">
               {p.image && <img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-8">
-                <div><h3 className="text-xl font-bold text-white mb-1">{p.title}</h3><p className="text-white/70 text-sm">{p.category}</p></div>
-                {p.link && <a href={p.link} target="_blank" rel="noreferrer" className="absolute top-4 right-4 w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30"><ArrowUpRight className="w-4 h-4" /></a>}
+                <div className="flex-1"><h3 className="text-xl font-bold text-white mb-1">{p.title}</h3><p className="text-white/70 text-sm">{p.category}</p></div>
+                {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 flex-shrink-0"><ArrowUpRight className="w-4 h-4" /></a>}
               </div>
             </div>
           ))}
@@ -336,12 +340,20 @@ function PortfolioSection({ items, theme }) {
   if (theme === 'classic') return (
     <section className="py-20 bg-[#faf9f6]" id="portfolio" data-testid="portfolio-section">
       <div className="max-w-6xl mx-auto px-6">
-        <div className="text-center mb-14"><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2><div className="w-20 h-0.5 mx-auto mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
+        <div className="flex items-center justify-between mb-14">
+          <div><h2 className="text-3xl font-bold" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2><div className="w-20 h-0.5 mt-4" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} /></div>
+          <Link to="/featured-projects" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="portfolio-view-all">View All <ArrowRight className="w-4 h-4" /></Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {items.slice(0, 4).map(p => (
             <div key={p.id} className="border-2 group overflow-hidden" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
               {p.image && <div className="h-52 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
-              <div className="p-6 bg-[#faf9f6]"><h3 className="font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p><p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p></div>
+              <div className="p-6 bg-[#faf9f6]">
+                <h3 className="font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p>
+                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p>
+                {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium mt-2 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View Project <ArrowUpRight className="w-3 h-3" /></a>}
+              </div>
             </div>
           ))}
         </div>
@@ -352,12 +364,20 @@ function PortfolioSection({ items, theme }) {
   return (
     <section className="py-20 bg-white" id="portfolio" data-testid="portfolio-section">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
-        <div className="text-center mb-14"><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>Our Work</p><h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
+        <div className="flex items-center justify-between mb-14">
+          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>Our Work</p><h2 className="text-3xl md:text-4xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="portfolio-title">Featured Projects</h2></div>
+          <Link to="/featured-projects" className="text-sm font-medium flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="portfolio-view-all">View All <ArrowRight className="w-4 h-4" /></Link>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {items.slice(0, 6).map(p => (
             <div key={p.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all border border-slate-100 group">
               {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
-              <div className="p-5"><h3 className="font-bold mb-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p><p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p></div>
+              <div className="p-5">
+                <h3 className="font-bold mb-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p>
+                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p>
+                {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium mt-2 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View Project <ArrowUpRight className="w-3 h-3" /></a>}
+              </div>
             </div>
           ))}
         </div>
@@ -549,6 +569,8 @@ export default function HomePage() {
   const [books, setBooks] = useState([]);
   const [maps, setMaps] = useState([]);
   const [locations, setLocations] = useState([]);
+  const [locConferences, setLocConferences] = useState([]);
+  const [locRecommended, setLocRecommended] = useState([]);
   const [portfolio, setPortfolio] = useState([]);
   const [gallery, setGallery] = useState([]);
   const [testimonials, setTestimonials] = useState([]);
@@ -560,7 +582,9 @@ export default function HomePage() {
     publicAPI.getBlog().then(r => setPosts(r.data?.posts || r.data || [])).catch(() => {});
     publicAPI.getBooks().then(r => setBooks(r.data)).catch(() => {});
     publicAPI.getMaps().then(r => setMaps(r.data)).catch(() => {});
-    publicAPI.getMapLocations?.().then(r => setLocations(r.data)).catch(() => {});
+    publicAPI.getMapLocations('global_business').then(r => setLocations(r.data)).catch(() => {});
+    publicAPI.getMapLocations('conferences').then(r => setLocConferences(r.data)).catch(() => {});
+    publicAPI.getMapLocations('recommended_sites').then(r => setLocRecommended(r.data)).catch(() => {});
     publicAPI.getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
     publicAPI.getGallery().then(r => setGallery(r.data)).catch(() => {});
     publicAPI.getTestimonials().then(r => setTestimonials(r.data)).catch(() => {});
@@ -568,7 +592,7 @@ export default function HomePage() {
   }, []);
 
   const sections = settings.sections || {};
-  const sectionOrder = settings.section_order || ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'portfolio', 'gallery', 'testimonials', 'contact'];
+  const sectionOrder = settings.section_order || ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
   const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
   const sectionMap = {
@@ -580,6 +604,9 @@ export default function HomePage() {
     reading_list: <ReadingListSection key="reading" books={books} theme={theme} />,
     map: <MapSection key="map" maps={maps} locations={locations} theme={theme} />,
     locations: <MapSection key="locations" maps={maps} locations={locations} theme={theme} />,
+    map_global: <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" />,
+    map_conferences: <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" />,
+    map_recommended: <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" />,
     portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
     gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
     testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,

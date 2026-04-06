@@ -14,6 +14,8 @@ import ReadingListPage from './pages/ReadingListPage';
 import GalleryPage from './pages/GalleryPage';
 import MapDetailPage from './pages/MapDetailPage';
 import CheckoutSuccess from './pages/CheckoutSuccess';
+import FeaturedProjectsPage from './pages/FeaturedProjectsPage';
+import ConferencesPage, { RecommendedSitesPage } from './pages/MapTypePage';
 import DynamicPage from './pages/DynamicPage';
 import ServiceDetailPage from './pages/ServiceDetailPage';
 import LayoutSubGallery from './components/layouts/LayoutSubGallery';
@@ -305,6 +307,9 @@ function AppRouter() {
         <Route path="/gallery" element={<GalleryPage />} />
         <Route path="/map/:slug" element={<MapDetailPage />} />
         <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+        <Route path="/featured-projects" element={<FeaturedProjectsPage />} />
+        <Route path="/conferences" element={<ConferencesPage />} />
+        <Route path="/recommended_sites" element={<RecommendedSitesPage />} />
         <Route path="/album/:albumId" element={<LayoutSubGallery />} />
         <Route path="/terms" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/privacy" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />

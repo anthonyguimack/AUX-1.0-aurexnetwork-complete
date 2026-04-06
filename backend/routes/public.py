@@ -96,8 +96,11 @@ async def get_public_map_detail(slug: str):
     return m
 
 @router.get("/public/map-locations")
-async def get_public_map_locations():
-    return await db.map_locations.find({}, {"_id": 0}).to_list(500)
+async def get_public_map_locations(map_type: str = ""):
+    query = {}
+    if map_type:
+        query["map_type"] = map_type
+    return await db.map_locations.find(query, {"_id": 0}).to_list(500)
 
 @router.get("/public/gallery")
 async def get_public_gallery(category: str = ""):

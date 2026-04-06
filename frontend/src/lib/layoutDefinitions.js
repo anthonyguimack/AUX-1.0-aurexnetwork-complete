@@ -106,6 +106,9 @@ export const BLOCK_TYPES = {
   separator: { label: 'Separator', desc: 'Visual divider between content' },
   custom_html: { label: 'Custom HTML', desc: 'Raw HTML code block' },
   legends_testimonials: { label: 'Legends & Testimonials', desc: 'Auto-sliding quote carousel' },
+  map_global: { label: 'Global Business Map', desc: 'World map with business locations' },
+  map_conferences: { label: 'Conferences Map', desc: 'Map with conference locations' },
+  map_recommended: { label: 'Recommended Sites Map', desc: 'Map with recommended locations' },
 };
 
 export const getDefaultBlockConfig = (type) => {

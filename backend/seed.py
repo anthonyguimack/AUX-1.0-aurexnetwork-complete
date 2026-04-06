@@ -266,12 +266,15 @@ async def seed_data():
             "blog": {"enabled": True, "title": "Blog"},
             "reading_list": {"enabled": True, "title": "Reading List"},
             "map": {"enabled": True, "title": "Travel Map"},
+            "map_global": {"enabled": True, "title": "Global Business Presence"},
+            "map_conferences": {"enabled": False, "title": "Conferences"},
+            "map_recommended": {"enabled": False, "title": "Recommended Sites"},
             "portfolio": {"enabled": True, "title": "Portfolio"},
             "gallery": {"enabled": True, "title": "Gallery"},
             "testimonials": {"enabled": True, "title": "Testimonials"},
             "contact": {"enabled": True, "title": "Contact"}
         },
-        "section_order": ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"],
+        "section_order": ["hero", "about", "services", "news", "blog", "reading_list", "map", "map_global", "map_conferences", "map_recommended", "portfolio", "gallery", "testimonials", "contact"],
         "page_access": {
             "news": "public", "reading_list": "public", "gallery": "public",
             "map": "public", "terms": "public", "privacy": "public"
@@ -320,11 +323,11 @@ async def seed_data():
         "tags": ["global", "consulting"], "published": True, "created_at": datetime.now(timezone.utc).isoformat()
     })
     await db.map_locations.insert_many([
-        {"id": str(uuid.uuid4()), "name": "New York Office", "lat": 40.7128, "lng": -74.0060, "description": "Flagship office in Manhattan", "category": "office", "link": "", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": str(uuid.uuid4()), "name": "London Hub", "lat": 51.5074, "lng": -0.1278, "description": "European headquarters", "category": "office", "link": "", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": str(uuid.uuid4()), "name": "Tokyo Center", "lat": 35.6762, "lng": 139.6503, "description": "Asia-Pacific operations", "category": "office", "link": "", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": str(uuid.uuid4()), "name": "Dubai Office", "lat": 25.2048, "lng": 55.2708, "description": "Middle East regional office", "category": "office", "link": "", "created_at": datetime.now(timezone.utc).isoformat()},
-        {"id": str(uuid.uuid4()), "name": "Sydney Branch", "lat": -33.8688, "lng": 151.2093, "description": "Oceania operations", "category": "office", "link": "", "created_at": datetime.now(timezone.utc).isoformat()},
+        {"id": str(uuid.uuid4()), "name": "New York Office", "lat": 40.7128, "lng": -74.0060, "description": "Flagship office in Manhattan", "map_type": "global_business", "link": "", "open_in_new_tab": False, "created_at": datetime.now(timezone.utc).isoformat()},
+        {"id": str(uuid.uuid4()), "name": "London Hub", "lat": 51.5074, "lng": -0.1278, "description": "European headquarters", "map_type": "global_business", "link": "", "open_in_new_tab": False, "created_at": datetime.now(timezone.utc).isoformat()},
+        {"id": str(uuid.uuid4()), "name": "Tokyo Center", "lat": 35.6762, "lng": 139.6503, "description": "Asia-Pacific operations", "map_type": "global_business", "link": "", "open_in_new_tab": False, "created_at": datetime.now(timezone.utc).isoformat()},
+        {"id": str(uuid.uuid4()), "name": "Dubai Office", "lat": 25.2048, "lng": 55.2708, "description": "Middle East regional office", "map_type": "global_business", "link": "", "open_in_new_tab": False, "created_at": datetime.now(timezone.utc).isoformat()},
+        {"id": str(uuid.uuid4()), "name": "Sydney Branch", "lat": -33.8688, "lng": 151.2093, "description": "Oceania operations", "map_type": "global_business", "link": "", "open_in_new_tab": False, "created_at": datetime.now(timezone.utc).isoformat()},
     ])
     await db.gallery.insert_many([
         {"id": str(uuid.uuid4()), "title": "Strategic Planning Session", "summary": "Annual strategy meeting", "image": "https://images.unsplash.com/photo-1552664730-d307ca884978?w=800", "category": "professional", "created_at": datetime.now(timezone.utc).isoformat()},

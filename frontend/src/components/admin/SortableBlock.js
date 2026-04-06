@@ -1,14 +1,14 @@
 import React from 'react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Edit2, Trash2, Type, Image, Video, Briefcase, Images, User, MousePointerClick, Minus, Code, Quote, Newspaper, BookOpen } from 'lucide-react';
+import { GripVertical, Edit2, Trash2, Type, Image, Video, Briefcase, Images, User, MousePointerClick, Minus, Code, Quote, Newspaper, BookOpen, Map } from 'lucide-react';
 import { BLOCK_TYPES } from '../../lib/layoutDefinitions';
 
 export const BLOCK_ICONS = {
   rich_text: Type, image: Image, video: Video, service_list: Briefcase,
   gallery: Images, gallery_albums: Images, blog_posts: Newspaper, reading_list: BookOpen,
   profile_card: User, button: MousePointerClick, separator: Minus, custom_html: Code,
-  legends_testimonials: Quote,
+  legends_testimonials: Quote, map_global: Map, map_conferences: Map, map_recommended: Map,
 };
 
 export function SortableBlock({ block, zoneId, onEdit, onDelete }) {
@@ -42,7 +42,7 @@ export function SortableBlock({ block, zoneId, onEdit, onDelete }) {
         )}
       </div>
       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-        {!['service_list', 'gallery', 'gallery_albums', 'blog_posts', 'reading_list', 'legends_testimonials'].includes(block.type) && (
+        {!['service_list', 'gallery', 'gallery_albums', 'blog_posts', 'reading_list', 'legends_testimonials', 'map_global', 'map_conferences', 'map_recommended'].includes(block.type) && (
           <button onClick={() => onEdit(block)} className="p-1 text-slate-300 hover:text-[#0D9488]" data-testid={`edit-block-${block.id}`}><Edit2 className="w-3.5 h-3.5" /></button>
         )}
         <button onClick={() => onDelete(block.id)} className="p-1 text-slate-300 hover:text-red-500" data-testid={`delete-block-${block.id}`}><Trash2 className="w-3.5 h-3.5" /></button>

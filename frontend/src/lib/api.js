@@ -18,7 +18,7 @@ export const publicAPI = {
   getBooks: () => api.get('/public/books'),
   getMaps: () => api.get('/public/maps'),
   getMapDetail: (slug) => api.get(`/public/maps/${slug}`),
-  getMapLocations: () => api.get('/public/map-locations'),
+  getMapLocations: (mapType = '') => api.get(`/public/map-locations?map_type=${mapType}`),
   getGallery: (category = '') => api.get(`/public/gallery?category=${category}`),
   getGalleryCategories: () => api.get('/public/gallery-categories'),
   getPortfolio: () => api.get('/public/portfolio'),
