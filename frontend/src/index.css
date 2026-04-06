@@ -106,6 +106,35 @@
 .rich-text-content .ql-align-left,
 .ql-editor .ql-align-left { text-align: left; }
 
+/* Custom map marker cluster styling */
+.marker-cluster-small {
+  background-color: rgba(13, 148, 136, 0.25);
+}
+.marker-cluster-small div {
+  background-color: rgba(13, 148, 136, 0.7);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+}
+.marker-cluster-medium {
+  background-color: rgba(26, 35, 50, 0.25);
+}
+.marker-cluster-medium div {
+  background-color: rgba(26, 35, 50, 0.7);
+  color: #fff;
+  font-weight: 600;
+  font-size: 13px;
+}
+.marker-cluster-large {
+  background-color: rgba(26, 35, 50, 0.35);
+}
+.marker-cluster-large div {
+  background-color: rgba(26, 35, 50, 0.85);
+  color: #fff;
+  font-weight: 700;
+  font-size: 14px;
+}
+
 /* Bio modal rich text content (dark background) */
 .bio-rich-content {
   word-break: break-word;
