@@ -210,25 +210,76 @@ function BlogPostsBlock() {
   );
 }
 
-/* Reading List block - Auto-displays books */
+/* Reading List block - Auto-displays books with modal */
 function ReadingListBlock() {
   const [books, setBooks] = useState([]);
+  const [selected, setSelected] = useState(null);
   useEffect(() => { publicAPI.getBooks().then(r => setBooks(r.data || [])).catch(() => {}); }, []);
   if (!books.length) return null;
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5" data-testid="block-reading-list">
-      {books.map(book => {
-        const src = resolveSrc(book.image || book.cover_image);
-        return (
-          <div key={book.id} className="group text-center" data-testid={`reading-block-item-${book.id}`}>
-            <div className="aspect-[2/3] rounded-lg overflow-hidden bg-slate-100 shadow-md group-hover:shadow-lg transition-shadow mb-3">
-              {src ? <img src={src} alt={book.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No cover</div>}
+    <div data-testid="block-reading-list">
+      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5">
+        {books.map(book => {
+          const src = resolveSrc(book.image || book.cover_image);
+          return (
+            <div key={book.id} className="group text-center cursor-pointer" onClick={() => setSelected(book)} data-testid={`reading-block-item-${book.id}`}>
+              <div className="aspect-[2/3] rounded-lg overflow-hidden bg-slate-100 shadow-md group-hover:shadow-lg transition-shadow mb-3">
+                {src ? <img src={src} alt={book.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No cover</div>}
+              </div>
+              <h4 className="text-sm font-semibold line-clamp-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{book.title}</h4>
+              {book.author && <p className="text-xs text-slate-500 mt-0.5">{book.author}</p>}
             </div>
-            <h4 className="text-sm font-semibold line-clamp-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{book.title}</h4>
-            {book.author && <p className="text-xs text-slate-500 mt-0.5">{book.author}</p>}
+          );
+        })}
+      </div>
+      {selected && (
+        <BookDetailModal book={selected} onClose={() => setSelected(null)} />
+      )}
+    </div>
+  );
+}
+
+/* Book Detail Modal - shared by ReadingListBlock */
+function BookDetailModal({ book, onClose }) {
+  const src = resolveSrc(book.image || book.cover_image);
+  return (
+    <div className="fixed inset-0 z-[9999] bg-black/60 flex items-center justify-center p-4" onClick={onClose} data-testid="book-detail-modal">
+      <div className="bg-white rounded-lg max-w-[600px] w-full max-h-[85vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="flex flex-col md:flex-row gap-6 p-6 pb-0">
+          {src && <img src={src} alt={book.title} className="w-36 h-52 object-cover rounded-sm shadow-lg mx-auto md:mx-0 flex-shrink-0" />}
+          <div>
+            <h3 className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{book.title}</h3>
+            <p className="text-sm font-medium mt-1" style={{ color: 'var(--color-accent, #0D9488)' }}>by {book.author}</p>
+            <p className="text-sm mt-3 leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{book.description}</p>
           </div>
-        );
-      })}
+        </div>
+        <div className="p-6 space-y-4">
+          {book.synopsis && (
+            <div>
+              <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>Synopsis</h4>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{book.synopsis}</p>
+            </div>
+          )}
+          {book.who_is_it_for && (
+            <div>
+              <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>Who Is It For?</h4>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{book.who_is_it_for}</p>
+            </div>
+          )}
+          {book.about_author && (
+            <div>
+              <h4 className="text-sm font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>About the Author</h4>
+              <p className="text-sm leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{book.about_author}</p>
+            </div>
+          )}
+          <div className="flex gap-3 pt-2">
+            {book.amazon_link && (
+              <a href={book.amazon_link} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 px-5 py-2.5 rounded-sm text-sm font-medium transition-colors" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="book-amazon-link">Buy on Amazon</a>
+            )}
+            <button onClick={onClose} className="px-5 py-2.5 border border-slate-200 rounded-sm text-sm text-slate-600 hover:bg-slate-50">Close</button>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

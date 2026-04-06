@@ -78,6 +78,11 @@ export const adminAPI = {
   createBlog: (data) => api.post('/admin/blog', data),
   updateBlog: (id, data) => api.put(`/admin/blog/${id}`, data),
   deleteBlog: (id) => api.delete(`/admin/blog/${id}`),
+  // Blog Categories
+  getBlogCategories: () => api.get('/admin/blog-categories'),
+  createBlogCategory: (data) => api.post('/admin/blog-categories', data),
+  updateBlogCategory: (id, data) => api.put(`/admin/blog-categories/${id}`, data),
+  deleteBlogCategory: (id) => api.delete(`/admin/blog-categories/${id}`),
   getBooks: () => api.get('/admin/books'),
   createBook: (data) => api.post('/admin/books', data),
   updateBook: (id, data) => api.put(`/admin/books/${id}`, data),

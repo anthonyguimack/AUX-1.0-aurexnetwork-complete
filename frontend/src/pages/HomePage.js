@@ -196,7 +196,7 @@ function NewsSection({ posts, theme }) {
         </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {posts.slice(0, 3).map(p => (
-            <Link to={`/news/${p.id}`} key={p.id} className={`bg-white group transition-all ${cardStyle}`} style={borderColor ? { borderColor } : {}}>
+            <Link to={`/news/${p.slug || p.id}`} key={p.id} className={`bg-white group transition-all ${cardStyle}`} style={borderColor ? { borderColor } : {}}>
               {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3"><Clock className="w-3 h-3 text-slate-400" /><span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString()}</span></div>

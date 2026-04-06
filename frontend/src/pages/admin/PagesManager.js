@@ -27,8 +27,7 @@ export default function PagesManager() {
   const load = () => adminAPI.getNavPages().then(r => setItems((r.data || []).sort((a, b) => (a.order || 0) - (b.order || 0)))).catch(console.error);
 
   useEffect(() => {
-    // Seed system pages on first load, then load all
-    adminAPI.seedSystemPages().then(() => load()).catch(() => load());
+    load();
   }, []);
 
   const handleSave = async () => {

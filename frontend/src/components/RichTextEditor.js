@@ -8,6 +8,7 @@ const modules = {
     ['bold', 'italic', 'underline', 'strike'],
     [{ list: 'ordered' }, { list: 'bullet' }],
     [{ indent: '-1' }, { indent: '+1' }],
+    [{ align: [] }],
     [{ color: ['#000000', '#434343', '#666666', '#999999', '#cccccc', '#ffffff', '#980000', '#ff0000', '#ff9900', '#ffff00', '#00ff00', '#00ffff', '#4a86e8', '#0000ff', '#9900ff', '#ff00ff', false] }, { background: [] }],
     ['link', 'image'],
     ['blockquote', 'code-block'],

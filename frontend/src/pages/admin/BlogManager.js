@@ -5,27 +5,35 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Settings2, Tag } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 
 const emptyPost = { title: '', summary: '', content: '', category: '', author: '', image: '', published: true };
+const emptyCategory = { name: '' };
 
 export default function BlogManager() {
   const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [selected, setSelected] = useState([]);
+  const [catOpen, setCatOpen] = useState(false);
+  const [editCat, setEditCat] = useState(null);
+  const [catLoading, setCatLoading] = useState(false);
 
-  const load = () => adminAPI.getBlog().then(r => setItems(r.data)).catch(console.error);
+  const load = () => {
+    adminAPI.getBlog().then(r => setItems(r.data)).catch(console.error);
+    adminAPI.getBlogCategories().then(r => setCategories(r.data || [])).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   const handleSave = async () => {
     setLoading(true);
     try {
-      if (editing.id) { await adminAPI.updateBlog(editing.id, editing); }
-      else { await adminAPI.createBlog(editing); }
+      if (editing.id) await adminAPI.updateBlog(editing.id, editing);
+      else await adminAPI.createBlog(editing);
       toast.success('Saved!'); setOpen(false); load();
     } catch { toast.error('Error saving'); }
     finally { setLoading(false); }
@@ -42,12 +50,22 @@ export default function BlogManager() {
     catch { toast.error('Error'); }
   };
 
-  const toggleSelect = (id) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggleAll = () => setSelected(prev => prev.length === items.length ? [] : items.map(i => i.id));
+
+  // Category CRUD
+  const handleSaveCategory = async () => {
+    setCatLoading(true);
+    try {
+      if (editCat.id) await adminAPI.updateBlogCategory(editCat.id, editCat);
+      else await adminAPI.createBlogCategory(editCat);
+      toast.success('Category saved!'); setEditCat(null); load();
+    } catch { toast.error('Error'); } finally { setCatLoading(false); }
   };
 
-  const toggleAll = () => {
-    setSelected(prev => prev.length === items.length ? [] : items.map(i => i.id));
+  const handleDeleteCategory = async (id) => {
+    if (!window.confirm('Delete this category?')) return;
+    try { await adminAPI.deleteBlogCategory(id); toast.success('Deleted'); load(); } catch { toast.error('Error'); }
   };
 
   return (
@@ -60,6 +78,9 @@ export default function BlogManager() {
               <Trash2 className="w-3 h-3" /> Delete ({selected.length})
             </button>
           )}
+          <button onClick={() => setCatOpen(true)} className="border border-slate-200 text-slate-600 px-3 py-2 rounded-sm text-sm font-medium flex items-center gap-1 hover:border-[#0D9488] transition-colors" data-testid="manage-blog-categories-btn">
+            <Settings2 className="w-3.5 h-3.5" /> Categories
+          </button>
           <button onClick={() => { setEditing({...emptyPost}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-blog-btn"><Plus className="w-4 h-4" /> New Post</button>
         </div>
       </div>
@@ -91,27 +112,26 @@ export default function BlogManager() {
         </table>
         {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No blog posts yet</div>}
       </div>
+
+      {/* Post Edit Dialog */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto" data-testid="blog-dialog">
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Post</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
               <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" data-testid="blog-title-input" /></div>
-              <div><Label>Summary</Label><textarea value={editing.summary} onChange={e => setEditing({...editing, summary: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-summary-input" /></div>
-              <div>
-                <Label>Content</Label>
-                <div className="mt-1">
-                  <RichTextEditor value={editing.content} onChange={val => setEditing({...editing, content: val})} />
-                </div>
-              </div>
+              <div><Label>Summary</Label><textarea value={editing.summary || ''} onChange={e => setEditing({...editing, summary: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-summary-input" /></div>
+              <div><Label>Content</Label><div className="mt-1"><RichTextEditor value={editing.content} onChange={val => setEditing({...editing, content: val})} /></div></div>
               <div className="grid grid-cols-2 gap-4">
-                <div><Label>Category</Label><Input value={editing.category} onChange={e => setEditing({...editing, category: e.target.value})} className="mt-1" /></div>
-                <div><Label>Author</Label><Input value={editing.author} onChange={e => setEditing({...editing, author: e.target.value})} className="mt-1" /></div>
+                <div><Label>Category</Label>
+                  <select value={editing.category} onChange={e => setEditing({...editing, category: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-category-select">
+                    <option value="">-- Select category --</option>
+                    {categories.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
+                  </select>
+                </div>
+                <div><Label>Author</Label><Input value={editing.author} onChange={e => setEditing({...editing, author: e.target.value})} className="mt-1" data-testid="blog-author-input" /></div>
               </div>
-              <div>
-                <Label>Featured Image</Label>
-                <ImageUpload value={editing.image} onChange={val => setEditing({...editing, image: val})} className="mt-1" />
-              </div>
+              <div><Label>Featured Image</Label><ImageUpload value={editing.image} onChange={val => setEditing({...editing, image: val})} className="mt-1" /></div>
               <div className="flex items-center gap-2">
                 <Checkbox checked={editing.published} onCheckedChange={v => setEditing({...editing, published: v})} id="published" />
                 <Label htmlFor="published">Published</Label>
@@ -121,6 +141,36 @@ export default function BlogManager() {
               </button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* Categories Manager Dialog */}
+      <Dialog open={catOpen} onOpenChange={setCatOpen}>
+        <DialogContent className="sm:max-w-[500px]" data-testid="blog-categories-dialog">
+          <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>Blog Categories</DialogTitle></DialogHeader>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              {categories.map(c => (
+                <div key={c.id} className="flex items-center gap-2 bg-slate-50 rounded-sm border border-slate-100 px-3 py-2" data-testid={`blog-cat-row-${c.id}`}>
+                  <Tag className="w-3.5 h-3.5 text-slate-400 flex-shrink-0" />
+                  <span className="text-sm font-medium text-slate-700 flex-1">{c.name}</span>
+                  <button onClick={() => setEditCat({...c})} className="p-1 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-blog-cat-${c.id}`}><Edit2 className="w-3 h-3" /></button>
+                  <button onClick={() => handleDeleteCategory(c.id)} className="p-1 text-slate-400 hover:text-red-500" data-testid={`delete-blog-cat-${c.id}`}><Trash2 className="w-3 h-3" /></button>
+                </div>
+              ))}
+              {categories.length === 0 && <p className="text-sm text-slate-400 text-center py-4">No categories yet. Add one below.</p>}
+            </div>
+            <div className="border-t border-slate-200 pt-4">
+              <p className="text-xs font-semibold text-slate-500 uppercase mb-2">{editCat?.id ? 'Edit' : 'Add'} Category</p>
+              <div className="flex gap-2">
+                <Input placeholder="Category name" value={editCat?.name || ''} onChange={e => setEditCat(prev => ({...(prev || emptyCategory), name: e.target.value}))} className="flex-1" data-testid="blog-category-name-input" />
+                <button onClick={handleSaveCategory} disabled={catLoading || !editCat?.name} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium disabled:opacity-50 flex items-center gap-1" data-testid="save-blog-category-btn">
+                  {catLoading && <Loader2 className="w-3 h-3 animate-spin" />} {editCat?.id ? 'Update' : 'Add'}
+                </button>
+                {editCat?.id && <button onClick={() => setEditCat({...emptyCategory})} className="px-3 py-2 rounded-sm text-sm text-slate-500 border border-slate-200">Cancel</button>}
+              </div>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

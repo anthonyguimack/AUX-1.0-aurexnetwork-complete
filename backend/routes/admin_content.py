@@ -135,6 +135,23 @@ async def admin_update_blog(item_id: str, request: Request, user: dict = Depends
 async def admin_delete_blog(item_id: str, user: dict = Depends(require_admin)):
     return await crud_delete("blog_posts", item_id)
 
+# Blog Categories
+@router.get("/admin/blog-categories")
+async def admin_list_blog_categories(user: dict = Depends(require_admin)):
+    return await db.blog_categories.find({}, {"_id": 0}).sort("name", 1).to_list(100)
+
+@router.post("/admin/blog-categories")
+async def admin_create_blog_category(request: Request, user: dict = Depends(require_admin)):
+    return await crud_create("blog_categories", await request.json())
+
+@router.put("/admin/blog-categories/{item_id}")
+async def admin_update_blog_category(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    return await crud_update("blog_categories", item_id, await request.json())
+
+@router.delete("/admin/blog-categories/{item_id}")
+async def admin_delete_blog_category(item_id: str, user: dict = Depends(require_admin)):
+    return await crud_delete("blog_categories", item_id)
+
 # Books
 @router.get("/admin/books")
 async def admin_list_books(user: dict = Depends(require_admin)):
@@ -220,7 +237,7 @@ async def admin_reorder_gallery(request: Request, user: dict = Depends(require_a
 # Gallery Categories
 @router.get("/admin/gallery-categories")
 async def admin_list_gallery_categories(user: dict = Depends(require_admin)):
-    return await crud_list("gallery_categories")
+    return await db.gallery_categories.find({}, {"_id": 0}).sort("name", 1).to_list(100)
 
 @router.post("/admin/gallery-categories")
 async def admin_create_gallery_category(request: Request, user: dict = Depends(require_admin)):
