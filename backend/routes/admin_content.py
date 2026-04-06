@@ -195,7 +195,8 @@ async def admin_delete_map_location(item_id: str, user: dict = Depends(require_a
 # Gallery
 @router.get("/admin/gallery")
 async def admin_list_gallery(user: dict = Depends(require_admin)):
-    return await crud_list("gallery")
+    items = await db.gallery.find({}, {"_id": 0}).sort("order", 1).to_list(500)
+    return items
 
 @router.post("/admin/gallery")
 async def admin_create_gallery(request: Request, user: dict = Depends(require_admin)):
@@ -208,6 +209,13 @@ async def admin_update_gallery(item_id: str, request: Request, user: dict = Depe
 @router.delete("/admin/gallery/{item_id}")
 async def admin_delete_gallery(item_id: str, user: dict = Depends(require_admin)):
     return await crud_delete("gallery", item_id)
+
+@router.put("/admin/gallery/reorder/batch")
+async def admin_reorder_gallery(request: Request, user: dict = Depends(require_admin)):
+    data = await request.json()
+    for item in data.get("items", []):
+        await db.gallery.update_one({"id": item["id"]}, {"$set": {"order": item["order"]}})
+    return {"message": "Reordered"}
 
 # Gallery Categories
 @router.get("/admin/gallery-categories")

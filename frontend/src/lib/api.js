@@ -94,6 +94,7 @@ export const adminAPI = {
   createGallery: (data) => api.post('/admin/gallery', data),
   updateGallery: (id, data) => api.put(`/admin/gallery/${id}`, data),
   deleteGallery: (id) => api.delete(`/admin/gallery/${id}`),
+  reorderGallery: (items) => api.put('/admin/gallery/reorder/batch', { items }),
   // Gallery Categories
   getGalleryCategories: () => api.get('/admin/gallery-categories'),
   createGalleryCategory: (data) => api.post('/admin/gallery-categories', data),

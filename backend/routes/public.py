@@ -104,7 +104,7 @@ async def get_public_gallery(category: str = ""):
     query = {}
     if category:
         query["category"] = category
-    return await db.gallery.find(query, {"_id": 0}).to_list(100)
+    return await db.gallery.find(query, {"_id": 0}).sort("order", 1).to_list(100)
 
 @router.get("/public/gallery-categories")
 async def get_public_gallery_categories():

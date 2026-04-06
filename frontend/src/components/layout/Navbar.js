@@ -30,12 +30,6 @@ function useNavData() {
   }, []);
 
   const headerPages = navPages.filter(p => p.show_in_header).sort((a, b) => (a.order || 0) - (b.order || 0));
-  const baseLinks = [
-    { label: 'Home', href: '/' },
-    { label: 'News', href: '/news' },
-    { label: 'Gallery', href: '/gallery' },
-    { label: 'Reading List', href: '/reading-list' },
-  ];
 
   const handlePageClick = (page, e) => {
     if (page.login_required && !user) { e.preventDefault(); setLoginOpen(true); return; }
@@ -56,27 +50,22 @@ function useNavData() {
   const isExternal = (url) => url?.startsWith('http://') || url?.startsWith('https://');
   const isAdmin = location.pathname.startsWith('/admin');
 
-  return { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen };
+  return { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen };
 }
 
-function NavLinks({ baseLinks, headerPages, isExternal, handlePageClick, location, user }) {
+function NavLinks({ headerPages, isExternal, handlePageClick, location, user }) {
   return (
     <>
-      {baseLinks.map(link => (
-        <Link key={link.href} to={link.href}
-          className="text-sm font-medium transition-colors hover:opacity-70"
-          style={{ color: location.pathname === link.href ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)' }}
-          data-testid={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
-        >{link.label}</Link>
-      ))}
       {headerPages.map(page => {
+        const pageUrl = page.url || `/page/${page.id}`;
         if (isExternal(page.url)) {
-          return <a key={page.id} href={page.url} target={page.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-sm font-medium transition-colors hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</a>;
+          return <a key={page.id} href={page.url} target={page.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-sm font-medium transition-colors hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}>{page.title}</a>;
         }
         return (
-          <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={e => handlePageClick(page, e)}
+          <Link key={page.id} to={pageUrl} onClick={e => handlePageClick(page, e)}
             className="text-sm font-medium transition-colors hover:opacity-70"
-            style={{ color: location.pathname === (page.url || `/page/${page.id}`) ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)' }}
+            style={{ color: location.pathname === pageUrl ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)' }}
+            data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}
           >{page.title} {page.login_required && !user && <span className="text-[10px]">*</span>}</Link>
         );
       })}
@@ -85,7 +74,7 @@ function NavLinks({ baseLinks, headerPages, isExternal, handlePageClick, locatio
 }
 
 function DefaultNavbar() {
-  const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -120,7 +109,7 @@ function DefaultNavbar() {
             ) : <div className="h-8 w-24" />}
           </Link>
           <nav className="hidden md:flex items-center gap-6">
-            <NavLinks {...{ baseLinks, headerPages, isExternal, handlePageClick, location, user }} />
+            <NavLinks {...{ headerPages, isExternal, handlePageClick, location, user }} />
           </nav>
           <div className="flex items-center gap-3">
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="search-toggle"><Search className="w-4 h-4" /></button>
@@ -141,8 +130,10 @@ function DefaultNavbar() {
         {searchOpen && <div className="max-w-7xl mx-auto px-6 pb-3"><SearchBar onClose={() => setSearchOpen(false)} /></div>}
         {mobileOpen && (
           <div className="md:hidden border-t px-6 py-4 space-y-3 bg-white">
-            {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{link.label}</Link>)}
-            {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>)}
+            {headerPages.map(page => {
+              const href = page.url || `/page/${page.id}`;
+              return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>;
+            })}
             {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
@@ -153,7 +144,7 @@ function DefaultNavbar() {
 }
 
 function ModernNavbar() {
-  const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hasHero, setHasHero] = useState(true);
@@ -209,19 +200,12 @@ function ModernNavbar() {
             })()}
           </Link>
           <nav className="hidden md:flex items-center gap-8">
-            {baseLinks.map(link => (
-              <Link key={link.href} to={link.href}
-                className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70"
-                style={{ color: location.pathname === link.href ? 'var(--color-accent, #0D9488)' : textColor, letterSpacing: '0.1em' }}
-                data-testid={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
-              >{link.label}</Link>
-            ))}
             {headerPages.map(page => {
               const href = isExternal(page.url) ? page.url : (page.url || `/page/${page.id}`);
               const isExt = isExternal(page.url);
               const Comp = isExt ? 'a' : Link;
               const props = isExt ? { href, target: page.open_in_new_tab ? '_blank' : '_self', rel: 'noreferrer' } : { to: href, onClick: e => handlePageClick(page, e) };
-              return <Comp key={page.id} {...props} className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70" style={{ color: textColor, letterSpacing: '0.1em' }}>{page.title}</Comp>;
+              return <Comp key={page.id} {...props} className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70" style={{ color: location.pathname === href ? 'var(--color-accent, #0D9488)' : textColor, letterSpacing: '0.1em' }} data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}>{page.title}</Comp>;
             })}
           </nav>
           <div className="flex items-center gap-3">
@@ -241,8 +225,10 @@ function ModernNavbar() {
         </div>
         {mobileOpen && (
           <div className="md:hidden px-6 py-4 space-y-3 bg-white shadow-lg">
-            {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{link.label}</Link>)}
-            {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>)}
+            {headerPages.map(page => {
+              const href = page.url || `/page/${page.id}`;
+              return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>;
+            })}
             {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
@@ -253,7 +239,7 @@ function ModernNavbar() {
 }
 
 function ClassicNavbar() {
-  const { user, logout, settings, socialLinks, headerPages, baseLinks, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -307,23 +293,12 @@ function ClassicNavbar() {
             ) : <div className="h-9 w-28" />}
           </Link>
           <nav className="hidden md:flex items-center gap-1">
-            {baseLinks.map(link => (
-              <Link key={link.href} to={link.href}
-                className="text-sm font-medium px-4 py-2 transition-colors"
-                style={{
-                  color: location.pathname === link.href ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)',
-                  borderBottom: location.pathname === link.href ? '2px solid var(--color-accent, #0D9488)' : '2px solid transparent',
-                  fontFamily: "'Playfair Display', serif"
-                }}
-                data-testid={`nav-${link.label.toLowerCase().replace(/\s/g, '-')}`}
-              >{link.label}</Link>
-            ))}
             {headerPages.map(page => {
               const href = isExternal(page.url) ? page.url : (page.url || `/page/${page.id}`);
               const isExt = isExternal(page.url);
               const Comp = isExt ? 'a' : Link;
               const props = isExt ? { href, target: page.open_in_new_tab ? '_blank' : '_self', rel: 'noreferrer' } : { to: href, onClick: e => handlePageClick(page, e) };
-              return <Comp key={page.id} {...props} className="text-sm font-medium px-4 py-2 transition-colors" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif", borderBottom: '2px solid transparent' }}>{page.title}</Comp>;
+              return <Comp key={page.id} {...props} className="text-sm font-medium px-4 py-2 transition-colors" style={{ color: location.pathname === href ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)', borderBottom: location.pathname === href ? '2px solid var(--color-accent, #0D9488)' : '2px solid transparent', fontFamily: "'Playfair Display', serif" }} data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}>{page.title}</Comp>;
             })}
           </nav>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2" style={{ color: 'var(--color-heading-color, #1a2332)' }}>
@@ -332,8 +307,10 @@ function ClassicNavbar() {
         </div>
         {mobileOpen && (
           <div className="md:hidden px-6 py-4 space-y-3" style={{ backgroundColor: '#faf9f6', borderTop: '1px solid #e8e4de' }}>
-            {baseLinks.map(link => <Link key={link.href} to={link.href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{link.label}</Link>)}
-            {headerPages.map(page => <Link key={page.id} to={page.url || `/page/${page.id}`} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{page.title}</Link>)}
+            {headerPages.map(page => {
+              const href = page.url || `/page/${page.id}`;
+              return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{page.title}</Link>;
+            })}
             {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-accent, #0D9488)', fontFamily: "'Playfair Display', serif" }}>My Account</Link>}
           </div>
         )}
