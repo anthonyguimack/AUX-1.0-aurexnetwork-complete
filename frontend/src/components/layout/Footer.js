@@ -14,7 +14,7 @@ function useFooterData() {
   React.useEffect(() => {
     publicAPI.getNavPages().then(r => {
       const all = r.data || [];
-      setFooterPages(all.filter(p => p.show_in_footer));
+      setFooterPages(all.filter(p => p.show_in_footer).sort((a, b) => (a.order || 0) - (b.order || 0)));
     }).catch(() => {});
   }, []);
 
@@ -23,17 +23,30 @@ function useFooterData() {
   return { settings, socialLinks, footerPages, isExternal, isAdmin };
 }
 
-const baseLinks = [
-  { label: 'Home', href: '/' },
-  { label: 'News', href: '/news' },
-  { label: 'Gallery', href: '/gallery' },
-  { label: 'Reading List', href: '/reading-list' },
-];
-
 function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc, theme }) {
   const isClassic = theme === 'classic';
   const fontFamily = isClassic ? "'Playfair Display', serif" : undefined;
   const API = process.env.REACT_APP_BACKEND_URL;
+
+  // Split footer pages into two columns
+  const half = Math.ceil(footerPages.length / 2);
+  const col1 = footerPages.slice(0, half);
+  const col2 = footerPages.slice(half);
+
+  const renderPageLink = (page) => {
+    if (isExternal(page.url) || page.open_in_new_tab) {
+      return (
+        <a href={isExternal(page.url) ? page.url : (page.url || '/')} target="_blank" rel="noreferrer" className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2">
+          <ArrowRight className="w-3 h-3 flex-shrink-0" /> {page.title}
+        </a>
+      );
+    }
+    return (
+      <Link to={page.url || `/page/${page.id}`} className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2">
+        <ArrowRight className="w-3 h-3 flex-shrink-0" /> {page.title}
+      </Link>
+    );
+  };
 
   return (
     <>
@@ -59,39 +72,21 @@ function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc
             </p>
           </div>
 
-          {/* Column 2: Site Map */}
-          <div>
+          {/* Columns 2-3: Site Map (two columns from CMS pages) */}
+          <div className="sm:col-span-2 lg:col-span-2">
             <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Site Map</h4>
-            <ul className="space-y-2.5">
-              {baseLinks.map(link => (
-                <li key={link.href}>
-                  <Link to={link.href} className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2">
-                    <ArrowRight className="w-3 h-3 flex-shrink-0" /> {link.label}
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
-
-          {/* Column 3: Resources (created pages) */}
-          <div>
-            <h4 className="text-white text-sm font-bold uppercase tracking-wider mb-5" style={fontFamily ? { fontFamily } : {}}>Resources</h4>
-            <ul className="space-y-2.5">
-              {footerPages.map(page => (
-                <li key={page.id}>
-                  {isExternal(page.url) || page.open_in_new_tab ? (
-                    <a href={isExternal(page.url) ? page.url : (page.url || '/')} target="_blank" rel="noreferrer" className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2">
-                      <ArrowRight className="w-3 h-3 flex-shrink-0" /> {page.title}
-                    </a>
-                  ) : (
-                    <Link to={page.url || `/page/${page.id}`} className="text-white/50 text-sm hover:text-white transition-colors flex items-center gap-2">
-                      <ArrowRight className="w-3 h-3 flex-shrink-0" /> {page.title}
-                    </Link>
-                  )}
-                </li>
-              ))}
-              {footerPages.length === 0 && <li className="text-white/30 text-sm">No pages yet</li>}
-            </ul>
+            {footerPages.length > 0 ? (
+              <div className="grid grid-cols-2 gap-x-8 gap-y-2.5" data-testid="footer-sitemap">
+                <ul className="space-y-2.5">
+                  {col1.map(page => <li key={page.id}>{renderPageLink(page)}</li>)}
+                </ul>
+                <ul className="space-y-2.5">
+                  {col2.map(page => <li key={page.id}>{renderPageLink(page)}</li>)}
+                </ul>
+              </div>
+            ) : (
+              <p className="text-white/30 text-sm">No pages configured for footer.</p>
+            )}
           </div>
 
           {/* Column 4: Connect (Social + Email) */}

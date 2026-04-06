@@ -31,7 +31,7 @@ export default function PageBuilder({ zones, layout, onChange }) {
     newZones[zoneId] = [...newZones[zoneId], newBlock];
     onChange(newZones);
     setShowBlockPicker(null);
-    if (!['service_list', 'gallery', 'separator', 'legends_testimonials'].includes(blockType)) {
+    if (!['service_list', 'gallery', 'gallery_albums', 'blog_posts', 'reading_list', 'separator', 'legends_testimonials'].includes(blockType)) {
       setEditingBlock(newBlock);
       setEditingZone(zoneId);
     }

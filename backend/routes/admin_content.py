@@ -209,6 +209,23 @@ async def admin_update_gallery(item_id: str, request: Request, user: dict = Depe
 async def admin_delete_gallery(item_id: str, user: dict = Depends(require_admin)):
     return await crud_delete("gallery", item_id)
 
+# Gallery Categories
+@router.get("/admin/gallery-categories")
+async def admin_list_gallery_categories(user: dict = Depends(require_admin)):
+    return await crud_list("gallery_categories")
+
+@router.post("/admin/gallery-categories")
+async def admin_create_gallery_category(request: Request, user: dict = Depends(require_admin)):
+    return await crud_create("gallery_categories", await request.json())
+
+@router.put("/admin/gallery-categories/{item_id}")
+async def admin_update_gallery_category(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    return await crud_update("gallery_categories", item_id, await request.json())
+
+@router.delete("/admin/gallery-categories/{item_id}")
+async def admin_delete_gallery_category(item_id: str, user: dict = Depends(require_admin)):
+    return await crud_delete("gallery_categories", item_id)
+
 # Portfolio
 @router.get("/admin/portfolio")
 async def admin_list_portfolio(user: dict = Depends(require_admin)):

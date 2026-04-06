@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI } from '../../lib/api';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, ExternalLink } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -66,30 +66,107 @@ function ServiceListBlock() {
   );
 }
 
-/* Gallery block - Simple photo gallery (from gallery collection) */
-function GalleryBlock() {
-  const [items, setItems] = useState([]);
-  useEffect(() => { publicAPI.getGallery().then(r => setItems(r.data || [])).catch(() => {}); }, []);
-  if (!items.length) return null;
+/* Lightbox component for gallery */
+function Lightbox({ items, currentIndex, onClose, onNext, onPrev }) {
+  useEffect(() => {
+    const handleKey = (e) => {
+      if (e.key === 'Escape') onClose();
+      if (e.key === 'ArrowRight') onNext();
+      if (e.key === 'ArrowLeft') onPrev();
+    };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => { document.removeEventListener('keydown', handleKey); document.body.style.overflow = ''; };
+  }, [onClose, onNext, onPrev]);
+
+  const item = items[currentIndex];
+  if (!item) return null;
+  const src = resolveSrc(item.image);
+
   return (
-    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4" data-testid="block-gallery">
-      {items.map(item => {
-        const src = resolveSrc(item.image);
-        return (
-          <div key={item.id} className="group aspect-square rounded-lg overflow-hidden bg-slate-100">
-            {src ? (
-              <img src={src} alt={item.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No image</div>
-            )}
-          </div>
-        );
-      })}
+    <div className="fixed inset-0 z-[9999] bg-black/95 flex items-center justify-center" data-testid="gallery-lightbox" onClick={onClose}>
+      <button onClick={onClose} className="absolute top-4 right-4 z-10 text-white/70 hover:text-white p-2" data-testid="lightbox-close"><X className="w-7 h-7" /></button>
+      {items.length > 1 && (
+        <>
+          <button onClick={(e) => { e.stopPropagation(); onPrev(); }} className="absolute left-4 top-1/2 -translate-y-1/2 z-10 text-white/50 hover:text-white p-2 bg-white/10 rounded-full" data-testid="lightbox-prev"><ChevronLeft className="w-7 h-7" /></button>
+          <button onClick={(e) => { e.stopPropagation(); onNext(); }} className="absolute right-4 top-1/2 -translate-y-1/2 z-10 text-white/50 hover:text-white p-2 bg-white/10 rounded-full" data-testid="lightbox-next"><ChevronRight className="w-7 h-7" /></button>
+        </>
+      )}
+      <div className="max-w-5xl max-h-[90vh] flex flex-col items-center px-4" onClick={(e) => e.stopPropagation()}>
+        {src && <img src={src} alt={item.title || ''} className="max-w-full max-h-[75vh] object-contain rounded" data-testid="lightbox-image" />}
+        <div className="mt-4 text-center">
+          {item.title && <h3 className="text-white text-lg font-semibold">{item.title}</h3>}
+          {item.summary && <p className="text-white/60 text-sm mt-1 max-w-xl">{item.summary}</p>}
+        </div>
+        <p className="text-white/30 text-xs mt-3">{currentIndex + 1} / {items.length}</p>
+      </div>
     </div>
   );
 }
 
-/* Gallery Albums block - Album-based gallery (from gallery_albums collection) */
+/* Gallery block - Simple photo gallery with category tabs + lightbox */
+function GalleryBlock() {
+  const [items, setItems] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [tab, setTab] = useState('all');
+  const [lightboxIndex, setLightboxIndex] = useState(-1);
+
+  useEffect(() => {
+    publicAPI.getGallery().then(r => setItems(r.data || [])).catch(() => {});
+    publicAPI.getGalleryCategories().then(r => setCategories(r.data || [])).catch(() => {});
+  }, []);
+
+  const filtered = tab === 'all' ? items : items.filter(i => i.category === tab);
+  const uniqueCats = categories.length > 0 ? categories : [...new Set(items.map(i => i.category).filter(Boolean))].map(c => ({ name: c }));
+
+  if (!items.length) return null;
+  return (
+    <div data-testid="block-gallery">
+      {uniqueCats.length > 0 && (
+        <div className="flex flex-wrap justify-center gap-2 mb-8" data-testid="gallery-block-tabs">
+          <button onClick={() => setTab('all')} className={`px-5 py-2 rounded-sm text-sm font-medium transition-colors ${tab === 'all' ? 'text-white' : 'bg-white text-slate-600 border border-slate-200 hover:border-[#0D9488]'}`} style={tab === 'all' ? { backgroundColor: 'var(--color-primary, #1a2332)' } : {}}>All</button>
+          {uniqueCats.map(c => {
+            const key = c.slug || c.name;
+            return (
+              <button key={key} onClick={() => setTab(c.name)} className={`px-5 py-2 rounded-sm text-sm font-medium transition-colors capitalize ${tab === c.name ? 'text-white' : 'bg-white text-slate-600 border border-slate-200 hover:border-[#0D9488]'}`} style={tab === c.name ? { backgroundColor: 'var(--color-primary, #1a2332)' } : {}} data-testid={`gallery-block-tab-${key}`}>{c.name}</button>
+            );
+          })}
+        </div>
+      )}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filtered.map((item, idx) => {
+          const src = resolveSrc(item.image);
+          return (
+            <div key={item.id} className="group relative rounded-lg overflow-hidden bg-slate-100 cursor-pointer" data-testid={`gallery-block-item-${item.id}`}>
+              {item.link && (
+                <a href={item.link} target={item.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="absolute top-3 right-3 z-10 bg-white/90 rounded-full p-1.5 opacity-0 group-hover:opacity-100 transition-opacity" onClick={(e) => e.stopPropagation()} data-testid={`gallery-link-${item.id}`}>
+                  <ExternalLink className="w-3.5 h-3.5 text-slate-600" />
+                </a>
+              )}
+              <div className="aspect-[4/3] overflow-hidden" onClick={() => setLightboxIndex(filtered.findIndex(f => f.id === item.id))}>
+                {src ? <img src={src} alt={item.title || ''} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /> : <div className="w-full h-full flex items-center justify-center text-slate-300">No image</div>}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+              </div>
+              {(item.title || item.summary) && (
+                <div className="p-3">
+                  {item.title && <h4 className="text-sm font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{item.title}</h4>}
+                  {item.summary && <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{item.summary}</p>}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+      {lightboxIndex >= 0 && (
+        <Lightbox items={filtered} currentIndex={lightboxIndex} onClose={() => setLightboxIndex(-1)}
+          onNext={() => setLightboxIndex(p => (p + 1) % filtered.length)}
+          onPrev={() => setLightboxIndex(p => (p - 1 + filtered.length) % filtered.length)} />
+      )}
+    </div>
+  );
+}
+
+/* Gallery Albums block */
 function GalleryAlbumsBlock() {
   const [albums, setAlbums] = useState([]);
   useEffect(() => { publicAPI.getGalleryAlbums().then(r => setAlbums(r.data || [])).catch(() => {}); }, []);
@@ -104,6 +181,54 @@ function GalleryAlbumsBlock() {
           <h3 className="mt-2 font-medium text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{a.title}</h3>
         </Link>
       ))}
+    </div>
+  );
+}
+
+/* Blog Posts block - Auto-displays latest news/blog posts */
+function BlogPostsBlock() {
+  const [posts, setPosts] = useState([]);
+  useEffect(() => { publicAPI.getBlog(1, 6).then(r => setPosts(r.data?.posts || r.data || [])).catch(() => {}); }, []);
+  if (!posts.length) return null;
+  return (
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6" data-testid="block-blog-posts">
+      {posts.map(post => {
+        const src = resolveSrc(post.image);
+        return (
+          <Link key={post.id} to={`/news/${post.slug || post.id}`} className="group bg-white rounded-lg border border-slate-100 overflow-hidden hover:shadow-md transition-shadow" data-testid={`blog-block-item-${post.id}`}>
+            {src && <div className="h-44 overflow-hidden"><img src={src} alt={post.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" /></div>}
+            <div className="p-4">
+              {post.category && <span className="text-xs font-semibold uppercase tracking-wider mb-1 block" style={{ color: 'var(--color-accent, #0D9488)' }}>{post.category}</span>}
+              <h3 className="text-base font-bold mb-1 line-clamp-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{post.title}</h3>
+              <p className="text-sm text-slate-500 line-clamp-2">{post.excerpt || ''}</p>
+              {post.created_at && <p className="text-xs text-slate-400 mt-2">{new Date(post.created_at).toLocaleDateString()}</p>}
+            </div>
+          </Link>
+        );
+      })}
+    </div>
+  );
+}
+
+/* Reading List block - Auto-displays books */
+function ReadingListBlock() {
+  const [books, setBooks] = useState([]);
+  useEffect(() => { publicAPI.getBooks().then(r => setBooks(r.data || [])).catch(() => {}); }, []);
+  if (!books.length) return null;
+  return (
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-5" data-testid="block-reading-list">
+      {books.map(book => {
+        const src = resolveSrc(book.image || book.cover_image);
+        return (
+          <div key={book.id} className="group text-center" data-testid={`reading-block-item-${book.id}`}>
+            <div className="aspect-[2/3] rounded-lg overflow-hidden bg-slate-100 shadow-md group-hover:shadow-lg transition-shadow mb-3">
+              {src ? <img src={src} alt={book.title} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-slate-300 text-sm">No cover</div>}
+            </div>
+            <h4 className="text-sm font-semibold line-clamp-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{book.title}</h4>
+            {book.author && <p className="text-xs text-slate-500 mt-0.5">{book.author}</p>}
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -209,6 +334,8 @@ export default function BlockRenderer({ block }) {
     case 'service_list': return <ServiceListBlock />;
     case 'gallery': return <GalleryBlock />;
     case 'gallery_albums': return <GalleryAlbumsBlock />;
+    case 'blog_posts': return <BlogPostsBlock />;
+    case 'reading_list': return <ReadingListBlock />;
     case 'profile_card': return <ProfileCardBlock config={config} />;
     case 'button': return <ButtonBlock config={config} />;
     case 'separator': return <SeparatorBlock config={config} />;
