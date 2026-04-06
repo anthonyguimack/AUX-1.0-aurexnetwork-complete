@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { publicAPI } from '../lib/api';
@@ -55,15 +56,17 @@ function MapTypePage({ mapType, title, subtitle }) {
         <div className="rounded-lg overflow-hidden" style={{ height: '450px' }}>
           <MapContainer center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
             <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
-            {locations.map(loc => (
-              <Marker key={loc.id} position={[loc.lat, loc.lng]}>
-                <Popup>
-                  <strong>{loc.name}</strong>
-                  {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
-                  {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
-                </Popup>
-              </Marker>
-            ))}
+            <MarkerClusterGroup chunkedLoading>
+              {locations.map(loc => (
+                <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+                  <Popup>
+                    <strong>{loc.name}</strong>
+                    {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
+                    {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
+                  </Popup>
+                </Marker>
+              ))}
+            </MarkerClusterGroup>
           </MapContainer>
         </div>
       ) : (

@@ -389,6 +389,7 @@ function MapBlock({ mapType }) {
   const TileLayerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.TileLayer })));
   const MarkerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Marker })));
   const PopupLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Popup })));
+  const ClusterLazy = React.lazy(() => import('react-leaflet-cluster'));
 
   const center = [locations[0].lat, locations[0].lng];
   return (
@@ -396,15 +397,17 @@ function MapBlock({ mapType }) {
       <div className="rounded-lg overflow-hidden" style={{ height: '400px' }} data-testid={`block-map-${mapType}`}>
         <MapContainerLazy center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
           <TileLayerLazy url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-          {locations.map(loc => (
-            <MarkerLazy key={loc.id} position={[loc.lat, loc.lng]}>
-              <PopupLazy>
-                <strong>{loc.name}</strong>
-                {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
-                {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
-              </PopupLazy>
-            </MarkerLazy>
-          ))}
+          <ClusterLazy chunkedLoading>
+            {locations.map(loc => (
+              <MarkerLazy key={loc.id} position={[loc.lat, loc.lng]}>
+                <PopupLazy>
+                  <strong>{loc.name}</strong>
+                  {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
+                  {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
+                </PopupLazy>
+              </MarkerLazy>
+            ))}
+          </ClusterLazy>
         </MapContainerLazy>
       </div>
     </React.Suspense>

@@ -4,7 +4,7 @@
 Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engine, Visual Page Builder, and Maps management.
 
 ## Tech Stack
-- **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit, Framer Motion, react-leaflet, React-Quill
+- **Frontend**: React, TailwindCSS, Shadcn/UI, @dnd-kit, Framer Motion, react-leaflet, react-leaflet-cluster, React-Quill
 - **Backend**: FastAPI, Motor (Async MongoDB), Pydantic, APIRouter
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
