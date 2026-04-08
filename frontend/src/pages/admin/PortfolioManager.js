@@ -3,11 +3,12 @@ import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
+import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 
-const emptyItem = { title: '', description: '', image: '', tags: [], link: '' };
+const emptyItem = { title: '', description: '', image: '', tags: [], link: '', open_in_new_tab: false };
 
 export default function PortfolioManager() {
   const [items, setItems] = useState([]);
@@ -56,7 +57,13 @@ export default function PortfolioManager() {
             <div><Label>Description</Label><textarea value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
             <div><Label>Image</Label><ImageUpload value={editing.image} onChange={val => setEditing({...editing, image: val})} className="mt-1" /></div>
             <div><Label>Tags (comma separated)</Label><Input value={(editing.tags || []).join(', ')} onChange={e => setEditing({...editing, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)})} className="mt-1" /></div>
-            <div><Label>Link</Label><Input value={editing.link || ''} onChange={e => setEditing({...editing, link: e.target.value})} className="mt-1" /></div>
+            <div><Label>Link</Label><Input value={editing.link || ''} onChange={e => setEditing({...editing, link: e.target.value})} className="mt-1" placeholder="https://..." data-testid="portfolio-link-input" /></div>
+            {editing.link && (
+              <div className="flex items-center gap-2.5 p-3 bg-slate-50 rounded-sm border border-slate-100">
+                <Switch checked={editing.open_in_new_tab || false} onCheckedChange={v => setEditing({...editing, open_in_new_tab: v})} data-testid="portfolio-newtab-toggle" />
+                <Label className="text-sm">Open link in new tab</Label>
+              </div>
+            )}
             <button onClick={handleSave} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium disabled:opacity-50">Save</button>
           </div>}
         </DialogContent>
