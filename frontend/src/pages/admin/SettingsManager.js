@@ -5,10 +5,11 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
 import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, THEMES } from '../../lib/themeColors';
+import { MAP_LANGUAGES } from '../../lib/mapConfig';
 
 function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
   const [open, setOpen] = useState(true);
@@ -187,6 +188,16 @@ export default function SettingsManager() {
             <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Footer Text</h3>
             <div><Label>Footer Description</Label><p className="text-xs text-slate-400 mb-1">Text shown below the logo in the footer.</p><textarea value={settings.footer_description || ''} onChange={e => setSettings({...settings, footer_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="settings-footer-description" /></div>
             <div><Label>Footer Copyright</Label><p className="text-xs text-slate-400 mb-1">Copyright text at the bottom of the footer.</p><Input value={settings.footer_copyright || ''} onChange={e => setSettings({...settings, footer_copyright: e.target.value})} className="mt-1" data-testid="settings-footer-copyright" /></div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}><Map className="w-4 h-4" /> Maps Configuration</h3>
+            <div>
+              <Label>Maps Language</Label>
+              <p className="text-xs text-slate-400 mb-1">Select the language for map tile labels globally across all maps.</p>
+              <select value={settings.maps_language || 'local'} onChange={e => setSettings({...settings, maps_language: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="settings-maps-language">
+                {MAP_LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
+              </select>
+            </div>
           </div>
         </TabsContent>
 

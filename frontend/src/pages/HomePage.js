@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI, contactAPI, checkoutAPI, blogExternalAPI } from '../lib/api';
 import { useSettings, useTheme } from '../App';
+import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { toast } from 'sonner';
 import {
   ArrowRight, Phone, Briefcase, TrendingUp, BarChart3, Monitor, Star,
@@ -287,11 +288,12 @@ function ReadingListSection({ books, theme }) {
 }
 
 /* ==================== MAP ==================== */
-function MapSection({ maps, locations, theme, title }) {
+function MapSection({ maps, locations, theme, title, mapsLang }) {
   const allLocations = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
   if (!allLocations.length) return null;
   const center = [allLocations[0].lat, allLocations[0].lng];
   const sectionTitle = title || 'Our Locations';
+  const lang = mapsLang || 'local';
   return (
     <section className={`py-20 ${theme === 'classic' ? 'bg-white' : 'bg-slate-50'}`} id="locations" data-testid="map-section">
       <div className={`${theme === 'classic' ? 'max-w-6xl' : 'max-w-7xl'} mx-auto px-6`}>
@@ -302,9 +304,9 @@ function MapSection({ maps, locations, theme, title }) {
         </div>
         <div className={`${theme === 'modern' ? 'rounded-2xl' : theme === 'classic' ? 'border-2' : 'rounded-lg'} overflow-hidden shadow-lg h-[400px]`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
           <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+            <TileLayer url={getTileUrl(lang)} attribution={getTileAttribution(lang)} />
             <MarkerClusterGroup>
-              {allLocations.map((loc, i) => (<Marker key={i} position={[loc.lat, loc.lng]}><Popup><strong>{loc.title || loc.name}</strong>{loc.description && <p>{loc.description}</p>}{loc.link && <a href={loc.link} target="_blank" rel="noreferrer" className="text-blue-500 underline">Visit</a>}</Popup></Marker>))}
+              {allLocations.map((loc, i) => (<Marker key={i} position={[loc.lat, loc.lng]}><Popup><strong>{loc.title || loc.name}</strong>{loc.description && <p>{loc.description}</p>}{loc.link && <a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-blue-500 underline">Visit</a>}</Popup></Marker>))}
             </MarkerClusterGroup>
           </MapContainer>
         </div>
@@ -595,6 +597,8 @@ export default function HomePage() {
   const sectionOrder = settings.section_order || ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
   const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
+  const mapsLang = settings.maps_language || 'local';
+
   const sectionMap = {
     hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
     about: <AboutSection key="about" data={about} theme={theme} />,
@@ -602,11 +606,11 @@ export default function HomePage() {
     news: <NewsSection key="news" posts={posts} theme={theme} />,
     blog: <ExternalBlogSection key="blog" theme={theme} />,
     reading_list: <ReadingListSection key="reading" books={books} theme={theme} />,
-    map: <MapSection key="map" maps={maps} locations={locations} theme={theme} />,
-    locations: <MapSection key="locations" maps={maps} locations={locations} theme={theme} />,
-    map_global: <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" />,
-    map_conferences: <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" />,
-    map_recommended: <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" />,
+    map: <MapSection key="map" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
+    locations: <MapSection key="locations" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
+    map_global: <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" mapsLang={mapsLang} />,
+    map_conferences: <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" mapsLang={mapsLang} />,
+    map_recommended: <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" mapsLang={mapsLang} />,
     portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
     gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
     testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,

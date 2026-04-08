@@ -1,7 +1,20 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI } from '../../lib/api';
+import { useSettings } from '../../App';
+import { getTileUrl, getTileAttribution } from '../../lib/mapConfig';
 import { ChevronLeft, ChevronRight, X, ExternalLink } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import MarkerClusterGroup from 'react-leaflet-cluster';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -378,39 +391,33 @@ function LegendsTestimonialsBlock() {
 /* Map Block - renders a react-leaflet map for a given map type (map-only, no list) */
 function MapBlock({ mapType }) {
   const [locations, setLocations] = useState([]);
+  const settings = useSettings();
+  const lang = settings.maps_language || 'local';
+
   useEffect(() => {
     publicAPI.getMapLocations(mapType).then(r => setLocations(r.data || [])).catch(() => {});
   }, [mapType]);
 
   if (!locations.length) return <div className="text-center py-8 text-slate-400 text-sm">No locations for this map.</div>;
 
-  // Lazy import to avoid SSR issues
-  const MapContainerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.MapContainer })));
-  const TileLayerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.TileLayer })));
-  const MarkerLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Marker })));
-  const PopupLazy = React.lazy(() => import('react-leaflet').then(m => ({ default: m.Popup })));
-  const ClusterLazy = React.lazy(() => import('react-leaflet-cluster'));
-
   const center = [locations[0].lat, locations[0].lng];
   return (
-    <React.Suspense fallback={<div className="h-[400px] bg-slate-100 animate-pulse rounded-lg" />}>
-      <div className="rounded-lg overflow-hidden" style={{ height: '400px' }} data-testid={`block-map-${mapType}`}>
-        <MapContainerLazy center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-          <TileLayerLazy url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
-          <ClusterLazy chunkedLoading>
-            {locations.map(loc => (
-              <MarkerLazy key={loc.id} position={[loc.lat, loc.lng]}>
-                <PopupLazy>
-                  <strong>{loc.name}</strong>
-                  {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
-                  {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
-                </PopupLazy>
-              </MarkerLazy>
-            ))}
-          </ClusterLazy>
-        </MapContainerLazy>
-      </div>
-    </React.Suspense>
+    <div className="rounded-lg overflow-hidden" style={{ height: '400px' }} data-testid={`block-map-${mapType}`}>
+      <MapContainer center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
+        <TileLayer url={getTileUrl(lang)} attribution={getTileAttribution(lang)} />
+        <MarkerClusterGroup chunkedLoading>
+          {locations.map(loc => (
+            <Marker key={loc.id} position={[loc.lat, loc.lng]}>
+              <Popup>
+                <strong>{loc.name}</strong>
+                {loc.description && <><br /><span style={{ fontSize: '12px', color: '#666' }}>{loc.description}</span></>}
+                {loc.link && <><br /><a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" style={{ fontSize: '12px', color: '#0D9488' }}>Visit &rarr;</a></>}
+              </Popup>
+            </Marker>
+          ))}
+        </MarkerClusterGroup>
+      </MapContainer>
+    </div>
   );
 }
 

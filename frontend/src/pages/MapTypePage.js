@@ -4,6 +4,8 @@ import MarkerClusterGroup from 'react-leaflet-cluster';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { publicAPI } from '../lib/api';
+import { useSettings } from '../App';
+import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { MapPin, ExternalLink } from 'lucide-react';
 
 delete L.Icon.Default.prototype._getIconUrl;
@@ -39,6 +41,8 @@ function LocationList({ locations }) {
 
 function MapTypePage({ mapType, title, subtitle }) {
   const [locations, setLocations] = useState([]);
+  const settings = useSettings();
+  const lang = settings.maps_language || 'local';
 
   useEffect(() => {
     publicAPI.getMapLocations(mapType).then(r => setLocations(r.data || [])).catch(console.error);
@@ -55,7 +59,7 @@ function MapTypePage({ mapType, title, subtitle }) {
       {locations.length > 0 ? (
         <div className="rounded-lg overflow-hidden" style={{ height: '450px' }}>
           <MapContainer center={center} zoom={locations.length > 1 ? 3 : 6} style={{ height: '100%', width: '100%' }} scrollWheelZoom={false}>
-            <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution='&copy; OpenStreetMap' />
+            <TileLayer url={getTileUrl(lang)} attribution={getTileAttribution(lang)} />
             <MarkerClusterGroup chunkedLoading>
               {locations.map(loc => (
                 <Marker key={loc.id} position={[loc.lat, loc.lng]}>

@@ -8,6 +8,25 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Plus, Edit2, Trash2, Loader2, MapPin } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
+import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
+
+delete L.Icon.Default.prototype._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon-2x.png',
+  iconUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-icon.png',
+  shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+});
+
+function ClickableMap({ lat, lng, onSelect }) {
+  useMapEvents({
+    click(e) {
+      onSelect(e.latlng.lat, e.latlng.lng);
+    },
+  });
+  return lat && lng ? <Marker position={[lat, lng]} /> : null;
+}
 
 const MAP_TYPES = [
   { value: 'global_business', label: 'Global Business Presence' },
@@ -120,6 +139,15 @@ export default function MapsManager() {
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Latitude</Label><Input type="number" step="any" value={editLoc.lat} onChange={e => setEditLoc({...editLoc, lat: parseFloat(e.target.value) || 0})} className="mt-1" data-testid="location-lat-input" /></div>
               <div><Label>Longitude</Label><Input type="number" step="any" value={editLoc.lng} onChange={e => setEditLoc({...editLoc, lng: parseFloat(e.target.value) || 0})} className="mt-1" data-testid="location-lng-input" /></div>
+            </div>
+            <div>
+              <Label className="text-xs text-slate-500">Click the map to set coordinates</Label>
+              <div className="rounded-sm overflow-hidden border border-slate-200 mt-1" style={{ height: '200px' }} data-testid="location-map-picker">
+                <MapContainer center={[editLoc.lat || 20, editLoc.lng || 0]} zoom={editLoc.lat ? 8 : 2} style={{ height: '100%', width: '100%' }} key={`${editLoc.id || 'new'}`}>
+                  <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" attribution="&copy; OpenStreetMap" />
+                  <ClickableMap lat={editLoc.lat} lng={editLoc.lng} onSelect={(lat, lng) => setEditLoc(prev => ({...prev, lat: parseFloat(lat.toFixed(6)), lng: parseFloat(lng.toFixed(6))}))} />
+                </MapContainer>
+              </div>
             </div>
             <div><Label>Description</Label><textarea value={editLoc.description} onChange={e => setEditLoc({...editLoc, description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="location-desc-input" /></div>
             <div><Label>Map Type</Label>
