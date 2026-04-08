@@ -11,20 +11,20 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 ## What's Been Implemented
 
 ### Core (Phase 1-2)
-Full public website, admin CMS, Visual Page Builder (15 layouts), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore
+Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore
 
-### Session: Apr 6, 2026 (Latest)
-1. **Quill Alignment CSS** — Added .ql-align-center/right/justify CSS rules to index.css for proper rendering on all frontend pages
-2. **Featured Projects Page** — New page at `/featured-projects` showing all portfolio items with title, category, description, and "View Project" links
-3. **Homepage Portfolio** — Added "View All" → `/featured-projects` link + project links visible on cards
-4. **Maps Module Refactor** — 3 map types: Global Business Presence, Conferences, Recommended Sites
-   - Location model: `map_type` dropdown (replaces free-text category), `link`, `open_in_new_tab`
-   - Admin: Map Type dropdown, Link + Open in New Tab fields
-   - Pages: `/conferences` and `/recommended_sites` with react-leaflet map + location list
-   - Content Blocks: `map_global`, `map_conferences`, `map_recommended` for Visual Builder
-   - Homepage Sections: All 3 map types controllable via Sections manager (show/hide + order)
-5. Blog Categories CRUD, Gallery Categories A→Z, Gallery drag-to-reorder
-6. Navbar fully dynamic (no hardcoded links), Footer dynamic sitemap
+### Session: Apr 8, 2026 (Latest)
+1. **MapBlock Crash Fix** — Replaced `React.lazy()` inside component body with direct imports in `BlockRenderer.js`, resolving crashes on "Our Group" dynamic page
+2. **Maps "Open in new tab" Fix** — Fixed hardcoded `target="_blank"` in `HomePage.js` MapSection popups to respect `open_in_new_tab` setting
+3. **Global Maps Language Setting** — Added `maps_language` field to CMS Settings > General tab with 11 language options. All map TileLayers now use centralized `mapConfig.js` for tile URLs
+4. **Interactive Map Picker** — Added Leaflet `ClickableMap` component in MapsManager location edit dialog for click-to-set lat/lng coordinates
+5. **Tile Provider Integration** — All maps (HomePage, MapTypePage, BlockRenderer) now use `getTileUrl(lang)` and `getTileAttribution(lang)` from `/app/frontend/src/lib/mapConfig.js`
+
+### Session: Apr 6, 2026
+1. Quill Alignment CSS, Featured Projects Page, Homepage Portfolio
+2. Maps Module Refactor — 3 map types: Global Business, Conferences, Recommended Sites
+3. Blog Categories CRUD, Gallery Categories A→Z, Gallery drag-to-reorder
+4. Navbar fully dynamic, Footer dynamic sitemap
 
 ## Content Block Types (16)
 Rich Text, Image, Video, Service List, Gallery, Gallery Albums, Blog/News, Reading List, Profile Card, Button, Separator, Custom HTML, Legends & Testimonials, Global Business Map, Conferences Map, Recommended Sites Map
