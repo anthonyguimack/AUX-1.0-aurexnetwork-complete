@@ -228,11 +228,6 @@ export default function SettingsManager() {
                   <p className="text-xs text-slate-400 mb-1">Exclusive logo for the landing page. Upload or paste URL.</p>
                   <ImageUpload value={settings.landing_page_logo || ''} onChange={v => setSettings({...settings, landing_page_logo: v})} data-testid="lp-logo" />
                 </div>
-                <div>
-                  <Label>Landing Page Background Image</Label>
-                  <p className="text-xs text-slate-400 mb-1">High-impact background image (recommended: 1920x1080, max 400KB).</p>
-                  <ImageUpload value={settings.landing_page_bg_image || ''} onChange={v => setSettings({...settings, landing_page_bg_image: v})} data-testid="lp-bg-image" />
-                </div>
               </>
             )}
           </div>

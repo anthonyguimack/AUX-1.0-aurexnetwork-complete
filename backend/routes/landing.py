@@ -66,8 +66,26 @@ async def admin_delete_landing_hero(slide_id: str, user: dict = Depends(require_
 
 @router.get("/public/landing-hero")
 async def public_get_landing_hero():
-    slides = await db.landing_hero.find({}, {"_id": 0}).sort("order", 1).to_list(100)
-    return slides
+    now = datetime.now(timezone.utc).isoformat()
+    all_slides = await db.landing_hero.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    active = []
+    for s in all_slides:
+        ds = s.get("date_start", "")
+        de = s.get("date_end", "")
+        if not ds and not de:
+            active.append(s)
+            continue
+        if ds and not de:
+            if now >= ds:
+                active.append(s)
+            continue
+        if not ds and de:
+            if now <= de:
+                active.append(s)
+            continue
+        if ds <= now <= de:
+            active.append(s)
+    return active
 
 # ─── Landing Page Subscribers (Waiting List) ───
 @router.get("/admin/landing-subscribers")

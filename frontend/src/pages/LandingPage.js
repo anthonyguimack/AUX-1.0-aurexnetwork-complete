@@ -147,7 +147,7 @@ export default function LandingPage() {
 
   const hero = heroSlides[0] || {};
   const logoSrc = resolveSrc(settings.landing_page_logo);
-  const heroBg = resolveSrc(hero.background) || resolveSrc(settings.landing_page_bg_image);
+  const heroBg = resolveSrc(hero.background);
   const videoUrl = resolveVideoUrl(hero.video_embed || hero.video_url);
   const heroPhoto = resolveSrc(hero.photo);
   const contactImage = resolveSrc(content.contact_image);
