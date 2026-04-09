@@ -11,30 +11,48 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 ## What's Been Implemented
 
 ### Core (Phase 1-2)
-Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore
+Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore, Gallery (lightbox/categories/reorder), Portfolio, Maps (3 types + clustering), Reading List, Blog Categories CRUD
 
-### Session: Apr 8, 2026 (Latest)
-1. **MapBlock Crash Fix** — Replaced `React.lazy()` inside component body with direct imports in `BlockRenderer.js`, resolving crashes on "Our Group" dynamic page
-2. **Maps "Open in new tab" Fix** — Fixed hardcoded `target="_blank"` in `HomePage.js` MapSection popups to respect `open_in_new_tab` setting
-3. **Global Maps Language Setting** — Added `maps_language` field to CMS Settings > General tab with 11 language options. All map TileLayers now use centralized `mapConfig.js` for tile URLs
-4. **Interactive Map Picker** — Added Leaflet `ClickableMap` component in MapsManager location edit dialog for click-to-set lat/lng coordinates
-5. **Tile Provider Integration** — All maps (HomePage, MapTypePage, BlockRenderer) now use `getTileUrl(lang)` and `getTileAttribution(lang)` from `/app/frontend/src/lib/mapConfig.js`
+### Landing Page Module (Apr 9, 2026)
+1. **"Coming Soon" Landing Page** — Dark premium design with animated countdown, 3 CTA buttons (More Info, Membership Lounge, Notify Me!), Description/Value Proposition section, Contact Form, "Notify Me!" newsletter modal, GDPR Cookie Banner, and configurable multi-layer background (image + overlay)
+2. **CMS Routing Logic** — Auto-switch between Landing Page and Website based on `landing_page_enabled` (Yes/No) and `landing_page_launch_date`. Client-side countdown expires → auto-shows website without reload
+3. **CMS > Settings > General** — Landing Page toggle (Yes/No radio), Website Launch Date (datetime-local), Landing Page Logo (upload), Background Image (upload)
+4. **CMS > Settings > Colors** — New "Landing Page" color block with 25 CSS variables (`--lp-*`) for backgrounds, countdown, buttons, inputs, modal, footer, cookie banner
+5. **CMS > Landing Page > Content** — Full content editor for all landing page text: hero title/subtitle/positioning, 3 button texts, description title/subtitle/body (rich text), contact form title/button, notify modal title/text/button, footer text, cookie message
+6. **CMS > Landing Page > Subscribers** — CRUD table for "Notify Me!" newsletter signups (sorted by most recent)
+7. **CMS > Landing Page > Contacts** — CRUD table for contact form submissions (sorted by most recent)
+8. **Admin Login Page** — Standalone dark-themed admin login at `/admin/login` accessible even when landing page is active
+9. **Complete Isolation** — Landing page has own component, styles (CSS variables), and does not share layout/logic with Website or My Account
 
-### Session: Apr 6, 2026
-1. Quill Alignment CSS, Featured Projects Page, Homepage Portfolio
-2. Maps Module Refactor — 3 map types: Global Business, Conferences, Recommended Sites
-3. Blog Categories CRUD, Gallery Categories A→Z, Gallery drag-to-reorder
-4. Navbar fully dynamic, Footer dynamic sitemap
+### Map Improvements (Apr 8, 2026)
+- MapBlock crash fix (React.lazy → direct imports)
+- Maps "Open in new tab" fix
+- Global Maps Language setting (11 languages)
+- Interactive Map Picker (click-to-set lat/lng)
+- Tile provider integration via mapConfig.js
 
-## Content Block Types (16)
-Rich Text, Image, Video, Service List, Gallery, Gallery Albums, Blog/News, Reading List, Profile Card, Button, Separator, Custom HTML, Legends & Testimonials, Global Business Map, Conferences Map, Recommended Sites Map
+## Landing Page Architecture
+```
+Settings (MongoDB):
+  landing_page_enabled: boolean
+  landing_page_launch_date: ISO datetime
+  landing_page_logo: image URL
+  landing_page_bg_image: image URL
+  theme_colors.landing_page: { 25 color fields }
 
-## Map Types
-| Type | Page URL | Block Key | Description |
-|------|----------|-----------|-------------|
-| Global Business Presence | (homepage section) | map_global | Existing world map |
-| Conferences | /conferences | map_conferences | Events + locations |
-| Recommended Sites | /recommended_sites | map_recommended | Recommended places |
+Collections:
+  landing_content: { hero_title, hero_subtitle, hero_positioning, btn1_text, btn2_text, btn3_text, desc_title, desc_subtitle, desc_body, desc_cta_text, contact_title, contact_btn_text, notify_title, notify_text, notify_btn_text, footer_text, cookie_message }
+  landing_subscribers: { id, first_name, last_name, email, created_at }
+  landing_contacts: { id, first_name, last_name, email, message, created_at }
+
+API Endpoints:
+  GET/PUT /api/admin/landing-content
+  GET/DELETE /api/admin/landing-subscribers/:id
+  GET/DELETE /api/admin/landing-contacts/:id
+  POST /api/public/landing-subscribe
+  POST /api/public/landing-contact
+  GET /api/public/landing-content
+```
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!
