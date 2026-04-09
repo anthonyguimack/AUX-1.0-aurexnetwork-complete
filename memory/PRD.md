@@ -11,50 +11,44 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 ## What's Been Implemented
 
 ### Core (Phase 1-2)
-Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore, Gallery (lightbox/categories/reorder), Portfolio, Maps (3 types + clustering), Reading List, Blog Categories CRUD
+Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore, Gallery, Portfolio, Maps (3 types + clustering), Reading List, Blog Categories CRUD
 
 ### Landing Page Module (Apr 9, 2026)
-**5-Section Layout (matching reference design):**
-1. **Header/Nav** — Fixed position, logo left + 4 configurable nav links (Home, More Information, Membership Lounge, Waiting List). Mobile hamburger menu.
-2. **Hero** — 2-column: Left has editable title (rich text), animated countdown, description, 3 CTA buttons. Right has embedded video (YouTube/Vimeo URL from hero slide).
-3. **Get in Touch** — 2-column: Left has configurable image, Right has title/subtitle/description + contact form (Name, Email, Subject, Message). Saves to `landing_contacts`.
-4. **Waiting List** — White background, centered form (Name, Last Name, Email + Submit). Saves to `landing_subscribers`.
-5. **Footer** — 2-column: Left has logo + description, Right has "Follow Us" + social media icons (from settings). Copyright centered below.
+**5-Section Layout:**
+1. **Header/Nav** — Fixed, logo left + 4 nav links right, mobile hamburger
+2. **Hero** — 2-column: Left (title, countdown, subtitle, description, multi-buttons), Right (video/photo embed). Background overlay toggle.
+3. **Get in Touch** — 2-column: Left (image), Right (form: Name/Email/Subject/Message). Saves to `landing_contacts`.
+4. **Waiting List** — White bg, centered form (Name/Last Name/Email). Saves to `landing_subscribers`.
+5. **Footer** — 2-column: Left (logo+desc), Right (social icons), Copyright center.
 
 **CMS Admin — Landing Page Section:**
-- **Hero** — Full CRUD for hero slides (title, subtitle, description w/ rich text, background image, video URL, 3 CTA button texts, display order)
-- **Content** — All text/images: nav link texts (4), contact section (title/subtitle/description/image/placeholders/button text), waiting list (title/subtitle/button text), footer (description/social title/copyright), cookie banner message
-- **Subscribers** — Table of waiting list signups, sorted by most recent, with delete
-- **Contacts** — Table of contact form submissions with Subject column, click-to-view detail dialog, delete
+- **Hero** — Full slide form CLONED from Website Hero: timer, title/subtitle/description (rich text), **multiple buttons per slide** (text/url/window/style), slide type (photo/video), media dimensions, background image + **Background Overlay (Yes/No)**, layer animation effects, layer positioning (canvas editor), revolution slider params, page assignment, live preview.
+- **Content** — Nav links (4), contact section (title/subtitle/description/image/placeholders), waiting list (title/subtitle/btn), footer (description/social title/copyright), cookie banner.
+- **Subscribers** — Waiting list signups table with delete.
+- **Contacts** — Contact form submissions table with Subject column + detail dialog.
 
-**CMS Settings Integration:**
-- Settings > General: LP toggle (Yes/No), Launch Date (datetime), Logo upload, Background Image upload
-- Settings > Colors: 25 CSS variables (`--lp-*`) for all visual elements
-- Routing: Auto-switch LP ↔ Website when countdown expires (client-side, no reload)
-- Admin Login: Standalone dark page at `/admin/login` accessible during LP mode
-- Complete Isolation: No shared layout/styles with Website or My Account
+**CMS Settings:**
+- Settings > General: LP toggle, Launch Date, Logo, Background Image
+- Settings > Colors: 25 CSS variables (`--lp-*`)
+- Routing: Auto-switch LP ↔ Website on countdown expiry (client-side, no reload)
+- Admin Login: Standalone at `/admin/login`
+
+**Text Rendering Fixes (Apr 9, 2026):**
+- Non-breaking hyphen replacement (`nbHyphens`) prevents text wrapping at hyphens (membership-based, expert-led, high-quality)
+- Rich text paragraph spacing: `<p>` tags get proper margin-bottom for line spacing
+- CSS `word-break: keep-all` + `hyphens: none` globally on `.rich-text-content`
 
 ### Map Improvements (Apr 8, 2026)
 MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languages), Interactive Map Picker, Tile provider integration
 
-## Key API Endpoints (Landing)
-```
-GET/PUT    /api/admin/landing-content
-GET/POST   /api/admin/landing-hero
-GET/PUT/DELETE /api/admin/landing-hero/:id
-GET/DELETE /api/admin/landing-subscribers/:id
-GET/DELETE /api/admin/landing-contacts/:id
-POST       /api/public/landing-subscribe
-POST       /api/public/landing-contact
-GET        /api/public/landing-hero
-GET        /api/public/landing-content
-```
-
-## DB Collections (Landing)
-- `landing_hero`: `{ id, title, subtitle, description, background, video_url, button1_text, button2_text, button3_text, order }`
-- `landing_content`: Single document with all text fields
-- `landing_subscribers`: `{ id, first_name, last_name, email, created_at }`
-- `landing_contacts`: `{ id, first_name, email, subject, message, created_at }`
+## Key Files
+- `/app/frontend/src/pages/LandingPage.js` — Main landing page component
+- `/app/frontend/src/pages/admin/LandingHeroSlideForm.js` — Full hero slide form (cloned from HeroSlideForm)
+- `/app/frontend/src/pages/admin/LandingHeroManager.js` — Hero slides list manager
+- `/app/frontend/src/pages/admin/LandingContentManager.js` — All text/image content
+- `/app/frontend/src/pages/admin/LandingSubscribersManager.js` — Waiting list table
+- `/app/frontend/src/pages/admin/LandingContactsManager.js` — Contact submissions
+- `/app/backend/routes/landing.py` — All landing page API endpoints
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!

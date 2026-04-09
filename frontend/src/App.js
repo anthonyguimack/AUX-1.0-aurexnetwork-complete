@@ -50,6 +50,7 @@ import LandingContentManager from './pages/admin/LandingContentManager';
 import LandingSubscribersManager from './pages/admin/LandingSubscribersManager';
 import LandingContactsManager from './pages/admin/LandingContactsManager';
 import LandingHeroManager from './pages/admin/LandingHeroManager';
+import LandingHeroSlideForm from './pages/admin/LandingHeroSlideForm';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 // Membership / My Account
 import MemberLogin from './pages/myaccount/MemberLogin';
@@ -355,6 +356,8 @@ function AppRouter() {
           <Route path="section-order" element={<SectionOrderManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
           <Route path="landing-hero" element={<LandingHeroManager />} />
+          <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
+          <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
         </Route>
@@ -416,6 +419,8 @@ function AppRouter() {
           <Route path="section-order" element={<SectionOrderManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
           <Route path="landing-hero" element={<LandingHeroManager />} />
+          <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
+          <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
         </Route>

@@ -7,6 +7,14 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
 const cv = (name, fallback) => `var(--lp-${name}, ${fallback})`;
 
+/* Replace regular hyphens between word chars with non-breaking hyphen U+2011 */
+function nbHyphens(html) {
+  if (!html) return html;
+  return html.replace(/>([^<]+)</g, (match, text) => {
+    return '>' + text.replace(/(\w)-(\w)/g, '$1\u2011$2') + '<';
+  }).replace(/^([^<]+)/, (text) => text.replace(/(\w)-(\w)/g, '$1\u2011$2'));
+}
+
 /* ─── Scroll Reveal ─── */
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef(null);
@@ -140,9 +148,12 @@ export default function LandingPage() {
   const hero = heroSlides[0] || {};
   const logoSrc = resolveSrc(settings.landing_page_logo);
   const heroBg = resolveSrc(hero.background) || resolveSrc(settings.landing_page_bg_image);
-  const videoUrl = resolveVideoUrl(hero.video_url);
+  const videoUrl = resolveVideoUrl(hero.video_embed || hero.video_url);
+  const heroPhoto = resolveSrc(hero.photo);
   const contactImage = resolveSrc(content.contact_image);
   const socialLinks = settings.social_media || [];
+  const showOverlay = hero.background_overlay !== false;
+  const heroButtons = hero.buttons || [];
 
   const scrollTo = (id) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); };
 
@@ -207,12 +218,15 @@ export default function LandingPage() {
       <section className="relative min-h-screen flex items-center pt-16" id="hero" data-testid="lp-hero">
         {/* Background */}
         {heroBg && <div className="absolute inset-0 z-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${heroBg})` }} />}
-        <div className="absolute inset-0 z-[1]" style={{ background: `linear-gradient(to bottom, ${cv('overlay-start', 'rgba(0,0,0,0.75)')}, ${cv('overlay-end', 'rgba(5,5,15,0.88)')})` }} />
+        {showOverlay && <div className="absolute inset-0 z-[1]" style={{ background: `linear-gradient(to bottom, ${cv('overlay-start', 'rgba(0,0,0,0.75)')}, ${cv('overlay-end', 'rgba(5,5,15,0.88)')})` }} />}
         <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 sm:py-24 w-full">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left column: Text + Countdown */}
             <div className="animate-fadeIn">
-              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-hero-title" dangerouslySetInnerHTML={{ __html: hero.title || 'Launching in :' }} />
+              {hero.title && (
+                <div className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 rich-text-content [&_p]:m-0" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-hero-title" dangerouslySetInnerHTML={{ __html: nbHyphens(hero.title) }} />
+              )}
+              {!hero.title && <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>Launching in :</h1>}
               {/* Countdown */}
               <div className="flex gap-3 sm:gap-5 mb-8" data-testid="lp-countdown">
                 <CountdownBox value={countdown.days} label="Days" />
@@ -220,27 +234,52 @@ export default function LandingPage() {
                 <CountdownBox value={countdown.minutes} label="Minutes" />
                 <CountdownBox value={countdown.seconds} label="Seconds" />
               </div>
-              {hero.description && (
-                <div className="text-sm leading-relaxed mb-8 max-w-lg rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: hero.description }} data-testid="lp-hero-description" />
+              {hero.subtitle && (
+                <div className="text-base sm:text-lg font-semibold mb-4 rich-text-content [&_p]:m-0" style={{ color: cv('body-text', '#f5f5f5') }} dangerouslySetInnerHTML={{ __html: nbHyphens(hero.subtitle) }} />
               )}
-              {/* CTA Buttons */}
-              <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
-                <button onClick={() => scrollTo('contact')} className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-info">
-                  {hero.button1_text || content.btn1_text || 'More Information'}
-                </button>
-                <a href="/my-account" className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 text-center" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-membership">
-                  {hero.button2_text || content.btn2_text || 'Membership Lounge'}
-                </a>
-                <button onClick={() => scrollTo('waitlist')} className="px-6 py-2.5 rounded text-sm font-medium transition-all hover:opacity-80" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-btn-waitlist">
-                  {hero.button3_text || content.btn3_text || 'Add to Waiting List'}
-                </button>
-              </div>
+              {hero.description && (
+                <div className="text-sm leading-relaxed mb-8 rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: nbHyphens(hero.description) }} data-testid="lp-hero-description" />
+              )}
+              {/* CTA Buttons — from slide buttons array */}
+              {heroButtons.length > 0 ? (
+                <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
+                  {heroButtons.map((btn, i) => {
+                    const isExternal = btn.window_open === 'new';
+                    const isFilled = btn.style === 'filled';
+                    const btnStyle = isFilled
+                      ? { backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }
+                      : { borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' };
+                    const cls = `px-6 py-2.5 rounded text-sm font-medium transition-all hover:opacity-80 ${isFilled ? '' : 'border'}`;
+                    if (btn.url === '#contact' || btn.url === '#waitlist' || btn.url === '#hero') {
+                      return <button key={i} onClick={() => scrollTo(btn.url.replace('#', ''))} className={cls} style={btnStyle} data-testid={`lp-btn-${i}`}>{btn.text}</button>;
+                    }
+                    return <a key={i} href={btn.url || '#'} target={isExternal ? '_blank' : '_self'} rel="noreferrer" className={`${cls} text-center`} style={btnStyle} data-testid={`lp-btn-${i}`}>{btn.text}</a>;
+                  })}
+                </div>
+              ) : (
+                /* Fallback: default 3 buttons if no buttons array */
+                <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
+                  <button onClick={() => scrollTo('contact')} className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-info">
+                    {content.btn1_text || 'More Information'}
+                  </button>
+                  <a href="/my-account" className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 text-center" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-membership">
+                    {content.btn2_text || 'Membership Lounge'}
+                  </a>
+                  <button onClick={() => scrollTo('waitlist')} className="px-6 py-2.5 rounded text-sm font-medium transition-all hover:opacity-80" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-btn-waitlist">
+                    {content.btn3_text || 'Add to Waiting List'}
+                  </button>
+                </div>
+              )}
             </div>
-            {/* Right column: Video */}
+            {/* Right column: Video or Photo */}
             <div className="animate-fadeIn" style={{ animationDelay: '0.3s' }}>
               {videoUrl ? (
                 <div className="rounded-lg overflow-hidden shadow-2xl border" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)'), aspectRatio: '16/9' }} data-testid="lp-hero-video">
                   <iframe src={videoUrl} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
+                </div>
+              ) : heroPhoto ? (
+                <div className="rounded-lg overflow-hidden shadow-2xl border" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)') }} data-testid="lp-hero-photo">
+                  <img src={heroPhoto} alt="" className="w-full h-auto object-cover" />
                 </div>
               ) : (
                 <div className="rounded-lg flex items-center justify-center" style={{ aspectRatio: '16/9', backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }} data-testid="lp-hero-video-placeholder">
@@ -276,7 +315,7 @@ export default function LandingPage() {
               </h2>
               {content.contact_subtitle && <p className="text-sm mb-3" style={{ color: cv('accent', '#c9a84c') }}>{content.contact_subtitle}</p>}
               {content.contact_description && (
-                <div className="text-sm leading-relaxed mb-8 rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: content.contact_description }} />
+                <div className="text-sm leading-relaxed mb-8 rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: nbHyphens(content.contact_description) }} />
               )}
               {contactSuccess ? (
                 <div className="text-center py-8 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }} data-testid="lp-contact-success">

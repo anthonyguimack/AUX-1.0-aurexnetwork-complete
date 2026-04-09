@@ -320,8 +320,10 @@ html {
 .rich-text-content {
   overflow-x: hidden;
   overflow-wrap: break-word;
-  word-break: break-word;
+  word-break: keep-all;
   hyphens: none;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
   max-width: 100%;
 }
 .rich-text-content img {
@@ -336,5 +338,17 @@ html {
 .rich-text-content pre {
   overflow-x: auto;
   max-width: 100%;
+}
+
+.rich-text-content p {
+  margin-bottom: 0.75em;
+}
+.rich-text-content p:last-child {
+  margin-bottom: 0;
+}
+.rich-text-content br {
+  content: "";
+  display: block;
+  margin-top: 0.5em;
 }
 
