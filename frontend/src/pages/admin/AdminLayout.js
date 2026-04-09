@@ -5,7 +5,7 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -22,10 +22,16 @@ const sidebarItems = [
   { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
   { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
   { label: 'Pages', icon: FileStack, href: '/admin/pages' },
+  { type: 'divider', label: 'Landing Page' },
+  { label: 'Content', icon: Rocket, href: '/admin/landing-content', group: 'landing' },
+  { label: 'Subscribers', icon: UserCheck, href: '/admin/landing-subscribers', group: 'landing' },
+  { label: 'Contacts', icon: Mail, href: '/admin/landing-contacts', group: 'landing' },
+  { type: 'divider', label: 'Membership' },
   { label: 'Members', icon: UserCheck, href: '/admin/members' },
   { label: 'Member Levels', icon: Shield, href: '/admin/member-levels' },
   { label: 'Member Types', icon: Users, href: '/admin/member-types' },
   { label: 'Membership Settings', icon: ClipboardCheck, href: '/admin/membership-settings' },
+  { type: 'divider', label: 'System' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
   { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
@@ -85,7 +91,11 @@ export default function AdminLayout() {
           </button>
         </div>
         <nav className="flex-1 py-3 overflow-y-auto">
-          {sidebarItems.map(item => {
+          {sidebarItems.map((item, idx) => {
+            if (item.type === 'divider') {
+              if (collapsed) return <div key={idx} className="my-2 mx-3 border-t border-white/10" />;
+              return <div key={idx} className="mt-4 mb-1 px-4 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</div>;
+            }
             const active = location.pathname === item.href;
             return (
               <Link key={item.href} to={item.href} onClick={() => setMobileOpen(false)}

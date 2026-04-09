@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
-import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, THEMES } from '../../lib/themeColors';
+import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, THEMES } from '../../lib/themeColors';
 import { MAP_LANGUAGES } from '../../lib/mapConfig';
 
 function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
@@ -124,6 +124,7 @@ export default function SettingsManager() {
   const websiteColors = tc.website || settings.colors || {};
   const myAccountColors = tc.my_account || {};
   const adminColors = tc.admin || {};
+  const landingPageColors = tc.landing_page || {};
 
   const activeTheme = settings.active_theme || 'default';
 
@@ -198,6 +199,42 @@ export default function SettingsManager() {
                 {MAP_LANGUAGES.map(l => <option key={l.value} value={l.value}>{l.label}</option>)}
               </select>
             </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}>Landing Page</h3>
+            <div>
+              <Label>Enable Landing Page</Label>
+              <p className="text-xs text-slate-400 mb-2">When enabled, visitors see the Landing Page instead of the Website until the launch date.</p>
+              <div className="flex gap-4">
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="lp_enabled" checked={settings.landing_page_enabled === true} onChange={() => setSettings({...settings, landing_page_enabled: true})} className="accent-[#0D9488]" data-testid="lp-enabled-yes" />
+                  <span className="text-sm">Yes</span>
+                </label>
+                <label className="flex items-center gap-2 cursor-pointer">
+                  <input type="radio" name="lp_enabled" checked={settings.landing_page_enabled !== true} onChange={() => setSettings({...settings, landing_page_enabled: false})} className="accent-[#0D9488]" data-testid="lp-enabled-no" />
+                  <span className="text-sm">No</span>
+                </label>
+              </div>
+            </div>
+            {settings.landing_page_enabled && (
+              <>
+                <div>
+                  <Label>Website Launch Date</Label>
+                  <p className="text-xs text-slate-400 mb-1">The landing page shows until this date, then auto-switches to the website.</p>
+                  <Input type="datetime-local" value={settings.landing_page_launch_date || ''} onChange={e => setSettings({...settings, landing_page_launch_date: e.target.value})} className="mt-1" data-testid="lp-launch-date" />
+                </div>
+                <div>
+                  <Label>Landing Page Logo</Label>
+                  <p className="text-xs text-slate-400 mb-1">Exclusive logo for the landing page. Upload or paste URL.</p>
+                  <ImageUpload value={settings.landing_page_logo || ''} onChange={v => setSettings({...settings, landing_page_logo: v})} data-testid="lp-logo" />
+                </div>
+                <div>
+                  <Label>Landing Page Background Image</Label>
+                  <p className="text-xs text-slate-400 mb-1">High-impact background image (recommended: 1920x1080, max 400KB).</p>
+                  <ImageUpload value={settings.landing_page_bg_image || ''} onChange={v => setSettings({...settings, landing_page_bg_image: v})} data-testid="lp-bg-image" />
+                </div>
+              </>
+            )}
           </div>
         </TabsContent>
 
@@ -229,6 +266,14 @@ export default function SettingsManager() {
               values={adminColors}
               onChange={(key, val) => updateThemeColor('admin', key, val)}
               testIdPrefix="admin"
+            />
+            <ColorGroup
+              title="Landing Page"
+              description="Colors for the Coming Soon landing page — backgrounds, countdown, buttons, modal, forms, footer, cookie banner."
+              colors={LANDING_PAGE_COLORS}
+              values={landingPageColors}
+              onChange={(key, val) => updateThemeColor('landing_page', key, val)}
+              testIdPrefix="landing"
             />
           </div>
         </TabsContent>

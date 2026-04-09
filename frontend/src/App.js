@@ -46,6 +46,10 @@ import MemberTypesManager from './pages/admin/MemberTypesManager';
 import MembershipSettingsManager from './pages/admin/MembershipSettingsManager';
 import BackupManager from './pages/admin/BackupManager';
 import ContactSettingsManager from './pages/admin/ContactSettingsManager';
+import LandingContentManager from './pages/admin/LandingContentManager';
+import LandingSubscribersManager from './pages/admin/LandingSubscribersManager';
+import LandingContactsManager from './pages/admin/LandingContactsManager';
+import AdminLoginPage from './pages/admin/AdminLoginPage';
 // Membership / My Account
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
@@ -59,6 +63,8 @@ import MyEbank from './pages/myaccount/MyEbank';
 import PortfolioList from './pages/myaccount/PortfolioList';
 import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
+
+import LandingPage from './pages/LandingPage';
 
 import { injectThemeColors } from './lib/themeColors';
 
@@ -143,7 +149,7 @@ function AuthCallback() {
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
-  if (!user || user.role !== 'admin') return <Navigate to="/" replace />;
+  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />;
   return children;
 }
 
@@ -266,11 +272,31 @@ function ScrollToTop() {
   return null;
 }
 
+function useLandingActive(settings) {
+  const [active, setActive] = useState(false);
+  useEffect(() => {
+    if (!settings.landing_page_enabled) { setActive(false); return; }
+    const check = () => {
+      if (!settings.landing_page_launch_date) { setActive(true); return; }
+      const launch = new Date(settings.landing_page_launch_date).getTime();
+      setActive(Date.now() < launch);
+    };
+    check();
+    const id = setInterval(check, 1000);
+    return () => clearInterval(id);
+  }, [settings.landing_page_enabled, settings.landing_page_launch_date]);
+  return active;
+}
+
 function AppRouter() {
   const location = useLocation();
+  const settings = useSettings();
+  const landingActive = useLandingActive(settings);
+
   if (location.hash?.includes('session_id=')) return <AuthCallback />;
 
   const isMemberArea = location.pathname.startsWith('/my-account');
+  const isAdmin = location.pathname.startsWith('/admin');
 
   if (isMemberArea) {
     return (
@@ -294,27 +320,10 @@ function AppRouter() {
     );
   }
 
-  return (
-    <>
-      <ScrollToTop />
-      <Navbar />
-      <SystemPageHero />
+  // Landing page takes over all non-admin, non-my-account routes
+  if (landingActive && !isAdmin) {
+    return (
       <Routes>
-        <Route path="/" element={<HomePage />} />
-        <Route path="/news" element={<NewsPage />} />
-        <Route path="/news/:slug" element={<NewsDetailPage />} />
-        <Route path="/reading-list" element={<ReadingListPage />} />
-        <Route path="/gallery" element={<GalleryPage />} />
-        <Route path="/map/:slug" element={<MapDetailPage />} />
-        <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
-        <Route path="/featured-projects" element={<FeaturedProjectsPage />} />
-        <Route path="/conferences" element={<ConferencesPage />} />
-        <Route path="/recommended_sites" element={<RecommendedSitesPage />} />
-        <Route path="/album/:albumId" element={<LayoutSubGallery />} />
-        <Route path="/terms" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
-        <Route path="/privacy" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
-        <Route path="/checkout/success" element={<CheckoutSuccess />} />
-        <Route path="/page/:pageId" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
           <Route index element={<AdminDashboard />} />
           <Route path="hero" element={<HeroManager />} />
@@ -343,6 +352,69 @@ function AppRouter() {
           <Route path="seo" element={<SeoManager />} />
           <Route path="backup" element={<BackupManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
+          <Route path="landing-content" element={<LandingContentManager />} />
+          <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
+          <Route path="landing-contacts" element={<LandingContactsManager />} />
+        </Route>
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="*" element={<LandingPage />} />
+      </Routes>
+    );
+  }
+
+  return (
+    <>
+      <ScrollToTop />
+      <Navbar />
+      <SystemPageHero />
+      <Routes>
+        <Route path="/" element={<HomePage />} />
+        <Route path="/news" element={<NewsPage />} />
+        <Route path="/news/:slug" element={<NewsDetailPage />} />
+        <Route path="/reading-list" element={<ReadingListPage />} />
+        <Route path="/gallery" element={<GalleryPage />} />
+        <Route path="/map/:slug" element={<MapDetailPage />} />
+        <Route path="/service/:serviceId" element={<ServiceDetailPage />} />
+        <Route path="/featured-projects" element={<FeaturedProjectsPage />} />
+        <Route path="/conferences" element={<ConferencesPage />} />
+        <Route path="/recommended_sites" element={<RecommendedSitesPage />} />
+        <Route path="/album/:albumId" element={<LayoutSubGallery />} />
+        <Route path="/terms" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
+        <Route path="/privacy" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
+        <Route path="/checkout/success" element={<CheckoutSuccess />} />
+        <Route path="/page/:pageId" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
+        <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
+          <Route index element={<AdminDashboard />} />
+          <Route path="hero" element={<HeroManager />} />
+          <Route path="hero/add" element={<HeroSlideForm />} />
+          <Route path="hero/edit/:id" element={<HeroSlideForm />} />
+          <Route path="about" element={<AboutManager />} />
+          <Route path="services" element={<ServicesManager />} />
+          <Route path="blog" element={<BlogManager />} />
+          <Route path="books" element={<BooksManager />} />
+          <Route path="maps" element={<MapsManager />} />
+          <Route path="gallery" element={<GalleryManager />} />
+          <Route path="gallery-albums" element={<GalleryAlbumsManager />} />
+          <Route path="portfolio" element={<PortfolioManager />} />
+          <Route path="testimonials" element={<TestimonialsManager />} />
+          <Route path="contacts" element={<ContactsManager />} />
+          <Route path="contact-settings" element={<ContactSettingsManager />} />
+          <Route path="purchases" element={<PurchasesManager />} />
+          <Route path="settings" element={<SettingsManager />} />
+          <Route path="pages" element={<PagesManager />} />
+          <Route path="users" element={<UsersManager />} />
+          <Route path="members" element={<MembersManager />} />
+          <Route path="member-levels" element={<MemberLevelsManager />} />
+          <Route path="member-types" element={<MemberTypesManager />} />
+          <Route path="membership-settings" element={<MembershipSettingsManager />} />
+          <Route path="analytics" element={<AnalyticsDashboard />} />
+          <Route path="seo" element={<SeoManager />} />
+          <Route path="backup" element={<BackupManager />} />
+          <Route path="section-order" element={<SectionOrderManager />} />
+          <Route path="landing-content" element={<LandingContentManager />} />
+          <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
+          <Route path="landing-contacts" element={<LandingContactsManager />} />
         </Route>
         {/* Catch-all: custom page URLs like /kls */}
         <Route path="*" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />

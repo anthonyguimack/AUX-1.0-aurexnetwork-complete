@@ -48,8 +48,35 @@ export const MYACCOUNT_COLORS = [
   { key: 'avatar_bg', label: 'Avatar Background', default: 'rgba(201,168,76,0.1)' },
 ];
 
+export const LANDING_PAGE_COLORS = [
+  { key: 'bg_base', label: 'Base Background', default: '#0a0a12' },
+  { key: 'overlay_start', label: 'Overlay Start (top)', default: 'rgba(0,0,0,0.75)' },
+  { key: 'overlay_end', label: 'Overlay End (bottom)', default: 'rgba(5,5,15,0.88)' },
+  { key: 'accent', label: 'Accent / Gold', default: '#c9a84c' },
+  { key: 'heading', label: 'Heading Color', default: '#f5f5f5' },
+  { key: 'body_text', label: 'Body Text', default: '#f5f5f5' },
+  { key: 'secondary_text', label: 'Secondary Text', default: '#a0a0b0' },
+  { key: 'border', label: 'Border / Separator', default: 'rgba(201,168,76,0.3)' },
+  { key: 'button_bg', label: 'Button Background', default: '#c9a84c' },
+  { key: 'button_text', label: 'Button Text', default: '#0a0a12' },
+  { key: 'button_outline_border', label: 'Outline Button Border', default: '#c9a84c' },
+  { key: 'button_outline_text', label: 'Outline Button Text', default: '#c9a84c' },
+  { key: 'input_bg', label: 'Input Background', default: 'rgba(255,255,255,0.05)' },
+  { key: 'input_border', label: 'Input Border', default: 'rgba(201,168,76,0.3)' },
+  { key: 'input_text', label: 'Input Text', default: '#f5f5f5' },
+  { key: 'input_placeholder', label: 'Input Placeholder', default: '#a0a0b0' },
+  { key: 'modal_bg', label: 'Modal Background', default: '#13161e' },
+  { key: 'modal_border', label: 'Modal Border', default: 'rgba(201,168,76,0.3)' },
+  { key: 'footer_bg', label: 'Footer Background', default: 'rgba(0,0,0,0.3)' },
+  { key: 'footer_text', label: 'Footer Text', default: '#a0a0b0' },
+  { key: 'cookie_bg', label: 'Cookie Banner Background', default: '#13161e' },
+  { key: 'cookie_text', label: 'Cookie Banner Text', default: '#a0a0b0' },
+  { key: 'countdown_bg', label: 'Countdown Box Background', default: 'rgba(255,255,255,0.05)' },
+  { key: 'countdown_number', label: 'Countdown Number', default: '#c9a84c' },
+  { key: 'countdown_label', label: 'Countdown Label', default: '#a0a0b0' },
+];
+
 export const ADMIN_COLORS = [
-  { key: 'sidebar_bg', label: 'Sidebar Background', default: '#1a2332' },
   { key: 'sidebar_text', label: 'Sidebar Text', default: 'rgba(255,255,255,0.6)' },
   { key: 'sidebar_active_bg', label: 'Sidebar Active Background', default: '#0D9488' },
   { key: 'sidebar_active_text', label: 'Sidebar Active Text', default: '#ffffff' },
@@ -82,7 +109,7 @@ export function getColor(group, key, themeColors) {
 }
 
 function getDefault(group, key) {
-  const groups = { website: WEBSITE_COLORS, my_account: MYACCOUNT_COLORS, admin: ADMIN_COLORS };
+  const groups = { website: WEBSITE_COLORS, my_account: MYACCOUNT_COLORS, admin: ADMIN_COLORS, landing_page: LANDING_PAGE_COLORS };
   return groups[group]?.find(c => c.key === key)?.default || '#000000';
 }
 
@@ -118,6 +145,12 @@ export function injectThemeColors(themeColors) {
   const ad = themeColors?.admin || {};
   ADMIN_COLORS.forEach(c => {
     root.style.setProperty(`--ad-${c.key.replace(/_/g, '-')}`, ad[c.key] || c.default);
+  });
+
+  // Landing Page colors (--lp-*)
+  const lp = themeColors?.landing_page || {};
+  LANDING_PAGE_COLORS.forEach(c => {
+    root.style.setProperty(`--lp-${c.key.replace(/_/g, '-')}`, lp[c.key] || c.default);
   });
 }
 

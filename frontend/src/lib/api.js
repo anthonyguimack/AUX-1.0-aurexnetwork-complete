@@ -53,6 +53,12 @@ export const authAPI = {
 
 export const contactAPI = { submit: (data) => api.post('/contact', data) };
 
+export const landingAPI = {
+  getContent: () => api.get('/public/landing-content'),
+  subscribe: (data) => api.post('/public/landing-subscribe', data),
+  submitContact: (data) => api.post('/public/landing-contact', data),
+};
+
 export const checkoutAPI = {
   create: (serviceId, originUrl) => api.post('/checkout', { service_id: serviceId, origin_url: originUrl }),
   status: (sessionId) => api.get(`/checkout/status/${sessionId}`),
@@ -197,6 +203,13 @@ export const adminAPI = {
   updateContactSettings: (data) => api.put('/admin/contact-settings', data),
   // System Pages
   seedSystemPages: () => api.post('/admin/seed-system-pages'),
+  // Landing Page
+  getLandingContent: () => api.get('/admin/landing-content'),
+  updateLandingContent: (data) => api.put('/admin/landing-content', data),
+  getLandingSubscribers: () => api.get('/admin/landing-subscribers'),
+  deleteLandingSubscriber: (id) => api.delete(`/admin/landing-subscribers/${id}`),
+  getLandingContacts: () => api.get('/admin/landing-contacts'),
+  deleteLandingContact: (id) => api.delete(`/admin/landing-contacts/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
