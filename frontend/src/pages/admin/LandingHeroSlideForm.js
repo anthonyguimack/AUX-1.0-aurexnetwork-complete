@@ -88,7 +88,7 @@ const defaultSlide = {
   title: '', subtitle: '', description: '',
   buttons: [],
   slide_type: 'photo', video_embed: '', photo: '',
-  background: '', background_overlay: true,
+  background: '', background_overlay: true, show_countdown: true,
   title_effect: 'top', subtitle_effect: 'right', description_effect: 'bottom',
   button_effect: 'left', media_effect: 'right',
   title_x: 100, title_y: 50,
@@ -190,9 +190,23 @@ export default function LandingHeroSlideForm() {
       {/* Timer */}
       <div className={sectionCls}>
         <h2 className={sectionTitle}>Timer</h2>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
           <div><Label className="text-xs text-slate-500">Date Start</Label><input type="datetime-local" value={form.date_start} onChange={set('date_start')} className={`mt-1 ${selectCls}`} data-testid="lp-slide-date-start" /></div>
           <div><Label className="text-xs text-slate-500">Date End</Label><input type="datetime-local" value={form.date_end} onChange={set('date_end')} className={`mt-1 ${selectCls}`} data-testid="lp-slide-date-end" /></div>
+        </div>
+        <div>
+          <Label className="text-xs text-slate-500 mb-2 block">Show Countdown Timer</Label>
+          <p className="text-xs text-slate-400 mb-2">Display the countdown timer on this slide. Disable to create slides without a timer (e.g. decorative or link-only slides).</p>
+          <div className="flex gap-4">
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="show_countdown" checked={form.show_countdown !== false} onChange={() => setForm(p => ({...p, show_countdown: true}))} className="accent-[#0D9488]" data-testid="lp-countdown-yes" />
+              <span className="text-sm text-slate-600">Yes</span>
+            </label>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input type="radio" name="show_countdown" checked={form.show_countdown === false} onChange={() => setForm(p => ({...p, show_countdown: false}))} className="accent-[#0D9488]" data-testid="lp-countdown-no" />
+              <span className="text-sm text-slate-600">No</span>
+            </label>
+          </div>
         </div>
       </div>
 

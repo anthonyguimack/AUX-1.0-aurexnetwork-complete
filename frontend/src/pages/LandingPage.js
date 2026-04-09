@@ -256,22 +256,24 @@ export default function LandingPage() {
               {hero.title && (
                 <div className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6 rich-text-content [&_p]:m-0" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-hero-title" dangerouslySetInnerHTML={{ __html: nbHyphens(hero.title) }} />
               )}
-              {!hero.title && <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>Launching in :</h1>}
-              {/* Countdown */}
-              <div className="flex gap-3 sm:gap-5 mb-8" data-testid="lp-countdown">
-                <CountdownBox value={countdown.days} label="Days" />
-                <CountdownBox value={countdown.hours} label="Hours" />
-                <CountdownBox value={countdown.minutes} label="Minutes" />
-                <CountdownBox value={countdown.seconds} label="Seconds" />
-              </div>
+              {!hero.title && hero.show_countdown !== false && <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>Launching in :</h1>}
+              {/* Countdown — only if enabled on this slide */}
+              {hero.show_countdown !== false && (
+                <div className="flex gap-3 sm:gap-5 mb-8" data-testid="lp-countdown">
+                  <CountdownBox value={countdown.days} label="Days" />
+                  <CountdownBox value={countdown.hours} label="Hours" />
+                  <CountdownBox value={countdown.minutes} label="Minutes" />
+                  <CountdownBox value={countdown.seconds} label="Seconds" />
+                </div>
+              )}
               {hero.subtitle && (
                 <div className="text-base sm:text-lg font-semibold mb-4 rich-text-content [&_p]:m-0" style={{ color: cv('body-text', '#f5f5f5') }} dangerouslySetInnerHTML={{ __html: nbHyphens(hero.subtitle) }} />
               )}
               {hero.description && (
                 <div className="text-sm leading-relaxed mb-8 rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: nbHyphens(hero.description) }} data-testid="lp-hero-description" />
               )}
-              {/* CTA Buttons — from slide buttons array */}
-              {heroButtons.length > 0 ? (
+              {/* CTA Buttons — only shown if admin created them */}
+              {heroButtons.length > 0 && (
                 <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
                   {heroButtons.map((btn, i) => {
                     const isExternal = btn.window_open === 'new';
@@ -286,19 +288,6 @@ export default function LandingPage() {
                     return <a key={i} href={btn.url || '#'} target={isExternal ? '_blank' : '_self'} rel="noreferrer" className={`${cls} text-center`} style={btnStyle} data-testid={`lp-btn-${i}`}>{btn.text}</a>;
                   })}
                 </div>
-              ) : (
-                /* Fallback: default 3 buttons if no buttons array */
-                <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
-                  <button onClick={() => scrollTo('contact')} className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-info">
-                    {content.btn1_text || 'More Information'}
-                  </button>
-                  <a href="/my-account" className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 text-center" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-membership">
-                    {content.btn2_text || 'Membership Lounge'}
-                  </a>
-                  <button onClick={() => scrollTo('waitlist')} className="px-6 py-2.5 rounded text-sm font-medium transition-all hover:opacity-80" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-btn-waitlist">
-                    {content.btn3_text || 'Add to Waiting List'}
-                  </button>
-                </div>
               )}
             </div>
             {/* Right column: Video or Photo */}
@@ -308,17 +297,10 @@ export default function LandingPage() {
                   <iframe src={videoUrl} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
                 </div>
               ) : heroPhoto ? (
-                <div className="rounded-lg overflow-hidden shadow-2xl border" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)') }} data-testid="lp-hero-photo">
+                <div className="rounded-lg overflow-hidden shadow-2xl" data-testid="lp-hero-photo">
                   <img src={heroPhoto} alt="" className="w-full h-auto object-cover" />
                 </div>
-              ) : (
-                <div className="rounded-lg flex items-center justify-center" style={{ aspectRatio: '16/9', backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }} data-testid="lp-hero-video-placeholder">
-                  <div className="text-center" style={{ color: cv('secondary-text', '#a0a0b0') }}>
-                    <svg className="w-16 h-16 mx-auto mb-2 opacity-30" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
-                    <p className="text-xs opacity-50">Video coming soon</p>
-                  </div>
-                </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>

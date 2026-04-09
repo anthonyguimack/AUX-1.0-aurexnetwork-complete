@@ -39,6 +39,9 @@ Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme E
 - Dot indicators with active state highlighting
 - Background image crossfade transition on slide change
 - Content re-animation via React key on slide transitions
+- Buttons only display if admin creates them (no fallback defaults)
+- Border only on video embeds (photos and empty states have no border)
+- Per-slide countdown timer toggle (`show_countdown` Yes/No in CMS)
 
 **Text Rendering Fixes (Apr 9, 2026):**
 - Non-breaking hyphen replacement (`nbHyphens`) prevents text wrapping at hyphens (membership-based, expert-led, high-quality)
