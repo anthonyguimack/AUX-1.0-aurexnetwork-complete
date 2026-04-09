@@ -33,6 +33,13 @@ Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme E
 - Routing: Auto-switch LP ↔ Website on countdown expiry (client-side, no reload)
 - Admin Login: Standalone at `/admin/login`
 
+**Hero Carousel (Apr 9, 2026):**
+- Multi-slide carousel with auto-advance (configurable delay per slide, default 9.4s)
+- Prev/Next arrow navigation (glassmorphism buttons)
+- Dot indicators with active state highlighting
+- Background image crossfade transition on slide change
+- Content re-animation via React key on slide transitions
+
 **Text Rendering Fixes (Apr 9, 2026):**
 - Non-breaking hyphen replacement (`nbHyphens`) prevents text wrapping at hyphens (membership-based, expert-led, high-quality)
 - Rich text paragraph spacing: `<p>` tags get proper margin-bottom for line spacing

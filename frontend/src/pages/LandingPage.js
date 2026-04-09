@@ -136,6 +136,8 @@ export default function LandingPage() {
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [currentSlide, setCurrentSlide] = useState(0);
+  const [slideAnimKey, setSlideAnimKey] = useState(0);
 
   const launchDate = settings.landing_page_launch_date;
   const countdown = useCountdown(launchDate);
@@ -145,7 +147,22 @@ export default function LandingPage() {
     landingAPI.getHeroSlides().then(r => setHeroSlides(r.data || [])).catch(() => {});
   }, []);
 
-  const hero = heroSlides[0] || {};
+  /* Auto-advance carousel */
+  useEffect(() => {
+    if (heroSlides.length <= 1) return;
+    const delay = heroSlides[currentSlide]?.delay || 9400;
+    const timer = setTimeout(() => {
+      setCurrentSlide(prev => (prev + 1) % heroSlides.length);
+      setSlideAnimKey(prev => prev + 1);
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [currentSlide, heroSlides]);
+
+  const goToSlide = (i) => { setCurrentSlide(i); setSlideAnimKey(prev => prev + 1); };
+  const prevSlide = () => goToSlide((currentSlide - 1 + heroSlides.length) % heroSlides.length);
+  const nextSlide = () => goToSlide((currentSlide + 1) % heroSlides.length);
+
+  const hero = heroSlides[currentSlide] || {};
   const logoSrc = resolveSrc(settings.landing_page_logo);
   const heroBg = resolveSrc(hero.background);
   const videoUrl = resolveVideoUrl(hero.video_embed || hero.video_url);
@@ -216,10 +233,23 @@ export default function LandingPage() {
 
       {/* ═══ HERO SECTION ═══ */}
       <section className="relative min-h-screen flex items-center pt-16" id="hero" data-testid="lp-hero">
-        {/* Background */}
-        {heroBg && <div className="absolute inset-0 z-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${heroBg})` }} />}
+        {/* Background with crossfade */}
+        {heroBg && <div className="absolute inset-0 z-0 bg-cover bg-center bg-fixed transition-opacity duration-700" style={{ backgroundImage: `url(${heroBg})` }} key={`bg-${slideAnimKey}`} />}
         {showOverlay && <div className="absolute inset-0 z-[1]" style={{ background: `linear-gradient(to bottom, ${cv('overlay-start', 'rgba(0,0,0,0.75)')}, ${cv('overlay-end', 'rgba(5,5,15,0.88)')})` }} />}
-        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 sm:py-24 w-full">
+
+        {/* Prev / Next arrows */}
+        {heroSlides.length > 1 && (
+          <>
+            <button onClick={prevSlide} className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110" style={{ backgroundColor: 'rgba(0,0,0,0.35)', color: cv('body-text', '#f5f5f5'), backdropFilter: 'blur(4px)' }} data-testid="lp-hero-prev" aria-label="Previous slide">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
+            </button>
+            <button onClick={nextSlide} className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-10 h-10 rounded-full flex items-center justify-center transition-all hover:scale-110" style={{ backgroundColor: 'rgba(0,0,0,0.35)', color: cv('body-text', '#f5f5f5'), backdropFilter: 'blur(4px)' }} data-testid="lp-hero-next" aria-label="Next slide">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
+            </button>
+          </>
+        )}
+
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 sm:py-24 w-full" key={slideAnimKey}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             {/* Left column: Text + Countdown */}
             <div className="animate-fadeIn">
@@ -292,6 +322,19 @@ export default function LandingPage() {
             </div>
           </div>
         </div>
+
+        {/* Dot indicators */}
+        {heroSlides.length > 1 && (
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2.5 z-20" data-testid="lp-hero-dots">
+            {heroSlides.map((_, i) => (
+              <button key={i} onClick={() => goToSlide(i)}
+                className={`w-2.5 h-2.5 rounded-full transition-all duration-300 ${i === currentSlide ? 'scale-125' : 'hover:opacity-70'}`}
+                style={{ backgroundColor: i === currentSlide ? cv('accent', '#c9a84c') : 'rgba(255,255,255,0.35)' }}
+                data-testid={`lp-hero-dot-${i}`}
+                aria-label={`Go to slide ${i + 1}`} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* ═══ GET IN TOUCH ═══ */}
