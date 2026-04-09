@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Save, Loader2 } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
+import ImageUpload from '../../components/ImageUpload';
 
 export default function LandingContentManager() {
   const [content, setContent] = useState({});
@@ -35,54 +36,51 @@ export default function LandingContentManager() {
       </div>
 
       <div className="space-y-6">
-        {/* Hero Section */}
+        {/* Navigation Links */}
         <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Hero / Countdown Section</h2>
-          <div><Label>Main Title</Label><Input value={content.hero_title || ''} onChange={e => u('hero_title', e.target.value)} className="mt-1" placeholder="Launching in:" data-testid="lp-hero-title" /></div>
-          <div><Label>Subtitle</Label><textarea value={content.hero_subtitle || ''} onChange={e => u('hero_subtitle', e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Your value proposition..." data-testid="lp-hero-subtitle" /></div>
-          <div><Label>Positioning Text</Label><textarea value={content.hero_positioning || ''} onChange={e => u('hero_positioning', e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Private community, limited membership..." data-testid="lp-hero-positioning" /></div>
-        </div>
-
-        {/* Navigation Buttons */}
-        <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Navigation Buttons</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div><Label>Button 1 Text</Label><Input value={content.btn1_text || ''} onChange={e => u('btn1_text', e.target.value)} className="mt-1" placeholder="More Information" data-testid="lp-btn1-text" /></div>
-            <div><Label>Button 2 Text</Label><Input value={content.btn2_text || ''} onChange={e => u('btn2_text', e.target.value)} className="mt-1" placeholder="Membership Lounge" data-testid="lp-btn2-text" /></div>
-            <div><Label>Button 3 Text</Label><Input value={content.btn3_text || ''} onChange={e => u('btn3_text', e.target.value)} className="mt-1" placeholder="Notify Me!" data-testid="lp-btn3-text" /></div>
+          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Navigation Bar Links</h2>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div><Label>Link 1 Text</Label><Input value={content.nav1_text || ''} onChange={e => u('nav1_text', e.target.value)} className="mt-1" placeholder="Home" data-testid="lp-nav1-text" /></div>
+            <div><Label>Link 2 Text</Label><Input value={content.nav2_text || ''} onChange={e => u('nav2_text', e.target.value)} className="mt-1" placeholder="More Information" data-testid="lp-nav2-text" /></div>
+            <div><Label>Link 3 Text</Label><Input value={content.nav3_text || ''} onChange={e => u('nav3_text', e.target.value)} className="mt-1" placeholder="Membership Lounge" data-testid="lp-nav3-text" /></div>
+            <div><Label>Link 4 Text</Label><Input value={content.nav4_text || ''} onChange={e => u('nav4_text', e.target.value)} className="mt-1" placeholder="Waiting List" data-testid="lp-nav4-text" /></div>
           </div>
         </div>
 
-        {/* Description Section */}
+        {/* Get in Touch Section */}
         <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Description / Value Proposition</h2>
-          <div><Label>Section Title</Label><Input value={content.desc_title || ''} onChange={e => u('desc_title', e.target.value)} className="mt-1" placeholder="Get in touch with us!" data-testid="lp-desc-title" /></div>
-          <div><Label>Subtitle</Label><Input value={content.desc_subtitle || ''} onChange={e => u('desc_subtitle', e.target.value)} className="mt-1" placeholder="" data-testid="lp-desc-subtitle" /></div>
+          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Get in Touch Section (Contact Form)</h2>
+          <div><Label>Section Title</Label><Input value={content.contact_title || ''} onChange={e => u('contact_title', e.target.value)} className="mt-1" placeholder="Get in touch with us!" data-testid="lp-contact-title" /></div>
+          <div><Label>Section Subtitle</Label><Input value={content.contact_subtitle || ''} onChange={e => u('contact_subtitle', e.target.value)} className="mt-1" placeholder="" data-testid="lp-contact-subtitle" /></div>
           <div><Label>Description</Label>
-            <RichTextEditor value={content.desc_body || ''} onChange={val => u('desc_body', val)} />
+            <RichTextEditor value={content.contact_description || ''} onChange={val => u('contact_description', val)} />
           </div>
-          <div><Label>CTA Button Text</Label><Input value={content.desc_cta_text || ''} onChange={e => u('desc_cta_text', e.target.value)} className="mt-1" placeholder="Request Access" data-testid="lp-desc-cta" /></div>
+          <div><Label>Section Image (left column)</Label>
+            <ImageUpload value={content.contact_image || ''} onChange={v => u('contact_image', v)} />
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div><Label>Submit Button Text</Label><Input value={content.contact_btn_text || ''} onChange={e => u('contact_btn_text', e.target.value)} className="mt-1" placeholder="Send my Message" data-testid="lp-contact-btn" /></div>
+            <div><Label>Name Placeholder</Label><Input value={content.contact_name_ph || ''} onChange={e => u('contact_name_ph', e.target.value)} className="mt-1" placeholder="Your Name" data-testid="lp-contact-name-ph" /></div>
+            <div><Label>Email Placeholder</Label><Input value={content.contact_email_ph || ''} onChange={e => u('contact_email_ph', e.target.value)} className="mt-1" placeholder="Your Email" data-testid="lp-contact-email-ph" /></div>
+            <div><Label>Subject Placeholder</Label><Input value={content.contact_subject_ph || ''} onChange={e => u('contact_subject_ph', e.target.value)} className="mt-1" placeholder="Write the subject" data-testid="lp-contact-subject-ph" /></div>
+            <div><Label>Message Placeholder</Label><Input value={content.contact_message_ph || ''} onChange={e => u('contact_message_ph', e.target.value)} className="mt-1" placeholder="Your message here" data-testid="lp-contact-message-ph" /></div>
+          </div>
         </div>
 
-        {/* Contact Form */}
+        {/* Waiting List Section */}
         <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Contact Form</h2>
-          <div><Label>Section Title</Label><Input value={content.contact_title || ''} onChange={e => u('contact_title', e.target.value)} className="mt-1" placeholder="Contact Us" data-testid="lp-contact-title" /></div>
-          <div><Label>Submit Button Text</Label><Input value={content.contact_btn_text || ''} onChange={e => u('contact_btn_text', e.target.value)} className="mt-1" placeholder="Send my Message" data-testid="lp-contact-btn" /></div>
-        </div>
-
-        {/* Notify Me Modal */}
-        <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Notify Me! Modal</h2>
-          <div><Label>Modal Title</Label><Input value={content.notify_title || ''} onChange={e => u('notify_title', e.target.value)} className="mt-1" placeholder="Notify Me!" data-testid="lp-notify-title" /></div>
-          <div><Label>Modal Text</Label><textarea value={content.notify_text || ''} onChange={e => u('notify_text', e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Signing up to our newsletter gives you exclusive access..." data-testid="lp-notify-text" /></div>
-          <div><Label>Submit Button Text</Label><Input value={content.notify_btn_text || ''} onChange={e => u('notify_btn_text', e.target.value)} className="mt-1" placeholder="Get notified" data-testid="lp-notify-btn" /></div>
+          <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Waiting List Section</h2>
+          <div><Label>Section Title</Label><Input value={content.waitlist_title || ''} onChange={e => u('waitlist_title', e.target.value)} className="mt-1" placeholder="Waiting List" data-testid="lp-waitlist-title" /></div>
+          <div><Label>Section Subtitle</Label><Input value={content.waitlist_subtitle || ''} onChange={e => u('waitlist_subtitle', e.target.value)} className="mt-1" placeholder="Signing up to our newsletter gives you exclusive access..." data-testid="lp-waitlist-subtitle" /></div>
+          <div><Label>Submit Button Text</Label><Input value={content.waitlist_btn_text || ''} onChange={e => u('waitlist_btn_text', e.target.value)} className="mt-1" placeholder="Submit" data-testid="lp-waitlist-btn" /></div>
         </div>
 
         {/* Footer */}
         <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
           <h2 className="font-semibold text-sm uppercase tracking-wider" style={{ color: 'var(--ad-heading, #1a2332)' }}>Footer</h2>
-          <div><Label>Footer Text</Label><Input value={content.footer_text || ''} onChange={e => u('footer_text', e.target.value)} className="mt-1" placeholder="&copy; aurexnetwork.com - Coming Soon" data-testid="lp-footer-text" /></div>
+          <div><Label>Footer Description</Label><textarea value={content.footer_description || ''} onChange={e => u('footer_description', e.target.value)} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Platform description for the footer..." data-testid="lp-footer-desc" /></div>
+          <div><Label>Social Section Title</Label><Input value={content.footer_social_title || ''} onChange={e => u('footer_social_title', e.target.value)} className="mt-1" placeholder="Follow Us" data-testid="lp-footer-social-title" /></div>
+          <div><Label>Copyright Text</Label><Input value={content.footer_text || ''} onChange={e => u('footer_text', e.target.value)} className="mt-1" placeholder="&copy; aurexnetwork.com - Coming Soon" data-testid="lp-footer-text" /></div>
         </div>
 
         {/* Cookie Banner */}

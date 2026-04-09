@@ -5,8 +5,9 @@ import { X } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
-const v = (name, fallback) => `var(--lp-${name}, ${fallback})`;
+const cv = (name, fallback) => `var(--lp-${name}, ${fallback})`;
 
+/* ─── Scroll Reveal ─── */
 function useScrollReveal(threshold = 0.15) {
   const ref = useRef(null);
   const [visible, setVisible] = useState(false);
@@ -20,16 +21,17 @@ function useScrollReveal(threshold = 0.15) {
   return [ref, visible];
 }
 
-function RevealSection({ children, className = '', style = {}, delay = 0, direction = 'up', ...props }) {
+function Reveal({ children, className = '', style = {}, delay = 0, direction = 'up', ...props }) {
   const [ref, visible] = useScrollReveal(0.1);
-  const transform = direction === 'up' ? 'translateY(40px)' : direction === 'left' ? 'translateX(-40px)' : direction === 'right' ? 'translateX(40px)' : 'translateY(40px)';
+  const t = direction === 'up' ? 'translateY(40px)' : direction === 'left' ? 'translateX(-40px)' : direction === 'right' ? 'translateX(40px)' : 'translateY(40px)';
   return (
-    <div ref={ref} className={className} style={{ ...style, opacity: visible ? 1 : 0, transform: visible ? 'translate(0)' : transform, transition: `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s` }} {...props}>
+    <div ref={ref} className={className} style={{ ...style, opacity: visible ? 1 : 0, transform: visible ? 'translate(0)' : t, transition: `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s` }} {...props}>
       {children}
     </div>
   );
 }
 
+/* ─── Countdown Hook ─── */
 function useCountdown(targetDate) {
   const calc = useCallback(() => {
     if (!targetDate) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
@@ -43,7 +45,6 @@ function useCountdown(targetDate) {
       expired: false,
     };
   }, [targetDate]);
-
   const [time, setTime] = useState(calc);
   useEffect(() => {
     const id = setInterval(() => setTime(calc()), 1000);
@@ -52,111 +53,98 @@ function useCountdown(targetDate) {
   return time;
 }
 
-function CountdownBox({ value, label }) {
-  return (
-    <div className="flex flex-col items-center" data-testid={`countdown-${label}`}>
-      <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-lg flex items-center justify-center text-3xl sm:text-4xl font-bold" style={{ backgroundColor: v('countdown-bg', 'rgba(255,255,255,0.05)'), color: v('countdown-number', '#c9a84c'), border: `1px solid ${v('border', 'rgba(201,168,76,0.3)')}` }}>
-        {String(value).padStart(2, '0')}
-      </div>
-      <span className="mt-2 text-xs uppercase tracking-[0.2em]" style={{ color: v('countdown-label', '#a0a0b0') }}>{label}</span>
-    </div>
-  );
+/* ─── Resolve Video URL ─── */
+function resolveVideoUrl(url) {
+  if (!url) return null;
+  const yt = url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([^&?\s]+)/);
+  if (yt) return `https://www.youtube.com/embed/${yt[1]}`;
+  const vim = url.match(/vimeo\.com\/(\d+)/);
+  if (vim) return `https://player.vimeo.com/video/${vim[1]}`;
+  if (url.startsWith('<iframe')) { const m = url.match(/src=["']([^"']+)["']/); if (m) return m[1]; }
+  return url;
 }
 
+/* ─── Cookie Banner ─── */
 function CookieBanner({ message }) {
   const [visible, setVisible] = useState(false);
-  useEffect(() => {
-    if (!localStorage.getItem('lp_cookie_consent')) setVisible(true);
-  }, []);
+  useEffect(() => { if (!localStorage.getItem('lp_cookie_consent')) setVisible(true); }, []);
   const accept = () => { localStorage.setItem('lp_cookie_consent', 'accepted'); setVisible(false); };
   const decline = () => { localStorage.setItem('lp_cookie_consent', 'declined'); setVisible(false); };
   if (!visible) return null;
   return (
     <div className="fixed bottom-0 left-0 right-0 z-[100] p-4" data-testid="cookie-banner">
-      <div className="max-w-4xl mx-auto rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4" style={{ backgroundColor: v('cookie-bg', '#13161e'), border: `1px solid ${v('border', 'rgba(201,168,76,0.3)')}` }}>
-        <p className="text-sm flex-1" style={{ color: v('cookie-text', '#a0a0b0') }}>{message || 'We use cookies and analytics to improve your browsing experience. By continuing, you agree to our use of cookies.'}</p>
+      <div className="max-w-4xl mx-auto rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4" style={{ backgroundColor: cv('cookie-bg', '#13161e'), border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }}>
+        <p className="text-sm flex-1" style={{ color: cv('cookie-text', '#a0a0b0') }}>{message || 'We use cookies and analytics to improve your experience.'}</p>
         <div className="flex gap-2 flex-shrink-0">
-          <button onClick={accept} className="px-4 py-2 rounded text-sm font-medium transition-opacity hover:opacity-80" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="cookie-accept">Accept all cookies</button>
-          <button onClick={decline} className="px-4 py-2 rounded text-sm font-medium transition-opacity hover:opacity-80 border" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)'), color: v('secondary-text', '#a0a0b0') }} data-testid="cookie-decline">Decline</button>
+          <button onClick={accept} className="px-4 py-2 rounded text-sm font-medium hover:opacity-80" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="cookie-accept">Accept all cookies</button>
+          <button onClick={decline} className="px-4 py-2 rounded text-sm font-medium hover:opacity-80 border" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)'), color: cv('secondary-text', '#a0a0b0') }} data-testid="cookie-decline">Decline</button>
         </div>
       </div>
     </div>
   );
 }
 
-function NotifyModal({ open, onClose, content }) {
-  const [form, setForm] = useState({ first_name: '', last_name: '', email: '' });
-  const [submitting, setSubmitting] = useState(false);
-  const [success, setSuccess] = useState(false);
-
-  if (!open) return null;
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitting(true);
-    try {
-      await landingAPI.subscribe(form);
-      setSuccess(true);
-      setForm({ first_name: '', last_name: '', email: '' });
-    } catch { }
-    finally { setSubmitting(false); }
-  };
-
-  const inputStyle = { backgroundColor: v('input-bg', 'rgba(255,255,255,0.05)'), border: `1px solid ${v('input-border', 'rgba(201,168,76,0.3)')}`, color: v('input-text', '#f5f5f5') };
-
+/* ─── Countdown Box ─── */
+function CountdownBox({ value, label }) {
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center p-4" data-testid="notify-modal">
-      <div className="absolute inset-0 bg-black/70" onClick={onClose} />
-      <div className="relative w-full max-w-md rounded-lg p-6 sm:p-8" style={{ backgroundColor: v('modal-bg', '#13161e'), border: `1px solid ${v('modal-border', 'rgba(201,168,76,0.3)')}` }}>
-        <button onClick={onClose} className="absolute top-4 right-4 transition-colors hover:opacity-80" style={{ color: v('secondary-text', '#a0a0b0') }} data-testid="notify-close"><X className="w-5 h-5" /></button>
-        <h2 className="text-2xl font-bold mb-2" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{content.notify_title || 'Notify Me!'}</h2>
-        <p className="text-sm mb-6" style={{ color: v('secondary-text', '#a0a0b0') }}>{content.notify_text || 'Signing up to our newsletter gives you exclusive access to our Grand Opening!'}</p>
-        {success ? (
-          <div className="text-center py-4">
-            <div className="text-3xl mb-2">&#10003;</div>
-            <p className="font-semibold" style={{ color: v('accent', '#c9a84c') }}>You're on the list!</p>
-            <p className="text-sm mt-1" style={{ color: v('secondary-text', '#a0a0b0') }}>We'll notify you when we launch.</p>
-          </div>
-        ) : (
-          <form onSubmit={handleSubmit} className="space-y-3">
-            <div className="grid grid-cols-2 gap-3">
-              <input placeholder="First Name" required value={form.first_name} onChange={e => setForm({ ...form, first_name: e.target.value })} className="w-full px-3 py-2.5 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="notify-first-name" />
-              <input placeholder="Last Name" required value={form.last_name} onChange={e => setForm({ ...form, last_name: e.target.value })} className="w-full px-3 py-2.5 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="notify-last-name" />
-            </div>
-            <input type="email" placeholder="Email Address" required value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} className="w-full px-3 py-2.5 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="notify-email" />
-            <button type="submit" disabled={submitting} className="w-full py-2.5 rounded text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="notify-submit">{submitting ? 'Sending...' : (content.notify_btn_text || 'Get notified')}</button>
-          </form>
-        )}
-        <div className="mt-4 text-center">
-          <a href="/my-account" className="text-xs hover:underline" style={{ color: v('accent', '#c9a84c') }} data-testid="notify-membership-link">Membership Lounge</a>
-        </div>
+    <div className="flex flex-col items-center" data-testid={`countdown-${label}`}>
+      <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-lg flex items-center justify-center text-2xl sm:text-3xl font-bold" style={{ backgroundColor: cv('countdown-bg', 'rgba(255,255,255,0.05)'), color: cv('countdown-number', '#c9a84c'), border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }}>
+        {String(value).padStart(2, '0')}
       </div>
+      <span className="mt-1.5 text-[10px] uppercase tracking-[0.2em]" style={{ color: cv('countdown-label', '#a0a0b0') }}>{label}</span>
     </div>
   );
 }
 
+/* ─── Social Icons ─── */
+function SocialIcon({ type, url }) {
+  const icons = {
+    facebook: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M18 2h-3a5 5 0 00-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 011-1h3z"/></svg>,
+    twitter: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>,
+    youtube: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z"/></svg>,
+    instagram: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 100 12.324 6.162 6.162 0 000-12.324zM12 16a4 4 0 110-8 4 4 0 010 8zm6.406-11.845a1.44 1.44 0 100 2.881 1.44 1.44 0 000-2.881z"/></svg>,
+    linkedin: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/></svg>,
+    tiktok: <svg viewBox="0 0 24 24" fill="currentColor" className="w-4 h-4"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg>,
+  };
+  if (!url) return null;
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="w-9 h-9 rounded-full border flex items-center justify-center transition-colors hover:opacity-70" style={{ borderColor: cv('border', 'rgba(255,255,255,0.2)'), color: cv('body-text', '#f5f5f5') }}>
+      {icons[type] || null}
+    </a>
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   MAIN LANDING PAGE
+   ═══════════════════════════════════════════════ */
 export default function LandingPage() {
   const settings = useSettings();
   const [content, setContent] = useState({});
-  const [showNotify, setShowNotify] = useState(false);
-  const [contactForm, setContactForm] = useState({ first_name: '', last_name: '', email: '', message: '' });
+  const [heroSlides, setHeroSlides] = useState([]);
+  const [contactForm, setContactForm] = useState({ first_name: '', email: '', subject: '', message: '' });
   const [contactSubmitting, setContactSubmitting] = useState(false);
   const [contactSuccess, setContactSuccess] = useState(false);
+  const [waitlistForm, setWaitlistForm] = useState({ first_name: '', last_name: '', email: '' });
+  const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
+  const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const launchDate = settings.landing_page_launch_date;
   const countdown = useCountdown(launchDate);
 
   useEffect(() => {
     landingAPI.getContent().then(r => setContent(r.data || {})).catch(() => {});
+    landingAPI.getHeroSlides().then(r => setHeroSlides(r.data || [])).catch(() => {});
   }, []);
 
+  const hero = heroSlides[0] || {};
   const logoSrc = resolveSrc(settings.landing_page_logo);
-  const bgImage = resolveSrc(settings.landing_page_bg_image);
+  const heroBg = resolveSrc(hero.background) || resolveSrc(settings.landing_page_bg_image);
+  const videoUrl = resolveVideoUrl(hero.video_url);
+  const contactImage = resolveSrc(content.contact_image);
+  const socialLinks = settings.social_media || [];
 
-  const scrollTo = (id) => {
-    const el = document.getElementById(id);
-    if (el) el.scrollIntoView({ behavior: 'smooth' });
-  };
+  const scrollTo = (id) => { document.getElementById(id)?.scrollIntoView({ behavior: 'smooth' }); setMobileMenuOpen(false); };
 
   const handleContact = async (e) => {
     e.preventDefault();
@@ -164,150 +152,232 @@ export default function LandingPage() {
     try {
       await landingAPI.submitContact(contactForm);
       setContactSuccess(true);
-      setContactForm({ first_name: '', last_name: '', email: '', message: '' });
-    } catch { }
-    finally { setContactSubmitting(false); }
+      setContactForm({ first_name: '', email: '', subject: '', message: '' });
+    } catch { } finally { setContactSubmitting(false); }
   };
 
-  const inputStyle = { backgroundColor: v('input-bg', 'rgba(255,255,255,0.05)'), border: `1px solid ${v('input-border', 'rgba(201,168,76,0.3)')}`, color: v('input-text', '#f5f5f5') };
+  const handleWaitlist = async (e) => {
+    e.preventDefault();
+    setWaitlistSubmitting(true);
+    try {
+      await landingAPI.subscribe(waitlistForm);
+      setWaitlistSuccess(true);
+      setWaitlistForm({ first_name: '', last_name: '', email: '' });
+    } catch { } finally { setWaitlistSubmitting(false); }
+  };
+
+  const inputDark = { backgroundColor: cv('input-bg', 'rgba(255,255,255,0.05)'), border: `1px solid ${cv('input-border', 'rgba(201,168,76,0.3)')}`, color: cv('input-text', '#f5f5f5') };
+  const inputLight = { backgroundColor: '#f3f4f6', border: '1px solid #e5e7eb', color: '#1a1a2e' };
 
   return (
-    <div className="min-h-screen relative" style={{ backgroundColor: v('bg-base', '#0a0a12') }} data-testid="landing-page">
-      {/* Background layers */}
-      {bgImage && (
-        <div className="fixed inset-0 z-0" style={{ backgroundImage: `url(${bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center', backgroundAttachment: 'fixed' }} data-testid="lp-bg-image" />
-      )}
-      <div className="fixed inset-0 z-[1]" style={{ background: `linear-gradient(to bottom, ${v('overlay-start', 'rgba(0,0,0,0.75)')}, ${v('overlay-end', 'rgba(5,5,15,0.88)')})` }} />
+    <div className="min-h-screen" style={{ backgroundColor: cv('bg-base', '#0a0a12') }} data-testid="landing-page">
 
-      {/* Content */}
-      <div className="relative z-10">
-        {/* Header */}
-        <header className="px-6 py-5 flex items-center justify-between max-w-6xl mx-auto" data-testid="lp-header">
+      {/* ═══ HEADER / NAV ═══ */}
+      <header className="fixed top-0 left-0 right-0 z-50" style={{ backgroundColor: 'rgba(10,10,18,0.92)', backdropFilter: 'blur(12px)' }} data-testid="lp-header">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           {logoSrc ? (
-            <img src={logoSrc} alt="Logo" className="h-10 sm:h-12 w-auto object-contain" data-testid="lp-logo" />
+            <img src={logoSrc} alt="Logo" className="h-8 sm:h-10 w-auto object-contain" data-testid="lp-logo" />
           ) : (
-            <div className="text-xl font-bold" style={{ color: v('accent', '#c9a84c'), fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Coming Soon'}</div>
+            <div className="text-lg font-bold tracking-wide" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Coming Soon'}</div>
           )}
-        </header>
-
-        {/* Hero Section */}
-        <section className="px-6 py-16 sm:py-24 text-center max-w-4xl mx-auto" id="hero" data-testid="lp-hero">
-          <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold mb-8 animate-fadeIn" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-hero-title">
-            {content.hero_title || 'Launching in:'}
-          </h1>
-
-          {/* Countdown */}
-          <div className="flex justify-center gap-4 sm:gap-6 mb-8" data-testid="lp-countdown">
-            <CountdownBox value={countdown.days} label="Days" />
-            <CountdownBox value={countdown.hours} label="Hours" />
-            <CountdownBox value={countdown.minutes} label="Minutes" />
-            <CountdownBox value={countdown.seconds} label="Seconds" />
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-8" data-testid="lp-nav">
+            <button onClick={() => scrollTo('hero')} className="text-sm hover:opacity-70 transition-opacity" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav1_text || 'Home'}</button>
+            <button onClick={() => scrollTo('contact')} className="text-sm hover:opacity-70 transition-opacity" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav2_text || 'More Information'}</button>
+            <a href="/my-account" className="text-sm hover:opacity-70 transition-opacity" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav3_text || 'Membership Lounge'}</a>
+            <button onClick={() => scrollTo('waitlist')} className="text-sm hover:opacity-70 transition-opacity" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav4_text || 'Waiting List'}</button>
+          </nav>
+          {/* Mobile hamburger */}
+          <button className="md:hidden" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} style={{ color: cv('body-text', '#f5f5f5') }} data-testid="lp-mobile-menu">
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" /></svg>}
+          </button>
+        </div>
+        {/* Mobile menu */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t px-6 py-4 space-y-3" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)'), backgroundColor: 'rgba(10,10,18,0.97)' }}>
+            <button onClick={() => scrollTo('hero')} className="block text-sm w-full text-left" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav1_text || 'Home'}</button>
+            <button onClick={() => scrollTo('contact')} className="block text-sm w-full text-left" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav2_text || 'More Information'}</button>
+            <a href="/my-account" className="block text-sm" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav3_text || 'Membership Lounge'}</a>
+            <button onClick={() => scrollTo('waitlist')} className="block text-sm w-full text-left" style={{ color: cv('body-text', '#f5f5f5') }}>{content.nav4_text || 'Waiting List'}</button>
           </div>
+        )}
+      </header>
 
-          {content.hero_subtitle && (
-            <p className="text-base sm:text-lg max-w-2xl mx-auto mb-4 leading-relaxed animate-fadeIn" style={{ color: v('body-text', '#f5f5f5'), animationDelay: '0.2s' }} data-testid="lp-hero-subtitle">{content.hero_subtitle}</p>
-          )}
-          {content.hero_positioning && (
-            <p className="text-sm max-w-xl mx-auto mb-8 animate-fadeIn" style={{ color: v('secondary-text', '#a0a0b0'), animationDelay: '0.4s' }} data-testid="lp-hero-positioning">{content.hero_positioning}</p>
-          )}
-
-          {/* CTA Buttons */}
-          <div className="flex flex-col sm:flex-row gap-3 justify-center items-center animate-fadeIn" style={{ animationDelay: '0.6s' }} data-testid="lp-cta-buttons">
-            <button onClick={() => scrollTo('description')} className="px-6 py-3 rounded text-sm font-semibold transition-all hover:opacity-80 min-w-[180px]" style={{ border: `1px solid ${v('button-outline-border', '#c9a84c')}`, color: v('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-info">
-              {content.btn1_text || 'More Information'}
-            </button>
-            <a href="/my-account" className="px-6 py-3 rounded text-sm font-semibold transition-all hover:opacity-80 min-w-[180px] text-center" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="lp-btn-membership">
-              {content.btn2_text || 'Membership Lounge'}
-            </a>
-            <button onClick={() => setShowNotify(true)} className="px-6 py-3 rounded text-sm font-semibold transition-all hover:opacity-80 min-w-[180px]" style={{ border: `1px solid ${v('button-outline-border', '#c9a84c')}`, color: v('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-notify">
-              {content.btn3_text || 'Notify Me!'}
-            </button>
-          </div>
-        </section>
-
-        {/* Divider */}
-        <RevealSection className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></RevealSection>
-
-        {/* Description Section */}
-        <section className="px-6 py-16 sm:py-20 max-w-4xl mx-auto" id="description" data-testid="lp-description">
-          <RevealSection>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-desc-title">
-              {content.desc_title || 'Get in touch with us!'}
-            </h2>
-          </RevealSection>
-          {content.desc_subtitle && (
-            <RevealSection delay={0.1}>
-              <p className="text-center text-sm mb-8" style={{ color: v('accent', '#c9a84c') }}>{content.desc_subtitle}</p>
-            </RevealSection>
-          )}
-          {content.desc_body && (
-            <RevealSection delay={0.2}>
-              <div className="prose max-w-none text-center leading-relaxed rich-text-content" style={{ color: v('body-text', '#f5f5f5') }} dangerouslySetInnerHTML={{ __html: content.desc_body }} data-testid="lp-desc-body" />
-            </RevealSection>
-          )}
-          {(content.desc_cta_text || !content.desc_body) && (
-            <RevealSection delay={0.3}>
-              <div className="text-center mt-8">
-                <button onClick={() => scrollTo('contact')} className="px-8 py-3 rounded text-sm font-semibold transition-all hover:opacity-80" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="lp-desc-cta">
-                  {content.desc_cta_text || 'Request Access'}
+      {/* ═══ HERO SECTION ═══ */}
+      <section className="relative min-h-screen flex items-center pt-16" id="hero" data-testid="lp-hero">
+        {/* Background */}
+        {heroBg && <div className="absolute inset-0 z-0 bg-cover bg-center bg-fixed" style={{ backgroundImage: `url(${heroBg})` }} />}
+        <div className="absolute inset-0 z-[1]" style={{ background: `linear-gradient(to bottom, ${cv('overlay-start', 'rgba(0,0,0,0.75)')}, ${cv('overlay-end', 'rgba(5,5,15,0.88)')})` }} />
+        <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 sm:py-24 w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+            {/* Left column: Text + Countdown */}
+            <div className="animate-fadeIn">
+              <h1 className="text-3xl sm:text-4xl lg:text-5xl font-bold mb-6" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-hero-title" dangerouslySetInnerHTML={{ __html: hero.title || 'Launching in :' }} />
+              {/* Countdown */}
+              <div className="flex gap-3 sm:gap-5 mb-8" data-testid="lp-countdown">
+                <CountdownBox value={countdown.days} label="Days" />
+                <CountdownBox value={countdown.hours} label="Hours" />
+                <CountdownBox value={countdown.minutes} label="Minutes" />
+                <CountdownBox value={countdown.seconds} label="Seconds" />
+              </div>
+              {hero.description && (
+                <div className="text-sm leading-relaxed mb-8 max-w-lg rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: hero.description }} data-testid="lp-hero-description" />
+              )}
+              {/* CTA Buttons */}
+              <div className="flex flex-wrap gap-3" data-testid="lp-cta-buttons">
+                <button onClick={() => scrollTo('contact')} className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-info">
+                  {hero.button1_text || content.btn1_text || 'More Information'}
+                </button>
+                <a href="/my-account" className="px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 text-center" style={{ borderColor: cv('button-outline-border', '#c9a84c'), color: cv('button-outline-text', '#c9a84c'), backgroundColor: 'transparent' }} data-testid="lp-btn-membership">
+                  {hero.button2_text || content.btn2_text || 'Membership Lounge'}
+                </a>
+                <button onClick={() => scrollTo('waitlist')} className="px-6 py-2.5 rounded text-sm font-medium transition-all hover:opacity-80" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-btn-waitlist">
+                  {hero.button3_text || content.btn3_text || 'Add to Waiting List'}
                 </button>
               </div>
-            </RevealSection>
-          )}
-        </section>
-
-        {/* Divider */}
-        <RevealSection className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></RevealSection>
-
-        {/* Contact Form */}
-        <section className="px-6 py-16 sm:py-20 max-w-2xl mx-auto" id="contact" data-testid="lp-contact-section">
-          <RevealSection>
-            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>
-              {content.contact_title || 'Contact Us'}
-            </h2>
-          </RevealSection>
-          <RevealSection delay={0.15}>
-          {contactSuccess ? (
-            <div className="text-center py-8" data-testid="lp-contact-success">
-              <div className="text-4xl mb-3">&#10003;</div>
-              <p className="text-lg font-semibold" style={{ color: v('accent', '#c9a84c') }}>Message sent!</p>
-              <p className="text-sm mt-2" style={{ color: v('secondary-text', '#a0a0b0') }}>We'll get back to you soon.</p>
-              <button onClick={() => setContactSuccess(false)} className="mt-4 text-sm hover:underline" style={{ color: v('accent', '#c9a84c') }}>Send another message</button>
             </div>
-          ) : (
-            <form onSubmit={handleContact} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <input placeholder="First Name" required value={contactForm.first_name} onChange={e => setContactForm({ ...contactForm, first_name: e.target.value })} className="w-full px-4 py-3 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="lp-contact-first-name" />
-                <input placeholder="Last Name" required value={contactForm.last_name} onChange={e => setContactForm({ ...contactForm, last_name: e.target.value })} className="w-full px-4 py-3 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="lp-contact-last-name" />
+            {/* Right column: Video */}
+            <div className="animate-fadeIn" style={{ animationDelay: '0.3s' }}>
+              {videoUrl ? (
+                <div className="rounded-lg overflow-hidden shadow-2xl border" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)'), aspectRatio: '16/9' }} data-testid="lp-hero-video">
+                  <iframe src={videoUrl} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Video" />
+                </div>
+              ) : (
+                <div className="rounded-lg flex items-center justify-center" style={{ aspectRatio: '16/9', backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }} data-testid="lp-hero-video-placeholder">
+                  <div className="text-center" style={{ color: cv('secondary-text', '#a0a0b0') }}>
+                    <svg className="w-16 h-16 mx-auto mb-2 opacity-30" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+                    <p className="text-xs opacity-50">Video coming soon</p>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ GET IN TOUCH ═══ */}
+      <section className="py-16 sm:py-24" id="contact" style={{ backgroundColor: cv('bg-base', '#0a0a12') }} data-testid="lp-contact-section">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-start">
+            {/* Left: Image */}
+            <Reveal direction="left">
+              {contactImage ? (
+                <img src={contactImage} alt="About" className="w-full h-auto rounded-lg object-cover shadow-lg" style={{ maxHeight: '600px' }} data-testid="lp-contact-image" />
+              ) : (
+                <div className="w-full rounded-lg flex items-center justify-center" style={{ minHeight: '400px', backgroundColor: 'rgba(255,255,255,0.03)', border: `1px solid ${cv('border', 'rgba(201,168,76,0.3)')}` }}>
+                  <p className="text-sm" style={{ color: cv('secondary-text', '#a0a0b0') }}>Upload an image in CMS</p>
+                </div>
+              )}
+            </Reveal>
+            {/* Right: Form */}
+            <Reveal direction="right" delay={0.15}>
+              <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-contact-title">
+                {content.contact_title || 'Get in touch with us!'}
+              </h2>
+              {content.contact_subtitle && <p className="text-sm mb-3" style={{ color: cv('accent', '#c9a84c') }}>{content.contact_subtitle}</p>}
+              {content.contact_description && (
+                <div className="text-sm leading-relaxed mb-8 rich-text-content" style={{ color: cv('secondary-text', '#a0a0b0') }} dangerouslySetInnerHTML={{ __html: content.contact_description }} />
+              )}
+              {contactSuccess ? (
+                <div className="text-center py-8 rounded-lg" style={{ backgroundColor: 'rgba(255,255,255,0.03)' }} data-testid="lp-contact-success">
+                  <div className="text-3xl mb-2" style={{ color: cv('accent', '#c9a84c') }}>&#10003;</div>
+                  <p className="font-semibold" style={{ color: cv('heading', '#f5f5f5') }}>Message sent!</p>
+                  <p className="text-sm mt-1" style={{ color: cv('secondary-text', '#a0a0b0') }}>We'll get back to you soon.</p>
+                  <button onClick={() => setContactSuccess(false)} className="mt-4 text-sm hover:underline" style={{ color: cv('accent', '#c9a84c') }}>Send another message</button>
+                </div>
+              ) : (
+                <form onSubmit={handleContact} className="space-y-4">
+                  <input placeholder={content.contact_name_ph || 'Your Name'} required value={contactForm.first_name} onChange={e => setContactForm({ ...contactForm, first_name: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50" style={inputDark} data-testid="lp-contact-name" />
+                  <input type="email" placeholder={content.contact_email_ph || 'Your Email'} required value={contactForm.email} onChange={e => setContactForm({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50" style={inputDark} data-testid="lp-contact-email" />
+                  <input placeholder={content.contact_subject_ph || 'Write the subject'} value={contactForm.subject} onChange={e => setContactForm({ ...contactForm, subject: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50" style={inputDark} data-testid="lp-contact-subject" />
+                  <textarea placeholder={content.contact_message_ph || 'Your message here'} required rows={4} value={contactForm.message} onChange={e => setContactForm({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50 resize-none" style={inputDark} data-testid="lp-contact-message" />
+                  <button type="submit" disabled={contactSubmitting} className="w-full py-3 rounded-lg text-sm font-semibold hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-contact-submit">
+                    {contactSubmitting ? 'Sending...' : (content.contact_btn_text || 'Send my Message')}
+                  </button>
+                </form>
+              )}
+            </Reveal>
+          </div>
+        </div>
+      </section>
+
+      {/* ═══ WAITING LIST ═══ */}
+      <section className="py-16 sm:py-24" id="waitlist" style={{ backgroundColor: '#ffffff' }} data-testid="lp-waitlist-section">
+        <div className="max-w-xl mx-auto px-6 text-center">
+          <Reveal>
+            <h2 className="text-2xl sm:text-3xl font-bold mb-3" style={{ color: '#1a1a2e', fontFamily: 'Playfair Display, serif' }} data-testid="lp-waitlist-title">
+              {content.waitlist_title || 'Waiting List'}
+            </h2>
+            <p className="text-sm mb-8" style={{ color: '#6b7280' }}>
+              {content.waitlist_subtitle || 'Signing up to our newsletter gives you exclusive access to our Grand Opening!'}
+            </p>
+          </Reveal>
+          <Reveal delay={0.15}>
+            {waitlistSuccess ? (
+              <div className="py-8" data-testid="lp-waitlist-success">
+                <div className="text-3xl mb-2" style={{ color: '#c9a84c' }}>&#10003;</div>
+                <p className="font-semibold" style={{ color: '#1a1a2e' }}>You're on the list!</p>
+                <p className="text-sm mt-1" style={{ color: '#6b7280' }}>We'll notify you when we launch.</p>
               </div>
-              <input type="email" placeholder="Email Address" required value={contactForm.email} onChange={e => setContactForm({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 rounded text-sm placeholder:opacity-50" style={inputStyle} data-testid="lp-contact-email" />
-              <textarea placeholder="Your message..." required rows={4} value={contactForm.message} onChange={e => setContactForm({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 rounded text-sm placeholder:opacity-50 resize-none" style={inputStyle} data-testid="lp-contact-message" />
-              <button type="submit" disabled={contactSubmitting} className="w-full py-3 rounded text-sm font-semibold transition-opacity hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="lp-contact-submit">
-                {contactSubmitting ? 'Sending...' : (content.contact_btn_text || 'Send my Message')}
-              </button>
-            </form>
-          )}
-          </RevealSection>
-        </section>
+            ) : (
+              <form onSubmit={handleWaitlist} className="space-y-3">
+                <input placeholder="Name" required value={waitlistForm.first_name} onChange={e => setWaitlistForm({ ...waitlistForm, first_name: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-name" />
+                <input placeholder="Last Name" required value={waitlistForm.last_name} onChange={e => setWaitlistForm({ ...waitlistForm, last_name: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-lastname" />
+                <input type="email" placeholder="Email" required value={waitlistForm.email} onChange={e => setWaitlistForm({ ...waitlistForm, email: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-email" />
+                <button type="submit" disabled={waitlistSubmitting} className="w-full py-3 rounded-lg text-sm font-semibold hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: '#1a1a2e', color: '#ffffff' }} data-testid="lp-waitlist-submit">
+                  {waitlistSubmitting ? 'Submitting...' : (content.waitlist_btn_text || 'Submit')}
+                </button>
+              </form>
+            )}
+          </Reveal>
+        </div>
+      </section>
 
-        {/* Footer */}
-        <RevealSection>
-          <footer className="py-6 text-center" style={{ backgroundColor: v('footer-bg', 'rgba(0,0,0,0.3)') }} data-testid="lp-footer">
-            <p className="text-sm" style={{ color: v('footer-text', '#a0a0b0') }}>{content.footer_text || '\u00A9 Coming Soon'}</p>
-          </footer>
-        </RevealSection>
-      </div>
-
-      {/* Notify Modal */}
-      <NotifyModal open={showNotify} onClose={() => setShowNotify(false)} content={content} />
+      {/* ═══ FOOTER ═══ */}
+      <footer className="py-12" style={{ backgroundColor: cv('footer-bg', 'rgba(0,0,0,0.3)') }} data-testid="lp-footer">
+        <div className="max-w-7xl mx-auto px-6">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+            {/* Left: Logo + description */}
+            <div>
+              {logoSrc ? (
+                <img src={logoSrc} alt="Logo" className="h-8 mb-4 w-auto object-contain" />
+              ) : (
+                <div className="text-lg font-bold mb-4" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Coming Soon'}</div>
+              )}
+              <p className="text-sm leading-relaxed max-w-md" style={{ color: cv('footer-text', '#a0a0b0') }}>
+                {content.footer_description || 'A membership-based community focused on financial literacy, growing assets, and creating generational wealth.'}
+              </p>
+            </div>
+            {/* Right: Social */}
+            <div className="md:text-right">
+              <h3 className="font-semibold text-sm mb-4" style={{ color: cv('heading', '#f5f5f5') }}>
+                {content.footer_social_title || 'Follow Us'}
+              </h3>
+              <div className="flex gap-2 md:justify-end">
+                {socialLinks.length > 0 ? socialLinks.map((s, i) => <SocialIcon key={i} type={s.platform} url={s.url} />) : (
+                  <>
+                    <SocialIcon type="facebook" url="#" />
+                    <SocialIcon type="twitter" url="#" />
+                    <SocialIcon type="youtube" url="#" />
+                    <SocialIcon type="instagram" url="#" />
+                  </>
+                )}
+              </div>
+            </div>
+          </div>
+          <div className="border-t pt-6 text-center" style={{ borderColor: cv('border', 'rgba(201,168,76,0.3)') }}>
+            <p className="text-xs" style={{ color: cv('footer-text', '#a0a0b0') }}>{content.footer_text || '\u00A9 Coming Soon'}</p>
+          </div>
+        </div>
+      </footer>
 
       {/* Cookie Banner */}
       <CookieBanner message={content.cookie_message} />
 
-      {/* Animations CSS */}
       <style>{`
         @keyframes fadeIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
         .animate-fadeIn { animation: fadeIn 0.8s ease-out both; }
+        html { scroll-behavior: smooth; }
       `}</style>
     </div>
   );

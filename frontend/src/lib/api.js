@@ -55,6 +55,7 @@ export const contactAPI = { submit: (data) => api.post('/contact', data) };
 
 export const landingAPI = {
   getContent: () => api.get('/public/landing-content'),
+  getHeroSlides: () => api.get('/public/landing-hero'),
   subscribe: (data) => api.post('/public/landing-subscribe', data),
   submitContact: (data) => api.post('/public/landing-contact', data),
 };
@@ -206,6 +207,11 @@ export const adminAPI = {
   // Landing Page
   getLandingContent: () => api.get('/admin/landing-content'),
   updateLandingContent: (data) => api.put('/admin/landing-content', data),
+  getLandingHeroSlides: () => api.get('/admin/landing-hero'),
+  createLandingHeroSlide: (data) => api.post('/admin/landing-hero', data),
+  getLandingHeroSlide: (id) => api.get(`/admin/landing-hero/${id}`),
+  updateLandingHeroSlide: (id, data) => api.put(`/admin/landing-hero/${id}`, data),
+  deleteLandingHeroSlide: (id) => api.delete(`/admin/landing-hero/${id}`),
   getLandingSubscribers: () => api.get('/admin/landing-subscribers'),
   deleteLandingSubscriber: (id) => api.delete(`/admin/landing-subscribers/${id}`),
   getLandingContacts: () => api.get('/admin/landing-contacts'),

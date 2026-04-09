@@ -24,7 +24,52 @@ async def public_get_landing_content():
     doc = await db.landing_content.find_one({}, {"_id": 0})
     return doc or {}
 
-# ─── Landing Page Subscribers (Notify Me) ───
+# ─── Landing Page Hero Slides ───
+@router.get("/admin/landing-hero")
+async def admin_list_landing_hero(user: dict = Depends(require_admin)):
+    slides = await db.landing_hero.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return slides
+
+@router.post("/admin/landing-hero")
+async def admin_create_landing_hero(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None)
+    body["id"] = str(uuid.uuid4())
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    count = await db.landing_hero.count_documents({})
+    body.setdefault("order", count)
+    await db.landing_hero.insert_one(body)
+    return await db.landing_hero.find_one({"id": body["id"]}, {"_id": 0})
+
+@router.get("/admin/landing-hero/{slide_id}")
+async def admin_get_landing_hero(slide_id: str, user: dict = Depends(require_admin)):
+    slide = await db.landing_hero.find_one({"id": slide_id}, {"_id": 0})
+    if not slide:
+        raise HTTPException(status_code=404, detail="Not found")
+    return slide
+
+@router.put("/admin/landing-hero/{slide_id}")
+async def admin_update_landing_hero(slide_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None)
+    body.pop("id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.landing_hero.update_one({"id": slide_id}, {"$set": body})
+    return await db.landing_hero.find_one({"id": slide_id}, {"_id": 0})
+
+@router.delete("/admin/landing-hero/{slide_id}")
+async def admin_delete_landing_hero(slide_id: str, user: dict = Depends(require_admin)):
+    result = await db.landing_hero.delete_one({"id": slide_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    return {"message": "Deleted"}
+
+@router.get("/public/landing-hero")
+async def public_get_landing_hero():
+    slides = await db.landing_hero.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return slides
+
+# ─── Landing Page Subscribers (Waiting List) ───
 @router.get("/admin/landing-subscribers")
 async def admin_list_subscribers(user: dict = Depends(require_admin)):
     items = await db.landing_subscribers.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
@@ -54,7 +99,7 @@ async def public_subscribe(request: Request):
     await db.landing_subscribers.insert_one(sub)
     return {"message": "Subscribed successfully", "id": sub["id"]}
 
-# ─── Landing Page Contacts ───
+# ─── Landing Page Contacts (Get in Touch) ───
 @router.get("/admin/landing-contacts")
 async def admin_list_landing_contacts(user: dict = Depends(require_admin)):
     items = await db.landing_contacts.find({}, {"_id": 0}).sort("created_at", -1).to_list(1000)
@@ -76,6 +121,7 @@ async def public_landing_contact(request: Request):
         "first_name": body.get("first_name", ""),
         "last_name": body.get("last_name", ""),
         "email": email,
+        "subject": body.get("subject", ""),
         "message": body.get("message", ""),
         "created_at": datetime.now(timezone.utc).isoformat()
     }

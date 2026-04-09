@@ -49,6 +49,7 @@ import ContactSettingsManager from './pages/admin/ContactSettingsManager';
 import LandingContentManager from './pages/admin/LandingContentManager';
 import LandingSubscribersManager from './pages/admin/LandingSubscribersManager';
 import LandingContactsManager from './pages/admin/LandingContactsManager';
+import LandingHeroManager from './pages/admin/LandingHeroManager';
 import AdminLoginPage from './pages/admin/AdminLoginPage';
 // Membership / My Account
 import MemberLogin from './pages/myaccount/MemberLogin';
@@ -353,6 +354,7 @@ function AppRouter() {
           <Route path="backup" element={<BackupManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
+          <Route path="landing-hero" element={<LandingHeroManager />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
         </Route>
@@ -413,6 +415,7 @@ function AppRouter() {
           <Route path="backup" element={<BackupManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
+          <Route path="landing-hero" element={<LandingHeroManager />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
         </Route>
