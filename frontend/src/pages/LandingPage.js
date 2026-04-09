@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { landingAPI } from '../lib/api';
 import { useSettings } from '../App';
 import { X } from 'lucide-react';
@@ -6,6 +6,29 @@ import { X } from 'lucide-react';
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
 const v = (name, fallback) => `var(--lp-${name}, ${fallback})`;
+
+function useScrollReveal(threshold = 0.15) {
+  const ref = useRef(null);
+  const [visible, setVisible] = useState(false);
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([entry]) => { if (entry.isIntersecting) { setVisible(true); obs.disconnect(); } }, { threshold });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [threshold]);
+  return [ref, visible];
+}
+
+function RevealSection({ children, className = '', style = {}, delay = 0, direction = 'up', ...props }) {
+  const [ref, visible] = useScrollReveal(0.1);
+  const transform = direction === 'up' ? 'translateY(40px)' : direction === 'left' ? 'translateX(-40px)' : direction === 'right' ? 'translateX(40px)' : 'translateY(40px)';
+  return (
+    <div ref={ref} className={className} style={{ ...style, opacity: visible ? 1 : 0, transform: visible ? 'translate(0)' : transform, transition: `opacity 0.8s ease-out ${delay}s, transform 0.8s ease-out ${delay}s` }} {...props}>
+      {children}
+    </div>
+  );
+}
 
 function useCountdown(targetDate) {
   const calc = useCallback(() => {
@@ -203,36 +226,47 @@ export default function LandingPage() {
         </section>
 
         {/* Divider */}
-        <div className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></div>
+        <RevealSection className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></RevealSection>
 
         {/* Description Section */}
         <section className="px-6 py-16 sm:py-20 max-w-4xl mx-auto" id="description" data-testid="lp-description">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-desc-title">
-            {content.desc_title || 'Get in touch with us!'}
-          </h2>
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-4" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }} data-testid="lp-desc-title">
+              {content.desc_title || 'Get in touch with us!'}
+            </h2>
+          </RevealSection>
           {content.desc_subtitle && (
-            <p className="text-center text-sm mb-8" style={{ color: v('accent', '#c9a84c') }}>{content.desc_subtitle}</p>
+            <RevealSection delay={0.1}>
+              <p className="text-center text-sm mb-8" style={{ color: v('accent', '#c9a84c') }}>{content.desc_subtitle}</p>
+            </RevealSection>
           )}
           {content.desc_body && (
-            <div className="prose max-w-none text-center leading-relaxed rich-text-content" style={{ color: v('body-text', '#f5f5f5') }} dangerouslySetInnerHTML={{ __html: content.desc_body }} data-testid="lp-desc-body" />
+            <RevealSection delay={0.2}>
+              <div className="prose max-w-none text-center leading-relaxed rich-text-content" style={{ color: v('body-text', '#f5f5f5') }} dangerouslySetInnerHTML={{ __html: content.desc_body }} data-testid="lp-desc-body" />
+            </RevealSection>
           )}
           {(content.desc_cta_text || !content.desc_body) && (
-            <div className="text-center mt-8">
-              <button onClick={() => scrollTo('contact')} className="px-8 py-3 rounded text-sm font-semibold transition-all hover:opacity-80" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="lp-desc-cta">
-                {content.desc_cta_text || 'Request Access'}
-              </button>
-            </div>
+            <RevealSection delay={0.3}>
+              <div className="text-center mt-8">
+                <button onClick={() => scrollTo('contact')} className="px-8 py-3 rounded text-sm font-semibold transition-all hover:opacity-80" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0a0a12') }} data-testid="lp-desc-cta">
+                  {content.desc_cta_text || 'Request Access'}
+                </button>
+              </div>
+            </RevealSection>
           )}
         </section>
 
         {/* Divider */}
-        <div className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></div>
+        <RevealSection className="max-w-6xl mx-auto px-6"><div className="border-t" style={{ borderColor: v('border', 'rgba(201,168,76,0.3)') }} /></RevealSection>
 
         {/* Contact Form */}
         <section className="px-6 py-16 sm:py-20 max-w-2xl mx-auto" id="contact" data-testid="lp-contact-section">
-          <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>
-            {content.contact_title || 'Contact Us'}
-          </h2>
+          <RevealSection>
+            <h2 className="text-2xl sm:text-3xl font-bold text-center mb-8" style={{ color: v('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>
+              {content.contact_title || 'Contact Us'}
+            </h2>
+          </RevealSection>
+          <RevealSection delay={0.15}>
           {contactSuccess ? (
             <div className="text-center py-8" data-testid="lp-contact-success">
               <div className="text-4xl mb-3">&#10003;</div>
@@ -253,12 +287,15 @@ export default function LandingPage() {
               </button>
             </form>
           )}
+          </RevealSection>
         </section>
 
         {/* Footer */}
-        <footer className="py-6 text-center" style={{ backgroundColor: v('footer-bg', 'rgba(0,0,0,0.3)') }} data-testid="lp-footer">
-          <p className="text-sm" style={{ color: v('footer-text', '#a0a0b0') }}>{content.footer_text || '\u00A9 Coming Soon'}</p>
-        </footer>
+        <RevealSection>
+          <footer className="py-6 text-center" style={{ backgroundColor: v('footer-bg', 'rgba(0,0,0,0.3)') }} data-testid="lp-footer">
+            <p className="text-sm" style={{ color: v('footer-text', '#a0a0b0') }}>{content.footer_text || '\u00A9 Coming Soon'}</p>
+          </footer>
+        </RevealSection>
       </div>
 
       {/* Notify Modal */}

@@ -14,22 +14,19 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme Engine, Dynamic Pages, SMTP config, External Blog API, Backup/Restore, Gallery (lightbox/categories/reorder), Portfolio, Maps (3 types + clustering), Reading List, Blog Categories CRUD
 
 ### Landing Page Module (Apr 9, 2026)
-1. **"Coming Soon" Landing Page** — Dark premium design with animated countdown, 3 CTA buttons (More Info, Membership Lounge, Notify Me!), Description/Value Proposition section, Contact Form, "Notify Me!" newsletter modal, GDPR Cookie Banner, and configurable multi-layer background (image + overlay)
-2. **CMS Routing Logic** — Auto-switch between Landing Page and Website based on `landing_page_enabled` (Yes/No) and `landing_page_launch_date`. Client-side countdown expires → auto-shows website without reload
-3. **CMS > Settings > General** — Landing Page toggle (Yes/No radio), Website Launch Date (datetime-local), Landing Page Logo (upload), Background Image (upload)
-4. **CMS > Settings > Colors** — New "Landing Page" color block with 25 CSS variables (`--lp-*`) for backgrounds, countdown, buttons, inputs, modal, footer, cookie banner
-5. **CMS > Landing Page > Content** — Full content editor for all landing page text: hero title/subtitle/positioning, 3 button texts, description title/subtitle/body (rich text), contact form title/button, notify modal title/text/button, footer text, cookie message
-6. **CMS > Landing Page > Subscribers** — CRUD table for "Notify Me!" newsletter signups (sorted by most recent)
-7. **CMS > Landing Page > Contacts** — CRUD table for contact form submissions (sorted by most recent)
-8. **Admin Login Page** — Standalone dark-themed admin login at `/admin/login` accessible even when landing page is active
-9. **Complete Isolation** — Landing page has own component, styles (CSS variables), and does not share layout/logic with Website or My Account
+1. **"Coming Soon" Landing Page** — Dark premium design with animated countdown, 3 CTA buttons, Description/Value section, Contact Form, "Notify Me!" modal, GDPR Cookie Banner, multi-layer background
+2. **Scroll Reveal Animations** — IntersectionObserver-based fade-in/slide-up animations on Description, Contact Form, Dividers, and Footer sections with staggered delays
+3. **CMS Routing Logic** — Auto-switch LP ↔ Website based on `landing_page_enabled` + `landing_page_launch_date`. Client-side countdown expires → auto-shows website without reload
+4. **CMS > Settings > General** — LP toggle (Yes/No), Launch Date, Logo upload, Background Image upload
+5. **CMS > Settings > Colors** — 25 CSS variables (`--lp-*`) for backgrounds, countdown, buttons, inputs, modal, footer, cookie
+6. **CMS > Landing Page > Content** — All text editable: hero, buttons, description (rich text), contact form, notify modal, footer, cookie banner
+7. **CMS > Landing Page > Subscribers** — CRUD table for "Notify Me!" newsletter signups
+8. **CMS > Landing Page > Contacts** — CRUD table for contact form submissions
+9. **Admin Login Page** — Standalone dark admin login at `/admin/login` accessible even when LP is active
+10. **Complete Isolation** — Own component, own CSS variables, no shared layout/logic with Website or My Account
 
 ### Map Improvements (Apr 8, 2026)
-- MapBlock crash fix (React.lazy → direct imports)
-- Maps "Open in new tab" fix
-- Global Maps Language setting (11 languages)
-- Interactive Map Picker (click-to-set lat/lng)
-- Tile provider integration via mapConfig.js
+- MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language setting (11 languages), Interactive Map Picker, Tile provider integration via mapConfig.js
 
 ## Landing Page Architecture
 ```
@@ -41,7 +38,7 @@ Settings (MongoDB):
   theme_colors.landing_page: { 25 color fields }
 
 Collections:
-  landing_content: { hero_title, hero_subtitle, hero_positioning, btn1_text, btn2_text, btn3_text, desc_title, desc_subtitle, desc_body, desc_cta_text, contact_title, contact_btn_text, notify_title, notify_text, notify_btn_text, footer_text, cookie_message }
+  landing_content: { hero_title, hero_subtitle, hero_positioning, btn1-3_text, desc_title/subtitle/body/cta_text, contact_title/btn_text, notify_title/text/btn_text, footer_text, cookie_message }
   landing_subscribers: { id, first_name, last_name, email, created_at }
   landing_contacts: { id, first_name, last_name, email, message, created_at }
 
