@@ -88,6 +88,12 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
+### Geo Data (Apr 10, 2026)
+- Populated with real-world data: 249 countries, 5046 states/subdivisions, 32,423 cities
+- Source: pycountry (countries/states) + geonamescache (cities with pop > 15k)
+- CMS admin geo management at /admin/geo (breadcrumb drill-down, search, CRUD)
+- Used across: Membership Enrollment, My Account, Members Manager
+
 ## Pending/Backlog
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
