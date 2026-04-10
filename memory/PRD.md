@@ -73,11 +73,15 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 
 **Features:**
 - Dynamic form fields stored in `enrollment_fields` collection (49 seeded defaults)
-- Admin CMS: Full CRUD for fields (add/edit/hide/delete), grouped by step
-- Field types: text, email, password, number, currency, date, select, radio, checkbox, textarea, rating, rating_table, legal_checkbox, signature, country/state/city
+- Admin CMS: Full CRUD for fields (add/edit/hide/delete), grouped by step, with up/down sorting arrows
+- Field types: text, email, password, number, currency, date, datetime, select, radio, checkbox, textarea, richtext, rating, rating_table, legal_checkbox, signature, country/state/city
+- Icon selector: SELECT dropdown with 29 Lucide icon options
+- Email validation in Step 1: checks for existing email before allowing proceed
 - CMS-configurable colors (`--me-*` CSS variables) via Settings > Colors > Membership Enrollment
 - Enrollment logo in Settings > General
-- On submit: creates member with Level 1, sends credentials email, auto-login redirect to /my-account
+- On submit: creates member with Level 1, stores full session data (profile + sponsor visible immediately), sends credentials email, auto-login redirect to /my-account
+- Invite codes marked with invitee_first_name, invitee_last_name, invitee_email, invitee_gender
+- Uses `sponsor_id` field (compatible with /my-account/register flow)
 - Password strength indicator, currency formatting, field tooltips, real-time validation
 - Reuses existing invite code validation and geo API (countries/states/cities)
 
