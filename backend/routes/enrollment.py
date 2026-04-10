@@ -94,6 +94,18 @@ async def validate_enrollment_code(request: Request):
     return {"valid": True, "sponsor_membership_id": doc.get("owner_membership_id", "")}
 
 
+@router.post("/public/enrollment/check-email")
+async def check_enrollment_email(request: Request):
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    existing = await db.members.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+    return {"available": True}
+
+
 @router.post("/public/enrollment/submit")
 async def submit_enrollment(request: Request):
     body = await request.json()
@@ -135,7 +147,7 @@ async def submit_enrollment(request: Request):
     default_level_id = default_level["id"] if default_level else None
 
     # Sponsor info
-    sponsor_member_id = code_doc["owner_member_id"] if code_doc else None
+    sponsor_id = code_doc["owner_member_id"] if code_doc else None
     sponsor_membership_number = code_doc["owner_membership_number"] if code_doc else None
 
     new_member = {
@@ -157,7 +169,7 @@ async def submit_enrollment(request: Request):
         "zip_code": form_data.get("zip_code", ""),
         "level_id": default_level_id,
         "member_type_id": None,
-        "sponsor_member_id": sponsor_member_id,
+        "sponsor_id": sponsor_id,
         "sponsor_membership_number": sponsor_membership_number,
         "avatar": "",
         "biography": "",
@@ -179,11 +191,21 @@ async def submit_enrollment(request: Request):
     }
     await db.enrollment_applications.insert_one(app_doc)
 
-    # Mark invite code as used
+    # Mark invite code as used (match register flow fields)
     if code_doc:
         await db.invite_codes.update_one(
             {"code": invite_code},
-            {"$set": {"status": "used", "used_by_member_id": member_id, "used_at": datetime.now(timezone.utc).isoformat()}}
+            {"$set": {
+                "status": "used",
+                "used_at": datetime.now(timezone.utc).isoformat(),
+                "used_by_member_id": member_id,
+                "used_by_membership_id": membership_id,
+                "used_by_membership_number": membership_number,
+                "invitee_first_name": first_name,
+                "invitee_last_name": last_name,
+                "invitee_email": email,
+                "invitee_gender": form_data.get("gender", ""),
+            }}
         )
 
     # Send email with credentials
@@ -200,21 +222,20 @@ async def submit_enrollment(request: Request):
 <p>You can log in at any time using these credentials.</p>
 <p>Best regards,<br/>{platform_name} Team</p>
 """
-        await send_email_smtp(email, f"Welcome to {platform_name} - Your Credentials", html, settings)
+        await send_email_smtp(settings, email, first_name, f"Welcome to {platform_name} - Your Credentials", html)
     except Exception as e:
         logger.warning(f"Failed to send enrollment email: {e}")
 
     # Create JWT token for auto-login
     token = create_jwt_token(member_id, email, "member")
 
+    # Return full member data (same as register flow)
+    member_data = {k: v for k, v in new_member.items() if k not in ("password_hash", "_id")}
+
     return {
         "success": True,
         "token": token,
-        "member_id": member_id,
-        "membership_id": membership_id,
-        "email": email,
-        "first_name": first_name,
-        "last_name": last_name,
+        "member": member_data,
     }
 
 
@@ -242,6 +263,16 @@ async def admin_create_field(request: Request, user: dict = Depends(require_admi
     body["order"] = (max_order["order"] + 1) if max_order else 1
     await db.enrollment_fields.insert_one(body)
     return await db.enrollment_fields.find_one({"id": body["id"]}, {"_id": 0})
+
+
+# NOTE: Reorder route must be defined BEFORE parameterized routes to avoid route conflicts
+@router.put("/admin/enrollment-fields/reorder")
+async def admin_reorder_fields(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    ordered_ids = body.get("ordered_ids", [])
+    for idx, fid in enumerate(ordered_ids):
+        await db.enrollment_fields.update_one({"id": fid}, {"$set": {"order": idx + 1}})
+    return {"success": True}
 
 
 @router.get("/admin/enrollment-fields/{field_id}")

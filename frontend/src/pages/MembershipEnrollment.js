@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { enrollmentAPI, geoAPI, publicAPI } from '../lib/api';
 import { useAuth } from '../lib/auth';
+import RichTextEditor from '../components/RichTextEditor';
 import { Lock, ChevronRight, Check, HelpCircle, Eye, EyeOff, Layers } from 'lucide-react';
 import { toast } from 'sonner';
 
@@ -140,15 +141,25 @@ export default function MembershipEnrollment() {
       setGlobalMsg({ type: 'error', text: 'Please correct the highlighted fields.' });
       return;
     }
-    // Step 1: validate invite code
-    if (currentStep === 1 && codeValid !== true) {
+    // Step 1: validate invite code AND check email
+    if (currentStep === 1) {
       try {
         setLoading(true);
-        await enrollmentAPI.validateCode(formData.invite_code);
-        setCodeValid(true);
+        // Check email availability first
+        await enrollmentAPI.checkEmail(formData.email);
+        // Then validate invite code
+        if (codeValid !== true) {
+          await enrollmentAPI.validateCode(formData.invite_code);
+          setCodeValid(true);
+        }
       } catch (e) {
-        setErrors({ invite_code: e.response?.data?.detail || 'Invalid invite code' });
-        setCodeValid(false);
+        const detail = e.response?.data?.detail || 'Validation failed';
+        if (detail.toLowerCase().includes('email')) {
+          setErrors({ email: detail });
+        } else {
+          setErrors({ invite_code: detail });
+          setCodeValid(false);
+        }
         setLoading(false);
         return;
       } finally {
@@ -173,9 +184,8 @@ export default function MembershipEnrollment() {
       const data = res.data;
       toast.success('Membership application submitted successfully!');
       if (data.token) {
-        setUserData({ token: data.token, email: data.email, role: 'member', member_id: data.member_id, first_name: data.first_name, last_name: data.last_name });
-        localStorage.setItem('token', data.token);
-        localStorage.setItem('user', JSON.stringify({ email: data.email, role: 'member', member_id: data.member_id }));
+        localStorage.setItem('auth_token', data.token);
+        if (data.member) setUserData(data.member);
         navigate('/my-account');
       }
     } catch (e) {
@@ -225,6 +235,10 @@ export default function MembershipEnrollment() {
         return <input type="date" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'textarea':
         return <textarea value={val || ''} onChange={e => setField(f.field_key, e.target.value)} rows={4} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle} resize-none`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
+      case 'richtext':
+        return <div data-testid={`enroll-${f.field_key}`}><RichTextEditor value={val || ''} onChange={v => setField(f.field_key, v)} placeholder={f.placeholder || ''} /></div>;
+      case 'datetime':
+        return <input type="datetime-local" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'select':
         return (
           <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`}>

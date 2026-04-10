@@ -3,7 +3,7 @@ import { enrollmentAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Text Input' },
@@ -11,11 +11,13 @@ const FIELD_TYPES = [
   { value: 'password', label: 'Password' },
   { value: 'number', label: 'Number' },
   { value: 'currency', label: 'Currency ($)' },
-  { value: 'date', label: 'Date Picker' },
+  { value: 'date', label: 'Date Picker (mm/dd/yyyy)' },
+  { value: 'datetime', label: 'Date & Time (mm/dd/yyyy HH:mm:ss)' },
   { value: 'select', label: 'Select Dropdown' },
   { value: 'radio', label: 'Radio Buttons' },
   { value: 'checkbox', label: 'Checkboxes' },
   { value: 'textarea', label: 'Text Area' },
+  { value: 'richtext', label: 'Rich Text' },
   { value: 'rating', label: 'Rating (1-5)' },
   { value: 'rating_table', label: 'Rating Table' },
   { value: 'legal_checkbox', label: 'Legal Agreement Checkbox' },
@@ -24,7 +26,38 @@ const FIELD_TYPES = [
   { value: 'country', label: 'Country Selector' },
   { value: 'state', label: 'State Selector' },
   { value: 'city', label: 'City Selector' },
-  { value: 'richtext', label: 'Rich Text' },
+];
+
+const ICON_OPTIONS = [
+  { value: '', label: 'None' },
+  { value: 'user', label: 'User' },
+  { value: 'mail', label: 'Mail' },
+  { value: 'lock', label: 'Lock' },
+  { value: 'phone', label: 'Phone' },
+  { value: 'map-pin', label: 'Map Pin' },
+  { value: 'calendar', label: 'Calendar' },
+  { value: 'briefcase', label: 'Briefcase' },
+  { value: 'book', label: 'Book' },
+  { value: 'pen', label: 'Pen' },
+  { value: 'hash', label: 'Hash' },
+  { value: 'dollar-sign', label: 'Dollar Sign' },
+  { value: 'gift', label: 'Gift' },
+  { value: 'shield', label: 'Shield' },
+  { value: 'globe', label: 'Globe' },
+  { value: 'home', label: 'Home' },
+  { value: 'heart', label: 'Heart' },
+  { value: 'star', label: 'Star' },
+  { value: 'flag', label: 'Flag' },
+  { value: 'file-text', label: 'File Text' },
+  { value: 'award', label: 'Award' },
+  { value: 'credit-card', label: 'Credit Card' },
+  { value: 'trending-up', label: 'Trending Up' },
+  { value: 'bar-chart', label: 'Bar Chart' },
+  { value: 'clipboard', label: 'Clipboard' },
+  { value: 'target', label: 'Target' },
+  { value: 'info', label: 'Info' },
+  { value: 'check-circle', label: 'Check Circle' },
+  { value: 'alert-circle', label: 'Alert Circle' },
 ];
 
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
@@ -121,8 +154,10 @@ export default function EnrollmentFieldsManager() {
             </div>
           </div>
           <div>
-            <Label className="text-xs text-slate-500">Icon (lucide icon name, optional)</Label>
-            <Input value={editing.icon || ''} onChange={e => setEditing(p => ({ ...p, icon: e.target.value }))} placeholder="e.g. mail, user, lock" data-testid="ef-icon" />
+            <Label className="text-xs text-slate-500">Icon</Label>
+            <select value={editing.icon || ''} onChange={e => setEditing(p => ({ ...p, icon: e.target.value }))} className={inputCls} data-testid="ef-icon">
+              {ICON_OPTIONS.map(ic => <option key={ic.value} value={ic.value}>{ic.label}</option>)}
+            </select>
           </div>
           {['select', 'radio', 'checkbox', 'rating_table', 'legal_checkbox'].includes(editing.field_type) && (
             <div>
@@ -140,9 +175,9 @@ export default function EnrollmentFieldsManager() {
               Visible on form
             </label>
           </div>
-          {editing.field_type === 'number' || editing.field_type === 'text' ? (
+          {editing.field_type === 'number' || editing.field_type === 'text' || true ? (
             <div>
-              <Label className="text-xs text-slate-500">Order</Label>
+              <Label className="text-xs text-slate-500">Display Order</Label>
               <Input type="number" value={editing.order || ''} onChange={e => setEditing(p => ({ ...p, order: parseInt(e.target.value) || 0 }))} data-testid="ef-order" />
             </div>
           ) : null}
@@ -162,6 +197,19 @@ export default function EnrollmentFieldsManager() {
     if (!grouped[f.step]) grouped[f.step] = [];
     grouped[f.step].push(f);
   });
+
+  const moveField = async (step, index, direction) => {
+    const stepFields = grouped[step] || [];
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= stepFields.length) return;
+    const newOrder = [...stepFields];
+    [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
+    const orderedIds = newOrder.map(f => f.id);
+    try {
+      await enrollmentAPI.adminReorderFields(orderedIds);
+      load();
+    } catch { toast.error('Failed to reorder'); }
+  };
 
   return (
     <div data-testid="enrollment-fields-manager">
@@ -183,9 +231,12 @@ export default function EnrollmentFieldsManager() {
                 <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--ad-badge-bg, #0D9488)', color: 'var(--ad-badge-text, #fff)' }}>{(grouped[step] || []).length} fields</span>
               </div>
               <div>
-                {(grouped[step] || []).map(f => (
+                {(grouped[step] || []).map((f, idx) => (
                   <div key={f.id} className="flex items-center gap-3 px-5 py-3 border-b last:border-0 hover:bg-slate-50 transition-colors" style={{ borderColor: 'var(--ad-table-border, #e2e8f0)' }} data-testid={`ef-row-${f.field_key}`}>
-                    <GripVertical className="w-4 h-4 text-slate-300 flex-shrink-0" />
+                    <div className="flex flex-col gap-0.5 flex-shrink-0">
+                      <button onClick={() => moveField(step, idx, -1)} disabled={idx === 0} className="p-0.5 rounded hover:bg-slate-200 disabled:opacity-20" data-testid={`ef-up-${f.field_key}`}><ChevronUp className="w-3.5 h-3.5 text-slate-400" /></button>
+                      <button onClick={() => moveField(step, idx, 1)} disabled={idx === (grouped[step] || []).length - 1} className="p-0.5 rounded hover:bg-slate-200 disabled:opacity-20" data-testid={`ef-down-${f.field_key}`}><ChevronDown className="w-3.5 h-3.5 text-slate-400" /></button>
+                    </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate" style={{ color: f.visible ? 'var(--ad-heading, #1a2332)' : '#9ca3af' }}>{f.label}</p>
                       <p className="text-xs text-slate-400">{f.field_key} &middot; {f.field_type}{f.required ? ' \u00b7 required' : ''}</p>

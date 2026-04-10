@@ -269,6 +269,7 @@ export const geoAPI = {
 export const enrollmentAPI = {
   getFields: () => api.get('/public/enrollment-fields'),
   validateCode: (code) => api.post('/public/enrollment/validate-code', { code }),
+  checkEmail: (email) => api.post('/public/enrollment/check-email', { email }),
   submit: (form_data) => api.post('/public/enrollment/submit', { form_data }),
   // Admin
   adminGetFields: () => api.get('/admin/enrollment-fields'),
@@ -277,6 +278,7 @@ export const enrollmentAPI = {
   adminUpdateField: (id, data) => api.put(`/admin/enrollment-fields/${id}`, data),
   adminDeleteField: (id) => api.delete(`/admin/enrollment-fields/${id}`),
   adminToggleVisibility: (id, visible) => api.put(`/admin/enrollment-fields/${id}/visibility`, { visible }),
+  adminReorderFields: (ordered_ids) => api.put('/admin/enrollment-fields/reorder', { ordered_ids }),
   adminGetApplications: () => api.get('/admin/enrollment-applications'),
 };
 
