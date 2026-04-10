@@ -205,7 +205,7 @@ async def submit_enrollment(request: Request):
         logger.warning(f"Failed to send enrollment email: {e}")
 
     # Create JWT token for auto-login
-    token = create_jwt_token({"sub": email, "role": "member", "member_id": member_id})
+    token = create_jwt_token(member_id, email, "member")
 
     return {
         "success": True,
