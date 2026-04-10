@@ -78,9 +78,11 @@ export const ThemeContext = createContext('default');
 export const useTheme = () => useContext(ThemeContext);
 
 function SettingsProvider({ children }) {
-  const [settings, setSettings] = useState({});
+  const [settings, setSettings] = useState({ _loaded: false });
   useEffect(() => {
-    publicAPI.getSettings().then(r => setSettings(r.data || {})).catch(() => {});
+    publicAPI.getSettings()
+      .then(r => setSettings({ ...(r.data || {}), _loaded: true }))
+      .catch(() => setSettings({ _loaded: true }));
   }, []);
 
   // Apply CSS variables from theme_colors (new) and colors (legacy)
@@ -294,6 +296,11 @@ function AppRouter() {
   const location = useLocation();
   const settings = useSettings();
   const landingActive = useLandingActive(settings);
+
+  // Show nothing until settings are loaded (prevents flash of main site before landing page)
+  if (!settings._loaded) {
+    return <div className="min-h-screen" style={{ backgroundColor: '#0a0a12' }} />;
+  }
 
   if (location.hash?.includes('session_id=')) return <AuthCallback />;
 

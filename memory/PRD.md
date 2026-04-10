@@ -42,6 +42,7 @@ Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme E
 - Buttons only display if admin creates them (no fallback defaults)
 - Border only on video embeds (photos and empty states have no border)
 - Per-slide countdown timer toggle (`show_countdown` Yes/No in CMS)
+- Settings loading gate: dark screen shown until settings load, preventing main website flash
 
 **Text Rendering Fixes (Apr 9, 2026):**
 - Non-breaking hyphen replacement (`nbHyphens`) prevents text wrapping at hyphens (membership-based, expert-led, high-quality)

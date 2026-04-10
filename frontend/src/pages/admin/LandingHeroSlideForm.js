@@ -75,7 +75,7 @@ function HeroSlidePreview({ form }) {
         )}
         {form.slide_type === 'photo' && photoSrc && (
           <div className="absolute" style={{ left: `${(form.media_x || 400) / 7}%`, top: `${(form.media_y || 50) / 3}%`, width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
-            <img src={photoSrc} alt="" className="rounded-md shadow-2xl w-full object-cover border border-white/10" style={form.media_height ? { maxHeight: `${Math.min(form.media_height * 0.45, 200)}px` } : { maxHeight: '180px' }} />
+            <img src={photoSrc} alt="" className="rounded-md shadow-2xl w-full object-cover" style={form.media_height ? { maxHeight: `${Math.min(form.media_height * 0.45, 200)}px` } : { maxHeight: '180px' }} />
           </div>
         )}
       </div>
