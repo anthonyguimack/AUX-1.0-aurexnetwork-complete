@@ -1,0 +1,288 @@
+from fastapi import APIRouter, HTTPException, Request, Depends
+from models.database import db, hash_password, verify_password, create_jwt_token, send_email_smtp, require_admin, logger
+from datetime import datetime, timezone
+import uuid
+
+router = APIRouter()
+
+# ── Default fields seeded on first run ──
+DEFAULT_FIELDS = [
+    # Step 1
+    {"step": 1, "field_key": "invite_code", "label": "Invite Code", "field_type": "text", "placeholder": "", "tooltip": "Enter the invitation code shared with you", "required": True, "visible": True, "order": 1, "options": [], "icon": "gift"},
+    {"step": 1, "field_key": "email", "label": "Email", "field_type": "email", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 2, "options": [], "icon": "mail"},
+    {"step": 1, "field_key": "first_name", "label": "Firstname", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 3, "options": [], "icon": "user"},
+    {"step": 1, "field_key": "last_name", "label": "Lastname", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 4, "options": [], "icon": "user"},
+    {"step": 1, "field_key": "password", "label": "Password", "field_type": "password", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 5, "options": [], "icon": "lock"},
+    {"step": 1, "field_key": "confirm_password", "label": "Re-Type Password", "field_type": "password", "placeholder": "", "tooltip": "Confirm your password", "required": True, "visible": True, "order": 6, "options": [], "icon": "lock"},
+    # Step 2
+    {"step": 2, "field_key": "gender", "label": "Gender", "field_type": "radio", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 1, "options": ["Male", "Female"], "icon": ""},
+    {"step": 2, "field_key": "country", "label": "Country", "field_type": "country", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 2, "options": [], "icon": ""},
+    {"step": 2, "field_key": "state", "label": "State", "field_type": "state", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 3, "options": [], "icon": ""},
+    {"step": 2, "field_key": "city", "label": "City", "field_type": "city", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 4, "options": [], "icon": ""},
+    {"step": 2, "field_key": "address", "label": "Home Address", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 5, "options": [], "icon": "map-pin"},
+    {"step": 2, "field_key": "zip_code", "label": "ZIP Code", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 6, "options": [], "icon": "hash"},
+    {"step": 2, "field_key": "phone", "label": "Phone Number", "field_type": "text", "placeholder": "", "tooltip": "International format", "required": True, "visible": True, "order": 7, "options": [], "icon": "phone"},
+    {"step": 2, "field_key": "date_of_birth", "label": "Date of Birth", "field_type": "date", "placeholder": "yyyy-mm-dd", "tooltip": "", "required": True, "visible": True, "order": 8, "options": [], "icon": "calendar"},
+    {"step": 2, "field_key": "security_question", "label": "Security Question", "field_type": "select", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 9, "options": ["Pet's Name", "City where you grew up", "Favorite Color", "Favorite Place"], "icon": ""},
+    {"step": 2, "field_key": "security_answer", "label": "Answer to question", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 10, "options": [], "icon": "pen"},
+    {"step": 2, "field_key": "own_business", "label": "Own a business", "field_type": "radio", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 11, "options": ["Yes", "No"], "icon": ""},
+    {"step": 2, "field_key": "current_job", "label": "Current Job / Company", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 12, "options": [], "icon": "briefcase"},
+    {"step": 2, "field_key": "current_position", "label": "Current Position", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 13, "options": [], "icon": "pen"},
+    {"step": 2, "field_key": "years_with_employer", "label": "Years with employer", "field_type": "number", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 14, "options": [], "icon": ""},
+    {"step": 2, "field_key": "education", "label": "Education", "field_type": "select", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 15, "options": ["High School", "College", "Post Graduate"], "icon": ""},
+    {"step": 2, "field_key": "fields_of_study", "label": "Fields of Study", "field_type": "text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 16, "options": [], "icon": "book"},
+    {"step": 2, "field_key": "total_assets", "label": "Current estimated total assets", "field_type": "currency", "placeholder": "$0.00", "tooltip": "Your total estimated assets in USD", "required": True, "visible": True, "order": 17, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "total_debt", "label": "Current short and long term debt", "field_type": "currency", "placeholder": "$0.00", "tooltip": "Combined short and long term debt", "required": True, "visible": True, "order": 18, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "monthly_debt_payments", "label": "Current monthly payments on debt", "field_type": "currency", "placeholder": "$0.00", "tooltip": "Monthly payments on short and long term debt", "required": True, "visible": True, "order": 19, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "credit_score", "label": "Current credit score", "field_type": "number", "placeholder": "", "tooltip": "Optional", "required": False, "visible": True, "order": 20, "options": [], "icon": ""},
+    {"step": 2, "field_key": "yearly_salary", "label": "Current yearly salary", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 21, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "monthly_savings", "label": "Current monthly amount for savings & investing", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 22, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "net_worth", "label": "Current estimated net worth", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 23, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "investment_purposes", "label": "Investment Purposes", "field_type": "checkbox", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 24, "options": ["Own real estate", "Rent", "Neither"], "icon": ""},
+    {"step": 2, "field_key": "investment_amount", "label": "Investment Amount", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 25, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "additional_capital", "label": "Additional Capital for future investments", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 26, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "credit_limit", "label": "Credit Limit", "field_type": "currency", "placeholder": "$0.00", "tooltip": "", "required": True, "visible": True, "order": 27, "options": [], "icon": "dollar-sign"},
+    {"step": 2, "field_key": "referral_source", "label": "How did you hear about us?", "field_type": "checkbox", "placeholder": "", "tooltip": "", "required": False, "visible": True, "order": 28, "options": ["Current partner", "Current member", "Friend", "Co-worker", "Family", "Other"], "icon": ""},
+    {"step": 2, "field_key": "knowledge_ratings", "label": "Rate your knowledge (1-5)", "field_type": "rating_table", "placeholder": "", "tooltip": "Rate your level of knowledge in each area from 1 to 5", "required": True, "visible": True, "order": 29, "options": ["Terminology", "Tools", "Capital Markets", "Products", "Real Estate", "Debt & Credit"], "icon": ""},
+    {"step": 2, "field_key": "risk_tolerance", "label": "How risk-taking do I consider myself?", "field_type": "rating", "placeholder": "", "tooltip": "1 = Very conservative, 5 = Very aggressive", "required": True, "visible": True, "order": 30, "options": [], "icon": ""},
+    {"step": 2, "field_key": "financial_involvement", "label": "How involved am I in my personal finances?", "field_type": "rating", "placeholder": "", "tooltip": "1 = Not involved, 5 = Very involved", "required": True, "visible": True, "order": 31, "options": [], "icon": ""},
+    {"step": 2, "field_key": "investment_security", "label": "How secure do I believe my current investments are?", "field_type": "rating", "placeholder": "", "tooltip": "1 = Not secure, 5 = Very secure", "required": True, "visible": True, "order": 32, "options": [], "icon": ""},
+    {"step": 2, "field_key": "financial_independence_age", "label": "At what age do you expect to be financially independent?", "field_type": "number", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 33, "options": [], "icon": ""},
+    {"step": 2, "field_key": "expected_return_rate", "label": "Reasonable rate of return for your investments (% annual)", "field_type": "number", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 34, "options": [], "icon": ""},
+    {"step": 2, "field_key": "investment_horizon", "label": "How long do you plan to keep money invested?", "field_type": "select", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 35, "options": ["6 months", "Less than a year", "More than a year"], "icon": ""},
+    {"step": 2, "field_key": "own_business_interest", "label": "Would you start/work in your own business?", "field_type": "select", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 36, "options": ["Yes", "No"], "icon": ""},
+    {"step": 2, "field_key": "additional_info", "label": "Additional Information and Clarity Statement", "field_type": "textarea", "placeholder": "", "tooltip": "", "required": False, "visible": True, "order": 37, "options": [], "icon": ""},
+    # Step 3 — legal agreements (fixed, not dynamic fields but still stored)
+    {"step": 3, "field_key": "agree_confidentiality", "label": "Membership Application Confidentiality Agreement", "field_type": "legal_checkbox", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 1, "options": ["All items entered on this application will be maintained confidential. If the group decides on not to accept the applicant, he/she may request at anytime (in writing) that this document be deposed from our files and records."], "icon": ""},
+    {"step": 3, "field_key": "agree_document_protection", "label": "Document Protection Clause", "field_type": "legal_checkbox", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 2, "options": ["Under no circumstance may the applicant make any copy of this or any other documents within the system, nor it is allowed to disseminate them without the express written consent of the group. Any breach of this clause may result in a direct legal action for distribution of proprietary information and dissemination of the firm's intellectual capital and resources. The firm advice the applicant that, if it is forced to seek legal actions, all cost, including attorney and court fee will be covered by the applicant."], "icon": ""},
+    {"step": 3, "field_key": "agree_privacy_policy", "label": "ACGMP Privacy Policy", "field_type": "legal_checkbox", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 3, "options": ["Please be advice that all items discussed by the firm are proprietary to the firms and its members. All members will be required to sign a non-disclosure and confidentiality agreement to protect all the company's intellectual capital and its member's privacy. Any breach of this confidentiality agreement may result in legal actions and compensation for intellectual property distribution."], "icon": ""},
+    {"step": 3, "field_key": "signature_first_name", "label": "First Name", "field_type": "signature_text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 4, "options": [], "icon": ""},
+    {"step": 3, "field_key": "signature_last_name", "label": "Last Name", "field_type": "signature_text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 5, "options": [], "icon": ""},
+    {"step": 3, "field_key": "signature_date", "label": "Date", "field_type": "signature_date", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 6, "options": [], "icon": ""},
+]
+
+
+async def seed_enrollment_fields():
+    count = await db.enrollment_fields.count_documents({})
+    if count > 0:
+        return
+    for f in DEFAULT_FIELDS:
+        f["id"] = str(uuid.uuid4())
+        f["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.enrollment_fields.insert_many(DEFAULT_FIELDS)
+    logger.info(f"Seeded {len(DEFAULT_FIELDS)} enrollment fields")
+
+
+# ── Public endpoints ──
+
+@router.get("/public/enrollment-fields")
+async def get_enrollment_fields():
+    """Return visible fields grouped by step for the public form."""
+    fields = await db.enrollment_fields.find({"visible": True}, {"_id": 0}).sort("order", 1).to_list(200)
+    return fields
+
+
+@router.post("/public/enrollment/validate-code")
+async def validate_enrollment_code(request: Request):
+    body = await request.json()
+    code = body.get("code", "").strip()
+    if not code:
+        raise HTTPException(status_code=400, detail="Invite code is required")
+    doc = await db.invite_codes.find_one({"code": code, "status": "available"}, {"_id": 0})
+    if not doc:
+        raise HTTPException(status_code=400, detail="Invalid or already used invite code")
+    return {"valid": True, "sponsor_membership_id": doc.get("owner_membership_id", "")}
+
+
+@router.post("/public/enrollment/submit")
+async def submit_enrollment(request: Request):
+    body = await request.json()
+    form_data = body.get("form_data", {})
+    email = form_data.get("email", "").strip().lower()
+    password = form_data.get("password", "")
+    confirm = form_data.get("confirm_password", "")
+    first_name = form_data.get("first_name", "").strip()
+    last_name = form_data.get("last_name", "").strip()
+    invite_code = form_data.get("invite_code", "").strip()
+
+    if not email:
+        raise HTTPException(status_code=400, detail="Email is required")
+    if len(password) < 8:
+        raise HTTPException(status_code=400, detail="Password must be at least 8 characters")
+    if password != confirm:
+        raise HTTPException(status_code=400, detail="Passwords do not match")
+
+    existing = await db.members.find_one({"email": email})
+    if existing:
+        raise HTTPException(status_code=400, detail="Email already registered")
+
+    # Validate invite code
+    code_doc = None
+    if invite_code:
+        code_doc = await db.invite_codes.find_one({"code": invite_code, "status": "available"}, {"_id": 0})
+        if not code_doc:
+            raise HTTPException(status_code=400, detail="Invalid or used invite code")
+
+    # Get membership number
+    from routes.membership import get_next_membership_number, get_aux_prefix
+    membership_number = await get_next_membership_number()
+    prefix = await get_aux_prefix()
+    membership_id = f"{prefix}-{membership_number}"
+    member_id = f"member_{uuid.uuid4().hex[:12]}"
+
+    # Get default level (Level 1 = lowest order)
+    default_level = await db.member_levels.find_one({}, {"_id": 0, "id": 1}, sort=[("order", 1)])
+    default_level_id = default_level["id"] if default_level else None
+
+    # Sponsor info
+    sponsor_member_id = code_doc["owner_member_id"] if code_doc else None
+    sponsor_membership_number = code_doc["owner_membership_number"] if code_doc else None
+
+    new_member = {
+        "member_id": member_id,
+        "membership_number": membership_number,
+        "membership_id": membership_id,
+        "username": email,
+        "email": email,
+        "password_hash": hash_password(password),
+        "first_name": first_name,
+        "last_name": last_name,
+        "gender": form_data.get("gender", ""),
+        "phone": form_data.get("phone", ""),
+        "date_of_birth": form_data.get("date_of_birth", ""),
+        "address": form_data.get("address", ""),
+        "country": form_data.get("country", ""),
+        "state": form_data.get("state", ""),
+        "city": form_data.get("city", ""),
+        "zip_code": form_data.get("zip_code", ""),
+        "level_id": default_level_id,
+        "member_type_id": None,
+        "sponsor_member_id": sponsor_member_id,
+        "sponsor_membership_number": sponsor_membership_number,
+        "avatar": "",
+        "biography": "",
+        "social_links": {},
+        "status": "active",
+        "created_at": datetime.now(timezone.utc).isoformat(),
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+        "registration_source": "enrollment",
+    }
+    await db.members.insert_one(new_member)
+
+    # Save full enrollment application data
+    app_doc = {
+        "id": str(uuid.uuid4()),
+        "member_id": member_id,
+        "email": email,
+        "form_data": {k: v for k, v in form_data.items() if k not in ("password", "confirm_password")},
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.enrollment_applications.insert_one(app_doc)
+
+    # Mark invite code as used
+    if code_doc:
+        await db.invite_codes.update_one(
+            {"code": invite_code},
+            {"$set": {"status": "used", "used_by_member_id": member_id, "used_at": datetime.now(timezone.utc).isoformat()}}
+        )
+
+    # Send email with credentials
+    try:
+        settings = await db.settings.find_one({}, {"_id": 0})
+        platform_name = (settings or {}).get("brand_name", "Membership Platform")
+        html = f"""
+<h2>Welcome to {platform_name}!</h2>
+<p>Dear {first_name} {last_name},</p>
+<p>Your membership application has been submitted successfully. Here are your login credentials:</p>
+<p><strong>Email:</strong> {email}<br/>
+<strong>Password:</strong> {password}<br/>
+<strong>Membership ID:</strong> {membership_id}</p>
+<p>You can log in at any time using these credentials.</p>
+<p>Best regards,<br/>{platform_name} Team</p>
+"""
+        await send_email_smtp(email, f"Welcome to {platform_name} - Your Credentials", html, settings)
+    except Exception as e:
+        logger.warning(f"Failed to send enrollment email: {e}")
+
+    # Create JWT token for auto-login
+    token = create_jwt_token({"sub": email, "role": "member", "member_id": member_id})
+
+    return {
+        "success": True,
+        "token": token,
+        "member_id": member_id,
+        "membership_id": membership_id,
+        "email": email,
+        "first_name": first_name,
+        "last_name": last_name,
+    }
+
+
+# ── Admin endpoints ──
+
+@router.get("/admin/enrollment-fields")
+async def admin_list_fields(user: dict = Depends(require_admin)):
+    fields = await db.enrollment_fields.find({}, {"_id": 0}).sort([("step", 1), ("order", 1)]).to_list(200)
+    return fields
+
+
+@router.post("/admin/enrollment-fields")
+async def admin_create_field(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body["id"] = str(uuid.uuid4())
+    body.setdefault("visible", True)
+    body.setdefault("required", False)
+    body.setdefault("options", [])
+    body.setdefault("icon", "")
+    body.setdefault("tooltip", "")
+    body.setdefault("placeholder", "")
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    # Auto-set order
+    max_order = await db.enrollment_fields.find_one({"step": body.get("step", 1)}, sort=[("order", -1)])
+    body["order"] = (max_order["order"] + 1) if max_order else 1
+    await db.enrollment_fields.insert_one(body)
+    return await db.enrollment_fields.find_one({"id": body["id"]}, {"_id": 0})
+
+
+@router.get("/admin/enrollment-fields/{field_id}")
+async def admin_get_field(field_id: str, user: dict = Depends(require_admin)):
+    field = await db.enrollment_fields.find_one({"id": field_id}, {"_id": 0})
+    if not field:
+        raise HTTPException(status_code=404, detail="Field not found")
+    return field
+
+
+@router.put("/admin/enrollment-fields/{field_id}")
+async def admin_update_field(field_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("id", None)
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.enrollment_fields.update_one({"id": field_id}, {"$set": body})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Field not found")
+    return await db.enrollment_fields.find_one({"id": field_id}, {"_id": 0})
+
+
+@router.delete("/admin/enrollment-fields/{field_id}")
+async def admin_delete_field(field_id: str, user: dict = Depends(require_admin)):
+    result = await db.enrollment_fields.delete_one({"id": field_id})
+    if result.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Field not found")
+    return {"success": True}
+
+
+@router.put("/admin/enrollment-fields/{field_id}/visibility")
+async def admin_toggle_visibility(field_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    visible = body.get("visible", True)
+    result = await db.enrollment_fields.update_one({"id": field_id}, {"$set": {"visible": visible}})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Field not found")
+    return {"success": True, "visible": visible}
+
+
+@router.get("/admin/enrollment-applications")
+async def admin_list_applications(user: dict = Depends(require_admin)):
+    apps = await db.enrollment_applications.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return apps

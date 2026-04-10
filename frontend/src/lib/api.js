@@ -266,4 +266,18 @@ export const geoAPI = {
   getCities: (stateId) => api.get(`/geo/cities${stateId ? `?state_id=${stateId}` : ''}`),
 };
 
+export const enrollmentAPI = {
+  getFields: () => api.get('/public/enrollment-fields'),
+  validateCode: (code) => api.post('/public/enrollment/validate-code', { code }),
+  submit: (form_data) => api.post('/public/enrollment/submit', { form_data }),
+  // Admin
+  adminGetFields: () => api.get('/admin/enrollment-fields'),
+  adminGetField: (id) => api.get(`/admin/enrollment-fields/${id}`),
+  adminCreateField: (data) => api.post('/admin/enrollment-fields', data),
+  adminUpdateField: (id, data) => api.put(`/admin/enrollment-fields/${id}`, data),
+  adminDeleteField: (id) => api.delete(`/admin/enrollment-fields/${id}`),
+  adminToggleVisibility: (id, visible) => api.put(`/admin/enrollment-fields/${id}/visibility`, { visible }),
+  adminGetApplications: () => api.get('/admin/enrollment-applications'),
+};
+
 export default api;

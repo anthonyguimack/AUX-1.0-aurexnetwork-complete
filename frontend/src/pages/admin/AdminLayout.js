@@ -27,6 +27,8 @@ const sidebarItems = [
   { label: 'Content', icon: Layers, href: '/admin/landing-content', group: 'landing' },
   { label: 'Subscribers', icon: UserCheck, href: '/admin/landing-subscribers', group: 'landing' },
   { label: 'Contacts', icon: Mail, href: '/admin/landing-contacts', group: 'landing' },
+  { type: 'divider', label: 'Membership Enrollment' },
+  { label: 'Content', icon: ClipboardCheck, href: '/admin/enrollment-fields', group: 'enrollment' },
   { type: 'divider', label: 'Membership' },
   { label: 'Members', icon: UserCheck, href: '/admin/members' },
   { label: 'Member Levels', icon: Shield, href: '/admin/member-levels' },

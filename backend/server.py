@@ -27,6 +27,7 @@ from routes.admin_tools import router as admin_tools_router
 from routes.payments import router as payments_router
 from routes.membership import router as membership_router
 from routes.landing import router as landing_router
+from routes.enrollment import router as enrollment_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -35,6 +36,7 @@ api_router.include_router(admin_tools_router)
 api_router.include_router(payments_router)
 api_router.include_router(membership_router)
 api_router.include_router(landing_router)
+api_router.include_router(enrollment_router)
 
 # Import seed data function
 from seed import seed_data
@@ -42,6 +44,8 @@ from seed import seed_data
 @app.on_event("startup")
 async def startup():
     await seed_data()
+    from routes.enrollment import seed_enrollment_fields
+    await seed_enrollment_fields()
     from scheduler import start_scheduler
     start_scheduler()
 

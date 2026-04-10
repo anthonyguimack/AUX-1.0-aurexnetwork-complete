@@ -103,13 +103,45 @@ export const ADMIN_COLORS = [
   { key: 'badge_text', label: 'Badge Text', default: '#ffffff' },
 ];
 
+export const ENROLLMENT_COLORS = [
+  { key: 'page_bg', label: 'Page Background', default: '#f4f4f4' },
+  { key: 'header_bg', label: 'Header Bar Background', default: '#F5A623' },
+  { key: 'header_text', label: 'Header Text', default: '#ffffff' },
+  { key: 'footer_bg', label: 'Footer Background', default: '#1a2535' },
+  { key: 'footer_text', label: 'Footer Text', default: '#9ca3af' },
+  { key: 'step_title', label: 'Step Title Color', default: '#1a2535' },
+  { key: 'step_active', label: 'Step Active Circle', default: '#F5A623' },
+  { key: 'step_completed', label: 'Step Completed Circle', default: '#F5A623' },
+  { key: 'step_pending', label: 'Step Pending Circle', default: '#d4d4d4' },
+  { key: 'progress_bar', label: 'Progress Bar Fill', default: '#F5A623' },
+  { key: 'progress_bg', label: 'Progress Bar Track', default: '#e5e7eb' },
+  { key: 'form_bg', label: 'Form Background', default: '#ffffff' },
+  { key: 'label_color', label: 'Field Label Color', default: '#374151' },
+  { key: 'input_text', label: 'Input Text', default: '#1a2535' },
+  { key: 'input_border', label: 'Input Bottom Border', default: '#d1d5db' },
+  { key: 'input_focus', label: 'Input Focus Border', default: '#F5A623' },
+  { key: 'input_icon', label: 'Input Icon Color', default: '#9ca3af' },
+  { key: 'placeholder', label: 'Placeholder Color', default: '#9ca3af' },
+  { key: 'save_btn_border', label: 'Save Button Border', default: '#dc2626' },
+  { key: 'save_btn_text', label: 'Save Button Text', default: '#dc2626' },
+  { key: 'continue_btn_border', label: 'Continue Button Border', default: '#1a2535' },
+  { key: 'continue_btn_text', label: 'Continue Button Text', default: '#1a2535' },
+  { key: 'submit_btn_border', label: 'Submit Button Border', default: '#1a2535' },
+  { key: 'submit_btn_text', label: 'Submit Button Text', default: '#1a2535' },
+  { key: 'error_color', label: 'Error Message Color', default: '#dc2626' },
+  { key: 'success_color', label: 'Success Color', default: '#16a34a' },
+  { key: 'section_title', label: 'Section Title', default: '#1a2535' },
+  { key: 'tooltip_bg', label: 'Tooltip Background', default: '#1a2535' },
+  { key: 'tooltip_text', label: 'Tooltip Text', default: '#ffffff' },
+];
+
 // Helper: get color value from settings with fallback to default
 export function getColor(group, key, themeColors) {
   return themeColors?.[group]?.[key] || getDefault(group, key);
 }
 
 function getDefault(group, key) {
-  const groups = { website: WEBSITE_COLORS, my_account: MYACCOUNT_COLORS, admin: ADMIN_COLORS, landing_page: LANDING_PAGE_COLORS };
+  const groups = { website: WEBSITE_COLORS, my_account: MYACCOUNT_COLORS, admin: ADMIN_COLORS, landing_page: LANDING_PAGE_COLORS, enrollment: ENROLLMENT_COLORS };
   return groups[group]?.find(c => c.key === key)?.default || '#000000';
 }
 
@@ -151,6 +183,12 @@ export function injectThemeColors(themeColors) {
   const lp = themeColors?.landing_page || {};
   LANDING_PAGE_COLORS.forEach(c => {
     root.style.setProperty(`--lp-${c.key.replace(/_/g, '-')}`, lp[c.key] || c.default);
+  });
+
+  // Membership Enrollment colors (--me-*)
+  const me = themeColors?.enrollment || {};
+  ENROLLMENT_COLORS.forEach(c => {
+    root.style.setProperty(`--me-${c.key.replace(/_/g, '-')}`, me[c.key] || c.default);
   });
 }
 

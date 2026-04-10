@@ -67,6 +67,8 @@ import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
 
 import LandingPage from './pages/LandingPage';
+import MembershipEnrollment from './pages/MembershipEnrollment';
+import EnrollmentFieldsManager from './pages/admin/EnrollmentFieldsManager';
 
 import { injectThemeColors } from './lib/themeColors';
 
@@ -367,8 +369,10 @@ function AppRouter() {
           <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
+          <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
+        <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
         <Route path="*" element={<LandingPage />} />
       </Routes>
     );
@@ -430,7 +434,9 @@ function AppRouter() {
           <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
+          <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
         </Route>
+        <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
         {/* Catch-all: custom page URLs like /kls */}
         <Route path="*" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
       </Routes>

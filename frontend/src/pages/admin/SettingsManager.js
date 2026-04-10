@@ -8,7 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/ta
 import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
-import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, THEMES } from '../../lib/themeColors';
+import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, THEMES } from '../../lib/themeColors';
 import { MAP_LANGUAGES } from '../../lib/mapConfig';
 
 function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
@@ -125,6 +125,7 @@ export default function SettingsManager() {
   const myAccountColors = tc.my_account || {};
   const adminColors = tc.admin || {};
   const landingPageColors = tc.landing_page || {};
+  const enrollmentColors = tc.enrollment || {};
 
   const activeTheme = settings.active_theme || 'default';
 
@@ -230,6 +231,14 @@ export default function SettingsManager() {
                 </div>
               </>
             )}
+            <div className="border-t pt-4 mt-4">
+              <h3 className="font-semibold mb-2" style={{ color: 'var(--ad-heading, #1a2332)' }}>Membership Enrollment</h3>
+              <div>
+                <Label>Membership Enrollment Logo</Label>
+                <p className="text-xs text-slate-400 mb-1">Exclusive logo displayed only in the Membership Enrollment portal. Upload or paste URL.</p>
+                <ImageUpload value={settings.enrollment_logo || ''} onChange={v => setSettings({...settings, enrollment_logo: v})} data-testid="enrollment-logo" />
+              </div>
+            </div>
           </div>
         </TabsContent>
 
@@ -269,6 +278,14 @@ export default function SettingsManager() {
               values={landingPageColors}
               onChange={(key, val) => updateThemeColor('landing_page', key, val)}
               testIdPrefix="landing"
+            />
+            <ColorGroup
+              title="Membership Enrollment"
+              description="Colors for the Membership Enrollment portal — header, progress bar, form inputs, buttons, footer."
+              colors={ENROLLMENT_COLORS}
+              values={enrollmentColors}
+              onChange={(key, val) => updateThemeColor('enrollment', key, val)}
+              testIdPrefix="enrollment"
             />
           </div>
         </TabsContent>
