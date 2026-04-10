@@ -69,6 +69,7 @@ import PortfolioForm from './pages/myaccount/PortfolioForm';
 import LandingPage from './pages/LandingPage';
 import MembershipEnrollment from './pages/MembershipEnrollment';
 import EnrollmentFieldsManager from './pages/admin/EnrollmentFieldsManager';
+import GeoManager from './pages/admin/GeoManager';
 
 import { injectThemeColors } from './lib/themeColors';
 
@@ -370,6 +371,7 @@ function AppRouter() {
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
           <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
+          <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
@@ -381,10 +383,14 @@ function AppRouter() {
   return (
     <>
       <ScrollToTop />
-      <Navbar />
-      <SystemPageHero />
       <Routes>
-        <Route path="/" element={<HomePage />} />
+        <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
+        <Route path="*" element={
+          <>
+            <Navbar />
+            <SystemPageHero />
+            <Routes>
+              <Route path="/" element={<HomePage />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsDetailPage />} />
         <Route path="/reading-list" element={<ReadingListPage />} />
@@ -435,12 +441,16 @@ function AppRouter() {
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
           <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
+          <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
         {/* Catch-all: custom page URLs like /kls */}
         <Route path="*" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
       </Routes>
       <Footer />
+    </>
+    } />
+      </Routes>
     </>
   );
 }

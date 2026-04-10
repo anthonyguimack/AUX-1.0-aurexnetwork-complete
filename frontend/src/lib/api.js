@@ -264,6 +264,16 @@ export const geoAPI = {
   getCountries: () => api.get('/geo/countries'),
   getStates: (countryId) => api.get(`/geo/states${countryId ? `?country_id=${countryId}` : ''}`),
   getCities: (stateId) => api.get(`/geo/cities${stateId ? `?state_id=${stateId}` : ''}`),
+  // Admin
+  adminCreateCountry: (data) => api.post('/admin/geo/countries', data),
+  adminUpdateCountry: (id, data) => api.put(`/admin/geo/countries/${id}`, data),
+  adminDeleteCountry: (id) => api.delete(`/admin/geo/countries/${id}`),
+  adminCreateState: (data) => api.post('/admin/geo/states', data),
+  adminUpdateState: (id, data) => api.put(`/admin/geo/states/${id}`, data),
+  adminDeleteState: (id) => api.delete(`/admin/geo/states/${id}`),
+  adminCreateCity: (data) => api.post('/admin/geo/cities', data),
+  adminUpdateCity: (id, data) => api.put(`/admin/geo/cities/${id}`, data),
+  adminDeleteCity: (id) => api.delete(`/admin/geo/cities/${id}`),
 };
 
 export const enrollmentAPI = {

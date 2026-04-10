@@ -355,9 +355,9 @@ export default function MembershipEnrollment() {
     <div className="min-h-screen flex flex-col" style={{ backgroundColor: cv('page-bg', '#f4f4f4') }} data-testid="membership-enrollment">
       {/* Header */}
       <header className="relative" data-testid="enroll-header">
-        <div className="h-[45px]" style={{ backgroundColor: cv('header-bg', '#F5A623') }} />
+        <div className="h-[70px]" style={{ backgroundColor: cv('header-bg', '#F5A623') }} />
         {logo && (
-          <div className="absolute left-1/2 -translate-x-1/2 top-0 -translate-y-1/3 z-10">
+          <div className="absolute left-1/2 -translate-x-1/2 top-1 z-10">
             <div className="bg-white rounded shadow-md p-2">
               <img src={logo} alt="Logo" className="h-14 w-auto object-contain" data-testid="enroll-logo" />
             </div>
@@ -426,10 +426,10 @@ export default function MembershipEnrollment() {
               </p>
             </div>
           ) : (
-            <div className="space-y-5">
+            <div className="space-y-7">
               {stepFields.map(f => (
                 <div key={f.id || f.field_key} data-testid={`enroll-field-${f.field_key}`}>
-                  <label className="flex items-center text-sm font-medium mb-1" style={{ color: cv('label-color', '#374151') }}>
+                  <label className="flex items-center text-sm font-medium mb-2.5" style={{ color: cv('label-color', '#374151') }}>
                     {f.label}
                     {f.required && <span className="ml-0.5" style={{ color: cv('error-color', '#dc2626') }}>*</span>}
                     <Tooltip text={f.tooltip} />

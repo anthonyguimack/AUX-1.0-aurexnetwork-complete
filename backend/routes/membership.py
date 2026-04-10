@@ -684,6 +684,68 @@ async def list_cities(state_id: str = None):
     query = {"state_id": state_id} if state_id else {}
     return await db.cities.find(query, {"_id": 0}).sort("name", 1).to_list(10000)
 
+# ---- Admin Geo Management ----
+
+@router.post("/admin/geo/countries")
+async def admin_create_country(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    doc = {"id": str(uuid.uuid4()), "name": body.get("name", ""), "code": body.get("code", ""), "alpha3": body.get("alpha3", "")}
+    await db.countries.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@router.put("/admin/geo/countries/{cid}")
+async def admin_update_country(cid: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None); body.pop("id", None)
+    await db.countries.update_one({"id": cid}, {"$set": body})
+    return await db.countries.find_one({"id": cid}, {"_id": 0})
+
+@router.delete("/admin/geo/countries/{cid}")
+async def admin_delete_country(cid: str, user: dict = Depends(require_admin)):
+    await db.countries.delete_one({"id": cid})
+    await db.states.delete_many({"country_id": cid})
+    await db.cities.delete_many({"country_id": cid})
+    return {"success": True}
+
+@router.post("/admin/geo/states")
+async def admin_create_state(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    doc = {"id": str(uuid.uuid4()), "name": body.get("name", ""), "code": body.get("code", ""), "country_id": body.get("country_id", ""), "country_code": body.get("country_code", "")}
+    await db.states.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@router.put("/admin/geo/states/{sid}")
+async def admin_update_state(sid: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None); body.pop("id", None)
+    await db.states.update_one({"id": sid}, {"$set": body})
+    return await db.states.find_one({"id": sid}, {"_id": 0})
+
+@router.delete("/admin/geo/states/{sid}")
+async def admin_delete_state(sid: str, user: dict = Depends(require_admin)):
+    await db.states.delete_one({"id": sid})
+    await db.cities.delete_many({"state_id": sid})
+    return {"success": True}
+
+@router.post("/admin/geo/cities")
+async def admin_create_city(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    doc = {"id": str(uuid.uuid4()), "name": body.get("name", ""), "state_id": body.get("state_id", ""), "country_id": body.get("country_id", ""), "country_code": body.get("country_code", "")}
+    await db.cities.insert_one(doc)
+    return {k: v for k, v in doc.items() if k != "_id"}
+
+@router.put("/admin/geo/cities/{city_id}")
+async def admin_update_city(city_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("_id", None); body.pop("id", None)
+    await db.cities.update_one({"id": city_id}, {"$set": body})
+    return await db.cities.find_one({"id": city_id}, {"_id": 0})
+
+@router.delete("/admin/geo/cities/{city_id}")
+async def admin_delete_city(city_id: str, user: dict = Depends(require_admin)):
+    await db.cities.delete_one({"id": city_id})
+    return {"success": True}
+
 # ---- Member Levels ----
 
 @router.get("/admin/member-levels")
