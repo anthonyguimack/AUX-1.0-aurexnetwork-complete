@@ -60,6 +60,26 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - `/app/frontend/src/pages/admin/LandingSubscribersManager.js` — Waiting list table
 - `/app/frontend/src/pages/admin/LandingContactsManager.js` — Contact submissions
 - `/app/backend/routes/landing.py` — All landing page API endpoints
+- `/app/frontend/src/pages/MembershipEnrollment.js` — 4-step enrollment wizard
+- `/app/frontend/src/pages/admin/EnrollmentFieldsManager.js` — CMS admin for enrollment form fields
+- `/app/backend/routes/enrollment.py` — All enrollment API endpoints
+
+### Membership Enrollment Module (Apr 10, 2026)
+**4-Step Wizard at `/membership-enrollment`:**
+1. **Step 1 — Invitation CODE**: Invite code validation + email/name/password
+2. **Step 2 — Clarity Statement and Interview**: 37 fields (personal, financial, ratings, geo cascading selects)
+3. **Step 3 — Application Enrollment**: 3 legal agreements + digital signature
+4. **Step 4 — Confirm & Submit**: Confirmation message + Submit button
+
+**Features:**
+- Dynamic form fields stored in `enrollment_fields` collection (49 seeded defaults)
+- Admin CMS: Full CRUD for fields (add/edit/hide/delete), grouped by step
+- Field types: text, email, password, number, currency, date, select, radio, checkbox, textarea, rating, rating_table, legal_checkbox, signature, country/state/city
+- CMS-configurable colors (`--me-*` CSS variables) via Settings > Colors > Membership Enrollment
+- Enrollment logo in Settings > General
+- On submit: creates member with Level 1, sends credentials email, auto-login redirect to /my-account
+- Password strength indicator, currency formatting, field tooltips, real-time validation
+- Reuses existing invite code validation and geo API (countries/states/cities)
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!
