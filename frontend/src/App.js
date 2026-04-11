@@ -70,6 +70,7 @@ import LandingPage from './pages/LandingPage';
 import MembershipEnrollment from './pages/MembershipEnrollment';
 import EnrollmentFieldsManager from './pages/admin/EnrollmentFieldsManager';
 import GeoManager from './pages/admin/GeoManager';
+import DocumentationManager from './pages/admin/DocumentationManager';
 
 import { injectThemeColors } from './lib/themeColors';
 
@@ -371,6 +372,7 @@ function AppRouter() {
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
           <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
+          <Route path="documentation" element={<DocumentationManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -441,6 +443,7 @@ function AppRouter() {
           <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
           <Route path="landing-contacts" element={<LandingContactsManager />} />
           <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
+          <Route path="documentation" element={<DocumentationManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />

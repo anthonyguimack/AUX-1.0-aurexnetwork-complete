@@ -5,7 +5,7 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -41,6 +41,7 @@ const sidebarItems = [
   { label: 'Sections', icon: Layers, href: '/admin/section-order' },
   { label: 'SEO', icon: Globe, href: '/admin/seo' },
   { label: 'Countries, States, Cities', icon: MapPin, href: '/admin/geo' },
+  { label: 'Documentation', icon: ScrollText, href: '/admin/documentation' },
   { label: 'Backup', icon: Database, href: '/admin/backup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings' },
 ];

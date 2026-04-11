@@ -21,85 +21,65 @@ Full public website, admin CMS, Visual Page Builder (16 content blocks), Theme E
 4. **Waiting List** — White bg, centered form (Name/Last Name/Email). Saves to `landing_subscribers`.
 5. **Footer** — 2-column: Left (logo+desc), Right (social icons), Copyright center.
 
-**CMS Admin — Landing Page Section:**
-- **Hero** — Full slide form CLONED from Website Hero: timer, title/subtitle/description (rich text), **multiple buttons per slide** (text/url/window/style), slide type (photo/video), media dimensions, background image + **Background Overlay (Yes/No)**, layer animation effects, layer positioning (canvas editor), revolution slider params, page assignment, live preview.
-- **Content** — Nav links (4), contact section (title/subtitle/description/image/placeholders), waiting list (title/subtitle/btn), footer (description/social title/copyright), cookie banner.
-- **Subscribers** — Waiting list signups table with delete.
-- **Contacts** — Contact form submissions table with Subject column + detail dialog.
-
-**CMS Settings:**
-- Settings > General: LP toggle, Launch Date, Logo, Background Image
-- Settings > Colors: 25 CSS variables (`--lp-*`)
-- Routing: Auto-switch LP ↔ Website on countdown expiry (client-side, no reload)
-- Admin Login: Standalone at `/admin/login`
-
 **Hero Carousel (Apr 9, 2026):**
 - Multi-slide carousel with auto-advance (configurable delay per slide, default 9.4s)
 - Prev/Next arrow navigation (glassmorphism buttons)
 - Dot indicators with active state highlighting
-- Background image crossfade transition on slide change
-- Content re-animation via React key on slide transitions
-- Buttons only display if admin creates them (no fallback defaults)
-- Border only on video embeds (photos and empty states have no border)
-- Per-slide countdown timer toggle (`show_countdown` Yes/No in CMS)
-- Settings loading gate: dark screen shown until settings load, preventing main website flash
-
-**Text Rendering Fixes (Apr 9, 2026):**
-- Non-breaking hyphen replacement (`nbHyphens`) prevents text wrapping at hyphens (membership-based, expert-led, high-quality)
-- Rich text paragraph spacing: `<p>` tags get proper margin-bottom for line spacing
-- CSS `word-break: keep-all` + `hyphens: none` globally on `.rich-text-content`
 
 ### Map Improvements (Apr 8, 2026)
 MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languages), Interactive Map Picker, Tile provider integration
-
-## Key Files
-- `/app/frontend/src/pages/LandingPage.js` — Main landing page component
-- `/app/frontend/src/pages/admin/LandingHeroSlideForm.js` — Full hero slide form (cloned from HeroSlideForm)
-- `/app/frontend/src/pages/admin/LandingHeroManager.js` — Hero slides list manager
-- `/app/frontend/src/pages/admin/LandingContentManager.js` — All text/image content
-- `/app/frontend/src/pages/admin/LandingSubscribersManager.js` — Waiting list table
-- `/app/frontend/src/pages/admin/LandingContactsManager.js` — Contact submissions
-- `/app/backend/routes/landing.py` — All landing page API endpoints
-- `/app/frontend/src/pages/MembershipEnrollment.js` — 4-step enrollment wizard
-- `/app/frontend/src/pages/admin/EnrollmentFieldsManager.js` — CMS admin for enrollment form fields
-- `/app/backend/routes/enrollment.py` — All enrollment API endpoints
 
 ### Membership Enrollment Module (Apr 10, 2026)
 **4-Step Wizard at `/membership-enrollment`:**
 1. **Step 1 — Invitation CODE**: Invite code validation + email/name/password
 2. **Step 2 — Clarity Statement and Interview**: 37 fields (personal, financial, ratings, geo cascading selects)
 3. **Step 3 — Application Enrollment**: 3 legal agreements + digital signature
-4. **Step 4 — Confirm & Submit**: Confirmation message + Submit button
+4. **Step 4 — Confirm & Submit**: CMS-managed title + description + Submit button
 
 **Features:**
 - Dynamic form fields stored in `enrollment_fields` collection (49 seeded defaults)
-- Admin CMS: Full CRUD for fields (add/edit/hide/delete), grouped by step, with up/down sorting arrows
-- Field types: text, email, password, number, currency, date, datetime, select, radio, checkbox, textarea, richtext, rating, rating_table, legal_checkbox, signature, country/state/city
-- Icon selector: SELECT dropdown with 29 Lucide icon options
-- Email validation in Step 1: checks for existing email before allowing proceed
-- CMS-configurable colors (`--me-*` CSS variables) via Settings > Colors > Membership Enrollment
-- Enrollment logo in Settings > General
-- On submit: creates member with Level 1, stores full session data (profile + sponsor visible immediately), sends credentials email, auto-login redirect to /my-account
-- Invite codes marked with invitee_first_name, invitee_last_name, invitee_email, invitee_gender
-- Uses `sponsor_id` field (compatible with /my-account/register flow)
-- Password strength indicator, currency formatting, field tooltips, real-time validation
-- Reuses existing invite code validation and geo API (countries/states/cities)
+- Admin CMS: Full CRUD for fields, grouped by step, with drag-and-drop sorting
+- 20 field types: text, email, password, number, currency, date, datetime, select, radio, checkbox, textarea, richtext, rating, rating_table, legal_checkbox, signature_text, signature_date, country, state, city
+- Step 4 Content CMS: Dedicated tab with Title + Rich Text Description
+- CMS-configurable colors (`--me-*` CSS variables)
+- On submit: creates member with Level 1, auto-login, redirect to /my-account
+
+### UI & CMS Refinements (Apr 11, 2026)
+- Enrollment form buttons (Save/Continue/Submit) right-aligned
+- Step 4 Content management via CMS tab (Title + Description)
+- Fixed Step 4 text duplication (removed legacy richtext field rendering)
+- Send Invitation modal colors now use CMS `--ma-*` CSS variables
+
+### QR Code System (Apr 11, 2026)
+- CMS Members Manager: "Create QR Code" (Yes/No) permission in Membership tab
+- My Account Invite Code: Business QR section (conditional on permission)
+- QR encodes `/my-account/register?sponsor={membership_number}`
+- Download, View Full, Regenerate actions
+
+### Documentation (Apr 11, 2026)
+- Admin Documentation page (`/admin/documentation`) with 4 downloadable documents:
+  1. Use Case & Flow Diagram (SVG-based, all actors + registration paths)
+  2. Technical Documentation (architecture, DB, APIs, auth, CSS vars)
+  3. Operator Manual (CMS step-by-step guide)
+  4. User Guide (My Account member manual)
+- All docs have "Save as PDF" browser print functionality
+
+### Geo Data (Apr 10, 2026)
+- 249 countries, 5046 states/subdivisions, 32,423 cities
+- CMS admin geo management at /admin/geo
+
+## Key Files
+- `/app/frontend/src/pages/MembershipEnrollment.js` — 4-step enrollment wizard
+- `/app/frontend/src/pages/admin/EnrollmentFieldsManager.js` — CMS form fields + Step 4 content
+- `/app/frontend/src/pages/admin/MembersManager.js` — Members with QR permission
+- `/app/frontend/src/pages/myaccount/InviteCode.js` — Invite codes + Business QR
+- `/app/frontend/src/pages/admin/DocumentationManager.js` — Docs page
+- `/app/backend/routes/enrollment.py` — Enrollment + content APIs
+- `/app/backend/routes/membership.py` — Members, QR, invite codes
+- `/app/backend/routes/docs.py` — Documentation HTML endpoints
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!
-
-### Geo Data (Apr 10, 2026)
-- Populated with real-world data: 249 countries, 5046 states/subdivisions, 32,423 cities
-- Source: pycountry (countries/states) + geonamescache (cities with pop > 15k)
-- CMS admin geo management at /admin/geo (breadcrumb drill-down, search, CRUD)
-- Used across: Membership Enrollment, My Account, Members Manager
-
-
-### UI & CMS Refinements (Apr 11, 2026)
-- Enrollment form buttons (Save/Continue/Submit) right-aligned across all steps
-- Step 4 Content management: CMS tab under Membership Enrollment with Title + Rich Text Description
-- New endpoints: GET/PUT /api/public/enrollment-content/step4, GET/PUT /api/admin/enrollment-content/step4
-- Data stored in `enrollment_content` collection with key="step4"
 
 ## Pending/Backlog
 - (P2) S3/Cloud Image Storage migration
