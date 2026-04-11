@@ -3,10 +3,11 @@ import { enrollmentAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, GripVertical } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, GripVertical, FileText, ListOrdered } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Text Input' },
@@ -97,12 +98,32 @@ export default function EnrollmentFieldsManager() {
   const [fields, setFields] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(null); // null = list view, object = editing
+  const [activeTab, setActiveTab] = useState('fields'); // 'fields' | 'step4'
+  const [step4Content, setStep4Content] = useState({ title: '', description: '' });
+  const [step4Loading, setStep4Loading] = useState(false);
+  const [step4Saving, setStep4Saving] = useState(false);
 
   const load = () => {
     setLoading(true);
     enrollmentAPI.adminGetFields().then(r => { setFields(r.data || []); setLoading(false); }).catch(() => setLoading(false));
   };
   useEffect(load, []);
+
+  useEffect(() => {
+    if (activeTab === 'step4') {
+      setStep4Loading(true);
+      enrollmentAPI.adminGetStep4Content().then(r => { setStep4Content(r.data || {}); setStep4Loading(false); }).catch(() => setStep4Loading(false));
+    }
+  }, [activeTab]);
+
+  const saveStep4Content = async () => {
+    setStep4Saving(true);
+    try {
+      await enrollmentAPI.adminUpdateStep4Content(step4Content);
+      toast.success('Step 4 content updated');
+    } catch { toast.error('Failed to save'); }
+    setStep4Saving(false);
+  };
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
@@ -251,11 +272,76 @@ export default function EnrollmentFieldsManager() {
   return (
     <div data-testid="enrollment-fields-manager">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Enrollment Form Fields</h1>
-        <button onClick={openNew} className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="ef-add-btn">
-          <Plus className="w-4 h-4" /> Add Field
+        <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Membership Enrollment</h1>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex gap-1 mb-6 border-b" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
+        <button
+          onClick={() => setActiveTab('fields')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'fields' ? 'border-[var(--ad-button-bg,#0D9488)] text-[var(--ad-button-bg,#0D9488)]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          data-testid="tab-fields"
+        >
+          <ListOrdered className="w-4 h-4" /> Form Fields
+        </button>
+        <button
+          onClick={() => setActiveTab('step4')}
+          className={`flex items-center gap-2 px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${activeTab === 'step4' ? 'border-[var(--ad-button-bg,#0D9488)] text-[var(--ad-button-bg,#0D9488)]' : 'border-transparent text-slate-500 hover:text-slate-700'}`}
+          data-testid="tab-step4-content"
+        >
+          <FileText className="w-4 h-4" /> Step 4 Content
         </button>
       </div>
+
+      {/* Step 4 Content Tab */}
+      {activeTab === 'step4' && (
+        <div data-testid="step4-content-editor">
+          {step4Loading ? (
+            <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
+          ) : (
+            <div className="bg-white rounded border p-6 space-y-5 max-w-3xl" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
+              <p className="text-sm text-slate-500 mb-4">Customize the title and description that appear on Step 4 (Confirm & Submit) of the enrollment form.</p>
+              <div>
+                <Label className="text-xs text-slate-500 mb-1 block">Title</Label>
+                <Input
+                  value={step4Content.title || ''}
+                  onChange={e => setStep4Content(p => ({ ...p, title: e.target.value }))}
+                  placeholder="e.g. Thank you for entering your information"
+                  data-testid="step4-title-input"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-500 mb-1 block">Description</Label>
+                <RichTextEditor
+                  value={step4Content.description || ''}
+                  onChange={v => setStep4Content(p => ({ ...p, description: v }))}
+                  placeholder="Enter description text for Step 4..."
+                />
+              </div>
+              <div className="pt-2">
+                <button
+                  onClick={saveStep4Content}
+                  disabled={step4Saving}
+                  className="px-5 py-2 rounded text-sm font-medium text-white flex items-center gap-2 disabled:opacity-50"
+                  style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }}
+                  data-testid="step4-save-btn"
+                >
+                  <Save className="w-4 h-4" /> {step4Saving ? 'Saving...' : 'Save Content'}
+                </button>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Form Fields Tab */}
+      {activeTab === 'fields' && (
+        <>
+          <div className="flex items-center justify-end mb-4">
+            <button onClick={openNew} className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="ef-add-btn">
+              <Plus className="w-4 h-4" /> Add Field
+            </button>
+          </div>
 
       {loading ? (
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
@@ -283,6 +369,8 @@ export default function EnrollmentFieldsManager() {
             </div>
           ))}
         </div>
+      )}
+        </>
       )}
     </div>
   );

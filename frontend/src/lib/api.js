@@ -290,6 +290,9 @@ export const enrollmentAPI = {
   adminToggleVisibility: (id, visible) => api.put(`/admin/enrollment-fields/${id}/visibility`, { visible }),
   adminReorderFields: (ordered_ids) => api.put('/admin/enrollment-fields/reorder', { ordered_ids }),
   adminGetApplications: () => api.get('/admin/enrollment-applications'),
+  getStep4Content: () => api.get('/public/enrollment-content/step4'),
+  adminGetStep4Content: () => api.get('/admin/enrollment-content/step4'),
+  adminUpdateStep4Content: (data) => api.put('/admin/enrollment-content/step4', data),
 };
 
 export default api;

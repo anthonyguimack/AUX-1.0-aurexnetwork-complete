@@ -70,9 +70,11 @@ export default function MembershipEnrollment() {
   const [states, setStates] = useState([]);
   const [cities, setCities] = useState([]);
   const [globalMsg, setGlobalMsg] = useState({ type: '', text: '' });
+  const [step4Content, setStep4Content] = useState({ title: '', description: '' });
 
   useEffect(() => {
     enrollmentAPI.getFields().then(r => setFields(r.data || [])).catch(() => {});
+    enrollmentAPI.getStep4Content().then(r => setStep4Content(r.data || {})).catch(() => {});
     publicAPI.getSettings().then(r => setSettings(r.data || {})).catch(() => {});
     geoAPI.getCountries().then(r => setCountries(r.data || [])).catch(() => {});
     // Pre-fill signature date
@@ -422,8 +424,16 @@ export default function MembershipEnrollment() {
                   <Check className="w-8 h-8 text-white" />
                 </div>
               </div>
+              <div className="text-center pb-4">
+                <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }} data-testid="enroll-step4-title">
+                  {step4Content.title || 'Thank you for entering your information'}
+                </h2>
+                <div className="text-sm max-w-md mx-auto prose prose-sm" style={{ color: '#6b7280' }} data-testid="enroll-step4-description"
+                  dangerouslySetInnerHTML={{ __html: step4Content.description || 'Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.' }}
+                />
+              </div>
               {/* Render Step 4 dynamic fields (e.g. rich text message) */}
-              {stepFields.length > 0 ? (
+              {stepFields.length > 0 && (
                 <div className="space-y-0">
                   {stepFields.map(f => (
                     <div key={f.id || f.field_key} className="pt-4 first:pt-0" data-testid={`enroll-field-${f.field_key}`}>
@@ -440,13 +450,6 @@ export default function MembershipEnrollment() {
                       )}
                     </div>
                   ))}
-                </div>
-              ) : (
-                <div className="text-center pb-4">
-                  <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }}>Thank you for entering your information</h2>
-                  <p className="text-sm max-w-md mx-auto" style={{ color: '#6b7280' }}>
-                    Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.
-                  </p>
                 </div>
               )}
             </div>
@@ -468,7 +471,7 @@ export default function MembershipEnrollment() {
         </div>
 
         {/* Navigation Buttons */}
-        <div className="flex items-center gap-3 mt-6" data-testid="enroll-buttons">
+        <div className="flex items-center justify-end gap-3 mt-6" data-testid="enroll-buttons">
           {currentStep < 4 && (
             <>
               <button onClick={handleSaveOrContinue} disabled={loading}

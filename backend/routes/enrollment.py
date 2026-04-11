@@ -327,3 +327,34 @@ async def admin_toggle_visibility(field_id: str, request: Request, user: dict = 
 async def admin_list_applications(user: dict = Depends(require_admin)):
     apps = await db.enrollment_applications.find({}, {"_id": 0}).sort("created_at", -1).to_list(500)
     return apps
+
+
+# ── Step 4 Content Management ──
+
+@router.get("/public/enrollment-content/step4")
+async def get_step4_content():
+    doc = await db.enrollment_content.find_one({"key": "step4"}, {"_id": 0})
+    if not doc:
+        return {"title": "Thank you for entering your information", "description": "Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>."}
+    return {"title": doc.get("title", ""), "description": doc.get("description", "")}
+
+
+@router.get("/admin/enrollment-content/step4")
+async def admin_get_step4_content(user: dict = Depends(require_admin)):
+    doc = await db.enrollment_content.find_one({"key": "step4"}, {"_id": 0})
+    if not doc:
+        return {"title": "Thank you for entering your information", "description": "Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>."}
+    return {"title": doc.get("title", ""), "description": doc.get("description", "")}
+
+
+@router.put("/admin/enrollment-content/step4")
+async def admin_update_step4_content(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    title = body.get("title", "")
+    description = body.get("description", "")
+    await db.enrollment_content.update_one(
+        {"key": "step4"},
+        {"$set": {"key": "step4", "title": title, "description": description, "updated_at": datetime.now(timezone.utc).isoformat()}},
+        upsert=True
+    )
+    return {"success": True, "title": title, "description": description}
