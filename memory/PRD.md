@@ -94,6 +94,13 @@ Admin: admin@consultant.com / Admin123!
 - CMS admin geo management at /admin/geo (breadcrumb drill-down, search, CRUD)
 - Used across: Membership Enrollment, My Account, Members Manager
 
+
+### UI & CMS Refinements (Apr 11, 2026)
+- Enrollment form buttons (Save/Continue/Submit) right-aligned across all steps
+- Step 4 Content management: CMS tab under Membership Enrollment with Title + Rich Text Description
+- New endpoints: GET/PUT /api/public/enrollment-content/step4, GET/PUT /api/admin/enrollment-content/step4
+- Data stored in `enrollment_content` collection with key="step4"
+
 ## Pending/Backlog
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
