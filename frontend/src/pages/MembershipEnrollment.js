@@ -428,30 +428,10 @@ export default function MembershipEnrollment() {
                 <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }} data-testid="enroll-step4-title">
                   {step4Content.title || 'Thank you for entering your information'}
                 </h2>
-                <div className="text-sm max-w-md mx-auto prose prose-sm" style={{ color: '#6b7280' }} data-testid="enroll-step4-description"
+                <div className="text-sm max-w-lg mx-auto prose prose-sm" style={{ color: '#6b7280' }} data-testid="enroll-step4-description"
                   dangerouslySetInnerHTML={{ __html: step4Content.description || 'Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.' }}
                 />
               </div>
-              {/* Render Step 4 dynamic fields (e.g. rich text message) */}
-              {stepFields.length > 0 && (
-                <div className="space-y-0">
-                  {stepFields.map(f => (
-                    <div key={f.id || f.field_key} className="pt-4 first:pt-0" data-testid={`enroll-field-${f.field_key}`}>
-                      {f.field_type === 'richtext' ? (
-                        <div className="prose prose-sm max-w-none" style={{ color: cv('input-text', '#1a2535') }} dangerouslySetInnerHTML={{ __html: f.options?.[0] || f.label }} />
-                      ) : (
-                        <>
-                          <label className="flex items-center text-sm font-medium mb-1" style={{ color: cv('label-color', '#374151') }}>
-                            {f.label}
-                            {f.required && <span className="ml-0.5" style={{ color: cv('error-color', '#dc2626') }}>*</span>}
-                          </label>
-                          {renderField(f)}
-                        </>
-                      )}
-                    </div>
-                  ))}
-                </div>
-              )}
             </div>
           ) : (
             <div className="space-y-0">

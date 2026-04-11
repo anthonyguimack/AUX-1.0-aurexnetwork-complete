@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Key, Send, Loader2, Copy, Check } from 'lucide-react';
+import { Key, Send, Loader2, Copy, Check, QrCode, Download, Eye } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -17,6 +17,8 @@ export default function InviteCode() {
   const [sendForm, setSendForm] = useState({ first_name: '', last_name: '', email: '', phone: '', gender: '' });
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(null);
+  const [qrGenerating, setQrGenerating] = useState(false);
+  const [qrData, setQrData] = useState({ qr_code: member?.qr_code || '', qr_url: member?.qr_url || '' });
 
   const loadCodes = () => memberAPI.listCodes().then(r => setCodes(r.data)).catch(console.error);
   useEffect(() => { loadCodes(); }, []);
@@ -50,10 +52,80 @@ export default function InviteCode() {
     setTimeout(() => setCopied(null), 2000);
   };
 
+  const handleGenerateQR = async () => {
+    setQrGenerating(true);
+    try {
+      const baseUrl = window.location.origin;
+      const r = await memberAPI.generateQR({ base_url: baseUrl });
+      setQrData({ qr_code: r.data.qr_code, qr_url: r.data.qr_url });
+      toast.success('QR Code generated!');
+    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to generate QR'); }
+    finally { setQrGenerating(false); }
+  };
+
+  const downloadQR = () => {
+    if (!qrData.qr_code) return;
+    const link = document.createElement('a');
+    link.href = qrData.qr_code;
+    link.download = `qr-code-${member?.membership_id || 'member'}.png`;
+    link.click();
+  };
+
+  // Sync member qr_code on mount
+  useEffect(() => {
+    if (member?.qr_code && !qrData.qr_code) {
+      setQrData({ qr_code: member.qr_code, qr_url: member.qr_url || '' });
+    }
+  }, [member]); // eslint-disable-line
+
   return (
     <div data-testid="invite-code-page">
       <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>Invite Code</h1>
       <p className="text-gray-500 text-sm mb-6">Your Membership ID: <span className="text-[#c9a84c] font-semibold">{member?.membership_id}</span></p>
+
+      {/* Business QR Section - only visible if member has permission */}
+      {member?.can_create_qr && (
+        <div className="border rounded-lg p-5 mb-6" style={{ backgroundColor: 'var(--ma-card-bg, #13161e)', borderColor: 'var(--ma-card-border, rgba(255,255,255,0.05))' }} data-testid="business-qr-section">
+          <div className="flex items-center gap-2 mb-4">
+            <QrCode className="w-5 h-5" style={{ color: 'var(--ma-accent, #c9a84c)' }} />
+            <h2 className="text-base font-bold" style={{ color: 'var(--ma-text-primary, #ffffff)', fontFamily: "'DM Serif Display', serif" }}>Business QR</h2>
+          </div>
+          {qrData.qr_code ? (
+            <div className="flex flex-col sm:flex-row items-start gap-5">
+              <div className="bg-white rounded-lg p-2 flex-shrink-0">
+                <img src={qrData.qr_code} alt="QR Code" className="w-40 h-40" data-testid="my-qr-image" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-xs mb-2" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Share this QR code to invite users to register as your sponsored members.</p>
+                <p className="text-xs font-mono break-all mb-3 p-2 rounded" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', color: 'var(--ma-accent, #c9a84c)', border: '1px solid var(--ma-input-border, rgba(255,255,255,0.1))' }} data-testid="qr-url-display">{qrData.qr_url}</p>
+                <div className="flex gap-2">
+                  <button onClick={downloadQR} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium" style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }} data-testid="download-qr-btn">
+                    <Download className="w-3 h-3" /> Download
+                  </button>
+                  <button onClick={() => { const w = window.open('', '_blank'); w.document.write(`<html><body style="display:flex;align-items:center;justify-content:center;min-height:100vh;margin:0;background:#f5f5f5"><img src="${qrData.qr_code}" style="max-width:400px" /></body></html>`); }}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border" style={{ borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-secondary, #9ca3af)' }} data-testid="view-qr-fullscreen-btn">
+                    <Eye className="w-3 h-3" /> View Full
+                  </button>
+                  <button onClick={handleGenerateQR} disabled={qrGenerating} className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium border" style={{ borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-secondary, #9ca3af)' }} data-testid="regenerate-qr-btn">
+                    {qrGenerating ? <Loader2 className="w-3 h-3 animate-spin" /> : <QrCode className="w-3 h-3" />} Regenerate
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div className="text-center py-4">
+              <p className="text-sm mb-3" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Generate a QR code for sponsor-based registration. Share it to invite new members.</p>
+              <button onClick={handleGenerateQR} disabled={qrGenerating}
+                className="inline-flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold disabled:opacity-50"
+                style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }}
+                data-testid="generate-my-qr-btn">
+                {qrGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <QrCode className="w-4 h-4" />}
+                Generate QR Code
+              </button>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Generate Section */}
       <div className="bg-[#13161e] border border-white/5 rounded-lg p-5 mb-6">
@@ -131,31 +203,31 @@ export default function InviteCode() {
 
       {/* Send Invitation Modal */}
       <Dialog open={sendOpen} onOpenChange={setSendOpen}>
-        <DialogContent className="bg-[#13161e] border-white/10 text-white" data-testid="send-invite-dialog">
+        <DialogContent className="border" style={{ backgroundColor: 'var(--ma-modal-bg, #13161e)', borderColor: 'var(--ma-modal-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }} data-testid="send-invite-dialog">
           <DialogHeader>
-            <DialogTitle className="text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Send Invitation</DialogTitle>
+            <DialogTitle style={{ fontFamily: "'DM Serif Display', serif", color: 'var(--ma-text-primary, #ffffff)' }}>Send Invitation</DialogTitle>
           </DialogHeader>
           {sendCode && (
             <div className="space-y-3">
-              <p className="text-xs text-gray-400">Code: <span className="text-[#c9a84c]">{sendCode.code}</span></p>
+              <p className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Code: <span style={{ color: 'var(--ma-accent, #c9a84c)' }}>{sendCode.code}</span></p>
               <div className="grid grid-cols-2 gap-3">
-                <div><Label className="text-gray-400 text-xs">First Name</Label>
-                  <Input value={sendForm.first_name} onChange={e => setSendForm(p => ({...p, first_name: e.target.value}))} className="bg-[#0d0f14] border-white/10 text-white mt-1" /></div>
-                <div><Label className="text-gray-400 text-xs">Last Name</Label>
-                  <Input value={sendForm.last_name} onChange={e => setSendForm(p => ({...p, last_name: e.target.value}))} className="bg-[#0d0f14] border-white/10 text-white mt-1" /></div>
+                <div><Label className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>First Name</Label>
+                  <Input value={sendForm.first_name} onChange={e => setSendForm(p => ({...p, first_name: e.target.value}))} className="mt-1" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }} /></div>
+                <div><Label className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Last Name</Label>
+                  <Input value={sendForm.last_name} onChange={e => setSendForm(p => ({...p, last_name: e.target.value}))} className="mt-1" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }} /></div>
               </div>
-              <div><Label className="text-gray-400 text-xs">Email *</Label>
-                <Input type="email" value={sendForm.email} onChange={e => setSendForm(p => ({...p, email: e.target.value}))} className="bg-[#0d0f14] border-white/10 text-white mt-1" data-testid="invite-email-input" /></div>
-              <div><Label className="text-gray-400 text-xs">Phone</Label>
-                <Input value={sendForm.phone} onChange={e => setSendForm(p => ({...p, phone: e.target.value}))} className="bg-[#0d0f14] border-white/10 text-white mt-1" /></div>
-              <div><Label className="text-gray-400 text-xs">Gender</Label>
+              <div><Label className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Email *</Label>
+                <Input type="email" value={sendForm.email} onChange={e => setSendForm(p => ({...p, email: e.target.value}))} className="mt-1" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }} data-testid="invite-email-input" /></div>
+              <div><Label className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Phone</Label>
+                <Input value={sendForm.phone} onChange={e => setSendForm(p => ({...p, phone: e.target.value}))} className="mt-1" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }} /></div>
+              <div><Label className="text-xs" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Gender</Label>
                 <select value={sendForm.gender} onChange={e => setSendForm(p => ({...p, gender: e.target.value}))}
-                  className="w-full px-3 py-2 bg-[#0d0f14] border border-white/10 rounded text-white text-sm mt-1">
+                  className="w-full px-3 py-2 border rounded text-sm mt-1" style={{ backgroundColor: 'var(--ma-input-bg, #0d0f14)', borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-primary, #ffffff)' }}>
                   <option value="">Select...</option><option value="Male">Male</option><option value="Female">Female</option>
                 </select></div>
               <div className="flex gap-2 pt-2">
-                <button onClick={() => setSendOpen(false)} className="flex-1 py-2 border border-white/10 text-gray-400 rounded text-sm hover:bg-white/5">Cancel</button>
-                <button onClick={handleSend} disabled={sending} className="flex-1 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2" data-testid="send-invite-submit">
+                <button onClick={() => setSendOpen(false)} className="flex-1 py-2 border rounded text-sm hover:opacity-80" style={{ borderColor: 'var(--ma-input-border, rgba(255,255,255,0.1))', color: 'var(--ma-text-secondary, #9ca3af)' }}>Cancel</button>
+                <button onClick={handleSend} disabled={sending} className="flex-1 py-2 rounded text-sm font-semibold disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }} data-testid="send-invite-submit">
                   {sending && <Loader2 className="w-3 h-3 animate-spin" />} Send
                 </button>
               </div>

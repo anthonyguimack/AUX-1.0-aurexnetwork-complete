@@ -14,7 +14,7 @@ const emptyMember = {
   sponsor_membership_number: null, mentor_membership_number: null,
   level_id: null,
   membership_ranking: '', membership_status: 'Free', active_date: '', expiration_date: '',
-  membership_fee: '', member_type_id: '',
+  membership_fee: '', member_type_id: '', can_create_qr: false,
 };
 
 export default function MembersManager() {
@@ -251,6 +251,13 @@ export default function MembersManager() {
                       {mentors.filter(m => m.member_id !== editing.member_id).map(m => <option key={m.member_id} value={m.membership_number}>{m.membership_id} - {m.first_name} {m.last_name}</option>)}
                     </select>
                     {mentors.length === 0 && <p className="text-xs text-amber-500 mt-1">No mentors. Create a Member Type with Mentor permission enabled and assign it to members.</p>}
+                  </div>
+                  <div className="p-3 bg-slate-50 rounded"><Label className="text-xs font-medium mb-2 block">Create QR Code</Label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="can_create_qr" checked={editing.can_create_qr === true} onChange={() => setEditing({...editing, can_create_qr: true})} className="accent-[#0D9488]" data-testid="can-create-qr-yes" /><span className="text-sm">Yes</span></label>
+                      <label className="flex items-center gap-1.5 cursor-pointer"><input type="radio" name="can_create_qr" checked={editing.can_create_qr !== true} onChange={() => setEditing({...editing, can_create_qr: false})} className="accent-[#0D9488]" data-testid="can-create-qr-no" /><span className="text-sm">No</span></label>
+                    </div>
+                    <p className="text-xs text-slate-400 mt-1">Allow this member to generate their own QR code from My Account for bulk invitations.</p>
                   </div>
                   {editing.member_id && <div><Label className="text-xs">New Password (leave blank to keep)</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>}
                 </div>
