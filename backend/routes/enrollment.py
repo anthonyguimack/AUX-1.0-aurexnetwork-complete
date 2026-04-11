@@ -59,18 +59,28 @@ DEFAULT_FIELDS = [
     {"step": 3, "field_key": "signature_first_name", "label": "First Name", "field_type": "signature_text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 4, "options": [], "icon": ""},
     {"step": 3, "field_key": "signature_last_name", "label": "Last Name", "field_type": "signature_text", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 5, "options": [], "icon": ""},
     {"step": 3, "field_key": "signature_date", "label": "Date", "field_type": "signature_date", "placeholder": "", "tooltip": "", "required": True, "visible": True, "order": 6, "options": [], "icon": ""},
+    # Step 4 — Confirmation message (editable via CMS)
+    {"step": 4, "field_key": "confirm_message", "label": "Confirmation Message", "field_type": "richtext", "placeholder": "", "tooltip": "", "required": False, "visible": True, "order": 1, "options": ["<h2 style=\"text-align:center\">Thank you for entering your information</h2><p style=\"text-align:center\">Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.</p>"], "icon": ""},
 ]
 
 
 async def seed_enrollment_fields():
     count = await db.enrollment_fields.count_documents({})
-    if count > 0:
+    if count == 0:
+        for f in DEFAULT_FIELDS:
+            f["id"] = str(uuid.uuid4())
+            f["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.enrollment_fields.insert_many(DEFAULT_FIELDS)
+        logger.info(f"Seeded {len(DEFAULT_FIELDS)} enrollment fields")
         return
-    for f in DEFAULT_FIELDS:
-        f["id"] = str(uuid.uuid4())
-        f["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.enrollment_fields.insert_many(DEFAULT_FIELDS)
-    logger.info(f"Seeded {len(DEFAULT_FIELDS)} enrollment fields")
+    # Ensure Step 4 confirm_message field exists
+    step4 = await db.enrollment_fields.find_one({"field_key": "confirm_message", "step": 4})
+    if not step4:
+        step4_field = [f for f in DEFAULT_FIELDS if f["field_key"] == "confirm_message"][0]
+        step4_field["id"] = str(uuid.uuid4())
+        step4_field["created_at"] = datetime.now(timezone.utc).isoformat()
+        await db.enrollment_fields.insert_one(step4_field)
+        logger.info("Added Step 4 confirm_message field")
 
 
 # ── Public endpoints ──

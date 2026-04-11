@@ -3,7 +3,10 @@ import { enrollmentAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, ChevronUp, ChevronDown } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, ArrowLeft, Save, Loader2, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Text Input' },
@@ -61,7 +64,34 @@ const ICON_OPTIONS = [
 ];
 
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
-const STEP_NAMES = { 1: 'Step 1 - Invitation CODE', 2: 'Step 2 - Clarity Statement and Interview', 3: 'Step 3 - Application Enrollment' };
+const STEP_NAMES = { 1: 'Step 1 - Invitation CODE', 2: 'Step 2 - Clarity Statement and Interview', 3: 'Step 3 - Application Enrollment', 4: 'Step 4 - Confirm & Submit' };
+
+function SortableFieldRow({ field: f, onEdit, onDelete, onToggleVisibility }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: f.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.5 : 1, zIndex: isDragging ? 50 : 'auto' };
+  return (
+    <div ref={setNodeRef} style={style} className="flex items-center gap-3 px-5 py-3 border-b last:border-0 hover:bg-slate-50 transition-colors bg-white" data-testid={`ef-row-${f.field_key}`}>
+      <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing p-1 rounded hover:bg-slate-200 flex-shrink-0 touch-none" data-testid={`ef-drag-${f.field_key}`}>
+        <GripVertical className="w-4 h-4 text-slate-300" />
+      </button>
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium truncate" style={{ color: f.visible ? 'var(--ad-heading, #1a2332)' : '#9ca3af' }}>{f.label}</p>
+        <p className="text-xs text-slate-400">{f.field_key} &middot; {f.field_type}{f.required ? ' \u00b7 required' : ''}</p>
+      </div>
+      <div className="flex items-center gap-1.5">
+        <button onClick={() => onToggleVisibility(f)} className={`p-1.5 rounded hover:bg-slate-100 ${f.visible ? 'text-slate-500' : 'text-slate-300'}`} title={f.visible ? 'Hide' : 'Show'} data-testid={`ef-vis-${f.field_key}`}>
+          {f.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        </button>
+        <button onClick={() => onEdit(f)} className="p-1.5 rounded hover:bg-slate-100 text-slate-500" title="Edit" data-testid={`ef-edit-${f.field_key}`}>
+          <Pencil className="w-4 h-4" />
+        </button>
+        <button onClick={() => onDelete(f)} className="p-1.5 rounded hover:bg-red-50 text-red-400 hover:text-red-600" title="Delete" data-testid={`ef-del-${f.field_key}`}>
+          <Trash2 className="w-4 h-4" />
+        </button>
+      </div>
+    </div>
+  );
+}
 
 export default function EnrollmentFieldsManager() {
   const [fields, setFields] = useState([]);
@@ -73,6 +103,8 @@ export default function EnrollmentFieldsManager() {
     enrollmentAPI.adminGetFields().then(r => { setFields(r.data || []); setLoading(false); }).catch(() => setLoading(false));
   };
   useEffect(load, []);
+
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
   const toggleVisibility = async (field) => {
     try {
@@ -198,17 +230,22 @@ export default function EnrollmentFieldsManager() {
     grouped[f.step].push(f);
   });
 
-  const moveField = async (step, index, direction) => {
+  const handleDragEnd = async (event, step) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
     const stepFields = grouped[step] || [];
-    const newIndex = index + direction;
-    if (newIndex < 0 || newIndex >= stepFields.length) return;
-    const newOrder = [...stepFields];
-    [newOrder[index], newOrder[newIndex]] = [newOrder[newIndex], newOrder[index]];
-    const orderedIds = newOrder.map(f => f.id);
+    const oldIndex = stepFields.findIndex(f => f.id === active.id);
+    const newIndex = stepFields.findIndex(f => f.id === over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+    const reordered = arrayMove(stepFields, oldIndex, newIndex);
+    // Optimistic update
+    setFields(prev => {
+      const otherFields = prev.filter(f => f.step !== step);
+      return [...otherFields, ...reordered.map((f, i) => ({ ...f, order: i + 1 }))];
+    });
     try {
-      await enrollmentAPI.adminReorderFields(orderedIds);
-      load();
-    } catch { toast.error('Failed to reorder'); }
+      await enrollmentAPI.adminReorderFields(reordered.map(f => f.id));
+    } catch { toast.error('Failed to save order'); load(); }
   };
 
   return (
@@ -224,40 +261,25 @@ export default function EnrollmentFieldsManager() {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
       ) : (
         <div className="space-y-6">
-          {[1, 2, 3].map(step => (
+          {[1, 2, 3, 4].map(step => (
             <div key={step} className="bg-white rounded border" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
               <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)', backgroundColor: 'var(--ad-table-header-bg, #f8fafc)' }}>
                 <h2 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>{STEP_NAMES[step]}</h2>
-                <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--ad-badge-bg, #0D9488)', color: 'var(--ad-badge-text, #fff)' }}>{(grouped[step] || []).length} fields</span>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-slate-400">Drag to reorder</span>
+                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--ad-badge-bg, #0D9488)', color: 'var(--ad-badge-text, #fff)' }}>{(grouped[step] || []).length} fields</span>
+                </div>
               </div>
-              <div>
-                {(grouped[step] || []).map((f, idx) => (
-                  <div key={f.id} className="flex items-center gap-3 px-5 py-3 border-b last:border-0 hover:bg-slate-50 transition-colors" style={{ borderColor: 'var(--ad-table-border, #e2e8f0)' }} data-testid={`ef-row-${f.field_key}`}>
-                    <div className="flex flex-col gap-0.5 flex-shrink-0">
-                      <button onClick={() => moveField(step, idx, -1)} disabled={idx === 0} className="p-0.5 rounded hover:bg-slate-200 disabled:opacity-20" data-testid={`ef-up-${f.field_key}`}><ChevronUp className="w-3.5 h-3.5 text-slate-400" /></button>
-                      <button onClick={() => moveField(step, idx, 1)} disabled={idx === (grouped[step] || []).length - 1} className="p-0.5 rounded hover:bg-slate-200 disabled:opacity-20" data-testid={`ef-down-${f.field_key}`}><ChevronDown className="w-3.5 h-3.5 text-slate-400" /></button>
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate" style={{ color: f.visible ? 'var(--ad-heading, #1a2332)' : '#9ca3af' }}>{f.label}</p>
-                      <p className="text-xs text-slate-400">{f.field_key} &middot; {f.field_type}{f.required ? ' \u00b7 required' : ''}</p>
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <button onClick={() => toggleVisibility(f)} className={`p-1.5 rounded hover:bg-slate-100 ${f.visible ? 'text-slate-500' : 'text-slate-300'}`} title={f.visible ? 'Hide field' : 'Show field'} data-testid={`ef-vis-${f.field_key}`}>
-                        {f.visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
-                      </button>
-                      <button onClick={() => openEdit(f)} className="p-1.5 rounded hover:bg-slate-100 text-slate-500" title="Edit" data-testid={`ef-edit-${f.field_key}`}>
-                        <Pencil className="w-4 h-4" />
-                      </button>
-                      <button onClick={() => deleteField(f)} className="p-1.5 rounded hover:bg-red-50 text-red-400 hover:text-red-600" title="Delete" data-testid={`ef-del-${f.field_key}`}>
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    </div>
-                  </div>
-                ))}
-                {(!grouped[step] || grouped[step].length === 0) && (
-                  <p className="px-5 py-4 text-sm text-slate-400">No fields in this step.</p>
-                )}
-              </div>
+              <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, step)}>
+                <SortableContext items={(grouped[step] || []).map(f => f.id)} strategy={verticalListSortingStrategy}>
+                  {(grouped[step] || []).map(f => (
+                    <SortableFieldRow key={f.id} field={f} onEdit={openEdit} onDelete={deleteField} onToggleVisibility={toggleVisibility} />
+                  ))}
+                </SortableContext>
+              </DndContext>
+              {(!grouped[step] || grouped[step].length === 0) && (
+                <p className="px-5 py-4 text-sm text-slate-400">No fields in this step.</p>
+              )}
             </div>
           ))}
         </div>

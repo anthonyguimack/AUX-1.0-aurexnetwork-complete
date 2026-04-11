@@ -416,20 +416,45 @@ export default function MembershipEnrollment() {
         {/* Step Content */}
         <div className="rounded-lg shadow-sm p-6 sm:p-8" style={{ backgroundColor: cv('form-bg', '#ffffff') }} data-testid="enroll-form">
           {currentStep === 4 ? (
-            <div className="text-center py-10" data-testid="enroll-confirm">
-              <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: cv('step-active', '#F5A623') }}>
-                <Check className="w-8 h-8 text-white" />
+            <div data-testid="enroll-confirm">
+              <div className="text-center py-6">
+                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: cv('step-active', '#F5A623') }}>
+                  <Check className="w-8 h-8 text-white" />
+                </div>
               </div>
-              <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }}>Thank you for entering your information</h2>
-              <p className="text-sm max-w-md mx-auto mb-6" style={{ color: '#6b7280' }}>
-                Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.
-              </p>
+              {/* Render Step 4 dynamic fields (e.g. rich text message) */}
+              {stepFields.length > 0 ? (
+                <div className="space-y-0">
+                  {stepFields.map(f => (
+                    <div key={f.id || f.field_key} className="pt-4 first:pt-0" data-testid={`enroll-field-${f.field_key}`}>
+                      {f.field_type === 'richtext' ? (
+                        <div className="prose prose-sm max-w-none" style={{ color: cv('input-text', '#1a2535') }} dangerouslySetInnerHTML={{ __html: f.options?.[0] || f.label }} />
+                      ) : (
+                        <>
+                          <label className="flex items-center text-sm font-medium mb-1" style={{ color: cv('label-color', '#374151') }}>
+                            {f.label}
+                            {f.required && <span className="ml-0.5" style={{ color: cv('error-color', '#dc2626') }}>*</span>}
+                          </label>
+                          {renderField(f)}
+                        </>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center pb-4">
+                  <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }}>Thank you for entering your information</h2>
+                  <p className="text-sm max-w-md mx-auto" style={{ color: '#6b7280' }}>
+                    Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.
+                  </p>
+                </div>
+              )}
             </div>
           ) : (
-            <div className="space-y-7">
+            <div className="space-y-0">
               {stepFields.map(f => (
-                <div key={f.id || f.field_key} data-testid={`enroll-field-${f.field_key}`}>
-                  <label className="flex items-center text-sm font-medium mb-2.5" style={{ color: cv('label-color', '#374151') }}>
+                <div key={f.id || f.field_key} className="pt-6 first:pt-0" data-testid={`enroll-field-${f.field_key}`}>
+                  <label className="flex items-center text-sm font-medium mb-1" style={{ color: cv('label-color', '#374151') }}>
                     {f.label}
                     {f.required && <span className="ml-0.5" style={{ color: cv('error-color', '#dc2626') }}>*</span>}
                     <Tooltip text={f.tooltip} />
