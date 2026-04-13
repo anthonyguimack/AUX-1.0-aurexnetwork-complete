@@ -86,6 +86,18 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Member login now records `last_login` timestamp for analytics tracking
 - Step 4 enrollment: Fixed text overflow by removing `prose` class and adding `overflow-wrap: break-word`
 
+### My Account Quick Links (Apr 13, 2026)
+- Quick Links bar in My Account top header (right-aligned, same row as logo)
+- Links separated by dividers, external links show ↗ icon, active link highlighted
+- Breadcrumb remains visible below the quick links bar
+- CMS admin page `/admin/quick-links` with full CRUD, drag-and-drop reorder, toggle active/inactive, new tab toggle
+- Backend: `myaccount_links` collection with CRUD + reorder endpoints
+
+### Members Manager & Analytics Fixes (Apr 13, 2026)
+- Added "Register" column to Members Manager table showing member registration date
+- Fixed Logged-In Members chart: now tracks each login event in `member_logins` collection (was only tracking `last_login` overwrite)
+- Analytics counts unique member_ids per month via MongoDB aggregation
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
