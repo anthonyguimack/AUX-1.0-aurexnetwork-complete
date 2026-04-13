@@ -78,6 +78,14 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - `/app/backend/routes/membership.py` — Members, QR, invite codes
 - `/app/backend/routes/docs.py` — Documentation HTML endpoints
 
+### Dashboard & Analytics Improvements (Apr 13, 2026)
+- Dashboard: Added "Members" card (first in grid) showing total member count with Users icon, linking to /admin/members
+- Analytics: Fixed "Users" label to "Members", now counts from `db.members` (was incorrectly using `db.users`)
+- Analytics: Added "Registered Members" monthly bar chart showing new registrations per month
+- Analytics: Added "Logged-In Members" monthly bar chart tracking member logins
+- Member login now records `last_login` timestamp for analytics tracking
+- Step 4 enrollment: Fixed text overflow by removing `prose` class and adding `overflow-wrap: break-word`
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
