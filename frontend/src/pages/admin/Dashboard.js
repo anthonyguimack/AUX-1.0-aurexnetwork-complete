@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../lib/api';
 import { Link } from 'react-router-dom';
-import { FileText, Package, Mail, CreditCard, Images, Briefcase, MessageSquare, BookOpen, Map, DollarSign, Eye } from 'lucide-react';
+import { FileText, Package, Mail, CreditCard, Images, Briefcase, MessageSquare, BookOpen, Map, DollarSign, Eye, Users } from 'lucide-react';
 
 export default function AdminDashboard() {
   const [stats, setStats] = useState({});
   useEffect(() => { adminAPI.dashboard().then(r => setStats(r.data)).catch(console.error); }, []);
 
   const cards = [
+    { label: 'Members', value: stats.members_count || 0, icon: Users, color: 'bg-[#0D9488]', href: '/admin/members' },
     { label: 'Blog Posts', value: stats.blog_count || 0, icon: FileText, color: 'bg-blue-500', href: '/admin/blog' },
     { label: 'Services', value: stats.services_count || 0, icon: Package, color: 'bg-[#0D9488]', href: '/admin/services' },
     { label: 'Contacts', value: stats.contacts_count || 0, icon: Mail, color: 'bg-amber-500', href: '/admin/contacts', badge: stats.unread_contacts },

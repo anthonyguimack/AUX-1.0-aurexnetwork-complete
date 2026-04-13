@@ -41,7 +41,7 @@ export default function AnalyticsDashboard() {
         {[
           { label: 'Total Contacts', value: cs.total_contacts, icon: Mail, color: 'bg-amber-500' },
           { label: 'Unread', value: cs.unread_contacts, icon: Mail, color: 'bg-red-500' },
-          { label: 'Users', value: cs.total_users, icon: Users, color: '' },
+          { label: 'Members', value: cs.total_users, icon: Users, color: '' },
           { label: 'Blog Posts', value: cs.blog_posts, icon: FileText, color: 'bg-blue-500' },
         ].map(m => (
           <div key={m.label} className="bg-white p-4 rounded-sm border border-slate-100" data-testid={`metric-${m.label.toLowerCase().replace(/\s/g, '-')}`}>
@@ -84,6 +84,36 @@ export default function AnalyticsDashboard() {
               <Tooltip formatter={v => `$${v}`} />
               <Line type="monotone" dataKey="revenue" stroke={heading} strokeWidth={2} dot={{ fill: accent }} />
             </LineChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+        {/* Monthly Registered Members Chart */}
+        <div className="bg-white rounded-sm border border-slate-100 p-5" data-testid="registrations-chart">
+          <h3 className="text-sm font-semibold text-[#1a2332] mb-4">Registered Members</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={data.monthly_registrations}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="members" fill="#059669" radius={[4, 4, 0, 0]} />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Monthly Logged-In Members Chart */}
+        <div className="bg-white rounded-sm border border-slate-100 p-5" data-testid="logins-chart">
+          <h3 className="text-sm font-semibold text-[#1a2332] mb-4">Logged-In Members</h3>
+          <ResponsiveContainer width="100%" height={250}>
+            <BarChart data={data.monthly_logins}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
+              <XAxis dataKey="month" tick={{ fontSize: 12 }} />
+              <YAxis tick={{ fontSize: 12 }} allowDecimals={false} />
+              <Tooltip />
+              <Bar dataKey="logins" fill="#2563eb" radius={[4, 4, 0, 0]} />
+            </BarChart>
           </ResponsiveContainer>
         </div>
       </div>

@@ -132,11 +132,26 @@ async def admin_analytics(user: dict = Depends(require_admin)):
         "testimonials": await db.testimonials.count_documents({}),
         "total_contacts": await db.contacts.count_documents({}),
         "unread_contacts": await db.contacts.count_documents({"read": False}),
-        "total_users": await db.users.count_documents({"role": {"$ne": "admin"}}),
+        "total_users": await db.members.count_documents({}),
         "total_pages": await db.nav_pages.count_documents({}),
     }
+    # Monthly registered members
+    monthly_registrations = []
+    for i in range(5, -1, -1):
+        month_start = now.replace(day=1) - timedelta(days=i * 30)
+        month_end = month_start + timedelta(days=30)
+        count = await db.members.count_documents({"created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
+        monthly_registrations.append({"month": month_start.strftime("%b"), "members": count})
+    # Monthly logged-in members
+    monthly_logins = []
+    for i in range(5, -1, -1):
+        month_start = now.replace(day=1) - timedelta(days=i * 30)
+        month_end = month_start + timedelta(days=30)
+        count = await db.members.count_documents({"last_login": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
+        monthly_logins.append({"month": month_start.strftime("%b"), "logins": count})
     return {
         "monthly_contacts": monthly_contacts, "monthly_revenue": monthly_revenue,
+        "monthly_registrations": monthly_registrations, "monthly_logins": monthly_logins,
         "top_services": [{"name": s["_id"] or "Unknown", "count": s["count"], "revenue": s["revenue"]} for s in top_services],
         "content_stats": content_stats,
     }

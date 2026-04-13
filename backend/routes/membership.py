@@ -55,6 +55,8 @@ async def member_login(request: Request, response: Response):
     member = await db.members.find_one({"$or": [{"username": username}, {"email": username}]}, {"_id": 0})
     if not member or not verify_password(password, member.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    # Track last login for analytics
+    await db.members.update_one({"member_id": member["member_id"]}, {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}})
     token = create_jwt_token(member["member_id"], member["email"], "member")
     return {"token": token, "member": {k: v for k, v in member.items() if k != "password_hash"}}
 

@@ -428,7 +428,7 @@ export default function MembershipEnrollment() {
                 <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }} data-testid="enroll-step4-title">
                   {step4Content.title || 'Thank you for entering your information'}
                 </h2>
-                <div className="text-sm max-w-lg mx-auto prose prose-sm" style={{ color: '#6b7280' }} data-testid="enroll-step4-description"
+                <div className="text-sm mx-auto" style={{ color: '#6b7280', overflowWrap: 'break-word', wordBreak: 'break-word' }} data-testid="enroll-step4-description"
                   dangerouslySetInnerHTML={{ __html: step4Content.description || 'Thank you for entering your information on our membership application form. To finish the subscription process, please click <strong>SUBMIT</strong>.' }}
                 />
               </div>

@@ -522,6 +522,7 @@ async def admin_dashboard(user: dict = Depends(require_admin)):
     books_count = await db.books.count_documents({})
     maps_count = await db.maps.count_documents({})
     users_count = await db.members.count_documents({"role": {"$ne": "admin"}})
+    members_count = await db.members.count_documents({})
     pages_count = await db.nav_pages.count_documents({})
     pipeline = [{"$match": {"payment_status": "paid"}}, {"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
     revenue_result = await db.payment_transactions.aggregate(pipeline).to_list(1)
@@ -531,6 +532,6 @@ async def admin_dashboard(user: dict = Depends(require_admin)):
         "purchases_count": purchases_count, "gallery_count": gallery_count,
         "portfolio_count": portfolio_count, "testimonials_count": testimonials_count,
         "books_count": books_count, "maps_count": maps_count,
-        "users_count": users_count, "pages_count": pages_count,
+        "users_count": users_count, "members_count": members_count, "pages_count": pages_count,
         "total_revenue": revenue_result[0]["total"] if revenue_result else 0
     }
