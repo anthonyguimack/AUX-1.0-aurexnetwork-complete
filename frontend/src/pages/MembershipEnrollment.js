@@ -419,12 +419,12 @@ export default function MembershipEnrollment() {
         <div className="rounded-lg shadow-sm p-6 sm:p-8" style={{ backgroundColor: cv('form-bg', '#ffffff') }} data-testid="enroll-form">
           {currentStep === 4 ? (
             <div data-testid="enroll-confirm">
-              <div className="text-center py-6">
-                <div className="w-16 h-16 rounded-full mx-auto mb-4 flex items-center justify-center" style={{ backgroundColor: cv('step-active', '#F5A623') }}>
+              <div className="text-center pt-4 pb-2">
+                <div className="w-16 h-16 rounded-full mx-auto mb-3 flex items-center justify-center" style={{ backgroundColor: cv('step-active', '#F5A623') }}>
                   <Check className="w-8 h-8 text-white" />
                 </div>
               </div>
-              <div className="text-center pb-4">
+              <div className="text-center pb-6">
                 <h2 className="text-xl font-bold mb-3" style={{ color: cv('section-title', '#1a2535') }} data-testid="enroll-step4-title">
                   {step4Content.title || 'Thank you for entering your information'}
                 </h2>
