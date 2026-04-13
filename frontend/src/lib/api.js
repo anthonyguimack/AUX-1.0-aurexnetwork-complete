@@ -31,6 +31,7 @@ export const publicAPI = {
   getGalleryAlbums: () => api.get('/public/gallery-albums'),
   getAlbumPhotos: (albumId) => api.get(`/public/gallery-albums/${albumId}/photos`),
   getServiceDetail: (id) => api.get(`/public/services/${id}`),
+  getMyAccountLinks: () => api.get('/public/myaccount-links'),
 };
 
 export const searchAPI = {
@@ -216,6 +217,12 @@ export const adminAPI = {
   deleteLandingSubscriber: (id) => api.delete(`/admin/landing-subscribers/${id}`),
   getLandingContacts: () => api.get('/admin/landing-contacts'),
   deleteLandingContact: (id) => api.delete(`/admin/landing-contacts/${id}`),
+  // My Account Quick Links
+  getMyAccountLinks: () => api.get('/admin/myaccount-links'),
+  createMyAccountLink: (data) => api.post('/admin/myaccount-links', data),
+  updateMyAccountLink: (id, data) => api.put(`/admin/myaccount-links/${id}`, data),
+  deleteMyAccountLink: (id) => api.delete(`/admin/myaccount-links/${id}`),
+  reorderMyAccountLinks: (ordered_ids) => api.put('/admin/myaccount-links-reorder', { ordered_ids }),
 };
 
 // Member API (unified - uses same auth_token)

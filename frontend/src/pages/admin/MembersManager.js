@@ -95,6 +95,7 @@ export default function MembersManager() {
             <th className="text-left p-3 font-medium text-slate-600">Email</th>
             <th className="text-left p-3 font-medium text-slate-600">Member Type</th>
             <th className="text-left p-3 font-medium text-slate-600">Level</th>
+            <th className="text-left p-3 font-medium text-slate-600">Register</th>
             <th className="text-left p-3 font-medium text-slate-600">Sponsor</th>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
@@ -108,6 +109,7 @@ export default function MembersManager() {
                   <td className="p-3 text-slate-500">{item.email}</td>
                   <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${item.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>{item.role === 'admin' ? 'Admin' : 'Member'}</span></td>
                   <td className="p-3 text-slate-500 text-xs">{lvl?.name || '-'}</td>
+                  <td className="p-3 text-slate-500 text-xs">{item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{item.sponsor_membership_number ? `AUX-${item.sponsor_membership_number}` : '-'}</td>
                   <td className="p-3 text-right">
                     <button onClick={() => { setEditing({...item}); setTab('personal'); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>

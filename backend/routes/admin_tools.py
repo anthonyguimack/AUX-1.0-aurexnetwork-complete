@@ -142,13 +142,19 @@ async def admin_analytics(user: dict = Depends(require_admin)):
         month_end = month_start + timedelta(days=30)
         count = await db.members.count_documents({"created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
         monthly_registrations.append({"month": month_start.strftime("%b"), "members": count})
-    # Monthly logged-in members
+    # Monthly logged-in members (count unique members who logged in per month)
     monthly_logins = []
     for i in range(5, -1, -1):
         month_start = now.replace(day=1) - timedelta(days=i * 30)
         month_end = month_start + timedelta(days=30)
-        count = await db.members.count_documents({"last_login": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
-        monthly_logins.append({"month": month_start.strftime("%b"), "logins": count})
+        # Count distinct member_ids from login events
+        pipeline = [
+            {"$match": {"logged_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}}},
+            {"$group": {"_id": "$member_id"}},
+            {"$count": "total"}
+        ]
+        result = await db.member_logins.aggregate(pipeline).to_list(1)
+        monthly_logins.append({"month": month_start.strftime("%b"), "logins": result[0]["total"] if result else 0})
     return {
         "monthly_contacts": monthly_contacts, "monthly_revenue": monthly_revenue,
         "monthly_registrations": monthly_registrations, "monthly_logins": monthly_logins,

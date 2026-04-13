@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
@@ -33,9 +33,11 @@ export default function MyAccountLayout() {
   const [sideOpen, setSideOpen] = useState(false);
   const [settings, setSettings] = useState({});
   const [levelPerms, setLevelPerms] = useState(null);
+  const [quickLinks, setQuickLinks] = useState([]);
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
+    publicAPI.getMyAccountLinks().then(r => setQuickLinks(r.data || [])).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -164,15 +166,47 @@ export default function MyAccountLayout() {
 
       {/* Main */}
       <div className="flex-1 flex flex-col min-h-screen">
-        <header className="h-14 flex items-center px-4 lg:px-6 sticky top-0 z-30"
-          style={{ backgroundColor: v('header-bg', '#13161e'), borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
-          <button onClick={() => setSideOpen(!sideOpen)} className="lg:hidden mr-4" style={{ color: v('sidebar-text', '#9ca3af') }}>
-            {sideOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-          </button>
-          <div className="flex items-center text-xs" style={{ color: v('text-muted', '#6b7280') }}>
-            <span>My Account</span>
-            <ChevronRight className="w-3 h-3 mx-1" />
-            <span style={{ color: v('text-secondary', '#9ca3af') }}>{ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href))?.label || 'Dashboard'}</span>
+        {/* Top Header with Quick Links */}
+        <header className="sticky top-0 z-30" style={{ backgroundColor: v('header-bg', '#13161e'), borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
+          <div className="h-14 flex items-center px-4 lg:px-6 justify-between">
+            <button onClick={() => setSideOpen(!sideOpen)} className="lg:hidden mr-4" style={{ color: v('sidebar-text', '#9ca3af') }}>
+              {sideOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+            {/* Quick Links Bar */}
+            {quickLinks.length > 0 && (
+              <nav className="hidden sm:flex items-center gap-0 ml-auto" data-testid="quick-links-bar">
+                {quickLinks.map((ql, idx) => {
+                  const isActive = ql.url === location.pathname || (ql.url !== '/' && location.pathname.startsWith(ql.url));
+                  return (
+                    <React.Fragment key={ql.id}>
+                      {idx > 0 && <span className="text-xs mx-0.5 select-none" style={{ color: v('text-muted', '#6b7280') }}>|</span>}
+                      <a
+                        href={ql.url}
+                        target={ql.new_tab ? '_blank' : '_self'}
+                        rel={ql.new_tab ? 'noopener noreferrer' : undefined}
+                        className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                        style={isActive
+                          ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') }
+                          : { color: v('accent', '#c9a84c') }
+                        }
+                        data-testid={`quick-link-${ql.label.toLowerCase().replace(/\s/g, '-')}`}
+                      >
+                        {ql.label}
+                        {ql.new_tab && <ExternalLink className="w-2.5 h-2.5" />}
+                      </a>
+                    </React.Fragment>
+                  );
+                })}
+              </nav>
+            )}
+          </div>
+          {/* Breadcrumb */}
+          <div className="h-8 flex items-center px-4 lg:px-6" style={{ borderTop: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
+            <div className="flex items-center text-xs" style={{ color: v('text-muted', '#6b7280') }}>
+              <span>My Account</span>
+              <ChevronRight className="w-3 h-3 mx-1" />
+              <span style={{ color: v('text-secondary', '#9ca3af') }}>{ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href))?.label || 'Dashboard'}</span>
+            </div>
           </div>
         </header>
         <main className="flex-1 p-4 lg:p-8">

@@ -55,8 +55,10 @@ async def member_login(request: Request, response: Response):
     member = await db.members.find_one({"$or": [{"username": username}, {"email": username}]}, {"_id": 0})
     if not member or not verify_password(password, member.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    # Track last login for analytics
-    await db.members.update_one({"member_id": member["member_id"]}, {"$set": {"last_login": datetime.now(timezone.utc).isoformat()}})
+    now_iso = datetime.now(timezone.utc).isoformat()
+    # Track login for analytics
+    await db.members.update_one({"member_id": member["member_id"]}, {"$set": {"last_login": now_iso}})
+    await db.member_logins.insert_one({"member_id": member["member_id"], "logged_at": now_iso})
     token = create_jwt_token(member["member_id"], member["email"], "member")
     return {"token": token, "member": {k: v for k, v in member.items() if k != "password_hash"}}
 
@@ -945,3 +947,58 @@ async def validate_sponsor(membership_number: int):
     if not member:
         raise HTTPException(status_code=404, detail="Sponsor not found")
     return {"valid": True, "sponsor_membership_id": member.get("membership_id", ""), "sponsor_name": f"{member.get('first_name', '')} {member.get('last_name', '')}".strip()}
+
+
+# ---- My Account Quick Links ----
+
+@router.get("/public/myaccount-links")
+async def get_myaccount_links():
+    """Public: return active quick links for My Account header."""
+    links = await db.myaccount_links.find({"active": True}, {"_id": 0}).sort("order", 1).to_list(50)
+    return links
+
+
+@router.get("/admin/myaccount-links")
+async def admin_list_myaccount_links(user: dict = Depends(require_admin)):
+    links = await db.myaccount_links.find({}, {"_id": 0}).sort("order", 1).to_list(50)
+    return links
+
+
+@router.post("/admin/myaccount-links")
+async def admin_create_myaccount_link(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body["id"] = str(uuid.uuid4())
+    body.setdefault("active", True)
+    body.setdefault("new_tab", False)
+    body.setdefault("url", "#")
+    body.setdefault("label", "New Link")
+    max_order = await db.myaccount_links.find_one({}, sort=[("order", -1)])
+    body["order"] = (max_order["order"] + 1) if max_order else 1
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.myaccount_links.insert_one(body)
+    return await db.myaccount_links.find_one({"id": body["id"]}, {"_id": 0})
+
+
+@router.put("/admin/myaccount-links/{link_id}")
+async def admin_update_myaccount_link(link_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("id", None)
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.myaccount_links.update_one({"id": link_id}, {"$set": body})
+    return await db.myaccount_links.find_one({"id": link_id}, {"_id": 0})
+
+
+@router.delete("/admin/myaccount-links/{link_id}")
+async def admin_delete_myaccount_link(link_id: str, user: dict = Depends(require_admin)):
+    await db.myaccount_links.delete_one({"id": link_id})
+    return {"success": True}
+
+
+@router.put("/admin/myaccount-links-reorder")
+async def admin_reorder_myaccount_links(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    ordered_ids = body.get("ordered_ids", [])
+    for idx, lid in enumerate(ordered_ids):
+        await db.myaccount_links.update_one({"id": lid}, {"$set": {"order": idx + 1}})
+    return {"success": True}
