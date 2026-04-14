@@ -34,6 +34,7 @@ export default function MyAccountLayout() {
   const [settings, setSettings] = useState({});
   const [levelPerms, setLevelPerms] = useState(null);
   const [quickLinks, setQuickLinks] = useState([]);
+  const [qlPerms, setQlPerms] = useState(null);
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
@@ -44,6 +45,7 @@ export default function MyAccountLayout() {
     if (member) {
       if (member.role === 'admin') {
         setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
+        setQlPerms(null); // admin sees all
       } else if (member.level_id) {
         memberAPI.getMyLevel().then(r => {
           if (r.data && r.data.permissions && r.data.permissions.length > 0) {
@@ -51,9 +53,11 @@ export default function MyAccountLayout() {
           } else {
             setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
           }
-        }).catch(() => setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)));
+          setQlPerms(r.data?.quick_link_permissions || []);
+        }).catch(() => { setLevelPerms(ALL_NAV_ITEMS.map(i => i.id)); setQlPerms([]); });
       } else {
         setLevelPerms(ALL_NAV_ITEMS.map(i => i.id));
+        setQlPerms([]);
       }
     }
   }, [member]);
@@ -173,9 +177,13 @@ export default function MyAccountLayout() {
               {sideOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>
             {/* Quick Links Bar */}
-            {quickLinks.length > 0 && (
-              <nav className="hidden sm:flex items-center gap-0 ml-auto" data-testid="quick-links-bar">
-                {quickLinks.map((ql, idx) => {
+            {(() => {
+              // Filter by level permissions: admin sees all, others see only permitted links
+              const visibleLinks = qlPerms === null ? quickLinks : quickLinks.filter(ql => qlPerms.includes(ql.id));
+              if (visibleLinks.length === 0) return null;
+              return (
+              <nav className="flex items-center gap-0 ml-auto overflow-x-auto" data-testid="quick-links-bar">
+                {visibleLinks.map((ql, idx) => {
                   const isActive = ql.url === location.pathname || (ql.url !== '/' && location.pathname.startsWith(ql.url));
                   return (
                     <React.Fragment key={ql.id}>
@@ -184,7 +192,7 @@ export default function MyAccountLayout() {
                         href={ql.url}
                         target={ql.new_tab ? '_blank' : '_self'}
                         rel={ql.new_tab ? 'noopener noreferrer' : undefined}
-                        className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1"
+                        className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
                         style={isActive
                           ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') }
                           : { color: v('accent', '#c9a84c') }
@@ -198,7 +206,8 @@ export default function MyAccountLayout() {
                   );
                 })}
               </nav>
-            )}
+              );
+            })()}
           </div>
           {/* Breadcrumb */}
           <div className="h-8 flex items-center px-4 lg:px-6" style={{ borderTop: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>

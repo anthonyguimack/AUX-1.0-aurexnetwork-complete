@@ -105,19 +105,33 @@ async def admin_update_seo(page_path: str, request: Request, user: dict = Depend
 @router.get("/admin/analytics")
 async def admin_analytics(user: dict = Depends(require_admin)):
     now = datetime.now(timezone.utc)
+
+    # Helper: get proper month boundaries for last 6 months
+    def get_month_ranges(n=6):
+        ranges = []
+        for i in range(n - 1, -1, -1):
+            year = now.year
+            month = now.month - i
+            while month <= 0:
+                month += 12
+                year -= 1
+            m_start = datetime(year, month, 1, tzinfo=timezone.utc)
+            ny, nm = (year, month + 1) if month < 12 else (year + 1, 1)
+            m_end = datetime(ny, nm, 1, tzinfo=timezone.utc)
+            ranges.append((m_start, m_end, m_start.strftime("%b %y")))
+        return ranges
+
+    month_ranges = get_month_ranges()
+
     monthly_contacts = []
-    for i in range(5, -1, -1):
-        month_start = now.replace(day=1) - timedelta(days=i * 30)
-        month_end = month_start + timedelta(days=30)
-        count = await db.contacts.count_documents({"created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
-        monthly_contacts.append({"month": month_start.strftime("%b"), "contacts": count})
+    for m_start, m_end, label in month_ranges:
+        count = await db.contacts.count_documents({"created_at": {"$gte": m_start.isoformat(), "$lt": m_end.isoformat()}})
+        monthly_contacts.append({"month": label, "contacts": count})
     monthly_revenue = []
-    for i in range(5, -1, -1):
-        month_start = now.replace(day=1) - timedelta(days=i * 30)
-        month_end = month_start + timedelta(days=30)
-        pipeline = [{"$match": {"payment_status": "paid", "created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}}}, {"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
+    for m_start, m_end, label in month_ranges:
+        pipeline = [{"$match": {"payment_status": "paid", "created_at": {"$gte": m_start.isoformat(), "$lt": m_end.isoformat()}}}, {"$group": {"_id": None, "total": {"$sum": "$amount"}}}]
         result = await db.payment_transactions.aggregate(pipeline).to_list(1)
-        monthly_revenue.append({"month": month_start.strftime("%b"), "revenue": result[0]["total"] if result else 0})
+        monthly_revenue.append({"month": label, "revenue": result[0]["total"] if result else 0})
     top_services = await db.payment_transactions.aggregate([
         {"$match": {"payment_status": "paid"}}, {"$group": {"_id": "$service_name", "count": {"$sum": 1}, "revenue": {"$sum": "$amount"}}},
         {"$sort": {"count": -1}}, {"$limit": 5}
@@ -135,26 +149,19 @@ async def admin_analytics(user: dict = Depends(require_admin)):
         "total_users": await db.members.count_documents({}),
         "total_pages": await db.nav_pages.count_documents({}),
     }
-    # Monthly registered members
     monthly_registrations = []
-    for i in range(5, -1, -1):
-        month_start = now.replace(day=1) - timedelta(days=i * 30)
-        month_end = month_start + timedelta(days=30)
-        count = await db.members.count_documents({"created_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}})
-        monthly_registrations.append({"month": month_start.strftime("%b"), "members": count})
-    # Monthly logged-in members (count unique members who logged in per month)
+    for m_start, m_end, label in month_ranges:
+        count = await db.members.count_documents({"created_at": {"$gte": m_start.isoformat(), "$lt": m_end.isoformat()}})
+        monthly_registrations.append({"month": label, "members": count})
     monthly_logins = []
-    for i in range(5, -1, -1):
-        month_start = now.replace(day=1) - timedelta(days=i * 30)
-        month_end = month_start + timedelta(days=30)
-        # Count distinct member_ids from login events
+    for m_start, m_end, label in month_ranges:
         pipeline = [
-            {"$match": {"logged_at": {"$gte": month_start.isoformat(), "$lt": month_end.isoformat()}}},
+            {"$match": {"logged_at": {"$gte": m_start.isoformat(), "$lt": m_end.isoformat()}}},
             {"$group": {"_id": "$member_id"}},
             {"$count": "total"}
         ]
         result = await db.member_logins.aggregate(pipeline).to_list(1)
-        monthly_logins.append({"month": month_start.strftime("%b"), "logins": result[0]["total"] if result else 0})
+        monthly_logins.append({"month": label, "logins": result[0]["total"] if result else 0})
     return {
         "monthly_contacts": monthly_contacts, "monthly_revenue": monthly_revenue,
         "monthly_registrations": monthly_registrations, "monthly_logins": monthly_logins,

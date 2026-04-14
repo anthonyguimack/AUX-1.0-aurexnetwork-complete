@@ -209,7 +209,9 @@ export default function MembershipEnrollment() {
     const val = formData[f.field_key];
     const err = errors[f.field_key];
     const baseCls = "w-full bg-transparent border-0 border-b py-2.5 text-sm outline-none transition-colors placeholder:text-[--me-placeholder]";
+    const selectCls = "w-full border-0 border-b py-2.5 text-sm outline-none transition-colors";
     const borderStyle = { borderBottomColor: err ? cv('error-color', '#dc2626') : cv('input-border', '#d1d5db'), color: cv('input-text', '#1a2535') };
+    const selectStyle = { ...borderStyle, backgroundColor: 'transparent', WebkitAppearance: 'menulist', appearance: 'menulist', opacity: 1 };
     const focusStyle = `focus:border-b-2 focus:border-[var(--me-input-focus,#F5A623)]`;
 
     switch (f.field_type) {
@@ -243,28 +245,28 @@ export default function MembershipEnrollment() {
         return <input type="datetime-local" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'select':
         return (
-          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`}>
+          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${selectCls} ${focusStyle}`} style={selectStyle} data-testid={`enroll-${f.field_key}`}>
             <option value="">Select...</option>
             {(f.options || []).map(o => <option key={o} value={o}>{o}</option>)}
           </select>
         );
       case 'country':
         return (
-          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`}>
+          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${selectCls} ${focusStyle}`} style={selectStyle} data-testid={`enroll-${f.field_key}`}>
             <option value="">Select country...</option>
             {countries.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>
         );
       case 'state':
         return (
-          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`}>
+          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${selectCls} ${focusStyle}`} style={selectStyle} data-testid={`enroll-${f.field_key}`}>
             <option value="">Select state...</option>
             {states.map(s => <option key={s.id} value={s.name}>{s.name}</option>)}
           </select>
         );
       case 'city':
         return (
-          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`}>
+          <select value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${selectCls} ${focusStyle}`} style={selectStyle} data-testid={`enroll-${f.field_key}`}>
             <option value="">Select city...</option>
             {cities.map(c => <option key={c.id} value={c.name}>{c.name}</option>)}
           </select>

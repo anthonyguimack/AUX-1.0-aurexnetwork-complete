@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, Shield } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Shield, Link2 } from 'lucide-react';
 
 const SIDEBAR_SECTIONS = [
   { id: 'membership-profile', label: 'Membership Profile' },
@@ -20,8 +20,12 @@ export default function MemberLevelsManager() {
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [quickLinks, setQuickLinks] = useState([]);
 
-  const load = () => adminAPI.getLevels().then(r => setLevels(r.data)).catch(console.error);
+  const load = () => {
+    adminAPI.getLevels().then(r => setLevels(r.data)).catch(console.error);
+    adminAPI.getMyAccountLinks().then(r => setQuickLinks(r.data || [])).catch(() => {});
+  };
   useEffect(() => { load(); }, []);
 
   const handleSave = async () => {
@@ -50,6 +54,16 @@ export default function MemberLevelsManager() {
     });
   };
 
+  const toggleQLPerm = (linkId) => {
+    setEditing(prev => {
+      const perms = [...(prev.quick_link_permissions || [])];
+      const idx = perms.indexOf(linkId);
+      if (idx >= 0) perms.splice(idx, 1);
+      else perms.push(linkId);
+      return { ...prev, quick_link_permissions: perms };
+    });
+  };
+
   return (
     <div data-testid="member-levels-manager">
       <div className="flex items-center justify-between mb-6">
@@ -75,6 +89,14 @@ export default function MemberLevelsManager() {
                 })}
                 {(!level.permissions || level.permissions.length === 0) && <span className="text-xs text-slate-400">No permissions</span>}
               </div>
+              {(level.quick_link_permissions || []).length > 0 && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {(level.quick_link_permissions || []).map(qlId => {
+                    const ql = quickLinks.find(l => l.id === qlId);
+                    return ql ? <span key={qlId} className="text-xs bg-blue-50 text-blue-700 px-2 py-0.5 rounded flex items-center gap-1"><Link2 className="w-3 h-3" />{ql.label}</span> : null;
+                  })}
+                </div>
+              )}
             </div>
             <div className="flex gap-1">
               <button onClick={() => { setEditing({...level}); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
@@ -103,6 +125,20 @@ export default function MemberLevelsManager() {
                   ))}
                 </div>
               </div>
+              {quickLinks.length > 0 && (
+                <div>
+                  <Label className="text-xs mb-3 block">Permissions (My Account — Quick Links)</Label>
+                  <div className="space-y-2">
+                    {quickLinks.map(ql => (
+                      <label key={ql.id} className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer" data-testid={`ql-perm-${ql.id}`}>
+                        <input type="checkbox" checked={(editing.quick_link_permissions || []).includes(ql.id)} onChange={() => toggleQLPerm(ql.id)} className="accent-[#2563eb] w-4 h-4" />
+                        <span className="text-sm text-slate-700">{ql.label}</span>
+                        {ql.new_tab && <span className="text-xs text-slate-400">(external)</span>}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
               <button onClick={handleSave} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" data-testid="level-save-btn">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save
               </button>

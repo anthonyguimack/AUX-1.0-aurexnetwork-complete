@@ -101,7 +101,7 @@ export default function MemberRegister() {
   const brandName = settings.brand_name || 'Legacy';
   const bgImage = settings.membership_login_bg || '';
   const inputCls = "w-full bg-[#13161e] border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#c9a84c]/50";
-  const selectCls = inputCls;
+  const selectCls = inputCls + " appearance-auto";
 
   return (
     <div className="min-h-screen flex" style={{ fontFamily: "'DM Sans', sans-serif" }} data-testid="member-register-page">

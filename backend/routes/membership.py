@@ -763,6 +763,7 @@ async def admin_create_level(request: Request, user: dict = Depends(require_admi
         "id": str(uuid.uuid4()),
         "name": body.get("name", ""),
         "permissions": body.get("permissions", []),
+        "quick_link_permissions": body.get("quick_link_permissions", []),
         "order": body.get("order", 0),
         "created_at": datetime.now(timezone.utc).isoformat()
     }
