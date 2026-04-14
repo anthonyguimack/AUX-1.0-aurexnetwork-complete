@@ -231,6 +231,13 @@ export const adminAPI = {
   deleteCalendarEvent: (id) => api.delete(`/admin/calendar/events/${id}`),
   getEventRegistrations: (id) => api.get(`/admin/calendar/events/${id}/registrations`),
   getEventRegistrationsCSV: (id) => `${api.defaults.baseURL}/admin/calendar/events/${id}/registrations/csv`,
+  // Mentorship Schedule
+  getMentorshipSlots: () => api.get('/admin/mentorship/slots'),
+  createMentorshipSlot: (data) => api.post('/admin/mentorship/slots', data),
+  updateMentorshipSlot: (id, data) => api.put(`/admin/mentorship/slots/${id}`, data),
+  deleteMentorshipSlot: (id) => api.delete(`/admin/mentorship/slots/${id}`),
+  getSlotBookings: (id) => api.get(`/admin/mentorship/slots/${id}/bookings`),
+  getMentors: () => api.get('/admin/mentors'),
 };
 
 // Member API (unified - uses same auth_token)

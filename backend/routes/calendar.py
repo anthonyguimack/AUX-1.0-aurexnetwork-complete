@@ -94,6 +94,76 @@ async def admin_event_registrations_csv(event_id: str, user: dict = Depends(requ
     return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=event_{event_id}_registrations.csv"})
 
 
+# ── Admin: Mentorship Schedule ──
+
+@router.get("/admin/mentorship/slots")
+async def admin_list_mentorship_slots(user: dict = Depends(require_admin)):
+    slots = await db.mentorship_slots.find({}, {"_id": 0}).sort("date", 1).to_list(1000)
+    for s in slots:
+        s["booked_count"] = await db.mentorship_bookings.count_documents({"slot_id": s["id"], "status": {"$in": ["booked", "completed"]}})
+        s["waitlist_count"] = await db.mentorship_bookings.count_documents({"slot_id": s["id"], "status": "waitlist"})
+        mentor = await db.members.find_one({"member_id": s.get("mentor_id")}, {"_id": 0, "password_hash": 0})
+        s["mentor_name"] = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
+        s["mentor_membership_id"] = mentor.get("membership_id", "") if mentor else ""
+    return slots
+
+
+@router.post("/admin/mentorship/slots")
+async def admin_create_mentorship_slot(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body["id"] = str(uuid.uuid4())
+    body.setdefault("status", "active")
+    body.setdefault("max_students", 1)
+    body.setdefault("session_type", "One-on-One")
+    body.setdefault("description", "")
+    if not body.get("mentor_id"):
+        raise HTTPException(status_code=400, detail="mentor_id is required")
+    body["created_at"] = datetime.now(timezone.utc).isoformat()
+    await db.mentorship_slots.insert_one(body)
+    result = await db.mentorship_slots.find_one({"id": body["id"]}, {"_id": 0})
+    result["booked_count"] = 0
+    result["waitlist_count"] = 0
+    mentor = await db.members.find_one({"member_id": body["mentor_id"]}, {"_id": 0, "password_hash": 0})
+    result["mentor_name"] = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
+    result["mentor_membership_id"] = mentor.get("membership_id", "") if mentor else ""
+    return result
+
+
+@router.put("/admin/mentorship/slots/{slot_id}")
+async def admin_update_mentorship_slot(slot_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("id", None)
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.mentorship_slots.update_one({"id": slot_id}, {"$set": body})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Slot not found")
+    slot = await db.mentorship_slots.find_one({"id": slot_id}, {"_id": 0})
+    mentor = await db.members.find_one({"member_id": slot.get("mentor_id")}, {"_id": 0, "password_hash": 0})
+    slot["mentor_name"] = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
+    return slot
+
+
+@router.delete("/admin/mentorship/slots/{slot_id}")
+async def admin_delete_mentorship_slot(slot_id: str, user: dict = Depends(require_admin)):
+    await db.mentorship_slots.delete_one({"id": slot_id})
+    await db.mentorship_bookings.delete_many({"slot_id": slot_id})
+    return {"success": True}
+
+
+@router.get("/admin/mentorship/slots/{slot_id}/bookings")
+async def admin_slot_bookings(slot_id: str, user: dict = Depends(require_admin)):
+    bookings = await db.mentorship_bookings.find({"slot_id": slot_id}, {"_id": 0}).sort("booked_at", 1).to_list(200)
+    for b in bookings:
+        member = await db.members.find_one({"member_id": b["member_id"]}, {"_id": 0, "password_hash": 0})
+        if member:
+            b["membership_id"] = member.get("membership_id", "")
+            b["name"] = f"{member.get('first_name', '')} {member.get('last_name', '')}".strip()
+            b["email"] = member.get("email", "")
+    return bookings
+
+
+
 # ── Public: Member Event Access ──
 
 def get_current_member_dep():

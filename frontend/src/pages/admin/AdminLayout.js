@@ -31,6 +31,7 @@ const sidebarItems = [
   { label: 'Content', icon: ClipboardCheck, href: '/admin/enrollment-fields', group: 'enrollment' },
   { type: 'divider', label: 'Calendar' },
   { label: 'Global Events', icon: CalendarDays, href: '/admin/calendar/global', group: 'calendar' },
+  { label: 'Mentorship Schedule', icon: CalendarDays, href: '/admin/calendar/mentorship', group: 'calendar' },
   { type: 'divider', label: 'My Account' },
   { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount' },
   { type: 'divider', label: 'Membership' },

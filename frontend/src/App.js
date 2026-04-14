@@ -77,6 +77,7 @@ import GeoManager from './pages/admin/GeoManager';
 import DocumentationManager from './pages/admin/DocumentationManager';
 import QuickLinksManager from './pages/admin/QuickLinksManager';
 import GlobalEventsManager from './pages/admin/GlobalEventsManager';
+import MentorshipScheduleManager from './pages/admin/MentorshipScheduleManager';
 
 import { injectThemeColors } from './lib/themeColors';
 
@@ -385,6 +386,7 @@ function AppRouter() {
           <Route path="documentation" element={<DocumentationManager />} />
           <Route path="quick-links" element={<QuickLinksManager />} />
           <Route path="calendar/global" element={<GlobalEventsManager />} />
+          <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -458,6 +460,7 @@ function AppRouter() {
           <Route path="documentation" element={<DocumentationManager />} />
           <Route path="quick-links" element={<QuickLinksManager />} />
           <Route path="calendar/global" element={<GlobalEventsManager />} />
+          <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />

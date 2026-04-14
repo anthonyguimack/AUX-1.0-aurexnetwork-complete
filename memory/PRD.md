@@ -102,6 +102,7 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Backend: Full Global Events CRUD, member registration with capacity/waitlist, auto-promotion on cancel
 - Backend: Notifications system with unread count, Mentoring slots CRUD, booking with waitlist
 - CMS: Global Events Manager at `/admin/calendar/global` with event table, registration viewer, CSV export
+- CMS: Mentorship Schedule Manager at `/admin/calendar/mentorship` with slot table, mentor selector, bookings viewer
 - My Account: Events Calendar (`/my-account/global-calendar`) — Month grid + List view with event cards
 - My Account: Mentorship Calendar (`/my-account/mentorship-calendar`) — Mentor slot management with color-coded calendar
 - My Account: Mentor Calendar View (`/my-account/mentor-calendar`) — Member booking with confirmation dialog
