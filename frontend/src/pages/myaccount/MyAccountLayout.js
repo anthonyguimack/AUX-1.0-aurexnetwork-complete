@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
@@ -14,6 +14,10 @@ const ALL_NAV_ITEMS = [
   { id: 'invite-code', label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
   { id: 'my-community', label: 'My Community', icon: Users, href: '/my-account/my-community' },
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
+  { id: 'global-calendar', label: 'Events Calendar', icon: CalendarDays, href: '/my-account/global-calendar' },
+  { id: 'mentorship-calendar', label: 'My Calendar', icon: CalendarDays, href: '/my-account/mentorship-calendar', mentorOnly: true },
+  { id: 'mentor-calendar', label: 'Mentor Calendar', icon: CalendarDays, href: '/my-account/mentor-calendar', hasMentorOnly: true },
+  { id: 'my-bookings', label: 'My Reservations', icon: BookOpen, href: '/my-account/my-bookings' },
 ];
 
 const ROUTE_TO_PERM = {
@@ -35,11 +39,39 @@ export default function MyAccountLayout() {
   const [levelPerms, setLevelPerms] = useState(null);
   const [quickLinks, setQuickLinks] = useState([]);
   const [qlPerms, setQlPerms] = useState(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifOpen, setNotifOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+
+  const fetchUnread = useCallback(() => {
+    memberAPI.getUnreadCount().then(r => setUnreadCount(r.data?.count || 0)).catch(() => {});
+  }, []);
 
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
     publicAPI.getMyAccountLinks().then(r => setQuickLinks(r.data || [])).catch(() => {});
-  }, []);
+    fetchUnread();
+    const interval = setInterval(fetchUnread, 30000);
+    return () => clearInterval(interval);
+  }, [fetchUnread]);
+
+  const openNotifications = async () => {
+    setNotifOpen(!notifOpen);
+    if (!notifOpen) {
+      try {
+        const r = await memberAPI.getNotifications();
+        setNotifications(r.data || []);
+      } catch { setNotifications([]); }
+    }
+  };
+
+  const markAllRead = async () => {
+    try {
+      await memberAPI.markAllNotificationsRead();
+      setUnreadCount(0);
+      setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    } catch {}
+  };
 
   useEffect(() => {
     if (member) {
@@ -85,7 +117,15 @@ export default function MyAccountLayout() {
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
   const brandName = settings.brand_name || 'Legacy';
-  const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => levelPerms.includes(item.id)) : [];
+  const isMentor = member?._member_type?.permissions?.is_mentor;
+  const hasMentor = !!member?.mentor_id;
+  const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
+    if (item.mentorOnly && !isMentor) return false;
+    if (item.hasMentorOnly && !hasMentor) return false;
+    // Calendar items are always visible (not gated by level permissions)
+    if (['global-calendar', 'mentorship-calendar', 'mentor-calendar', 'my-bookings'].includes(item.id)) return true;
+    return levelPerms.includes(item.id);
+  }) : [];
   const permissionsLoading = levelPerms === null;
 
   // CSS variable shortcuts
@@ -208,6 +248,34 @@ export default function MyAccountLayout() {
               </nav>
               );
             })()}
+            {/* Notification Bell */}
+            <div className="relative ml-3" data-testid="notification-bell-wrapper">
+              <button onClick={openNotifications} className="relative p-2 rounded-full transition-colors hover:opacity-80" style={{ color: v('text-secondary', '#9ca3af') }} data-testid="notification-bell">
+                <Bell className="w-5 h-5" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 min-w-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: v('accent', '#c9a84c') }} data-testid="unread-badge">{unreadCount}</span>
+                )}
+              </button>
+              {notifOpen && (
+                <div className="absolute right-0 top-full mt-1 w-80 rounded-lg border shadow-xl z-50 max-h-[400px] overflow-y-auto" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.1)') }} data-testid="notification-dropdown">
+                  <div className="flex items-center justify-between p-3" style={{ borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
+                    <span className="text-xs font-semibold" style={{ color: v('text-primary', '#fff') }}>Notifications</span>
+                    {unreadCount > 0 && <button onClick={markAllRead} className="text-[10px] font-medium" style={{ color: v('accent', '#c9a84c') }} data-testid="mark-all-read">Mark all read</button>}
+                  </div>
+                  {notifications.length === 0 ? (
+                    <p className="p-6 text-center text-xs" style={{ color: v('text-muted', '#6b7280') }}>No notifications</p>
+                  ) : (
+                    notifications.map(n => (
+                      <div key={n.id} className="px-3 py-2.5 transition-colors hover:opacity-90" style={{ borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.03)')}`, backgroundColor: n.read ? 'transparent' : v('sidebar-active-bg', 'rgba(201,168,76,0.05)') }} data-testid={`notif-${n.id}`}>
+                        <p className="text-xs font-medium mb-0.5" style={{ color: n.read ? v('text-secondary', '#9ca3af') : v('accent', '#c9a84c') }}>{n.title}</p>
+                        <p className="text-[11px] leading-relaxed" style={{ color: v('text-muted', '#6b7280') }}>{n.message}</p>
+                        <p className="text-[10px] mt-1" style={{ color: v('text-muted', '#4b5563') }}>{new Date(n.created_at).toLocaleString()}</p>
+                      </div>
+                    ))
+                  )}
+                </div>
+              )}
+            </div>
           </div>
           {/* Breadcrumb */}
           <div className="h-8 flex items-center px-4 lg:px-6" style={{ borderTop: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>

@@ -65,6 +65,10 @@ import MyEbank from './pages/myaccount/MyEbank';
 import PortfolioList from './pages/myaccount/PortfolioList';
 import PortfolioDetail from './pages/myaccount/PortfolioDetail';
 import PortfolioForm from './pages/myaccount/PortfolioForm';
+import GlobalCalendar from './pages/myaccount/GlobalCalendar';
+import MentorshipCalendar from './pages/myaccount/MentorshipCalendar';
+import MentorCalendarView from './pages/myaccount/MentorCalendarView';
+import MyBookings from './pages/myaccount/MyBookings';
 
 import LandingPage from './pages/LandingPage';
 import MembershipEnrollment from './pages/MembershipEnrollment';
@@ -330,6 +334,10 @@ function AppRouter() {
           <Route path="portfolios/new" element={<PortfolioForm />} />
           <Route path="portfolios/:id" element={<PortfolioDetail />} />
           <Route path="portfolios/:id/edit" element={<PortfolioForm />} />
+          <Route path="global-calendar" element={<GlobalCalendar />} />
+          <Route path="mentorship-calendar" element={<MentorshipCalendar />} />
+          <Route path="mentor-calendar" element={<MentorCalendarView />} />
+          <Route path="my-bookings" element={<MyBookings />} />
         </Route>
       </Routes>
     );

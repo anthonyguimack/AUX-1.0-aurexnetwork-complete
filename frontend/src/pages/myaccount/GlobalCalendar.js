@@ -1,0 +1,185 @@
+import React, { useState, useEffect, useMemo } from 'react';
+import { memberAPI } from '../../lib/api';
+import { toast } from 'sonner';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, List, Grid3X3, Loader2 } from 'lucide-react';
+
+const v = (name, fb) => `var(--ma-${name}, ${fb})`;
+
+function MonthView({ events, year, month, onDayClick }) {
+  const firstDay = new Date(year, month, 1).getDay();
+  const daysInMonth = new Date(year, month + 1, 0).getDate();
+  const days = [];
+  for (let i = 0; i < firstDay; i++) days.push(null);
+  for (let d = 1; d <= daysInMonth; d++) days.push(d);
+
+  const getEventsForDay = (day) => {
+    if (!day) return [];
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+    return events.filter(e => e.date === dateStr);
+  };
+
+  return (
+    <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+        <div key={d} className="p-2 text-center text-xs font-medium" style={{ backgroundColor: v('card-bg', '#13161e'), color: v('text-secondary', '#9ca3af') }}>{d}</div>
+      ))}
+      {days.map((day, i) => {
+        const dayEvents = getEventsForDay(day);
+        return (
+          <div key={i} className="min-h-[80px] p-1.5 cursor-pointer transition-colors hover:opacity-80" onClick={() => day && onDayClick(day, dayEvents)}
+            style={{ backgroundColor: day ? v('card-bg', '#13161e') : 'transparent' }} data-testid={day ? `cal-day-${day}` : undefined}>
+            {day && (
+              <>
+                <span className="text-xs font-medium" style={{ color: v('text-primary', '#fff') }}>{day}</span>
+                {dayEvents.map(e => (
+                  <div key={e.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate" style={{ backgroundColor: e.status === 'cancelled' ? '#374151' : v('accent', '#c9a84c'), color: e.status === 'cancelled' ? '#9ca3af' : v('button-text', '#0d0f14') }}>
+                    {e.title}
+                  </div>
+                ))}
+              </>
+            )}
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function EventCard({ event, onRegister, onCancel }) {
+  const available = Math.max(0, (event.max_capacity || 0) - (event.registered_count || 0));
+  const isFull = available <= 0;
+  const API = process.env.REACT_APP_BACKEND_URL;
+  const imgSrc = event.image ? (event.image.startsWith('/api') ? `${API}${event.image}` : event.image) : null;
+
+  return (
+    <div className="rounded-lg border overflow-hidden" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid={`event-card-${event.id}`}>
+      {imgSrc && <img src={imgSrc} alt={event.title} className="w-full h-36 object-cover" />}
+      <div className="p-4">
+        <div className="flex items-center gap-2 mb-2">
+          <span className="text-[10px] px-2 py-0.5 rounded font-medium" style={{ backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') }}>{event.type}</span>
+          {event.status === 'cancelled' && <span className="text-[10px] px-2 py-0.5 rounded font-medium bg-red-500/20 text-red-400">Cancelled</span>}
+        </div>
+        <h3 className="font-bold text-sm mb-2" style={{ color: v('text-primary', '#fff') }}>{event.title}</h3>
+        <div className="space-y-1 text-xs mb-3" style={{ color: v('text-secondary', '#9ca3af') }}>
+          <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{event.date} &middot; {event.start_time} - {event.end_time}</div>
+          {event.location && <div className="flex items-center gap-1.5"><MapPin className="w-3 h-3" />{event.location}</div>}
+          <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{available} / {event.max_capacity} spots left</div>
+        </div>
+        {event.description && <div className="text-xs mb-3 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }} dangerouslySetInnerHTML={{ __html: event.description }} />}
+        {event.status === 'cancelled' ? (
+          <span className="text-xs px-3 py-1.5 rounded font-medium bg-red-500/10 text-red-400">Cancelled</span>
+        ) : event.my_status === 'registered' ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1.5 rounded font-medium" style={{ backgroundColor: 'rgba(34,197,94,0.15)', color: '#22c55e' }}>Registered</span>
+            <button onClick={() => onCancel(event.id)} className="text-xs px-3 py-1.5 rounded border font-medium" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }} data-testid={`cancel-reg-${event.id}`}>Cancel</button>
+          </div>
+        ) : event.my_status === 'waitlist' ? (
+          <div className="flex items-center gap-2">
+            <span className="text-xs px-3 py-1.5 rounded font-medium bg-blue-500/15 text-blue-400">Waiting List</span>
+            <button onClick={() => onCancel(event.id)} className="text-xs px-3 py-1.5 rounded border font-medium" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }}>Cancel</button>
+          </div>
+        ) : isFull ? (
+          <button onClick={() => onRegister(event.id)} className="text-xs px-3 py-1.5 rounded font-medium bg-blue-500/15 text-blue-400" data-testid={`waitlist-${event.id}`}>Waiting List</button>
+        ) : (
+          <button onClick={() => onRegister(event.id)} className="text-xs px-4 py-1.5 rounded font-medium" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid={`register-${event.id}`}>Register</button>
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default function GlobalCalendar() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [view, setView] = useState('month');
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDay, setSelectedDay] = useState(null);
+
+  const load = () => {
+    setLoading(true);
+    memberAPI.getCalendarEvents().then(r => { setEvents(r.data || []); setLoading(false); }).catch(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const handleRegister = async (eventId) => {
+    try {
+      const r = await memberAPI.registerEvent(eventId);
+      toast.success(r.data.status === 'registered' ? 'Registered!' : 'Added to waiting list');
+      load();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Failed'); }
+  };
+  const handleCancel = async (eventId) => {
+    try { await memberAPI.cancelEventRegistration(eventId); toast.success('Registration cancelled'); load(); }
+    catch (e) { toast.error(e.response?.data?.detail || 'Failed'); }
+  };
+
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth();
+  const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+  const prevMonth = () => setCurrentDate(new Date(year, month - 1, 1));
+  const nextMonth = () => setCurrentDate(new Date(year, month + 1, 1));
+
+  const upcomingEvents = useMemo(() =>
+    events.filter(e => e.status !== 'inactive').sort((a, b) => a.date.localeCompare(b.date)),
+  [events]);
+
+  const dayEvents = useMemo(() => {
+    if (!selectedDay) return [];
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(selectedDay).padStart(2, '0')}`;
+    return events.filter(e => e.date === dateStr);
+  }, [selectedDay, events, year, month]);
+
+  if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin" style={{ color: v('accent', '#c9a84c') }} /></div>;
+
+  return (
+    <div data-testid="global-calendar-page">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>Events Calendar</h1>
+        <div className="flex items-center gap-1 rounded p-0.5" style={{ backgroundColor: v('card-bg', '#13161e') }}>
+          {[{ key: 'month', icon: Grid3X3, label: 'Month' }, { key: 'list', icon: List, label: 'List' }].map(vw => (
+            <button key={vw.key} onClick={() => { setView(vw.key); setSelectedDay(null); }}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+              style={view === vw.key ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') } : { color: v('text-secondary', '#9ca3af') }}
+              data-testid={`view-${vw.key}`}>
+              <vw.icon className="w-3 h-3" /> {vw.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {view === 'month' && (
+        <>
+          <div className="flex items-center justify-between mb-4">
+            <button onClick={prevMonth} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronLeft className="w-5 h-5" /></button>
+            <h2 className="text-lg font-semibold" style={{ color: v('text-primary', '#fff') }}>{monthLabel}</h2>
+            <button onClick={nextMonth} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronRight className="w-5 h-5" /></button>
+          </div>
+          <MonthView events={events} year={year} month={month} onDayClick={(day, evts) => setSelectedDay(day)} />
+          {selectedDay && dayEvents.length > 0 && (
+            <div className="mt-4">
+              <h3 className="text-sm font-semibold mb-3" style={{ color: v('text-primary', '#fff') }}>
+                Events on {monthLabel.split(' ')[0]} {selectedDay}
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {dayEvents.map(e => <EventCard key={e.id} event={e} onRegister={handleRegister} onCancel={handleCancel} />)}
+              </div>
+            </div>
+          )}
+          {selectedDay && dayEvents.length === 0 && (
+            <p className="mt-4 text-sm text-center" style={{ color: v('text-muted', '#6b7280') }}>No events on this day</p>
+          )}
+        </>
+      )}
+
+      {view === 'list' && (
+        <div className="space-y-4">
+          {upcomingEvents.length === 0 && <p className="text-center py-12 text-sm" style={{ color: v('text-muted', '#6b7280') }}>No upcoming events</p>}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {upcomingEvents.map(e => <EventCard key={e.id} event={e} onRegister={handleRegister} onCancel={handleCancel} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
