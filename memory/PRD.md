@@ -98,13 +98,15 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Fixed Logged-In Members chart: now tracks each login event in `member_logins` collection (was only tracking `last_login` overwrite)
 - Analytics counts unique member_ids per month via MongoDB aggregation
 
-### Calendar System — Phase A (Apr 14, 2026)
-- Backend: Full Global Events CRUD (`calendar_events` collection) with registration tracking
-- Backend: Member event registration with capacity tracking, waitlist auto-promotion
-- Backend: Notifications system (`notifications` collection) with unread count
-- Backend: Mentoring slots CRUD, booking system with waitlist
+### Calendar System (Apr 14, 2026)
+- Backend: Full Global Events CRUD, member registration with capacity/waitlist, auto-promotion on cancel
+- Backend: Notifications system with unread count, Mentoring slots CRUD, booking with waitlist
 - CMS: Global Events Manager at `/admin/calendar/global` with event table, registration viewer, CSV export
-- API: 20+ new calendar endpoints (events, registrations, notifications, mentoring slots, bookings)
+- My Account: Events Calendar (`/my-account/global-calendar`) — Month grid + List view with event cards
+- My Account: Mentorship Calendar (`/my-account/mentorship-calendar`) — Mentor slot management with color-coded calendar
+- My Account: Mentor Calendar View (`/my-account/mentor-calendar`) — Member booking with confirmation dialog
+- My Account: My Reservations (`/my-account/my-bookings`) — Booking history with cancel
+- Notification Bell in header with unread badge, dropdown, mark-all-read, 30s auto-refresh
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!
