@@ -5,7 +5,7 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -29,6 +29,8 @@ const sidebarItems = [
   { label: 'Contacts', icon: Mail, href: '/admin/landing-contacts', group: 'landing' },
   { type: 'divider', label: 'Membership Enrollment' },
   { label: 'Content', icon: ClipboardCheck, href: '/admin/enrollment-fields', group: 'enrollment' },
+  { type: 'divider', label: 'Calendar' },
+  { label: 'Global Events', icon: CalendarDays, href: '/admin/calendar/global', group: 'calendar' },
   { type: 'divider', label: 'My Account' },
   { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount' },
   { type: 'divider', label: 'Membership' },

@@ -98,6 +98,14 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Fixed Logged-In Members chart: now tracks each login event in `member_logins` collection (was only tracking `last_login` overwrite)
 - Analytics counts unique member_ids per month via MongoDB aggregation
 
+### Calendar System — Phase A (Apr 14, 2026)
+- Backend: Full Global Events CRUD (`calendar_events` collection) with registration tracking
+- Backend: Member event registration with capacity tracking, waitlist auto-promotion
+- Backend: Notifications system (`notifications` collection) with unread count
+- Backend: Mentoring slots CRUD, booking system with waitlist
+- CMS: Global Events Manager at `/admin/calendar/global` with event table, registration viewer, CSV export
+- API: 20+ new calendar endpoints (events, registrations, notifications, mentoring slots, bookings)
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

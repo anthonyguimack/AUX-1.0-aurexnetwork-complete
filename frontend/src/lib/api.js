@@ -223,6 +223,14 @@ export const adminAPI = {
   updateMyAccountLink: (id, data) => api.put(`/admin/myaccount-links/${id}`, data),
   deleteMyAccountLink: (id) => api.delete(`/admin/myaccount-links/${id}`),
   reorderMyAccountLinks: (ordered_ids) => api.put('/admin/myaccount-links-reorder', { ordered_ids }),
+  // Calendar
+  getCalendarEvents: () => api.get('/admin/calendar/events'),
+  createCalendarEvent: (data) => api.post('/admin/calendar/events', data),
+  getCalendarEvent: (id) => api.get(`/admin/calendar/events/${id}`),
+  updateCalendarEvent: (id, data) => api.put(`/admin/calendar/events/${id}`, data),
+  deleteCalendarEvent: (id) => api.delete(`/admin/calendar/events/${id}`),
+  getEventRegistrations: (id) => api.get(`/admin/calendar/events/${id}/registrations`),
+  getEventRegistrationsCSV: (id) => `${api.defaults.baseURL}/admin/calendar/events/${id}/registrations/csv`,
 };
 
 // Member API (unified - uses same auth_token)
@@ -264,6 +272,24 @@ export const memberAPI = {
   getMembershipSettings: () => api.get('/public/membership-settings'),
   getProfileActivities: () => api.get('/member/profile-activities'),
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
+  // Calendar
+  getCalendarEvents: () => api.get('/member/calendar/events'),
+  registerEvent: (id) => api.post(`/member/calendar/events/${id}/register`),
+  cancelEventRegistration: (id) => api.post(`/member/calendar/events/${id}/cancel`),
+  // Notifications
+  getNotifications: () => api.get('/member/notifications'),
+  getUnreadCount: () => api.get('/member/notifications/unread-count'),
+  markNotificationRead: (id) => api.put(`/member/notifications/${id}/read`),
+  markAllNotificationsRead: () => api.put('/member/notifications/read-all'),
+  // Mentorship Calendar
+  getMentorSlots: () => api.get('/member/mentorship/slots'),
+  createMentorSlot: (data) => api.post('/member/mentorship/slots', data),
+  updateMentorSlot: (id, data) => api.put(`/member/mentorship/slots/${id}`, data),
+  deleteMentorSlot: (id) => api.delete(`/member/mentorship/slots/${id}`),
+  getMentorCalendar: () => api.get('/member/mentor-calendar'),
+  bookMentorSlot: (id) => api.post(`/member/mentorship/book/${id}`),
+  cancelMentorBooking: (id) => api.post(`/member/mentorship/cancel/${id}`),
+  getMyBookings: () => api.get('/member/my-bookings'),
 };
 
 // Geo API (public)

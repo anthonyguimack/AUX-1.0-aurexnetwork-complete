@@ -1,0 +1,214 @@
+import React, { useState, useEffect } from 'react';
+import { adminAPI } from '../../lib/api';
+import { toast } from 'sonner';
+import { Input } from '../../components/ui/input';
+import { Label } from '../../components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft } from 'lucide-react';
+import RichTextEditor from '../../components/RichTextEditor';
+import ImageUpload from '../../components/ImageUpload';
+
+const EVENT_TYPES = ['Activity', 'Meeting', 'Conference', 'Talk', 'Other'];
+const STATUSES = ['active', 'inactive', 'cancelled'];
+const TIMEZONES = ['UTC', 'US/Eastern', 'US/Central', 'US/Mountain', 'US/Pacific', 'Europe/London', 'Europe/Paris', 'Asia/Tokyo', 'America/Sao_Paulo'];
+
+const emptyEvent = {
+  title: '', type: 'Activity', description: '', date: '', start_time: '', end_time: '',
+  timezone: 'US/Eastern', location: '', max_capacity: 50, image: '', status: 'active',
+};
+
+const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
+const statusColors = { active: 'bg-green-50 text-green-700', inactive: 'bg-slate-100 text-slate-500', cancelled: 'bg-red-50 text-red-700' };
+
+export default function GlobalEventsManager() {
+  const [events, setEvents] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [editing, setEditing] = useState(null);
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [viewRegs, setViewRegs] = useState(null);
+  const [regs, setRegs] = useState([]);
+  const [regsLoading, setRegsLoading] = useState(false);
+
+  const load = () => {
+    setLoading(true);
+    adminAPI.getCalendarEvents().then(r => { setEvents(r.data || []); setLoading(false); }).catch(() => setLoading(false));
+  };
+  useEffect(load, []);
+
+  const handleSave = async () => {
+    if (!editing.title || !editing.date || !editing.start_time || !editing.end_time) {
+      toast.error('Title, Date, Start Time, and End Time are required'); return;
+    }
+    setSaving(true);
+    try {
+      if (editing.id) await adminAPI.updateCalendarEvent(editing.id, editing);
+      else await adminAPI.createCalendarEvent(editing);
+      toast.success('Saved!'); setOpen(false); load();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
+    finally { setSaving(false); }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Delete this event and all registrations?')) return;
+    try { await adminAPI.deleteCalendarEvent(id); toast.success('Deleted'); load(); } catch { toast.error('Error'); }
+  };
+
+  const openRegistrations = async (event) => {
+    setViewRegs(event);
+    setRegsLoading(true);
+    try {
+      const r = await adminAPI.getEventRegistrations(event.id);
+      setRegs(r.data || []);
+    } catch { setRegs([]); }
+    setRegsLoading(false);
+  };
+
+  const API = process.env.REACT_APP_BACKEND_URL;
+
+  // Registrations View
+  if (viewRegs) {
+    return (
+      <div data-testid="event-registrations-view">
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={() => setViewRegs(null)} className="p-1.5 rounded hover:bg-slate-100"><ArrowLeft className="w-5 h-5" /></button>
+          <div>
+            <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Registrations: {viewRegs.title}</h1>
+            <p className="text-xs text-slate-500">{viewRegs.date} &middot; {viewRegs.start_time} - {viewRegs.end_time}</p>
+          </div>
+          <a href={`${API}/api/admin/calendar/events/${viewRegs.id}/registrations/csv`} target="_blank" rel="noopener noreferrer"
+            className="ml-auto flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded border border-slate-300 text-slate-600 hover:bg-slate-50" data-testid="export-csv-btn">
+            <Download className="w-3 h-3" /> Export CSV
+          </a>
+        </div>
+        {regsLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+          <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
+            <table className="w-full text-sm">
+              <thead><tr className="border-b bg-slate-50">
+                <th className="text-left p-3 font-medium text-slate-600">#</th>
+                <th className="text-left p-3 font-medium text-slate-600">Membership ID</th>
+                <th className="text-left p-3 font-medium text-slate-600">Name</th>
+                <th className="text-left p-3 font-medium text-slate-600">Email</th>
+                <th className="text-left p-3 font-medium text-slate-600">Registered At</th>
+                <th className="text-left p-3 font-medium text-slate-600">Status</th>
+              </tr></thead>
+              <tbody>
+                {regs.map((r, i) => (
+                  <tr key={r.id} className="border-b border-slate-50 hover:bg-slate-50/50">
+                    <td className="p-3 text-slate-400">{i + 1}</td>
+                    <td className="p-3 font-mono text-[#0D9488]">{r.membership_id || '-'}</td>
+                    <td className="p-3 text-[#1a2332]">{r.name || '-'}</td>
+                    <td className="p-3 text-slate-500">{r.email || '-'}</td>
+                    <td className="p-3 text-slate-400 text-xs">{r.registered_at ? new Date(r.registered_at).toLocaleString() : '-'}</td>
+                    <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded font-medium ${r.status === 'registered' ? 'bg-green-50 text-green-700' : 'bg-blue-50 text-blue-700'}`}>{r.status}</span></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {regs.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">No registrations yet</p>}
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  return (
+    <div data-testid="global-events-manager">
+      <div className="flex items-center justify-between mb-6">
+        <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Global Events</h1>
+        <button onClick={() => { setEditing({ ...emptyEvent }); setOpen(true); }}
+          className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="add-event-btn">
+          <Plus className="w-4 h-4" /> Add Event
+        </button>
+      </div>
+
+      {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+        <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
+          <table className="w-full text-sm">
+            <thead><tr className="border-b bg-slate-50">
+              <th className="text-left p-3 font-medium text-slate-600">No.</th>
+              <th className="text-left p-3 font-medium text-slate-600">Title</th>
+              <th className="text-left p-3 font-medium text-slate-600">Type</th>
+              <th className="text-left p-3 font-medium text-slate-600">Date</th>
+              <th className="text-left p-3 font-medium text-slate-600">Time</th>
+              <th className="text-left p-3 font-medium text-slate-600">Capacity</th>
+              <th className="text-left p-3 font-medium text-slate-600">Registered</th>
+              <th className="text-left p-3 font-medium text-slate-600">Available</th>
+              <th className="text-left p-3 font-medium text-slate-600">Status</th>
+              <th className="text-right p-3 font-medium text-slate-600">Actions</th>
+            </tr></thead>
+            <tbody>
+              {events.map((ev, i) => {
+                const available = Math.max(0, (ev.max_capacity || 0) - (ev.registered_count || 0));
+                return (
+                  <tr key={ev.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`event-row-${ev.id}`}>
+                    <td className="p-3 text-slate-400">{i + 1}</td>
+                    <td className="p-3 font-medium text-[#1a2332]">{ev.title}</td>
+                    <td className="p-3 text-slate-500 text-xs">{ev.type}</td>
+                    <td className="p-3 text-slate-500 text-xs">{ev.date}</td>
+                    <td className="p-3 text-slate-500 text-xs">{ev.start_time} - {ev.end_time}</td>
+                    <td className="p-3 text-slate-500">{ev.max_capacity}</td>
+                    <td className="p-3 font-semibold text-[#0D9488]">{ev.registered_count || 0}</td>
+                    <td className="p-3" style={{ color: available > 0 ? '#059669' : '#dc2626' }}>{available}</td>
+                    <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded font-medium ${statusColors[ev.status] || ''}`}>{ev.status}</span></td>
+                    <td className="p-3 text-right">
+                      <button onClick={() => openRegistrations(ev)} className="p-1.5 text-slate-400 hover:text-[#0D9488]" title="View Registrations"><Users className="w-4 h-4" /></button>
+                      <button onClick={() => { setEditing({ ...ev }); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
+                      <button onClick={() => handleDelete(ev.id)} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+          {events.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">No events yet. Click "Add Event" to create one.</p>}
+        </div>
+      )}
+
+      {/* Event Editor Dialog */}
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogContent className="sm:max-w-[700px] max-h-[85vh] overflow-y-auto" data-testid="event-dialog">
+          <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Event</DialogTitle></DialogHeader>
+          {editing && (
+            <div className="space-y-4">
+              <div><Label className="text-xs">Title *</Label><Input value={editing.title} onChange={e => setEditing({ ...editing, title: e.target.value })} className="mt-1" placeholder="Event title" data-testid="event-title" /></div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Type *</Label>
+                  <select value={editing.type} onChange={e => setEditing({ ...editing, type: e.target.value })} className={inputCls + " mt-1"} data-testid="event-type">
+                    {EVENT_TYPES.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select>
+                </div>
+                <div><Label className="text-xs">Status *</Label>
+                  <select value={editing.status} onChange={e => setEditing({ ...editing, status: e.target.value })} className={inputCls + " mt-1"} data-testid="event-status">
+                    {STATUSES.map(s => <option key={s} value={s}>{s.charAt(0).toUpperCase() + s.slice(1)}</option>)}
+                  </select>
+                </div>
+              </div>
+              <div><Label className="text-xs">Description</Label>
+                <div className="mt-1"><RichTextEditor value={editing.description || ''} onChange={v => setEditing({ ...editing, description: v })} /></div>
+              </div>
+              <div className="grid grid-cols-3 gap-3">
+                <div><Label className="text-xs">Date *</Label><Input type="date" value={editing.date} onChange={e => setEditing({ ...editing, date: e.target.value })} className="mt-1" data-testid="event-date" /></div>
+                <div><Label className="text-xs">Start Time *</Label><Input type="time" value={editing.start_time} onChange={e => setEditing({ ...editing, start_time: e.target.value })} className="mt-1" data-testid="event-start" /></div>
+                <div><Label className="text-xs">End Time *</Label><Input type="time" value={editing.end_time} onChange={e => setEditing({ ...editing, end_time: e.target.value })} className="mt-1" data-testid="event-end" /></div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div><Label className="text-xs">Timezone *</Label>
+                  <select value={editing.timezone} onChange={e => setEditing({ ...editing, timezone: e.target.value })} className={inputCls + " mt-1"} data-testid="event-timezone">
+                    {TIMEZONES.map(tz => <option key={tz} value={tz}>{tz}</option>)}
+                  </select>
+                </div>
+                <div><Label className="text-xs">Max Capacity *</Label><Input type="number" value={editing.max_capacity} onChange={e => setEditing({ ...editing, max_capacity: parseInt(e.target.value) || 0 })} className="mt-1" data-testid="event-capacity" /></div>
+              </div>
+              <div><Label className="text-xs">Location</Label><Input value={editing.location || ''} onChange={e => setEditing({ ...editing, location: e.target.value })} className="mt-1" placeholder="Address or video call link" data-testid="event-location" /></div>
+              <div><Label className="text-xs">Image</Label><ImageUpload value={editing.image || ''} onChange={v => setEditing({ ...editing, image: v })} /></div>
+              <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded-sm text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="event-save-btn">
+                {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} {editing.id ? 'Update' : 'Create'} Event
+              </button>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+}
