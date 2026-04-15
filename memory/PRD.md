@@ -109,6 +109,13 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - My Account: My Reservations (`/my-account/my-bookings`) — Booking history with cancel
 - Notification Bell in header with unread badge, dropdown, mark-all-read, 30s auto-refresh
 
+### Event File Attachments (Apr 15, 2026)
+- New `/api/upload-file` endpoint: accepts PDF, PPT, DOC, XLS, CSV, TXT, ZIP, images (max 25MB)
+- Events store `attachments[]` array with url, name, size, content_type per file
+- CMS: File upload section in event editor (add multiple files, remove individual files)
+- CMS: Files column in events table showing attachment count
+- My Account: Event cards show downloadable file links with paperclip icon
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
