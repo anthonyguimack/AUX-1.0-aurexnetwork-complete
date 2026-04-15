@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, List, Grid3X3, Loader2 } from 'lucide-react';
+import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip } from 'lucide-react';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 
@@ -66,6 +66,20 @@ function EventCard({ event, onRegister, onCancel }) {
           <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{available} / {event.max_capacity} spots left</div>
         </div>
         {event.description && <div className="text-xs mb-3 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }} dangerouslySetInnerHTML={{ __html: event.description }} />}
+        {(event.attachments || []).length > 0 && (
+          <div className="mb-3 space-y-1" data-testid={`event-files-${event.id}`}>
+            {event.attachments.map((att, idx) => (
+              <a key={idx} href={`${API}${att.url}`} target="_blank" rel="noopener noreferrer" download={att.name}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded text-xs transition-colors hover:opacity-80"
+                style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af'), border: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}
+                data-testid={`download-file-${event.id}-${idx}`}>
+                <Paperclip className="w-3 h-3 flex-shrink-0" style={{ color: v('accent', '#c9a84c') }} />
+                <span className="truncate flex-1">{att.name}</span>
+                <Download className="w-3 h-3 flex-shrink-0" />
+              </a>
+            ))}
+          </div>
+        )}
         {event.status === 'cancelled' ? (
           <span className="text-xs px-3 py-1.5 rounded font-medium bg-red-500/10 text-red-400">Cancelled</span>
         ) : event.my_status === 'registered' ? (

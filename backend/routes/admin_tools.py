@@ -32,6 +32,38 @@ async def upload_file(file: UploadFile = File(...), user: dict = Depends(require
             await f.write(chunk)
     return {"url": f"/api/uploads/{filename}", "filename": filename}
 
+
+@router.post("/upload-file")
+async def upload_document_file(file: UploadFile = File(...), user: dict = Depends(require_admin)):
+    allowed = {
+        "application/pdf", "application/msword",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "application/vnd.ms-powerpoint",
+        "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+        "application/vnd.ms-excel",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        "text/plain", "text/csv",
+        "image/jpeg", "image/png", "image/gif", "image/webp",
+        "application/zip", "application/x-zip-compressed",
+    }
+    if file.content_type not in allowed:
+        raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
+    max_size = 25 * 1024 * 1024
+    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "bin"
+    filename = f"{uuid.uuid4().hex}.{ext}"
+    filepath = UPLOAD_DIR / filename
+    total = 0
+    async with aiofiles.open(filepath, "wb") as f:
+        while chunk := await file.read(1024 * 64):
+            total += len(chunk)
+            if total > max_size:
+                await f.close()
+                filepath.unlink(missing_ok=True)
+                raise HTTPException(status_code=400, detail="File too large (max 25MB)")
+            await f.write(chunk)
+    return {"url": f"/api/uploads/{filename}", "filename": filename, "original_name": file.filename, "size": total, "content_type": file.content_type}
+
+
 # CSV Export
 @router.get("/admin/contacts/export")
 async def export_contacts_csv(user: dict = Depends(require_admin)):

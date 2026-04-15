@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft, Paperclip, FileText, X } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 
@@ -14,7 +14,7 @@ const TIMEZONES = ['UTC', 'US/Eastern', 'US/Central', 'US/Mountain', 'US/Pacific
 
 const emptyEvent = {
   title: '', type: 'Activity', description: '', date: '', start_time: '', end_time: '',
-  timezone: 'US/Eastern', location: '', max_capacity: 50, image: '', status: 'active',
+  timezone: 'US/Eastern', location: '', max_capacity: 50, image: '', status: 'active', attachments: [],
 };
 
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
@@ -29,6 +29,7 @@ export default function GlobalEventsManager() {
   const [viewRegs, setViewRegs] = useState(null);
   const [regs, setRegs] = useState([]);
   const [regsLoading, setRegsLoading] = useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -65,6 +66,26 @@ export default function GlobalEventsManager() {
   };
 
   const API = process.env.REACT_APP_BACKEND_URL;
+
+  const handleFileUpload = async (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    setUploading(true);
+    const newAttachments = [...(editing.attachments || [])];
+    for (const file of files) {
+      try {
+        const r = await adminAPI.uploadFile(file);
+        newAttachments.push({ url: r.data.url, name: r.data.original_name, size: r.data.size, content_type: r.data.content_type });
+      } catch (err) { toast.error(`Failed to upload ${file.name}: ${err.response?.data?.detail || 'Error'}`); }
+    }
+    setEditing(prev => ({ ...prev, attachments: newAttachments }));
+    setUploading(false);
+    e.target.value = '';
+  };
+
+  const removeAttachment = (idx) => {
+    setEditing(prev => ({ ...prev, attachments: (prev.attachments || []).filter((_, i) => i !== idx) }));
+  };
 
   // Registrations View
   if (viewRegs) {
@@ -134,6 +155,7 @@ export default function GlobalEventsManager() {
               <th className="text-left p-3 font-medium text-slate-600">Capacity</th>
               <th className="text-left p-3 font-medium text-slate-600">Registered</th>
               <th className="text-left p-3 font-medium text-slate-600">Available</th>
+              <th className="text-left p-3 font-medium text-slate-600">Files</th>
               <th className="text-left p-3 font-medium text-slate-600">Status</th>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
@@ -150,6 +172,7 @@ export default function GlobalEventsManager() {
                     <td className="p-3 text-slate-500">{ev.max_capacity}</td>
                     <td className="p-3 font-semibold text-[#0D9488]">{ev.registered_count || 0}</td>
                     <td className="p-3" style={{ color: available > 0 ? '#059669' : '#dc2626' }}>{available}</td>
+                    <td className="p-3 text-slate-500 text-xs">{(ev.attachments || []).length > 0 ? <span className="flex items-center gap-1"><Paperclip className="w-3 h-3" />{(ev.attachments || []).length}</span> : '-'}</td>
                     <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded font-medium ${statusColors[ev.status] || ''}`}>{ev.status}</span></td>
                     <td className="p-3 text-right">
                       <button onClick={() => openRegistrations(ev)} className="p-1.5 text-slate-400 hover:text-[#0D9488]" title="View Registrations"><Users className="w-4 h-4" /></button>
@@ -202,6 +225,24 @@ export default function GlobalEventsManager() {
               </div>
               <div><Label className="text-xs">Location</Label><Input value={editing.location || ''} onChange={e => setEditing({ ...editing, location: e.target.value })} className="mt-1" placeholder="Address or video call link" data-testid="event-location" /></div>
               <div><Label className="text-xs">Image</Label><ImageUpload value={editing.image || ''} onChange={v => setEditing({ ...editing, image: v })} /></div>
+              <div>
+                <Label className="text-xs">Attachments (PDF, PPT, DOC, XLS, etc.)</Label>
+                <div className="mt-1 space-y-2">
+                  {(editing.attachments || []).map((att, idx) => (
+                    <div key={idx} className="flex items-center gap-2 p-2 bg-slate-50 rounded border border-slate-200 text-xs" data-testid={`attachment-${idx}`}>
+                      <FileText className="w-4 h-4 text-[#0D9488] flex-shrink-0" />
+                      <a href={`${API}${att.url}`} target="_blank" rel="noopener noreferrer" className="flex-1 truncate text-[#1a2332] hover:text-[#0D9488] font-medium">{att.name}</a>
+                      <span className="text-slate-400 flex-shrink-0">{att.size ? `${(att.size / 1024).toFixed(0)} KB` : ''}</span>
+                      <button onClick={() => removeAttachment(idx)} className="p-0.5 rounded hover:bg-red-50 text-slate-400 hover:text-red-500 flex-shrink-0" data-testid={`remove-attachment-${idx}`}><X className="w-3.5 h-3.5" /></button>
+                    </div>
+                  ))}
+                  <label className="flex items-center gap-2 px-3 py-2 border border-dashed border-slate-300 rounded cursor-pointer hover:border-[#0D9488] hover:bg-slate-50 transition-colors" data-testid="upload-attachment-btn">
+                    {uploading ? <Loader2 className="w-4 h-4 animate-spin text-slate-400" /> : <Paperclip className="w-4 h-4 text-slate-400" />}
+                    <span className="text-xs text-slate-500">{uploading ? 'Uploading...' : 'Click to add files (max 25MB each)'}</span>
+                    <input type="file" multiple accept=".pdf,.ppt,.pptx,.doc,.docx,.xls,.xlsx,.csv,.txt,.zip,.jpg,.png" onChange={handleFileUpload} className="hidden" disabled={uploading} />
+                  </label>
+                </div>
+              </div>
               <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded-sm text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="event-save-btn">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} {editing.id ? 'Update' : 'Create'} Event
               </button>

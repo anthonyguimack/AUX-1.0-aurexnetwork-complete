@@ -154,6 +154,7 @@ export const adminAPI = {
   testSmtpEmail: (data) => api.post('/admin/smtp/test-email', data),
   // Upload
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
+  uploadFile: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload-file', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
   // Bulk Operations
   bulkDelete: (collection, ids) => api.post('/admin/bulk-delete', { collection, ids }),
   bulkUpdate: (collection, ids, update) => api.post('/admin/bulk-update', { collection, ids, update }),
