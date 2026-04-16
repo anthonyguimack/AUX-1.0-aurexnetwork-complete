@@ -116,6 +116,25 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - CMS: Files column in events table showing attachment count
 - My Account: Event cards show downloadable file links with paperclip icon
 
+### Calendar Major Overhaul (Apr 16, 2026)
+- Clone Event: Duplicate events with "(Copy)" suffix and inactive status for admin
+- CSV Export: Fixed auth-token download using blob response
+- Event fields: Split into Address, Map URL, Virtual Link (3 separate fields)
+- Past events: Gray on calendar, no action buttons, Virtual Link removed
+- Active events: Green on calendar
+- Cancelled events: Hidden from member calendar, all registrants notified
+- Waitlist: Changed from auto-promote to notify-all-and-remove (members self-register)
+- Event Detail page: `/my-account/event/:eventId` with full description, attachments, links
+- "Read more" link on event cards
+- Renamed "Events Calendar" → "{AUX Prefix} Calendar"
+- Mentorship slots: virtual_link, attachments, time dropdowns, One-on-One defaults max=1
+- Mentor slot card: Shows participants list (booked + waitlisted)
+- Past slots: Gray, view-only (no edit/delete)
+- Cancelled slots: Hidden from member calendars, notifications sent
+- Mentor Calendar (member view): Month + List views
+- My Reservations: Status logic (Upcoming/Completed/Cancelled), Virtual Link column
+- CMS Mentorship Schedule: Calendar view alongside list view, time dropdowns
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
