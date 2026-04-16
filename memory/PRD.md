@@ -135,6 +135,18 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - My Reservations: Status logic (Upcoming/Completed/Cancelled), Virtual Link column
 - CMS Mentorship Schedule: Calendar view alongside list view, time dropdowns
 
+### Calendar Refinements (Apr 16, 2026)
+- Member file upload endpoint `/api/member/upload-file` (PDF, PPT, DOC, etc. up to 25MB)
+- Title field for mentorship slots (CMS + My Calendar)
+- Mentor Calendar moved into Mentorship Profile page (sidebar item removed)
+- CMS Global Events + Mentorship Schedule: Calendar views alongside list
+- CSV export includes event title and date
+- Waitlist: members kept in DB (not deleted) when spots open — notified to self-register
+- Cancellation notifications use "mentor" for slots, "administrator" for events
+- Virtual link only visible to booked members
+- Event detail page rich text rendering fixed (no horizontal scrollbar)
+- AUX Calendar enabled in sidebar
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
