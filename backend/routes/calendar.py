@@ -8,11 +8,8 @@ router = APIRouter()
 
 # ── Helper: notify all waitlisted members that a spot opened ──
 async def notify_waitlist_spot_open(collection, item_id, item_id_field, title, link="/my-account/global-calendar"):
-    """Notify ALL waitlisted members that a spot opened (they must self-register)."""
+    """Notify ALL waitlisted members that a spot opened (they keep their waitlist status and can book)."""
     waitlisted = await collection.find({item_id_field: item_id, "status": "waitlist"}, {"_id": 0}).to_list(500)
-    # Remove all waitlist entries — members must re-register
-    if waitlisted:
-        await collection.delete_many({item_id_field: item_id, "status": "waitlist"})
     for w in waitlisted:
         await db.notifications.insert_one({
             "id": str(uuid.uuid4()),
@@ -30,12 +27,13 @@ async def notify_cancellation(collection, item_id, item_id_field, title, cancel_
     """Notify all registered + waitlisted members that event/slot was cancelled."""
     regs = await collection.find({item_id_field: item_id}, {"_id": 0}).to_list(1000)
     for r in regs:
+        cancelled_by = "the mentor" if cancel_type == "slot" else "the administrator"
         await db.notifications.insert_one({
             "id": str(uuid.uuid4()),
             "member_id": r["member_id"],
             "type": f"{cancel_type}_cancelled_by_admin",
             "title": f"{cancel_type.capitalize()} Cancelled",
-            "message": f"\"{title}\" has been cancelled by the administrator.",
+            "message": f"\"{title}\" has been cancelled by {cancelled_by}.",
             "link": "/my-account/global-calendar" if cancel_type == "event" else "/my-account/my-bookings",
             "read": False,
             "created_at": datetime.now(timezone.utc).isoformat(),
@@ -144,16 +142,21 @@ async def admin_event_registrations_csv(event_id: str, user: dict = Depends(requ
     from fastapi.responses import StreamingResponse
     import io
     import csv
+    event = await db.calendar_events.find_one({"id": event_id}, {"_id": 0})
+    event_title = event.get("title", "Event") if event else "Event"
+    event_date = event.get("date", "") if event else ""
     regs = await db.event_registrations.find({"event_id": event_id}, {"_id": 0}).sort("registered_at", 1).to_list(1000)
     output = io.StringIO()
     writer = csv.writer(output)
+    writer.writerow([f"Event: {event_title}", f"Date: {event_date}"])
     writer.writerow(["#", "Membership ID", "Name", "Email", "Registered At", "Status"])
     for i, r in enumerate(regs, 1):
         member = await db.members.find_one({"member_id": r["member_id"]}, {"_id": 0, "password_hash": 0})
         name = f"{member.get('first_name', '')} {member.get('last_name', '')}".strip() if member else ""
         writer.writerow([i, member.get("membership_id", "") if member else "", name, member.get("email", "") if member else "", r.get("registered_at", ""), r.get("status", "")])
     output.seek(0)
-    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename=event_{event_id}_registrations.csv"})
+    safe_title = event_title.replace(" ", "_").replace("/", "-")[:50]
+    return StreamingResponse(iter([output.getvalue()]), media_type="text/csv", headers={"Content-Disposition": f"attachment; filename={safe_title}_{event_date}_registrations.csv"})
 
 
 # ── Admin: Mentorship Schedule ──
@@ -477,6 +480,9 @@ async def member_view_mentor_calendar(request: Request):
         s["waitlist_count"] = await db.mentorship_bookings.count_documents({"slot_id": s["id"], "status": "waitlist"})
         my_booking = await db.mentorship_bookings.find_one({"slot_id": s["id"], "member_id": member["member_id"]}, {"_id": 0})
         s["my_status"] = my_booking["status"] if my_booking else None
+        # Virtual link only visible to booked members
+        if s["my_status"] != "booked":
+            s.pop("virtual_link", None)
     mentor = await db.members.find_one({"member_id": mentor_id}, {"_id": 0, "password_hash": 0})
     return {"slots": slots, "mentor": {"name": f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip(), "membership_id": mentor.get("membership_id", "")} if mentor else None}
 

@@ -281,6 +281,7 @@ export const memberAPI = {
   getMembershipSettings: () => api.get('/public/membership-settings'),
   getProfileActivities: () => api.get('/member/profile-activities'),
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
+  uploadFile: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload-file', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
   // Calendar
   getCalendarEvents: () => api.get('/member/calendar/events'),
   getCalendarEvent: (id) => api.get(`/member/calendar/events/${id}`),

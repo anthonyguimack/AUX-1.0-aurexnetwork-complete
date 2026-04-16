@@ -16,7 +16,6 @@ const ALL_NAV_ITEMS = [
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
   { id: 'global-calendar', label: 'Calendar', icon: CalendarDays, href: '/my-account/global-calendar', dynamicLabel: true },
   { id: 'mentorship-calendar', label: 'My Calendar', icon: CalendarDays, href: '/my-account/mentorship-calendar', mentorOnly: true },
-  { id: 'mentor-calendar', label: 'Mentor Calendar', icon: CalendarDays, href: '/my-account/mentor-calendar', hasMentorOnly: true },
   { id: 'my-bookings', label: 'My Reservations', icon: BookOpen, href: '/my-account/my-bookings' },
 ];
 
@@ -121,9 +120,8 @@ export default function MyAccountLayout() {
   const hasMentor = !!member?.mentor_id;
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
     if (item.mentorOnly && !isMentor) return false;
-    if (item.hasMentorOnly && !hasMentor) return false;
     // Calendar items are always visible (not gated by level permissions)
-    if (['global-calendar', 'mentorship-calendar', 'mentor-calendar', 'my-bookings'].includes(item.id)) return true;
+    if (['global-calendar', 'mentorship-calendar', 'my-bookings'].includes(item.id)) return true;
     return levelPerms.includes(item.id);
   }) : [];
   const permissionsLoading = levelPerms === null;

@@ -122,7 +122,7 @@ export default function MentorshipScheduleManager() {
             <button onClick={() => setViewMode('list')} className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'list' ? 'bg-[#0D9488] text-white' : 'text-slate-500'}`} data-testid="cms-slot-list-view"><List className="w-3 h-3" /> List</button>
             <button onClick={() => setViewMode('calendar')} className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'calendar' ? 'bg-[#0D9488] text-white' : 'text-slate-500'}`} data-testid="cms-slot-cal-view"><Grid3X3 className="w-3 h-3" /> Calendar</button>
           </div>
-          <button onClick={() => { setEditing({ mentor_id: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '' }); setOpen(true); }}
+          <button onClick={() => { setEditing({ mentor_id: '', title: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '' }); setOpen(true); }}
             className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="add-slot-btn">
             <Plus className="w-4 h-4" /> Add Slot
           </button>
@@ -169,6 +169,7 @@ export default function MentorshipScheduleManager() {
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
               <th className="text-left p-3 font-medium text-slate-600">Mentor</th>
+              <th className="text-left p-3 font-medium text-slate-600">Title</th>
               <th className="text-left p-3 font-medium text-slate-600">Date</th>
               <th className="text-left p-3 font-medium text-slate-600">Time</th>
               <th className="text-left p-3 font-medium text-slate-600">Type</th>
@@ -186,6 +187,7 @@ export default function MentorshipScheduleManager() {
                     <span className="text-[#1a2332] font-medium">{s.mentor_name || '-'}</span>
                     {s.mentor_membership_id && <span className="block text-xs text-[#0D9488]">{s.mentor_membership_id}</span>}
                   </td>
+                  <td className="p-3 text-[#1a2332] text-xs font-medium">{s.title || '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{s.date}</td>
                   <td className="p-3 text-slate-500 text-xs">{s.start_time} - {s.end_time}</td>
                   <td className="p-3 text-slate-500 text-xs">{s.session_type}</td>
@@ -218,6 +220,10 @@ export default function MentorshipScheduleManager() {
                   <option value="">Select mentor...</option>
                   {mentors.map(m => <option key={m.member_id} value={m.member_id}>{m.membership_id} - {m.first_name} {m.last_name}</option>)}
                 </select>
+              </div>
+              <div>
+                <Label className="text-xs">Title</Label>
+                <Input value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value })} className="mt-1" placeholder="e.g. Portfolio Analysis Session" data-testid="slot-title" />
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Date *</Label><Input type="date" value={editing.date} onChange={e => setEditing({ ...editing, date: e.target.value })} className="mt-1" data-testid="slot-date" /></div>

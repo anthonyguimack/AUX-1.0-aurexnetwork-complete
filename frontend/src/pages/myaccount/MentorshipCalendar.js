@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { memberAPI, adminAPI } from '../../lib/api';
+import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -78,7 +78,7 @@ export default function MentorshipCalendar() {
     const newAtts = [...(editing.attachments || [])];
     for (const file of files) {
       try {
-        const r = await adminAPI.uploadFile(file);
+        const r = await memberAPI.uploadFile(file);
         newAtts.push({ url: r.data.url, name: r.data.original_name, size: r.data.size, content_type: r.data.content_type });
       } catch { toast.error(`Failed to upload ${file.name}`); }
     }
@@ -110,7 +110,7 @@ export default function MentorshipCalendar() {
     <div data-testid="mentorship-calendar-page">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>My Calendar</h1>
-        <button onClick={() => { setEditing({ date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '', attachments: [] }); setOpen(true); }} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
+        <button onClick={() => { setEditing({ title: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '', attachments: [] }); setOpen(true); }} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
           style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid="add-slot-btn">
           <Plus className="w-4 h-4" /> Add Slot
         </button>
@@ -149,7 +149,7 @@ export default function MentorshipCalendar() {
                       onClick={() => setViewSlot(s)}
                       style={{ backgroundColor: slotColor(s) + '20', color: slotColor(s), borderLeft: `2px solid ${slotColor(s)}` }}
                       data-testid={`slot-${s.id}`}>
-                      {s.start_time}-{s.end_time}
+                      {s.title ? s.title : `${s.start_time}-${s.end_time}`}
                     </div>
                   ))}
                 </>
@@ -166,7 +166,8 @@ export default function MentorshipCalendar() {
           <div className="mt-4 p-4 rounded-lg border" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid="slot-detail-card">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold text-sm" style={{ color: v('text-primary', '#fff') }}>
-                {viewSlot.date} &middot; {viewSlot.start_time} - {viewSlot.end_time}
+                {viewSlot.title && <span className="block">{viewSlot.title}</span>}
+                <span className="text-xs font-normal" style={{ color: v('text-secondary', '#9ca3af') }}>{viewSlot.date} &middot; {viewSlot.start_time} - {viewSlot.end_time}</span>
               </h3>
               {!isPast && viewSlot.status !== 'cancelled' && (
                 <div className="flex gap-1">
@@ -218,6 +219,8 @@ export default function MentorshipCalendar() {
           <DialogHeader><DialogTitle style={{ fontFamily: "'DM Serif Display', serif", color: v('text-primary', '#fff') }}>{editing?.id ? 'Edit' : 'New'} Slot</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-3">
+              <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Title</Label>
+                <Input value={editing?.title || ''} onChange={e => setEditing(p => ({ ...p, title: e.target.value }))} className="mt-1" placeholder="e.g. Portfolio Analysis Session" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-title" /></div>
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Date *</Label>
                 <Input type="date" value={editing.date || ''} onChange={e => setEditing(p => ({ ...p, date: e.target.value }))} className="mt-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-date" /></div>
               <div className="grid grid-cols-2 gap-3">
