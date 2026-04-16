@@ -231,7 +231,8 @@ export const adminAPI = {
   updateCalendarEvent: (id, data) => api.put(`/admin/calendar/events/${id}`, data),
   deleteCalendarEvent: (id) => api.delete(`/admin/calendar/events/${id}`),
   getEventRegistrations: (id) => api.get(`/admin/calendar/events/${id}/registrations`),
-  getEventRegistrationsCSV: (id) => `${api.defaults.baseURL}/admin/calendar/events/${id}/registrations/csv`,
+  getEventRegistrationsCSV: (id) => api.get(`/admin/calendar/events/${id}/registrations/csv`, { responseType: 'blob' }),
+  cloneCalendarEvent: (id) => api.post(`/admin/calendar/events/${id}/clone`),
   // Mentorship Schedule
   getMentorshipSlots: () => api.get('/admin/mentorship/slots'),
   createMentorshipSlot: (data) => api.post('/admin/mentorship/slots', data),
@@ -282,8 +283,10 @@ export const memberAPI = {
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/member/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
   // Calendar
   getCalendarEvents: () => api.get('/member/calendar/events'),
+  getCalendarEvent: (id) => api.get(`/member/calendar/events/${id}`),
   registerEvent: (id) => api.post(`/member/calendar/events/${id}/register`),
   cancelEventRegistration: (id) => api.post(`/member/calendar/events/${id}/cancel`),
+  uploadEventFile: (id, data) => api.post(`/member/calendar/events/${id}/upload`, data),
   // Notifications
   getNotifications: () => api.get('/member/notifications'),
   getUnreadCount: () => api.get('/member/notifications/unread-count'),

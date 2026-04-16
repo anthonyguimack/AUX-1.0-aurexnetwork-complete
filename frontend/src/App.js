@@ -69,6 +69,7 @@ import GlobalCalendar from './pages/myaccount/GlobalCalendar';
 import MentorshipCalendar from './pages/myaccount/MentorshipCalendar';
 import MentorCalendarView from './pages/myaccount/MentorCalendarView';
 import MyBookings from './pages/myaccount/MyBookings';
+import EventDetail from './pages/myaccount/EventDetail';
 
 import LandingPage from './pages/LandingPage';
 import MembershipEnrollment from './pages/MembershipEnrollment';
@@ -336,6 +337,7 @@ function AppRouter() {
           <Route path="portfolios/:id" element={<PortfolioDetail />} />
           <Route path="portfolios/:id/edit" element={<PortfolioForm />} />
           <Route path="global-calendar" element={<GlobalCalendar />} />
+          <Route path="event/:eventId" element={<EventDetail />} />
           <Route path="mentorship-calendar" element={<MentorshipCalendar />} />
           <Route path="mentor-calendar" element={<MentorCalendarView />} />
           <Route path="my-bookings" element={<MyBookings />} />

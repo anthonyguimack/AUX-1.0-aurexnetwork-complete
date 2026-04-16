@@ -1,15 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Loader2, Calendar } from 'lucide-react';
+import { Loader2, Calendar, Video, ExternalLink } from 'lucide-react';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 
 const statusStyle = {
-  booked: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', label: 'Upcoming' },
+  upcoming: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', label: 'Upcoming' },
   completed: { bg: 'rgba(59,130,246,0.15)', color: '#3b82f6', label: 'Completed' },
   cancelled: { bg: 'rgba(239,68,68,0.15)', color: '#ef4444', label: 'Cancelled' },
   waitlist: { bg: 'rgba(56,189,248,0.15)', color: '#38bdf8', label: 'Waiting List' },
+  booked: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', label: 'Upcoming' },
 };
 
 export default function MyBookings() {
@@ -42,22 +43,31 @@ export default function MyBookings() {
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Time</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Mentor</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Type</th>
+              <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Virtual Link</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Status</th>
               <th className="text-right p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Actions</th>
             </tr>
           </thead>
           <tbody>
             {bookings.map(b => {
-              const st = statusStyle[b.status] || statusStyle.booked;
+              const displayStatus = b.display_status || b.status;
+              const st = statusStyle[displayStatus] || statusStyle.booked;
               return (
                 <tr key={b.id} style={{ borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }} data-testid={`booking-row-${b.id}`}>
                   <td className="p-3 text-xs" style={{ color: v('text-primary', '#fff') }}>{b.date || '-'}</td>
                   <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{b.start_time} - {b.end_time}</td>
                   <td className="p-3 text-xs" style={{ color: v('text-primary', '#fff') }}>{b.mentor_name || '-'}</td>
                   <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{b.session_type || '-'}</td>
+                  <td className="p-3 text-xs">
+                    {b.virtual_link && displayStatus === 'upcoming' ? (
+                      <a href={b.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}>
+                        <Video className="w-3 h-3" /> Join <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    ) : '-'}
+                  </td>
                   <td className="p-3"><span className="text-xs px-2 py-0.5 rounded font-medium" style={{ backgroundColor: st.bg, color: st.color }}>{st.label}</span></td>
                   <td className="p-3 text-right">
-                    {(b.status === 'booked' || b.status === 'waitlist') && (
+                    {(displayStatus === 'upcoming' || displayStatus === 'booked' || displayStatus === 'waitlist') && (
                       <button onClick={() => handleCancel(b.slot_id)} className="text-xs px-3 py-1 rounded border font-medium" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }} data-testid={`cancel-booking-${b.id}`}>Cancel</button>
                     )}
                   </td>

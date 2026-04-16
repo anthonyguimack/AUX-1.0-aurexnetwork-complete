@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft, Paperclip, FileText, X } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft, Paperclip, FileText, X, Copy } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 
@@ -14,7 +14,7 @@ const TIMEZONES = ['UTC', 'US/Eastern', 'US/Central', 'US/Mountain', 'US/Pacific
 
 const emptyEvent = {
   title: '', type: 'Activity', description: '', date: '', start_time: '', end_time: '',
-  timezone: 'US/Eastern', location: '', max_capacity: 50, image: '', status: 'active', attachments: [],
+  timezone: 'US/Eastern', location: '', map_url: '', virtual_link: '', max_capacity: 50, image: '', status: 'active', attachments: [],
 };
 
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
@@ -53,6 +53,19 @@ export default function GlobalEventsManager() {
   const handleDelete = async (id) => {
     if (!window.confirm('Delete this event and all registrations?')) return;
     try { await adminAPI.deleteCalendarEvent(id); toast.success('Deleted'); load(); } catch { toast.error('Error'); }
+  };
+
+  const handleClone = async (id) => {
+    try { await adminAPI.cloneCalendarEvent(id); toast.success('Event cloned (Inactive)'); load(); } catch { toast.error('Error cloning'); }
+  };
+
+  const handleExportCSV = async (eventId) => {
+    try {
+      const r = await adminAPI.getEventRegistrationsCSV(eventId);
+      const url = window.URL.createObjectURL(new Blob([r.data]));
+      const a = document.createElement('a'); a.href = url; a.download = `event_${eventId}_registrations.csv`; a.click();
+      window.URL.revokeObjectURL(url);
+    } catch { toast.error('CSV export failed'); }
   };
 
   const openRegistrations = async (event) => {
@@ -97,10 +110,10 @@ export default function GlobalEventsManager() {
             <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Registrations: {viewRegs.title}</h1>
             <p className="text-xs text-slate-500">{viewRegs.date} &middot; {viewRegs.start_time} - {viewRegs.end_time}</p>
           </div>
-          <a href={`${API}/api/admin/calendar/events/${viewRegs.id}/registrations/csv`} target="_blank" rel="noopener noreferrer"
+          <button onClick={() => handleExportCSV(viewRegs.id)}
             className="ml-auto flex items-center gap-2 px-3 py-1.5 text-xs font-medium rounded border border-slate-300 text-slate-600 hover:bg-slate-50" data-testid="export-csv-btn">
             <Download className="w-3 h-3" /> Export CSV
-          </a>
+          </button>
         </div>
         {regsLoading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
           <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
@@ -176,6 +189,7 @@ export default function GlobalEventsManager() {
                     <td className="p-3"><span className={`text-xs px-2 py-0.5 rounded font-medium ${statusColors[ev.status] || ''}`}>{ev.status}</span></td>
                     <td className="p-3 text-right">
                       <button onClick={() => openRegistrations(ev)} className="p-1.5 text-slate-400 hover:text-[#0D9488]" title="View Registrations"><Users className="w-4 h-4" /></button>
+                      <button onClick={() => handleClone(ev.id)} className="p-1.5 text-slate-400 hover:text-blue-500" title="Clone Event"><Copy className="w-4 h-4" /></button>
                       <button onClick={() => { setEditing({ ...ev }); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
                       <button onClick={() => handleDelete(ev.id)} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                     </td>
@@ -223,7 +237,9 @@ export default function GlobalEventsManager() {
                 </div>
                 <div><Label className="text-xs">Max Capacity *</Label><Input type="number" value={editing.max_capacity} onChange={e => setEditing({ ...editing, max_capacity: parseInt(e.target.value) || 0 })} className="mt-1" data-testid="event-capacity" /></div>
               </div>
-              <div><Label className="text-xs">Location</Label><Input value={editing.location || ''} onChange={e => setEditing({ ...editing, location: e.target.value })} className="mt-1" placeholder="Address or video call link" data-testid="event-location" /></div>
+              <div><Label className="text-xs">Location (Address)</Label><Input value={editing.location || ''} onChange={e => setEditing({ ...editing, location: e.target.value })} className="mt-1" placeholder="Address" data-testid="event-location" /></div>
+              <div><Label className="text-xs">View Map (URL)</Label><Input value={editing.map_url || ''} onChange={e => setEditing({ ...editing, map_url: e.target.value })} className="mt-1" placeholder="https://www.google.com/maps/..." data-testid="event-map-url" /></div>
+              <div><Label className="text-xs">Virtual Link (Zoom/Meet)</Label><Input value={editing.virtual_link || ''} onChange={e => setEditing({ ...editing, virtual_link: e.target.value })} className="mt-1" placeholder="https://zoom.us/..." data-testid="event-virtual-link" /></div>
               <div><Label className="text-xs">Image</Label><ImageUpload value={editing.image || ''} onChange={v => setEditing({ ...editing, image: v })} /></div>
               <div>
                 <Label className="text-xs">Attachments (PDF, PPT, DOC, XLS, etc.)</Label>

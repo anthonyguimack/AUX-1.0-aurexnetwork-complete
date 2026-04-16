@@ -4,11 +4,13 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, Users, Calendar, ArrowLeft } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Users, Calendar, ArrowLeft, ChevronLeft, ChevronRight, List, Grid3X3 } from 'lucide-react';
 
 const SESSION_TYPES = ['One-on-One', 'Group'];
-const STATUSES = ['active', 'inactive'];
+const STATUSES = ['active', 'inactive', 'cancelled'];
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
+const TIME_OPTIONS = [];
+for (let h = 6; h <= 22; h++) { for (let m of ['00', '15', '30', '45']) { TIME_OPTIONS.push(`${String(h).padStart(2, '0')}:${m}`); } }
 
 const slotStatusColors = {
   active: 'bg-green-50 text-green-700',
@@ -25,6 +27,8 @@ export default function MentorshipScheduleManager() {
   const [viewBookings, setViewBookings] = useState(null);
   const [bookings, setBookings] = useState([]);
   const [bookingsLoading, setBookingsLoading] = useState(false);
+  const [viewMode, setViewMode] = useState('list');
+  const [currentDate, setCurrentDate] = useState(new Date());
 
   const load = () => {
     setLoading(true);
@@ -113,10 +117,16 @@ export default function MentorshipScheduleManager() {
     <div data-testid="mentorship-schedule-manager">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Mentorship Schedule</h1>
-        <button onClick={() => { setEditing({ mentor_id: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active' }); setOpen(true); }}
-          className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="add-slot-btn">
-          <Plus className="w-4 h-4" /> Add Slot
-        </button>
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 rounded p-0.5 bg-slate-100">
+            <button onClick={() => setViewMode('list')} className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'list' ? 'bg-[#0D9488] text-white' : 'text-slate-500'}`} data-testid="cms-slot-list-view"><List className="w-3 h-3" /> List</button>
+            <button onClick={() => setViewMode('calendar')} className={`flex items-center gap-1 px-2.5 py-1 rounded text-xs font-medium ${viewMode === 'calendar' ? 'bg-[#0D9488] text-white' : 'text-slate-500'}`} data-testid="cms-slot-cal-view"><Grid3X3 className="w-3 h-3" /> Calendar</button>
+          </div>
+          <button onClick={() => { setEditing({ mentor_id: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '' }); setOpen(true); }}
+            className="text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="add-slot-btn">
+            <Plus className="w-4 h-4" /> Add Slot
+          </button>
+        </div>
       </div>
 
       {mentors.length === 0 && !loading && (
@@ -125,7 +135,35 @@ export default function MentorshipScheduleManager() {
         </div>
       )}
 
-      {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+      {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : viewMode === 'calendar' ? (() => {
+        const year = currentDate.getFullYear(); const mo = currentDate.getMonth();
+        const firstDay = new Date(year, mo, 1).getDay();
+        const daysInMonth = new Date(year, mo + 1, 0).getDate();
+        const days = []; for (let i = 0; i < firstDay; i++) days.push(null); for (let d = 1; d <= daysInMonth; d++) days.push(d);
+        const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+        const getSlotsForDay = (day) => { if (!day) return []; const ds = `${year}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; return slots.filter(s => s.date === ds); };
+        const sc = (s) => { if (s.status !== 'active') return '#6b7280'; const b = s.booked_count||0, mx = s.max_students||1; if (s.waitlist_count > 0) return '#38bdf8'; if (b >= mx) return '#ef4444'; if (b > 0) return '#eab308'; return '#22c55e'; };
+        return (
+          <>
+            <div className="flex items-center justify-between mb-4">
+              <button onClick={() => setCurrentDate(new Date(year, mo-1, 1))} className="p-1.5 rounded hover:bg-slate-100"><ChevronLeft className="w-5 h-5 text-slate-400" /></button>
+              <h2 className="text-sm font-semibold text-[#1a2332]">{monthLabel}</h2>
+              <button onClick={() => setCurrentDate(new Date(year, mo+1, 1))} className="p-1.5 rounded hover:bg-slate-100"><ChevronRight className="w-5 h-5 text-slate-400" /></button>
+            </div>
+            <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden bg-slate-200">
+              {['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(d => <div key={d} className="p-2 text-center text-xs font-medium bg-slate-50 text-slate-500">{d}</div>)}
+              {days.map((day, i) => {
+                const ds = getSlotsForDay(day);
+                return <div key={i} className="min-h-[80px] p-1.5 bg-white">
+                  {day && <><span className="text-xs font-medium text-[#1a2332]">{day}</span>
+                    {ds.map(s => <div key={s.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate cursor-pointer" onClick={() => openBookings(s)} style={{ backgroundColor: sc(s)+'20', color: sc(s), borderLeft: `2px solid ${sc(s)}` }}>{s.mentor_name?.split(' ')[0]} {s.start_time}</div>)}
+                  </>}
+                </div>;
+              })}
+            </div>
+          </>
+        );
+      })() : (
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
@@ -183,8 +221,16 @@ export default function MentorshipScheduleManager() {
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Date *</Label><Input type="date" value={editing.date} onChange={e => setEditing({ ...editing, date: e.target.value })} className="mt-1" data-testid="slot-date" /></div>
-                <div><Label className="text-xs">Start *</Label><Input type="time" value={editing.start_time} onChange={e => setEditing({ ...editing, start_time: e.target.value })} className="mt-1" data-testid="slot-start" /></div>
-                <div><Label className="text-xs">End *</Label><Input type="time" value={editing.end_time} onChange={e => setEditing({ ...editing, end_time: e.target.value })} className="mt-1" data-testid="slot-end" /></div>
+                <div><Label className="text-xs">Start *</Label>
+                  <select value={editing.start_time} onChange={e => setEditing({ ...editing, start_time: e.target.value })} className={inputCls + " mt-1"} data-testid="slot-start">
+                    <option value="">Select...</option>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select></div>
+                <div><Label className="text-xs">End *</Label>
+                  <select value={editing.end_time} onChange={e => setEditing({ ...editing, end_time: e.target.value })} className={inputCls + " mt-1"} data-testid="slot-end">
+                    <option value="">Select...</option>
+                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
+                  </select></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Session Type *</Label>
@@ -200,7 +246,9 @@ export default function MentorshipScheduleManager() {
                 </div>
               </div>
               <div><Label className="text-xs">Description</Label>
-                <textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={3} className={inputCls + " mt-1 resize-none"} placeholder="Optional notes visible to students" /></div>
+                <textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} className={inputCls + " mt-1 resize-none"} placeholder="Optional notes visible to students" /></div>
+              <div><Label className="text-xs">Virtual Link</Label>
+                <Input value={editing.virtual_link || ''} onChange={e => setEditing({ ...editing, virtual_link: e.target.value })} className="mt-1" placeholder="https://zoom.us/..." data-testid="slot-virtual-link" /></div>
               <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded-sm text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="slot-save-btn">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} {editing.id ? 'Update' : 'Create'} Slot
               </button>

@@ -14,7 +14,7 @@ const ALL_NAV_ITEMS = [
   { id: 'invite-code', label: 'Invite Code', icon: Key, href: '/my-account/invite-code' },
   { id: 'my-community', label: 'My Community', icon: Users, href: '/my-account/my-community' },
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
-  { id: 'global-calendar', label: 'Events Calendar', icon: CalendarDays, href: '/my-account/global-calendar' },
+  { id: 'global-calendar', label: 'Calendar', icon: CalendarDays, href: '/my-account/global-calendar', dynamicLabel: true },
   { id: 'mentorship-calendar', label: 'My Calendar', icon: CalendarDays, href: '/my-account/mentorship-calendar', mentorOnly: true },
   { id: 'mentor-calendar', label: 'Mentor Calendar', icon: CalendarDays, href: '/my-account/mentor-calendar', hasMentorOnly: true },
   { id: 'my-bookings', label: 'My Reservations', icon: BookOpen, href: '/my-account/my-bookings' },
@@ -189,7 +189,7 @@ export default function MyAccountLayout() {
                   onMouseLeave={e => { if (!active) e.currentTarget.style.color = v('sidebar-text', '#9ca3af'); }}
                   data-testid={`myaccount-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                   <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span>{item.label}</span>
+                  <span>{item.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item.label}</span>
                 </Link>
               );
             })
