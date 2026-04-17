@@ -369,68 +369,34 @@ html {
   border-color: var(--ma-input-border, rgba(255, 255, 255, 0.1)) !important;
 }
 
-/* === MY ACCOUNT — Native date/time picker icon visibility ===
-   Default browser icons are dark SVGs; invert them so they stay visible on
-   the dark member backgrounds and follow the dynamic theme. */
-[data-testid="myaccount-layout"] input[type="date"],
-[data-testid="myaccount-layout"] input[type="time"],
-[data-testid="myaccount-layout"] input[type="datetime-local"],
-[data-testid="myaccount-layout"] input[type="month"],
-[data-testid="myaccount-layout"] input[type="week"],
-[data-testid="myaccount-layout"] select,
-[data-testid="member-login-page"] input[type="date"],
-[data-testid="member-login-page"] input[type="time"],
-[data-testid="member-register-page"] input[type="date"],
-[data-testid="member-register-page"] input[type="time"],
-/* Radix dialogs portal outside myaccount-layout to document.body — target them explicitly */
-[role="dialog"][data-state="open"] input[type="date"],
-[role="dialog"][data-state="open"] input[type="time"],
-[role="dialog"][data-state="open"] input[type="datetime-local"],
-[role="dialog"][data-state="open"] input[type="month"],
-[role="dialog"][data-state="open"] input[type="week"],
-[role="dialog"][data-state="open"] select {
+/* === Adaptive color-scheme for native form controls ===
+   Browsers use `color-scheme` to tint native chrome on input[type=date|time|...],
+   select option lists, scrollbars, etc. We set it at the container level so that
+   all descendants inherit the correct scheme matching that container's background.
+
+   Rule: dark bg → color-scheme: dark (icons render light)
+         light bg → color-scheme: light (icons render dark)
+*/
+
+/* Dark containers */
+[data-testid="myaccount-layout"],
+[data-testid="member-login-page"],
+[data-testid="member-register-page"],
+[data-testid="admin-layout"],
+[role="dialog"][data-state="open"] {
   color-scheme: dark;
 }
 
-[data-testid="myaccount-layout"] input[type="date"]::-webkit-calendar-picker-indicator,
-[data-testid="myaccount-layout"] input[type="time"]::-webkit-calendar-picker-indicator,
-[data-testid="myaccount-layout"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-[data-testid="myaccount-layout"] input[type="month"]::-webkit-calendar-picker-indicator,
-[data-testid="myaccount-layout"] input[type="week"]::-webkit-calendar-picker-indicator,
-[data-testid="member-login-page"] input[type="date"]::-webkit-calendar-picker-indicator,
-[data-testid="member-login-page"] input[type="time"]::-webkit-calendar-picker-indicator,
-[data-testid="member-register-page"] input[type="date"]::-webkit-calendar-picker-indicator,
-[data-testid="member-register-page"] input[type="time"]::-webkit-calendar-picker-indicator,
-[role="dialog"][data-state="open"] input[type="date"]::-webkit-calendar-picker-indicator,
-[role="dialog"][data-state="open"] input[type="time"]::-webkit-calendar-picker-indicator,
-[role="dialog"][data-state="open"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
-[role="dialog"][data-state="open"] input[type="month"]::-webkit-calendar-picker-indicator,
-[role="dialog"][data-state="open"] input[type="week"]::-webkit-calendar-picker-indicator {
-  filter: invert(1) brightness(1.2) opacity(0.75);
-  cursor: pointer;
-  transition: opacity 0.15s ease, filter 0.15s ease;
-  padding: 2px;
-}
-[data-testid="myaccount-layout"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="myaccount-layout"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="myaccount-layout"] input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="myaccount-layout"] input[type="month"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="myaccount-layout"] input[type="week"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="member-login-page"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="member-login-page"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="member-register-page"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[data-testid="member-register-page"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
-[role="dialog"][data-state="open"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
-[role="dialog"][data-state="open"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
-[role="dialog"][data-state="open"] input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
-[role="dialog"][data-state="open"] input[type="month"]::-webkit-calendar-picker-indicator:hover,
-[role="dialog"][data-state="open"] input[type="week"]::-webkit-calendar-picker-indicator:hover {
-  opacity: 1;
+/* Light containers (enrollment wizard uses light theme by default) */
+[data-testid="membership-enrollment"] {
+  color-scheme: light;
 }
 
-/* Firefox: picker arrow uses inherited color, make it follow text */
+/* Firefox: picker arrow uses inherited text color, make sure date/time inputs
+   within dark containers render their value text in the theme's primary color. */
 [data-testid="myaccount-layout"] input[type="date"],
 [data-testid="myaccount-layout"] input[type="time"],
+[data-testid="myaccount-layout"] input[type="datetime-local"],
 [data-testid="member-login-page"] input[type="date"],
 [data-testid="member-login-page"] input[type="time"],
 [data-testid="member-register-page"] input[type="date"],

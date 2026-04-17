@@ -142,7 +142,7 @@ export default function MentorshipCalendar() {
 
   if (loading) return <div className="flex items-center justify-center py-20"><Loader2 className="w-6 h-6 animate-spin" style={{ color: v('accent', '#c9a84c') }} /></div>;
 
-  const selectStyle = { backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff'), border: '1px solid', appearance: 'auto' };
+  const selectStyle = { backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}`, color: v('text-primary', '#fff'), appearance: 'auto' };
 
   return (
     <div data-testid="mentorship-calendar-page">
