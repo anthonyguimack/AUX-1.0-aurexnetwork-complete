@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 import { memberAPI, publicAPI } from '../../lib/api';
-import { Loader2, DollarSign, TrendingUp, Clock, CheckCircle2, CalendarCheck, BarChart3 } from 'lucide-react';
+import { Loader2, DollarSign, TrendingUp, Clock, CheckCircle2, CalendarCheck, BarChart3, Package, Plus, Edit2, Trash2, Send } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid } from 'recharts';
+import BundleEditorDialog from '../../components/BundleEditorDialog';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const fmtMoney = (cents, currency = 'usd') => {
@@ -49,6 +51,7 @@ export default function MentorEarnings() {
       setLoading(false);
     });
     loadBundles();
+    loadPayouts();
   }, []);
 
   const handleSaveBundle = async () => {

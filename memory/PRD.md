@@ -263,9 +263,22 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
   - Booking dialog (`MentorCalendarView.js`) shows a new **Use 1 credit from "<Bundle>"** checkbox when the member has an eligible pack, updates CTA to **Book with Credit**.
 - Verified via curl: admin + mentor bundle CRUD, member browse, book-with-credit decrements 5→4, cancel restores 4→5, 402 still fires when trying to book without credit. Seeded 2 demo bundles → browse page renders correctly with savings copy. All seed data cleaned.
 
+### Payout Ledger MVP — Iteration 65 (Apr 17, 2026)
+- New `routes/payouts.py` with manual payout ledger tied to a configurable `platform_fee_percent` CMS setting (default 15%).
+- Ledger math: `gross = sum(paid transactions per mentor)`, `fee = gross * fee%`, `net = gross - fee`, `balance_owed = net - paid_out`.
+- Endpoints:
+  - Admin: `GET /api/admin/payouts` (aggregated per-mentor ledger + payout history), `POST /api/admin/payouts` (record manual payout: mentor_id, amount_cents, method, reference, notes), `DELETE /api/admin/payouts/{id}` (void).
+  - Mentor: `GET /api/member/mentor/payouts` (own ledger + records).
+- Frontend:
+  - New admin page `/admin/payouts` (`AdminPayoutsManager.js`) — 5 KPI cards (Gross / Fee / Net Owed / Paid Out / Outstanding), mentor earnings ledger table with "Record payout" action per mentor, and payout history table with void action.
+  - `MentorEarnings.js` gets a new **Payouts** card at the bottom showing Gross / Fee / Paid Out / Balance Owed stats + payout history table, with platform fee badge.
+- **Bug discovered & fixed** during visual QA: MentorEarnings was missing imports for `Package`, `Plus`, `Edit2`, `Trash2`, `Send` (lucide-react), `toast` (sonner), and `BundleEditorDialog` → caused `Package is not defined` runtime ReferenceError on page mount. Also `loadPayouts()` was defined but never called in useEffect. All fixed.
+- Verified via curl (17/17 backend tests) + screenshots of both `/admin/payouts` and `/my-account/earnings` (Carlos mentor account) rendering correctly with empty and populated ledger states.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
 ## Pending/Backlog
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
+- (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
