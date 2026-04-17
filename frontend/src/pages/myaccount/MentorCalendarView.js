@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Loader2, ChevronLeft, ChevronRight, Calendar, Clock, User, Video, MapPin, Users, List, Grid3X3, Download, Paperclip, ExternalLink } from 'lucide-react';
+import { Loader2, Calendar, Clock, User, Video, MapPin, Users, List, Grid3X3, Download, Paperclip, ExternalLink } from 'lucide-react';
+import CalendarGrid from '../../components/CalendarGrid';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -120,18 +121,6 @@ export default function MentorCalendarView() {
 
   const year = currentDate.getFullYear();
   const month = currentDate.getMonth();
-  const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
-  const firstDay = new Date(year, month, 1).getDay();
-  const daysInMonth = new Date(year, month + 1, 0).getDate();
-  const calDays = [];
-  for (let i = 0; i < firstDay; i++) calDays.push(null);
-  for (let d = 1; d <= daysInMonth; d++) calDays.push(d);
-
-  const getSlotsForDay = (day) => {
-    if (!day) return [];
-    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-    return data.slots.filter(s => s.date === dateStr);
-  };
 
   const daySlots = useMemo(() => {
     if (!selectedDay) return [];
@@ -180,33 +169,23 @@ export default function MentorCalendarView() {
 
       {view === 'month' && (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronLeft className="w-5 h-5" /></button>
-            <h2 className="text-lg font-semibold" style={{ color: v('text-primary', '#fff') }}>{monthLabel}</h2>
-            <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronRight className="w-5 h-5" /></button>
-          </div>
-          <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
-            {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-              <div key={d} className="p-2 text-center text-xs font-medium" style={{ backgroundColor: v('card-bg', '#13161e'), color: v('text-secondary', '#9ca3af') }}>{d}</div>
-            ))}
-            {calDays.map((day, i) => {
-              const ds = getSlotsForDay(day);
-              return (
-                <div key={i} className="min-h-[80px] p-1.5 cursor-pointer" onClick={() => day && setSelectedDay(day)} style={{ backgroundColor: day ? v('card-bg', '#13161e') : 'transparent' }}>
-                  {day && (
-                    <>
-                      <span className="text-xs font-medium" style={{ color: v('text-primary', '#fff') }}>{day}</span>
-                      {ds.map(s => (
-                        <div key={s.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate" style={{ backgroundColor: slotColor(s) + '20', color: slotColor(s), borderLeft: `2px solid ${slotColor(s)}` }}>
-                          {s.start_time}-{s.end_time} {s.my_status === 'booked' && '(Booked)'}
-                        </div>
-                      ))}
-                    </>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+          <CalendarGrid
+            currentDate={currentDate}
+            onPrevMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
+            onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
+            onDayClick={(day) => setSelectedDay(day)}
+            items={data.slots}
+            testIdPrefix="mentor-cal-day"
+            renderItem={(s) => (
+              <div
+                key={s.id}
+                className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate"
+                style={{ backgroundColor: slotColor(s) + '20', color: slotColor(s), borderLeft: `2px solid ${slotColor(s)}` }}
+              >
+                {s.start_time}-{s.end_time} {s.my_status === 'booked' && '(Booked)'}
+              </div>
+            )}
+          />
           {selectedDay && daySlots.length > 0 && (
             <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
               {daySlots.map(s => <SlotCard key={s.id} slot={s} mentor={data.mentor} onBook={handleBook} onCancel={handleCancelBooking} />)}

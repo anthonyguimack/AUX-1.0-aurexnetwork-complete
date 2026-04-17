@@ -239,6 +239,21 @@ export default function SettingsManager() {
                 <ImageUpload value={settings.enrollment_logo || ''} onChange={v => setSettings({...settings, enrollment_logo: v})} data-testid="enrollment-logo" />
               </div>
             </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Mentor Slot Templates</h3>
+            <div>
+              <Label>Enable Mentor Slot Templates</Label>
+              <p className="text-xs text-slate-400 mb-2">When enabled, mentors see an &quot;Apply Template&quot; dropdown inside the slot editor that pre-fills title, duration, description, and virtual link from admin-managed templates. Manage the library in <span className="font-medium">Calendar &rarr; Mentor Slot Templates</span>.</p>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={settings.mentor_slot_templates_enabled === true}
+                  onCheckedChange={(checked) => setSettings({ ...settings, mentor_slot_templates_enabled: checked })}
+                  data-testid="mentor-slot-templates-toggle"
+                />
+                <span className="text-sm text-slate-600">{settings.mentor_slot_templates_enabled ? 'Enabled' : 'Disabled'}</span>
+              </div>
+            </div>
           </div>
         </TabsContent>
 

@@ -30,6 +30,8 @@ export default function MentorshipScheduleManager() {
   const [bookingsLoading, setBookingsLoading] = useState(false);
   const [viewMode, setViewMode] = useState('list');
   const [currentDate, setCurrentDate] = useState(new Date());
+  const [templates, setTemplates] = useState([]);
+  const [templatesEnabled, setTemplatesEnabled] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -43,6 +45,34 @@ export default function MentorshipScheduleManager() {
     }).catch(() => setLoading(false));
   };
   useEffect(load, []);
+  useEffect(() => {
+    adminAPI.getSettings().then(r => setTemplatesEnabled(r.data?.mentor_slot_templates_enabled === true)).catch(() => {});
+    adminAPI.getMentorSlotTemplates().then(r => setTemplates(r.data || [])).catch(() => setTemplates([]));
+  }, []);
+
+  const addMinutes = (hhmm, mins) => {
+    if (!hhmm) return '';
+    const [h, m] = hhmm.split(':').map(Number);
+    const total = h * 60 + m + mins;
+    const newH = String(Math.floor(total / 60) % 24).padStart(2, '0');
+    const newM = String(total % 60).padStart(2, '0');
+    return `${newH}:${newM}`;
+  };
+
+  const applyTemplate = (tplId) => {
+    const t = templates.find(x => x.id === tplId);
+    if (!t || !editing) return;
+    setEditing(p => ({
+      ...p,
+      title: t.title || p.title,
+      session_type: t.session_type || p.session_type,
+      max_students: t.max_students || p.max_students,
+      description: t.description || p.description,
+      virtual_link: t.virtual_link || p.virtual_link,
+      end_time: p.start_time && t.default_duration_minutes ? addMinutes(p.start_time, t.default_duration_minutes) : p.end_time,
+    }));
+    toast.success(`Applied template "${t.name}"`);
+  };
 
   const handleSave = async () => {
     if (!editing.mentor_id || !editing.date || !editing.start_time || !editing.end_time) {
@@ -216,6 +246,16 @@ export default function MentorshipScheduleManager() {
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Mentorship Slot</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
+              {templatesEnabled && templates.length > 0 && !editing.id && (
+                <div className="p-3 rounded bg-slate-50 border border-slate-200">
+                  <Label className="text-xs font-medium">Apply Template</Label>
+                  <p className="text-[11px] text-slate-400 mb-1.5">Pre-fill title, type, duration, description, and virtual link from a saved template.</p>
+                  <select onChange={e => { if (e.target.value) { applyTemplate(e.target.value); e.target.value = ''; } }} className={inputCls} data-testid="admin-slot-apply-template" defaultValue="">
+                    <option value="">Select a template…</option>
+                    {templates.map(t => <option key={t.id} value={t.id}>{t.name} ({t.default_duration_minutes} min)</option>)}
+                  </select>
+                </div>
+              )}
               <div>
                 <Label className="text-xs">Mentor *</Label>
                 <select value={editing.mentor_id} onChange={e => setEditing({ ...editing, mentor_id: e.target.value })} className={inputCls + " mt-1"} data-testid="slot-mentor">

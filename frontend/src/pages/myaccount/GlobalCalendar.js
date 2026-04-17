@@ -2,7 +2,8 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Calendar, ChevronLeft, ChevronRight, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip, Video, Map, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip, Video, Map, ExternalLink } from 'lucide-react';
+import CalendarGrid from '../../components/CalendarGrid';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -200,12 +201,13 @@ export default function GlobalCalendar() {
 
       {view === 'month' && (
         <>
-          <div className="flex items-center justify-between mb-4">
-            <button onClick={() => setCurrentDate(new Date(year, month - 1, 1))} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronLeft className="w-5 h-5" /></button>
-            <h2 className="text-lg font-semibold" style={{ color: v('text-primary', '#fff') }}>{monthLabel}</h2>
-            <button onClick={() => setCurrentDate(new Date(year, month + 1, 1))} className="p-2 rounded" style={{ color: v('text-secondary', '#9ca3af') }}><ChevronRight className="w-5 h-5" /></button>
-          </div>
-          <MonthView events={events} year={year} month={month} onDayClick={(day) => setSelectedDay(day)} />
+          <MonthView
+            events={events}
+            currentDate={currentDate}
+            onPrevMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
+            onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
+            onDayClick={(day) => setSelectedDay(day)}
+          />
           {selectedDay && dayEvents.length > 0 && (
             <div className="mt-4">
               <h3 className="text-sm font-semibold mb-3" style={{ color: v('text-primary', '#fff') }}>

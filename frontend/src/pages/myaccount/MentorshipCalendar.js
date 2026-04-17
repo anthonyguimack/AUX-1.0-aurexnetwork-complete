@@ -36,6 +36,7 @@ export default function MentorshipCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [viewSlot, setViewSlot] = useState(null);
   const [uploading, setUploading] = useState(false);
+  const [templates, setTemplates] = useState([]);
 
   const load = () => {
     setLoading(true);
@@ -51,6 +52,33 @@ export default function MentorshipCalendar() {
     }).catch(() => setLoading(false));
   };
   useEffect(load, []); // eslint-disable-line
+  useEffect(() => {
+    memberAPI.getMentorSlotTemplates().then(r => setTemplates(r.data || [])).catch(() => setTemplates([]));
+  }, []);
+
+  const addMinutes = (hhmm, mins) => {
+    if (!hhmm) return '';
+    const [h, m] = hhmm.split(':').map(Number);
+    const total = h * 60 + m + mins;
+    const newH = String(Math.floor(total / 60) % 24).padStart(2, '0');
+    const newM = String(total % 60).padStart(2, '0');
+    return `${newH}:${newM}`;
+  };
+
+  const applyTemplate = (tplId) => {
+    const t = templates.find(x => x.id === tplId);
+    if (!t || !editing) return;
+    setEditing(p => ({
+      ...p,
+      title: t.title || p.title,
+      session_type: t.session_type || p.session_type,
+      max_students: t.max_students || p.max_students,
+      description: t.description || p.description,
+      virtual_link: t.virtual_link || p.virtual_link,
+      end_time: p.start_time && t.default_duration_minutes ? addMinutes(p.start_time, t.default_duration_minutes) : p.end_time,
+    }));
+    toast.success(`Applied template "${t.name}"`);
+  };
 
   const handleSave = async () => {
     if (!editing.date || !editing.start_time || !editing.end_time) { toast.error('Date and times required'); return; }
@@ -220,6 +248,15 @@ export default function MentorshipCalendar() {
           <DialogHeader><DialogTitle style={{ fontFamily: "'DM Serif Display', serif", color: v('text-primary', '#fff') }}>{editing?.id ? 'Edit' : 'New'} Slot</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-3">
+              {templates.length > 0 && !editing.id && (
+                <div>
+                  <Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Apply Template</Label>
+                  <select onChange={e => { if (e.target.value) { applyTemplate(e.target.value); e.target.value = ''; } }} className="w-full mt-1 px-3 py-2 rounded text-sm" style={selectStyle} data-testid="slot-apply-template" defaultValue="">
+                    <option value="">Select a template to pre-fill…</option>
+                    {templates.map(t => <option key={t.id} value={t.id}>{t.name} ({t.default_duration_minutes} min)</option>)}
+                  </select>
+                </div>
+              )}
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Title</Label>
                 <Input value={editing?.title || ''} onChange={e => setEditing(p => ({ ...p, title: e.target.value }))} className="mt-1" placeholder="e.g. Portfolio Analysis Session" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-title" /></div>
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Date *</Label>

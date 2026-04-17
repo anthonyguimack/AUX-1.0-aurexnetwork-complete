@@ -32,6 +32,7 @@ const sidebarItems = [
   { type: 'divider', label: 'Calendar' },
   { label: 'Global Events', icon: CalendarDays, href: '/admin/calendar/global', group: 'calendar' },
   { label: 'Mentorship Schedule', icon: CalendarDays, href: '/admin/calendar/mentorship', group: 'calendar' },
+  { label: 'Mentor Slot Templates', icon: CalendarDays, href: '/admin/calendar/mentor-slot-templates', group: 'calendar' },
   { type: 'divider', label: 'My Account' },
   { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount' },
   { type: 'divider', label: 'Membership' },

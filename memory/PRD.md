@@ -162,6 +162,22 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Mentor Slot `description` field upgraded from `<textarea>` to `RichTextEditor` (ReactQuill) in both CMS (`MentorshipScheduleManager`) and My Account (`MentorshipCalendar`) — new `.ma-quill-dark` class themes the editor for dark backgrounds
 - Slot detail display renders rich HTML via `dangerouslySetInnerHTML` + `rich-text-content`; calendar card previews use `stripHtml` helper to avoid tag bleed-through
 
+### Refactor + Mentor Slot Templates — Iteration 58 (Apr 17, 2026)
+- Split `/app/backend/routes/calendar.py` (620 lines) into three focused modules:
+  - `calendar_helpers.py` — shared notification helpers (`notify_waitlist_spot_open`, `notify_cancellation`)
+  - `calendar_events.py` — global events admin CRUD, member registration, notifications
+  - `mentor_slots.py` — admin/mentor slot CRUD, bookings, waitlist, mentor-calendar, slot templates
+  - `server.py` updated to mount both new routers; old `calendar.py` deleted
+- Extracted shared `<CalendarGrid>` component at `/app/frontend/src/components/CalendarGrid.js` — renders month navigation + 7-column day grid. `GlobalCalendar.js` and `MentorCalendarView.js` both now use it (60+ lines of duplicated grid logic removed from each)
+- **Feature: Mentor Slot Templates**
+  - New collection `mentor_slot_templates` with fields: `name`, `title`, `session_type`, `max_students`, `default_duration_minutes`, `description` (rich HTML), `virtual_link`
+  - Admin endpoints: GET/POST/PUT/DELETE `/api/admin/mentor-slot-templates`
+  - Member endpoint: GET `/api/member/mentor-slot-templates` (returns `[]` when `mentor_slot_templates_enabled` setting is off — server-side gated)
+  - New CMS page `/app/frontend/src/pages/admin/MentorSlotTemplatesManager.js` at route `/admin/calendar/mentor-slot-templates` with full CRUD + RichTextEditor
+  - New sidebar item **Calendar → Mentor Slot Templates** in `AdminLayout.js`
+  - New **Settings → General → Mentor Slot Templates** toggle (`mentor_slot_templates_enabled` on/off switch)
+  - **Apply Template dropdown** added to slot editor in both `MentorshipScheduleManager.js` (admin, gated by `templatesEnabled`) and `MentorshipCalendar.js` (member, server gates via empty list). Selecting a template pre-fills title, session_type, max_students, description (rich HTML), virtual_link, and auto-computes end_time from start_time + default_duration_minutes
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

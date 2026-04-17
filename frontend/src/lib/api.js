@@ -240,6 +240,11 @@ export const adminAPI = {
   deleteMentorshipSlot: (id) => api.delete(`/admin/mentorship/slots/${id}`),
   getSlotBookings: (id) => api.get(`/admin/mentorship/slots/${id}/bookings`),
   getMentors: () => api.get('/admin/mentors'),
+  // Mentor Slot Templates
+  getMentorSlotTemplates: () => api.get('/admin/mentor-slot-templates'),
+  createMentorSlotTemplate: (data) => api.post('/admin/mentor-slot-templates', data),
+  updateMentorSlotTemplate: (id, data) => api.put(`/admin/mentor-slot-templates/${id}`, data),
+  deleteMentorSlotTemplate: (id) => api.delete(`/admin/mentor-slot-templates/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
@@ -302,6 +307,8 @@ export const memberAPI = {
   bookMentorSlot: (id) => api.post(`/member/mentorship/book/${id}`),
   cancelMentorBooking: (id) => api.post(`/member/mentorship/cancel/${id}`),
   getMyBookings: () => api.get('/member/my-bookings'),
+  // Mentor Slot Templates (public list, gated by setting server-side)
+  getMentorSlotTemplates: () => api.get('/member/mentor-slot-templates'),
 };
 
 // Geo API (public)
