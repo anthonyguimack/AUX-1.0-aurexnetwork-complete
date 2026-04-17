@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Calendar, Users, ChevronLeft, ChevronRight, Paperclip, Download, X, Video, FileText } from 'lucide-react';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -181,7 +182,7 @@ export default function MentorshipCalendar() {
               <p>Type: {viewSlot.session_type} &middot; Max: {viewSlot.max_students} &middot; Booked: {viewSlot.booked_count || 0} &middot; Waitlist: {viewSlot.waitlist_count || 0}</p>
               <p>Status: <span style={{ color: slotColor(viewSlot) }}>{viewSlot.status}</span></p>
               {viewSlot.virtual_link && <a href={viewSlot.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}><Video className="w-3 h-3" /> Virtual Link</a>}
-              {viewSlot.description && <p className="pt-1">{viewSlot.description}</p>}
+              {viewSlot.description && <div className="pt-1 rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" dangerouslySetInnerHTML={{ __html: viewSlot.description }} />}
             </div>
             {/* Attachments */}
             {(viewSlot.attachments || []).length > 0 && (
@@ -244,7 +245,9 @@ export default function MentorshipCalendar() {
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Virtual Link</Label>
                 <Input value={editing.virtual_link || ''} onChange={e => setEditing(p => ({ ...p, virtual_link: e.target.value }))} className="mt-1" placeholder="https://zoom.us/..." style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-virtual-link" /></div>
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Description</Label>
-                <textarea value={editing.description || ''} onChange={e => setEditing(p => ({ ...p, description: e.target.value }))} rows={2} className="w-full mt-1 px-3 py-2 rounded text-sm resize-none" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff'), border: '1px solid' }} /></div>
+                <div className="mt-1 ma-quill-dark rounded" data-testid="slot-description-editor">
+                  <RichTextEditor value={editing.description || ''} onChange={val => setEditing(p => ({ ...p, description: val }))} placeholder="Optional notes visible to students" />
+                </div></div>
               {/* Attachments */}
               <div>
                 <Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Attachments</Label>

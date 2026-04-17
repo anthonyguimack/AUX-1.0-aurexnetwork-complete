@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Users, Calendar, ArrowLeft, ChevronLeft, ChevronRight, List, Grid3X3 } from 'lucide-react';
+import RichTextEditor from '../../components/RichTextEditor';
 
 const SESSION_TYPES = ['One-on-One', 'Group'];
 const STATUSES = ['active', 'inactive', 'cancelled'];
@@ -247,7 +248,9 @@ export default function MentorshipScheduleManager() {
                 </div>
               </div>
               <div><Label className="text-xs">Description</Label>
-                <textarea value={editing.description || ''} onChange={e => setEditing({ ...editing, description: e.target.value })} rows={2} className={inputCls + " mt-1 resize-none"} placeholder="Optional notes visible to students" /></div>
+                <div className="mt-1" data-testid="slot-description-editor">
+                  <RichTextEditor value={editing.description || ''} onChange={val => setEditing({ ...editing, description: val })} placeholder="Optional notes visible to students" />
+                </div></div>
               <div><Label className="text-xs">Virtual Link</Label>
                 <Input value={editing.virtual_link || ''} onChange={e => setEditing({ ...editing, virtual_link: e.target.value })} className="mt-1" placeholder="https://zoom.us/..." data-testid="slot-virtual-link" /></div>
               <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded-sm text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="slot-save-btn">

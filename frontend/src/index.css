@@ -352,3 +352,110 @@ html {
   margin-top: 0.5em;
 }
 
+/* === MY ACCOUNT — Enforce CSS variable borders on all form inputs === */
+/* Ensures every <input>, <select>, <textarea> inside the member area respects
+   --ma-input-border regardless of per-component Tailwind classes like
+   border-white/10, border-white/5, etc. Excludes checkboxes/radios/file inputs
+   which use accent-color instead of border. */
+[data-testid="myaccount-layout"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-testid="myaccount-layout"] select,
+[data-testid="myaccount-layout"] textarea,
+[data-testid="member-login-page"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-testid="member-login-page"] select,
+[data-testid="member-login-page"] textarea,
+[data-testid="member-register-page"] input:not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+[data-testid="member-register-page"] select,
+[data-testid="member-register-page"] textarea {
+  border-color: var(--ma-input-border, rgba(255, 255, 255, 0.1)) !important;
+}
+
+/* === MY ACCOUNT — Native date/time picker icon visibility ===
+   Default browser icons are dark SVGs; invert them so they stay visible on
+   the dark member backgrounds and follow the dynamic theme. */
+[data-testid="myaccount-layout"] input[type="date"],
+[data-testid="myaccount-layout"] input[type="time"],
+[data-testid="myaccount-layout"] input[type="datetime-local"],
+[data-testid="myaccount-layout"] input[type="month"],
+[data-testid="myaccount-layout"] input[type="week"],
+[data-testid="member-login-page"] input[type="date"],
+[data-testid="member-login-page"] input[type="time"],
+[data-testid="member-register-page"] input[type="date"],
+[data-testid="member-register-page"] input[type="time"] {
+  color-scheme: dark;
+}
+
+[data-testid="myaccount-layout"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-testid="myaccount-layout"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-testid="myaccount-layout"] input[type="datetime-local"]::-webkit-calendar-picker-indicator,
+[data-testid="myaccount-layout"] input[type="month"]::-webkit-calendar-picker-indicator,
+[data-testid="myaccount-layout"] input[type="week"]::-webkit-calendar-picker-indicator,
+[data-testid="member-login-page"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-testid="member-login-page"] input[type="time"]::-webkit-calendar-picker-indicator,
+[data-testid="member-register-page"] input[type="date"]::-webkit-calendar-picker-indicator,
+[data-testid="member-register-page"] input[type="time"]::-webkit-calendar-picker-indicator {
+  filter: invert(1) brightness(1.2) opacity(0.75);
+  cursor: pointer;
+  transition: opacity 0.15s ease, filter 0.15s ease;
+  padding: 2px;
+}
+[data-testid="myaccount-layout"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="myaccount-layout"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="myaccount-layout"] input[type="datetime-local"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="myaccount-layout"] input[type="month"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="myaccount-layout"] input[type="week"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="member-login-page"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="member-login-page"] input[type="time"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="member-register-page"] input[type="date"]::-webkit-calendar-picker-indicator:hover,
+[data-testid="member-register-page"] input[type="time"]::-webkit-calendar-picker-indicator:hover {
+  opacity: 1;
+}
+
+/* Firefox: picker arrow uses inherited color, make it follow text */
+[data-testid="myaccount-layout"] input[type="date"],
+[data-testid="myaccount-layout"] input[type="time"],
+[data-testid="member-login-page"] input[type="date"],
+[data-testid="member-login-page"] input[type="time"],
+[data-testid="member-register-page"] input[type="date"],
+[data-testid="member-register-page"] input[type="time"] {
+  color: var(--ma-text-primary, #ffffff);
+}
+
+/* === Rich Text Editor — Dark theme inside member-area modals === */
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-toolbar,
+[role="dialog"] .ma-quill-dark .ql-toolbar {
+  background-color: var(--ma-input-bg, #0d0f14) !important;
+  border-color: var(--ma-input-border, rgba(255, 255, 255, 0.1)) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-container,
+[role="dialog"] .ma-quill-dark .ql-container {
+  background-color: var(--ma-input-bg, #0d0f14) !important;
+  border-color: var(--ma-input-border, rgba(255, 255, 255, 0.1)) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-editor,
+[role="dialog"] .ma-quill-dark .ql-editor {
+  color: var(--ma-text-primary, #ffffff) !important;
+  min-height: 120px;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-snow .ql-stroke,
+[role="dialog"] .ma-quill-dark .ql-snow .ql-stroke {
+  stroke: var(--ma-text-secondary, #9ca3af) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-snow .ql-fill,
+[role="dialog"] .ma-quill-dark .ql-snow .ql-fill {
+  fill: var(--ma-text-secondary, #9ca3af) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-snow .ql-picker-label,
+[role="dialog"] .ma-quill-dark .ql-snow .ql-picker-label {
+  color: var(--ma-text-secondary, #9ca3af) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-snow .ql-picker-options,
+[role="dialog"] .ma-quill-dark .ql-snow .ql-picker-options {
+  background-color: var(--ma-card-bg, #13161e) !important;
+  border-color: var(--ma-input-border, rgba(255, 255, 255, 0.1)) !important;
+}
+[data-testid="myaccount-layout"] .ma-quill-dark .ql-editor.ql-blank::before,
+[role="dialog"] .ma-quill-dark .ql-editor.ql-blank::before {
+  color: var(--ma-text-muted, #6b7280) !important;
+  font-style: normal;
+}
+

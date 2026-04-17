@@ -155,6 +155,13 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Event detail: Breadcrumb shows "AUX Calendar", sidebar highlights AUX Calendar item
 - Same fix applied to event registration (waitlist → registered upgrade)
 
+### UI Polish — Iteration 57 (Apr 17, 2026)
+- Native `<input type="date">` / `<input type="time">` icons now visible on dark My Account & member login/register pages (filter-inverted, hover brightens, cursor pointer)
+- Color-scheme set to dark for member inputs so Firefox picker arrow follows text color
+- Global rule enforces `--ma-input-border` on every `input`/`select`/`textarea` inside `[data-testid="myaccount-layout"]` — no more drift from hard-coded `border-white/10` on pages like Membership Profile → General Info → Edit
+- Mentor Slot `description` field upgraded from `<textarea>` to `RichTextEditor` (ReactQuill) in both CMS (`MentorshipScheduleManager`) and My Account (`MentorshipCalendar`) — new `.ma-quill-dark` class themes the editor for dark backgrounds
+- Slot detail display renders rich HTML via `dangerouslySetInnerHTML` + `rich-text-content`; calendar card previews use `stripHtml` helper to avoid tag bleed-through
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

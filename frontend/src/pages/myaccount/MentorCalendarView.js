@@ -7,6 +7,7 @@ import { Loader2, ChevronLeft, ChevronRight, Calendar, Clock, User, Video, MapPi
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
+const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 
 const slotColor = (slot) => {
   const isPast = slot.date < todayStr();
@@ -38,7 +39,7 @@ function SlotCard({ slot, mentor, onBook, onCancel }) {
           <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{Math.max(0, max - booked)} / {max} spots</div>
           {slot.virtual_link && !isPast && <a href={slot.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}><Video className="w-3 h-3" /> Virtual Link <ExternalLink className="w-2.5 h-2.5" /></a>}
         </div>
-        {slot.description && <p className="text-xs mb-2 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }}>{slot.description}</p>}
+        {slot.description && <p className="text-xs mb-2 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }}>{stripHtml(slot.description)}</p>}
         {(slot.attachments || []).length > 0 && (
           <div className="mb-2 space-y-1">
             {slot.attachments.map((att, idx) => (
@@ -231,7 +232,7 @@ export default function MentorCalendarView() {
               {data.mentor && <div className="flex items-center gap-2 text-sm"><User className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Mentor: {data.mentor.name}</span></div>}
               <div className="flex items-center gap-2 text-sm"><Calendar className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Date: {bookDialog.date}</span></div>
               <div className="flex items-center gap-2 text-sm"><Clock className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Time: {bookDialog.start_time} — {bookDialog.end_time}</span></div>
-              {bookDialog.description && <div className="text-xs p-2 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }}>{bookDialog.description}</div>}
+              {bookDialog.description && <div className="text-xs p-2 rounded rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bookDialog.description }} />}
               <div className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>
                 Remaining: {Math.max(0, (bookDialog.max_students || 1) - (bookDialog.booked_count || 0))} / {bookDialog.max_students || 1}
               </div>
