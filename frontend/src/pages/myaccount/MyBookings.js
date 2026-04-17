@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Loader2, Calendar, Video, ExternalLink } from 'lucide-react';
+import { Loader2, Calendar, Video, ExternalLink, Rss } from 'lucide-react';
+import CalendarSyncCard from '../../components/CalendarSyncCard';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 
@@ -34,6 +35,21 @@ export default function MyBookings() {
   return (
     <div data-testid="my-bookings-page">
       <h1 className="text-2xl font-bold mb-6" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>My Reservations</h1>
+
+      {/* Calendar Sync — inline collapsible card */}
+      <details className="mb-6 rounded-lg border overflow-hidden" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+        <summary className="flex items-center gap-3 p-4 cursor-pointer list-none" data-testid="sync-inline-toggle">
+          <Rss className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} />
+          <div className="flex-1">
+            <p className="text-sm font-medium" style={{ color: v('text-primary', '#fff') }}>Sync with Google / Apple Calendar</p>
+            <p className="text-xs" style={{ color: v('text-muted', '#6b7280') }}>Get these reservations on your phone automatically.</p>
+          </div>
+          <span className="text-xs" style={{ color: v('text-muted', '#6b7280') }}>Show</span>
+        </summary>
+        <div className="p-4 border-t" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+          <CalendarSyncCard compact />
+        </div>
+      </details>
 
       <div className="rounded-lg border overflow-x-auto" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
         <table className="w-full text-sm">

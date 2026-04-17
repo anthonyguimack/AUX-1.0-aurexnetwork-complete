@@ -31,6 +31,7 @@ from routes.enrollment import router as enrollment_router
 from routes.docs import router as docs_router
 from routes.calendar_events import router as calendar_events_router
 from routes.mentor_slots import router as mentor_slots_router
+from routes.ical import router as ical_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -43,6 +44,7 @@ api_router.include_router(enrollment_router)
 api_router.include_router(docs_router)
 api_router.include_router(calendar_events_router)
 api_router.include_router(mentor_slots_router)
+api_router.include_router(ical_router)
 
 # Import seed data function
 from seed import seed_data

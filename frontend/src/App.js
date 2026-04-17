@@ -69,6 +69,7 @@ import GlobalCalendar from './pages/myaccount/GlobalCalendar';
 import MentorshipCalendar from './pages/myaccount/MentorshipCalendar';
 import MentorCalendarView from './pages/myaccount/MentorCalendarView';
 import MyBookings from './pages/myaccount/MyBookings';
+import CalendarSync from './pages/myaccount/CalendarSync';
 import EventDetail from './pages/myaccount/EventDetail';
 
 import LandingPage from './pages/LandingPage';
@@ -343,6 +344,7 @@ function AppRouter() {
           <Route path="mentorship-calendar" element={<MentorshipCalendar />} />
           <Route path="mentor-calendar" element={<MentorCalendarView />} />
           <Route path="my-bookings" element={<MyBookings />} />
+          <Route path="calendar-sync" element={<CalendarSync />} />
         </Route>
       </Routes>
     );

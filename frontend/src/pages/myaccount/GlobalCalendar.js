@@ -2,8 +2,9 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Calendar, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip, Video, Map, ExternalLink } from 'lucide-react';
+import { Calendar, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip, Video, Map, ExternalLink, Rss } from 'lucide-react';
 import CalendarGrid from '../../components/CalendarGrid';
+import CalendarSyncCard from '../../components/CalendarSyncCard';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -187,15 +188,25 @@ export default function GlobalCalendar() {
     <div data-testid="global-calendar-page">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>{auxPrefix} Calendar</h1>
-        <div className="flex items-center gap-1 rounded p-0.5" style={{ backgroundColor: v('card-bg', '#13161e') }}>
-          {[{ key: 'month', icon: Grid3X3, label: 'Month' }, { key: 'list', icon: List, label: 'List' }].map(vw => (
-            <button key={vw.key} onClick={() => { setView(vw.key); setSelectedDay(null); }}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors"
-              style={view === vw.key ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') } : { color: v('text-secondary', '#9ca3af') }}
-              data-testid={`view-${vw.key}`}>
-              <vw.icon className="w-3 h-3" /> {vw.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2">
+          <CalendarSyncCard
+            asModal
+            trigger={
+              <button className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors" style={{ color: v('text-secondary', '#9ca3af'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }} data-testid="subscribe-calendar-btn">
+                <Rss className="w-3 h-3" /> Subscribe
+              </button>
+            }
+          />
+          <div className="flex items-center gap-1 rounded p-0.5" style={{ backgroundColor: v('card-bg', '#13161e') }}>
+            {[{ key: 'month', icon: Grid3X3, label: 'Month' }, { key: 'list', icon: List, label: 'List' }].map(vw => (
+              <button key={vw.key} onClick={() => { setView(vw.key); setSelectedDay(null); }}
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded text-xs font-medium transition-colors"
+                style={view === vw.key ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') } : { color: v('text-secondary', '#9ca3af') }}
+                data-testid={`view-${vw.key}`}>
+                <vw.icon className="w-3 h-3" /> {vw.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 

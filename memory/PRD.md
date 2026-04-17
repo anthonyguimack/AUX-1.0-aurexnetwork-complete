@@ -196,6 +196,22 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - `<SlotRecurrencePicker>` now fetches blocked dates, filters the preview, and adds a second preview line: `"Skipping 1 blocked date: 2026-05-25 (Memorial Day)"`.
 - Existing slots on a newly-blocked date are **not** auto-cancelled (per design) — mentors still explicitly cancel those via the existing status-change flow that already triggers member notifications.
 
+### iCal Subscription Feeds — Iteration 61 (Apr 17, 2026)
+- New `/app/backend/routes/ical.py` module — RFC 5545 VCALENDAR generator using floating local time (no TZID) so each member's calendar app renders in local TZ.
+- Per-member opaque token stored as `ical_token` on the `members` document (auto-generated via `secrets.token_urlsafe(24)` on first visit).
+- Endpoints:
+  - `GET /api/ical/{token}.ics` — public, serves `text/calendar`; looks up member by token. 404s on invalid tokens.
+  - `GET /api/member/ical/info` — authenticated, returns `{ token, path }` (idempotent, generates token if missing).
+  - `POST /api/member/ical/regenerate` — authenticated, rotates the token and invalidates the old URL immediately.
+- Feed contents: booked mentorship slots (status in booked/completed) + registered global events. Excludes waitlist, cancelled slots, and cancelled events. Rich-HTML descriptions are stripped before escaping. UIDs are stable (`slot-{id}@consultant` / `event-{id}@consultant`) for proper update behavior in client calendar apps.
+- Frontend:
+  - New reusable `/app/frontend/src/components/CalendarSyncCard.js` — renders URL + copy button + three CTAs (Google Calendar "add by URL" deeplink, Apple Calendar `webcal://`, copy webcal://), expandable manual setup instructions for Google / Apple / Outlook, and a two-step "Regenerate URL" confirmation. Supports inline render or modal via `asModal` prop.
+  - New page `/app/frontend/src/pages/myaccount/CalendarSync.js` at route `/my-account/calendar-sync` — dedicated landing with intro copy + card.
+  - New sidebar item **Calendar Sync** (Rss icon) in `MyAccountLayout.js` — always visible (not gated by level perms, matching the other calendar items).
+  - Inline collapsible card at the top of **My Reservations** page (`MyBookings.js`) — one-click reveal with compact copy.
+  - Small **Subscribe** button on **Global / AUX Calendar** page (`GlobalCalendar.js`) that opens the modal variant.
+- Curl verified: `.ics` output is valid RFC 5545 (VCALENDAR/VEVENT wrapper, PRODID, VERSION, METHOD, DTSTART/DTEND floating, proper CRLF line-endings). Invalid token returns 404. Regenerate rotates and old URL stops working.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

@@ -315,6 +315,9 @@ export const memberAPI = {
   getMyBookings: () => api.get('/member/my-bookings'),
   // Mentor Slot Templates (public list, gated by setting server-side)
   getMentorSlotTemplates: () => api.get('/member/mentor-slot-templates'),
+  // iCal subscription feed
+  getIcalInfo: () => api.get('/member/ical/info'),
+  regenerateIcal: () => api.post('/member/ical/regenerate'),
 };
 
 // Geo API (public)
