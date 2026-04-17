@@ -34,8 +34,10 @@ export default function MentorEarnings() {
   const [editing, setEditing] = useState(null);
   const [bundleOpen, setBundleOpen] = useState(false);
   const [savingBundle, setSavingBundle] = useState(false);
+  const [payouts, setPayouts] = useState({ fee_percent: 15, ledger: null, records: [] });
 
   const loadBundles = () => memberAPI.getMyMentorBundles().then(r => setMyBundles(r.data || [])).catch(() => setMyBundles([]));
+  const loadPayouts = () => memberAPI.getMyPayouts().then(r => setPayouts(r.data || { fee_percent: 15, ledger: null, records: [] })).catch(() => {});
 
   useEffect(() => {
     Promise.all([
@@ -206,6 +208,57 @@ export default function MentorEarnings() {
       </div>
 
       <BundleEditorDialog open={bundleOpen} onOpenChange={setBundleOpen} editing={editing} setEditing={setEditing} onSave={handleSaveBundle} saving={savingBundle} theme="mentor-dark" />
+
+      {/* Payouts ledger */}
+      {payouts.ledger && (
+        <div className="rounded-lg border overflow-x-auto mt-6" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid="mentor-payouts-block">
+          <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+            <div className="flex items-center gap-2">
+              <Send className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} />
+              <h2 className="text-sm font-semibold" style={{ color: v('text-primary', '#fff') }}>Payouts</h2>
+            </div>
+            <span className="text-[11px]" style={{ color: v('text-muted', '#6b7280') }}>Platform fee: {payouts.fee_percent}%</span>
+          </div>
+          <div className="grid grid-cols-4 gap-px" style={{ backgroundColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+            {[
+              { label: 'Gross', value: fmtMoney(payouts.ledger.gross_cents, 'usd') },
+              { label: 'Fee', value: fmtMoney(payouts.ledger.fee_cents, 'usd') },
+              { label: 'Paid out', value: fmtMoney(payouts.ledger.paid_cents, 'usd') },
+              { label: 'Balance owed', value: fmtMoney(payouts.ledger.balance_cents, 'usd'), accent: true },
+            ].map((s, i) => (
+              <div key={i} className="p-3 text-center" style={{ backgroundColor: v('card-bg', '#13161e') }}>
+                <p className="text-[10px] uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>{s.label}</p>
+                <p className="text-lg font-bold mt-1" style={{ color: s.accent ? v('accent', '#c9a84c') : v('text-primary', '#fff') }}>{s.value}</p>
+              </div>
+            ))}
+          </div>
+          {payouts.records.length > 0 && (
+            <table className="w-full text-sm">
+              <thead>
+                <tr style={{ backgroundColor: v('input-bg', '#0d0f14') }}>
+                  <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Date</th>
+                  <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Method</th>
+                  <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Reference</th>
+                  <th className="text-right p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Amount</th>
+                </tr>
+              </thead>
+              <tbody>
+                {payouts.records.map(r => (
+                  <tr key={r.id} className="border-t" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+                    <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{new Date(r.created_at).toLocaleString()}</td>
+                    <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{r.method}</td>
+                    <td className="p-3 text-xs" style={{ color: v('text-muted', '#6b7280') }}>{r.reference || '—'}</td>
+                    <td className="p-3 text-right font-medium" style={{ color: v('accent', '#c9a84c') }}>{fmtMoney(r.amount_cents, 'usd')}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+          {payouts.records.length === 0 && (
+            <p className="p-6 text-center text-xs" style={{ color: v('text-muted', '#6b7280') }}>No payouts recorded yet. Your earned balance accrues here until the administrator settles it.</p>
+          )}
+        </div>
+      )}
     </div>
   );
 }

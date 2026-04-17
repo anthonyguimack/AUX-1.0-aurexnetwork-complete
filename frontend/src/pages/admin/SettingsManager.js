@@ -269,6 +269,17 @@ export default function SettingsManager() {
                 <span className="text-sm text-slate-600">{settings.mentor_slots_paid_enabled ? 'Enabled — Stripe active on booking flow' : 'Disabled — bookings remain free'}</span>
               </div>
             </div>
+            <div>
+              <Label>Platform Fee (%)</Label>
+              <p className="text-xs text-slate-400 mb-1">Percentage deducted from mentor gross earnings. Applies to the payouts ledger (Calendar → Payouts). Default: 15%.</p>
+              <Input
+                type="number" min={0} max={100} step="0.01"
+                value={settings.platform_fee_percent ?? 15}
+                onChange={e => setSettings({ ...settings, platform_fee_percent: Math.max(0, Math.min(100, parseFloat(e.target.value) || 0)) })}
+                className="max-w-[120px]"
+                data-testid="platform-fee-input"
+              />
+            </div>
           </div>
         </TabsContent>
 

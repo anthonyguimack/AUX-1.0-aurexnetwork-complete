@@ -256,6 +256,10 @@ export const adminAPI = {
   createAdminBundle: (d) => api.post('/admin/bundles', d),
   updateAdminBundle: (id, d) => api.put(`/admin/bundles/${id}`, d),
   deleteAdminBundle: (id) => api.delete(`/admin/bundles/${id}`),
+  // Payouts
+  getPayouts: () => api.get('/admin/payouts'),
+  createPayout: (d) => api.post('/admin/payouts', d),
+  deletePayout: (id) => api.delete(`/admin/payouts/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
@@ -330,6 +334,8 @@ export const memberAPI = {
   createMentorBundle: (d) => api.post('/member/mentor/bundles', d),
   updateMentorBundle: (id, d) => api.put(`/member/mentor/bundles/${id}`, d),
   deleteMentorBundle: (id) => api.delete(`/member/mentor/bundles/${id}`),
+  // Mentor payouts (personal history)
+  getMyPayouts: () => api.get('/member/mentor/payouts'),
   // Mentor Slot Templates (public list, gated by setting server-side)
   getMentorSlotTemplates: () => api.get('/member/mentor-slot-templates'),
   // iCal subscription feed
