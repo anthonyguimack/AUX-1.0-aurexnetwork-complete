@@ -212,6 +212,21 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
   - Small **Subscribe** button on **Global / AUX Calendar** page (`GlobalCalendar.js`) that opens the modal variant.
 - Curl verified: `.ics` output is valid RFC 5545 (VCALENDAR/VEVENT wrapper, PRODID, VERSION, METHOD, DTSTART/DTEND floating, proper CRLF line-endings). Invalid token returns 404. Regenerate rotates and old URL stops working.
 
+### Paid Mentor Slots (Stripe) — Iteration 62 (Apr 17, 2026)
+- New `mentorship_slots.price_cents` (int, default 0) + `currency` (default "usd"); free slots keep working.
+- New global **Settings → General → Paid Mentor Slots** toggle `mentor_slots_paid_enabled`. Takes effect immediately — no redeployment.
+- Backend (`routes/mentor_slots.py`):
+  - `POST /member/mentorship/book/{slot_id}` returns HTTP 402 when toggle=ON and slot has price > 0 (directs to checkout).
+  - New `POST /member/mentorship/checkout/{slot_id}` — creates Stripe Checkout via `emergentintegrations`, soft-holds the seat with `pending_payment` booking, inserts `payment_transactions` record. Success URL → `/my-account/mentorship/checkout-success?session_id={CHECKOUT_SESSION_ID}`.
+  - New `GET /member/mentorship/checkout/status/{session_id}` — polled by success page; on `paid` flips booking to `booked` (idempotent), notifies mentor + member.
+  - Rejects with 400 when: toggle=OFF, slot has no price, already booked/pending, or slot is full.
+- Frontend:
+  - Admin Settings toggle (clear copy: "Enabled — Stripe active on booking flow" / "Disabled — bookings remain free").
+  - Price (USD) input in both slot editors, only rendered when toggle is ON. Dollars input → cents storage.
+  - `MentorCalendarView.js`: price badge on SlotCard, "Pay $X & Book" button, dialog shows price line + adaptive CTA. Paid flow redirects to Stripe; free and waitlist flows unchanged.
+  - New `MentorshipCheckoutSuccess.js` polls status with 10×2s with loading/paid/failed/timeout/error states.
+- Testing (iteration_57): 17/17 backend PASS, CMS + slot editor UI verified, 0 regressions. Toggle left OFF after tests.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
