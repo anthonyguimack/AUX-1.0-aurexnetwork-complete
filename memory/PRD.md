@@ -147,6 +147,14 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Event detail page rich text rendering fixed (no horizontal scrollbar)
 - AUX Calendar enabled in sidebar
 
+### Calendar Fixes — Iteration 56 (Apr 17, 2026)
+- Time picker: CMS Mentorship Schedule + My Calendar changed from `<select>` to `<input type="time">` matching Global Events format
+- CMS calendar colors: Gray for past/cancelled, Green for upcoming (both Global Events + Mentorship Schedule)
+- CMS Mentorship Schedule calendar: Shows slot title (not just mentor name)
+- Waitlist-to-booked upgrade: Members on waitlist can now "Book this slot" when spots open (status upgraded from waitlist to booked/registered)
+- Event detail: Breadcrumb shows "AUX Calendar", sidebar highlights AUX Calendar item
+- Same fix applied to event registration (waitlist → registered upgrade)
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
