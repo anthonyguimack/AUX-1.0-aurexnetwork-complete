@@ -32,6 +32,7 @@ export const publicAPI = {
   getAlbumPhotos: (albumId) => api.get(`/public/gallery-albums/${albumId}/photos`),
   getServiceDetail: (id) => api.get(`/public/services/${id}`),
   getMyAccountLinks: () => api.get('/public/myaccount-links'),
+  getBlockedDates: () => api.get('/public/blocked-dates'),
 };
 
 export const searchAPI = {
@@ -245,6 +246,11 @@ export const adminAPI = {
   createMentorSlotTemplate: (data) => api.post('/admin/mentor-slot-templates', data),
   updateMentorSlotTemplate: (id, data) => api.put(`/admin/mentor-slot-templates/${id}`, data),
   deleteMentorSlotTemplate: (id) => api.delete(`/admin/mentor-slot-templates/${id}`),
+  // Blocked Dates
+  getBlockedDates: () => api.get('/admin/blocked-dates'),
+  createBlockedDate: (data) => api.post('/admin/blocked-dates', data),
+  updateBlockedDate: (id, data) => api.put(`/admin/blocked-dates/${id}`, data),
+  deleteBlockedDate: (id) => api.delete(`/admin/blocked-dates/${id}`),
 };
 
 // Member API (unified - uses same auth_token)

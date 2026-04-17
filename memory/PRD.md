@@ -184,6 +184,18 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Toast upgraded: multi-slot creation shows `"Created N slots"`.
 - Verified via curl: 4 weeks × [Mon, Wed] starting 2026-04-20 produced 8 correct dates (2026-04-20, 04-22, 04-27, 04-29, 05-04, 05-06, 05-11, 05-13).
 
+### Blocked Dates (holiday skip-list) — Iteration 60 (Apr 17, 2026)
+- New `blocked_dates` collection: `{ id, date, reason, created_at }`
+- Admin endpoints in `mentor_slots.py`: GET/POST/PUT/DELETE `/api/admin/blocked-dates`. Public read at `/api/public/blocked-dates` so the recurrence picker can preview skipped dates without auth.
+- `_expand_recurrence` extended with optional `excluded_dates: set` — filters out blocked dates during expansion.
+- Both slot-creation endpoints now:
+  - auto-load the blocked set and skip those dates during recurrence (e.g. 4 weeks × [Mon, Wed] with 2026-04-27 blocked → 7 slots instead of 8)
+  - reject single-slot creation on a blocked date with HTTP 400 ("2026-04-27 is a blocked date…")
+- New CMS page `/app/frontend/src/pages/admin/BlockedDatesManager.js` at route `/admin/calendar/blocked-dates` with date + reason fields.
+- New sidebar item **Calendar → Blocked Dates** in `AdminLayout.js`.
+- `<SlotRecurrencePicker>` now fetches blocked dates, filters the preview, and adds a second preview line: `"Skipping 1 blocked date: 2026-05-25 (Memorial Day)"`.
+- Existing slots on a newly-blocked date are **not** auto-cancelled (per design) — mentors still explicitly cancel those via the existing status-change flow that already triggers member notifications.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

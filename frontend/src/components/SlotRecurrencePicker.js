@@ -1,4 +1,5 @@
-import React, { useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
+import { publicAPI } from '../lib/api';
 
 /**
  * Reusable weekly-recurrence picker for slot editors.
@@ -46,8 +47,21 @@ function previewDates(baseDate, dows, weeks) {
 export default function SlotRecurrencePicker({ value, onChange, baseDate, dark = false }) {
   const val = value || { enabled: false, days_of_week: [], weeks: 4 };
   const set = (patch) => onChange({ ...val, ...patch });
+  const [blocked, setBlocked] = useState([]);
 
-  const dates = useMemo(() => previewDates(baseDate, val.days_of_week, val.weeks), [baseDate, val.days_of_week, val.weeks]);
+  useEffect(() => {
+    publicAPI.getBlockedDates().then(r => setBlocked(r.data || [])).catch(() => setBlocked([]));
+  }, []);
+  const blockedSet = useMemo(() => new Set(blocked.map(b => b.date)), [blocked]);
+  const blockedMap = useMemo(() => {
+    const m = new Map();
+    blocked.forEach(b => m.set(b.date, b.reason || ''));
+    return m;
+  }, [blocked]);
+
+  const allDates = useMemo(() => previewDates(baseDate, val.days_of_week, val.weeks), [baseDate, val.days_of_week, val.weeks]);
+  const dates = useMemo(() => allDates.filter(d => !blockedSet.has(d)), [allDates, blockedSet]);
+  const skipped = useMemo(() => allDates.filter(d => blockedSet.has(d)), [allDates, blockedSet]);
 
   const label = dark
     ? { color: 'var(--ma-text-secondary, #9ca3af)' }
@@ -123,10 +137,15 @@ export default function SlotRecurrencePicker({ value, onChange, baseDate, dark =
             />
           </div>
           <p className="text-[11px]" style={muted} data-testid="recurrence-preview">
-            {dates.length === 0
+            {dates.length === 0 && skipped.length === 0
               ? 'Pick at least one weekday to preview.'
               : `Will create ${dates.length} slot${dates.length === 1 ? '' : 's'}${dates.length > 1 ? ` (${dates[0]} → ${dates[dates.length - 1]})` : ''}.`}
           </p>
+          {skipped.length > 0 && (
+            <p className="text-[11px]" style={muted} data-testid="recurrence-skipped">
+              Skipping {skipped.length} blocked date{skipped.length === 1 ? '' : 's'}: {skipped.map(d => blockedMap.get(d) ? `${d} (${blockedMap.get(d)})` : d).join(', ')}
+            </p>
+          )}
         </div>
       )}
     </div>

@@ -8,10 +8,11 @@ import uuid
 router = APIRouter()
 
 
-def _expand_recurrence(base_date: str, days_of_week: list, weeks: int) -> list:
+def _expand_recurrence(base_date: str, days_of_week: list, weeks: int, excluded_dates: set = None) -> list:
     """Given a start date and a list of JS-style day-of-week indices (0=Sun..6=Sat),
     produce the sorted, deduplicated list of ISO dates across `weeks` consecutive weeks.
-    The first week starts at the Sunday on or before `base_date`."""
+    The first week starts at the Sunday on or before `base_date`.
+    Any date present in `excluded_dates` (ISO strings) is skipped."""
     if not base_date or not days_of_week or weeks <= 0:
         return []
     try:
@@ -25,15 +26,22 @@ def _expand_recurrence(base_date: str, days_of_week: list, weeks: int) -> list:
     # Anchor each week at the Sunday on-or-before the start date, so selecting
     # Monday against a Wednesday start yields next Monday, not 5 days in the past.
     sunday_anchor = start - timedelta(days=(start.weekday() + 1) % 7)
+    excluded = excluded_dates or set()
     out = set()
     for w in range(weeks):
         for dow in days_of_week:
             py_dow = js_to_py(int(dow))
             offset = (py_dow + 1) % 7  # days after Sunday
             dt = sunday_anchor + timedelta(weeks=w, days=offset)
-            if dt >= start:
+            if dt >= start and dt.isoformat() not in excluded:
                 out.add(dt.isoformat())
     return sorted(out)
+
+
+async def _load_blocked_dates_set() -> set:
+    """Return a set of ISO date strings marked as blocked by the admin."""
+    rows = await db.blocked_dates.find({}, {"_id": 0, "date": 1}).to_list(500)
+    return {r["date"] for r in rows if r.get("date")}
 
 
 async def _materialize_slot(base_body: dict, override_date: str) -> dict:
@@ -78,9 +86,14 @@ async def admin_create_mentorship_slot(request: Request, user: dict = Depends(re
     recurrence = body.pop("recurrence", None)
     dates = [body["date"]]
     if recurrence and recurrence.get("enabled"):
-        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1))
+        blocked = await _load_blocked_dates_set()
+        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1), excluded_dates=blocked)
         if expanded:
             dates = expanded[:104]  # hard cap (2 years)
+    elif body["date"]:
+        blocked = await _load_blocked_dates_set()
+        if body["date"] in blocked:
+            raise HTTPException(status_code=400, detail=f"{body['date']} is a blocked date. Remove it from Calendar → Blocked Dates first, or pick another date.")
     created = []
     for d in dates:
         rec = await _materialize_slot(body, d)
@@ -180,6 +193,57 @@ async def admin_delete_template(tpl_id: str, user: dict = Depends(require_admin)
     return {"success": True}
 
 
+# ── Admin: Blocked Dates (skip-list for recurrence engine) ──
+
+@router.get("/admin/blocked-dates")
+async def admin_list_blocked_dates(user: dict = Depends(require_admin)):
+    items = await db.blocked_dates.find({}, {"_id": 0}).sort("date", 1).to_list(500)
+    return items
+
+
+@router.post("/admin/blocked-dates")
+async def admin_create_blocked_date(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    if not body.get("date"):
+        raise HTTPException(status_code=400, detail="date is required")
+    existing = await db.blocked_dates.find_one({"date": body["date"]}, {"_id": 0})
+    if existing:
+        raise HTTPException(status_code=400, detail=f"{body['date']} is already blocked")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "date": body["date"],
+        "reason": body.get("reason", ""),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.blocked_dates.insert_one(doc)
+    return await db.blocked_dates.find_one({"id": doc["id"]}, {"_id": 0})
+
+
+@router.put("/admin/blocked-dates/{bd_id}")
+async def admin_update_blocked_date(bd_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    body.pop("id", None)
+    body.pop("_id", None)
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    result = await db.blocked_dates.update_one({"id": bd_id}, {"$set": body})
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    return await db.blocked_dates.find_one({"id": bd_id}, {"_id": 0})
+
+
+@router.delete("/admin/blocked-dates/{bd_id}")
+async def admin_delete_blocked_date(bd_id: str, user: dict = Depends(require_admin)):
+    await db.blocked_dates.delete_one({"id": bd_id})
+    return {"success": True}
+
+
+@router.get("/public/blocked-dates")
+async def public_list_blocked_dates():
+    """Public read so the recurrence picker can preview skipped dates."""
+    items = await db.blocked_dates.find({}, {"_id": 0}).sort("date", 1).to_list(500)
+    return items
+
+
 # ── Member-side: Mentor slot templates (read-only, gated by setting) ──
 
 @router.get("/member/mentor-slot-templates")
@@ -231,9 +295,14 @@ async def mentor_create_slot(request: Request):
     recurrence = body.pop("recurrence", None)
     dates = [body["date"]]
     if recurrence and recurrence.get("enabled"):
-        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1))
+        blocked = await _load_blocked_dates_set()
+        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1), excluded_dates=blocked)
         if expanded:
             dates = expanded[:104]
+    elif body["date"]:
+        blocked = await _load_blocked_dates_set()
+        if body["date"] in blocked:
+            raise HTTPException(status_code=400, detail=f"{body['date']} is a blocked date. Ask the administrator to remove it, or pick another date.")
     created = []
     for d in dates:
         rec = await _materialize_slot(body, d)
