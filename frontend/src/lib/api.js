@@ -313,6 +313,8 @@ export const memberAPI = {
   bookMentorSlot: (id) => api.post(`/member/mentorship/book/${id}`),
   cancelMentorBooking: (id) => api.post(`/member/mentorship/cancel/${id}`),
   getMyBookings: () => api.get('/member/my-bookings'),
+  // Mentor earnings
+  getMentorEarnings: () => api.get('/member/mentor/earnings'),
   // Mentor Slot Templates (public list, gated by setting server-side)
   getMentorSlotTemplates: () => api.get('/member/mentor-slot-templates'),
   // iCal subscription feed

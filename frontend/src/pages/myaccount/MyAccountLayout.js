@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss, BarChart3
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
@@ -16,6 +16,7 @@ const ALL_NAV_ITEMS = [
   { id: 'portfolios', label: 'Portfolios', icon: Briefcase, href: '/my-account/portfolios' },
   { id: 'global-calendar', label: 'Calendar', icon: CalendarDays, href: '/my-account/global-calendar', dynamicLabel: true },
   { id: 'mentorship-calendar', label: 'My Calendar', icon: CalendarDays, href: '/my-account/mentorship-calendar', mentorOnly: true },
+  { id: 'earnings', label: 'Earnings', icon: BarChart3, href: '/my-account/earnings', mentorOnly: true },
   { id: 'my-bookings', label: 'My Reservations', icon: BookOpen, href: '/my-account/my-bookings' },
   { id: 'calendar-sync', label: 'Calendar Sync', icon: Rss, href: '/my-account/calendar-sync' },
 ];

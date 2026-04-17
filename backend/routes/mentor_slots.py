@@ -675,3 +675,91 @@ async def member_mentorship_checkout_status(session_id: str, request: Request):
         "amount_total": status.amount_total,
         "currency": status.currency,
     }
+
+
+# ── Mentor Earnings Dashboard ──
+
+@router.get("/member/mentor/earnings")
+async def mentor_earnings(request: Request):
+    """Return aggregate earnings + monthly breakdown + recent transactions
+    for the authenticated mentor. Only paid bookings are counted."""
+    from routes.membership import get_current_member
+    from collections import defaultdict
+    member = await get_current_member(request)
+    mentor_id = member["member_id"]
+    today = datetime.now(timezone.utc)
+    today_str = today.strftime("%Y-%m-%d")
+    this_month_prefix = today.strftime("%Y-%m")
+
+    # All paid bookings for this mentor
+    bookings = await db.mentorship_bookings.find(
+        {"mentor_id": mentor_id, "payment_status": "paid"},
+        {"_id": 0},
+    ).sort("paid_at", -1).to_list(1000)
+
+    total_cents = 0
+    this_month_cents = 0
+    pending_revenue_cents = 0  # paid but session date is in the future
+    sessions_delivered = 0
+    sessions_pending = 0
+    monthly_map = defaultdict(lambda: {"revenue_cents": 0, "sessions": 0})
+    transactions = []
+
+    for b in bookings:
+        slot = await db.mentorship_slots.find_one({"id": b["slot_id"]}, {"_id": 0})
+        if not slot:
+            continue
+        cents = int(b.get("price_cents") or slot.get("price_cents") or 0)
+        paid_at = b.get("paid_at") or b.get("booked_at") or ""
+        month_key = paid_at[:7] if paid_at else today.strftime("%Y-%m")
+        total_cents += cents
+        monthly_map[month_key]["revenue_cents"] += cents
+        monthly_map[month_key]["sessions"] += 1
+        if paid_at.startswith(this_month_prefix):
+            this_month_cents += cents
+        slot_date = slot.get("date", "")
+        if slot_date and slot_date < today_str:
+            sessions_delivered += 1
+        else:
+            sessions_pending += 1
+            pending_revenue_cents += cents
+        if len(transactions) < 50:
+            m = await db.members.find_one({"member_id": b["member_id"]}, {"_id": 0, "password_hash": 0})
+            transactions.append({
+                "booking_id": b.get("id"),
+                "slot_id": b["slot_id"],
+                "slot_date": slot_date,
+                "slot_title": slot.get("title") or slot.get("session_type", "Mentorship"),
+                "session_type": slot.get("session_type", ""),
+                "member_name": f"{m.get('first_name', '')} {m.get('last_name', '')}".strip() if m else "",
+                "membership_id": m.get("membership_id", "") if m else "",
+                "amount_cents": cents,
+                "currency": (b.get("currency") or "usd"),
+                "paid_at": paid_at,
+                "status": "delivered" if (slot_date and slot_date < today_str) else "upcoming",
+            })
+
+    # Monthly breakdown — last 12 months (fill gaps with zeros)
+    monthly = []
+    for i in range(11, -1, -1):
+        y = today.year
+        m = today.month - i
+        while m <= 0:
+            m += 12
+            y -= 1
+        key = f"{y:04d}-{m:02d}"
+        data = monthly_map.get(key, {"revenue_cents": 0, "sessions": 0})
+        monthly.append({"month": key, "revenue_cents": data["revenue_cents"], "sessions": data["sessions"]})
+
+    return {
+        "currency": "usd",
+        "total_revenue_cents": total_cents,
+        "this_month_revenue_cents": this_month_cents,
+        "pending_revenue_cents": pending_revenue_cents,
+        "sessions_delivered": sessions_delivered,
+        "sessions_pending": sessions_pending,
+        "sessions_total": sessions_delivered + sessions_pending,
+        "monthly_breakdown": monthly,
+        "transactions": transactions,
+    }
+

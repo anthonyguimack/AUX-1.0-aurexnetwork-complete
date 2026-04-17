@@ -227,6 +227,21 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
   - New `MentorshipCheckoutSuccess.js` polls status with 10×2s with loading/paid/failed/timeout/error states.
 - Testing (iteration_57): 17/17 backend PASS, CMS + slot editor UI verified, 0 regressions. Toggle left OFF after tests.
 
+### Mentor Earnings Dashboard — Iteration 63 (Apr 17, 2026)
+- New `GET /api/member/mentor/earnings` — returns aggregated stats for the authenticated mentor:
+  - `total_revenue_cents`, `this_month_revenue_cents`, `pending_revenue_cents` (paid sessions with future dates)
+  - `sessions_delivered`, `sessions_pending`, `sessions_total`
+  - `monthly_breakdown` — last 12 months filled with zeros where no revenue
+  - `transactions` — up to 50 most recent paid bookings with slot/member/amount/status (delivered | upcoming)
+- Endpoint is mentor-scoped (`mentor_id` = current member), counts only bookings with `payment_status == 'paid'`. Returns zeros safely when no paid sessions exist.
+- Frontend page `/app/frontend/src/pages/myaccount/MentorEarnings.js` at route `/my-account/earnings`:
+  - 4 stat cards (Lifetime / This Month / Pending Payout / Delivered) with clean gold/amber accent
+  - Monthly bar chart using existing `recharts` dep — respects `--ma-accent` CSS var
+  - Transaction table with Delivered/Upcoming status pills
+  - Gentle notice when paid toggle is currently OFF: "Paid slots are currently disabled by the administrator — no new charges will occur, but past paid sessions are shown below."
+- New sidebar item **Earnings** (BarChart3 icon) in `MyAccountLayout.js`, gated by `mentorOnly: true` (matches existing My Calendar mentor-only pattern).
+- Verified via curl + screenshot: seeded 3 paid bookings (2 past delivered, 1 future upcoming) → dashboard correctly showed $225 lifetime, $175 this month, $100 pending, 2/3 delivered, plus monthly chart with Mar $75 / Apr $175 bars and 3-row transaction table.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 
