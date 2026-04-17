@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Users, Calendar, ArrowLeft, ChevronLeft, ChevronRight, List, Grid3X3 } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
+import SlotRecurrencePicker from '../../components/SlotRecurrencePicker';
 
 const SESSION_TYPES = ['One-on-One', 'Group'];
 const STATUSES = ['active', 'inactive', 'cancelled'];
@@ -80,9 +81,18 @@ export default function MentorshipScheduleManager() {
     }
     setSaving(true);
     try {
-      if (editing.id) await adminAPI.updateMentorshipSlot(editing.id, editing);
-      else await adminAPI.createMentorshipSlot(editing);
-      toast.success('Saved!'); setOpen(false); load();
+      if (editing.id) {
+        await adminAPI.updateMentorshipSlot(editing.id, editing);
+        toast.success('Saved!');
+      } else {
+        const r = await adminAPI.createMentorshipSlot(editing);
+        if (r.data?.count && r.data.count > 1) {
+          toast.success(`Created ${r.data.count} slots`);
+        } else {
+          toast.success('Saved!');
+        }
+      }
+      setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setSaving(false); }
   };
@@ -293,6 +303,13 @@ export default function MentorshipScheduleManager() {
                 </div></div>
               <div><Label className="text-xs">Virtual Link</Label>
                 <Input value={editing.virtual_link || ''} onChange={e => setEditing({ ...editing, virtual_link: e.target.value })} className="mt-1" placeholder="https://zoom.us/..." data-testid="slot-virtual-link" /></div>
+              {!editing.id && (
+                <SlotRecurrencePicker
+                  value={editing.recurrence}
+                  onChange={val => setEditing({ ...editing, recurrence: val })}
+                  baseDate={editing.date}
+                />
+              )}
               <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded-sm text-sm font-medium text-white flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="slot-save-btn">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} {editing.id ? 'Update' : 'Create'} Slot
               </button>

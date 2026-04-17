@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Calendar, Users, ChevronLeft, ChevronRight, Paperclip, Download, X, Video, FileText } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
+import SlotRecurrencePicker from '../../components/SlotRecurrencePicker';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -87,10 +88,16 @@ export default function MentorshipCalendar() {
       if (editing.id) {
         const r = await memberAPI.updateMentorSlot(editing.id, editing);
         setViewSlot(r.data);
+        toast.success('Saved!');
       } else {
-        await memberAPI.createMentorSlot(editing);
+        const r = await memberAPI.createMentorSlot(editing);
+        if (r.data?.count && r.data.count > 1) {
+          toast.success(`Created ${r.data.count} slots`);
+        } else {
+          toast.success('Saved!');
+        }
       }
-      toast.success('Saved!'); setOpen(false); load();
+      setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setSaving(false); }
   };
@@ -303,6 +310,14 @@ export default function MentorshipCalendar() {
                   </label>
                 </div>
               </div>
+              {!editing.id && (
+                <SlotRecurrencePicker
+                  value={editing.recurrence}
+                  onChange={val => setEditing(p => ({ ...p, recurrence: val }))}
+                  baseDate={editing.date}
+                  dark
+                />
+              )}
               <button onClick={handleSave} disabled={saving} className="w-full py-2 rounded text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid="slot-save-btn">
                 {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Calendar className="w-4 h-4" />} {editing?.id ? 'Update' : 'Create'} Slot
               </button>

@@ -2,10 +2,49 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin
 from routes.calendar_helpers import notify_waitlist_spot_open, notify_cancellation
-from datetime import datetime, timezone
+from datetime import datetime, timezone, date, timedelta
 import uuid
 
 router = APIRouter()
+
+
+def _expand_recurrence(base_date: str, days_of_week: list, weeks: int) -> list:
+    """Given a start date and a list of JS-style day-of-week indices (0=Sun..6=Sat),
+    produce the sorted, deduplicated list of ISO dates across `weeks` consecutive weeks.
+    The first week starts at the Sunday on or before `base_date`."""
+    if not base_date or not days_of_week or weeks <= 0:
+        return []
+    try:
+        y, m, d = [int(x) for x in base_date.split("-")]
+        start = date(y, m, d)
+    except (ValueError, AttributeError):
+        return []
+    # Python weekday(): Mon=0..Sun=6. JS: Sun=0..Sat=6. Convert JS dow → python dow.
+    def js_to_py(dow: int) -> int:
+        return 6 if dow == 0 else dow - 1
+    # Anchor each week at the Sunday on-or-before the start date, so selecting
+    # Monday against a Wednesday start yields next Monday, not 5 days in the past.
+    sunday_anchor = start - timedelta(days=(start.weekday() + 1) % 7)
+    out = set()
+    for w in range(weeks):
+        for dow in days_of_week:
+            py_dow = js_to_py(int(dow))
+            offset = (py_dow + 1) % 7  # days after Sunday
+            dt = sunday_anchor + timedelta(weeks=w, days=offset)
+            if dt >= start:
+                out.add(dt.isoformat())
+    return sorted(out)
+
+
+async def _materialize_slot(base_body: dict, override_date: str) -> dict:
+    """Insert a single slot document; return the enriched record."""
+    doc = {**base_body, "id": str(uuid.uuid4()), "date": override_date, "created_at": datetime.now(timezone.utc).isoformat()}
+    doc.pop("recurrence", None)
+    await db.mentorship_slots.insert_one(doc)
+    result = await db.mentorship_slots.find_one({"id": doc["id"]}, {"_id": 0})
+    result["booked_count"] = 0
+    result["waitlist_count"] = 0
+    return result
 
 
 # ── Admin: Mentorship Schedule ──
@@ -25,7 +64,6 @@ async def admin_list_mentorship_slots(user: dict = Depends(require_admin)):
 @router.post("/admin/mentorship/slots")
 async def admin_create_mentorship_slot(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
-    body["id"] = str(uuid.uuid4())
     body.setdefault("status", "active")
     body.setdefault("max_students", 1)
     body.setdefault("session_type", "One-on-One")
@@ -34,15 +72,28 @@ async def admin_create_mentorship_slot(request: Request, user: dict = Depends(re
     body.setdefault("attachments", [])
     if not body.get("mentor_id"):
         raise HTTPException(status_code=400, detail="mentor_id is required")
-    body["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.mentorship_slots.insert_one(body)
-    result = await db.mentorship_slots.find_one({"id": body["id"]}, {"_id": 0})
-    result["booked_count"] = 0
-    result["waitlist_count"] = 0
+    if not body.get("date"):
+        raise HTTPException(status_code=400, detail="date is required")
+    # Recurrence support: produce N cloned slots across selected weekdays/weeks.
+    recurrence = body.pop("recurrence", None)
+    dates = [body["date"]]
+    if recurrence and recurrence.get("enabled"):
+        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1))
+        if expanded:
+            dates = expanded[:104]  # hard cap (2 years)
+    created = []
+    for d in dates:
+        rec = await _materialize_slot(body, d)
+        created.append(rec)
     mentor = await db.members.find_one({"member_id": body["mentor_id"]}, {"_id": 0, "password_hash": 0})
-    result["mentor_name"] = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
-    result["mentor_membership_id"] = mentor.get("membership_id", "") if mentor else ""
-    return result
+    mentor_name = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
+    mentor_mid = mentor.get("membership_id", "") if mentor else ""
+    for rec in created:
+        rec["mentor_name"] = mentor_name
+        rec["mentor_membership_id"] = mentor_mid
+    if len(created) == 1:
+        return created[0]
+    return {"created": created, "count": len(created)}
 
 
 @router.put("/admin/mentorship/slots/{slot_id}")
@@ -168,7 +219,6 @@ async def mentor_create_slot(request: Request):
     from routes.membership import get_current_member
     member = await get_current_member(request)
     body = await request.json()
-    body["id"] = str(uuid.uuid4())
     body["mentor_id"] = member["member_id"]
     body.setdefault("status", "active")
     body.setdefault("max_students", 1)
@@ -176,13 +226,22 @@ async def mentor_create_slot(request: Request):
     body.setdefault("description", "")
     body.setdefault("virtual_link", "")
     body.setdefault("attachments", [])
-    body["created_at"] = datetime.now(timezone.utc).isoformat()
-    await db.mentorship_slots.insert_one(body)
-    result = await db.mentorship_slots.find_one({"id": body["id"]}, {"_id": 0})
-    result["booked_count"] = 0
-    result["waitlist_count"] = 0
-    result["participants"] = []
-    return result
+    if not body.get("date"):
+        raise HTTPException(status_code=400, detail="date is required")
+    recurrence = body.pop("recurrence", None)
+    dates = [body["date"]]
+    if recurrence and recurrence.get("enabled"):
+        expanded = _expand_recurrence(body["date"], recurrence.get("days_of_week") or [], int(recurrence.get("weeks") or 1))
+        if expanded:
+            dates = expanded[:104]
+    created = []
+    for d in dates:
+        rec = await _materialize_slot(body, d)
+        rec["participants"] = []
+        created.append(rec)
+    if len(created) == 1:
+        return created[0]
+    return {"created": created, "count": len(created)}
 
 
 @router.put("/member/mentorship/slots/{slot_id}")
