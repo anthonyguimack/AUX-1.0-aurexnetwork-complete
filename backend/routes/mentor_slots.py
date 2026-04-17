@@ -376,17 +376,31 @@ async def member_view_mentor_calendar(request: Request):
 @router.post("/member/mentorship/book/{slot_id}")
 async def member_book_slot(slot_id: str, request: Request):
     from routes.membership import get_current_member
+    from routes.bundles import _eligible_credit_pack
     member = await get_current_member(request)
     slot = await db.mentorship_slots.find_one({"id": slot_id}, {"_id": 0})
     if not slot:
         raise HTTPException(status_code=404, detail="Slot not found")
     if slot.get("status") != "active":
         raise HTTPException(status_code=400, detail="Slot is not available")
+
+    body = await request.json() if int(request.headers.get("content-length") or 0) > 0 else {}
+    use_credit = bool(body.get("use_credit"))
+
     # Paid-slot gate: when global toggle is ON and the slot has a price,
-    # bookings must go through Stripe via /member/mentorship/checkout/{slot_id}
+    # bookings must either redeem a credit pack or go through Stripe via
+    # /member/mentorship/checkout/{slot_id}
     settings = await db.settings.find_one({}, {"_id": 0}) or {}
-    if settings.get("mentor_slots_paid_enabled") and int(slot.get("price_cents") or 0) > 0:
-        raise HTTPException(status_code=402, detail="This is a paid slot. Use the checkout flow to book.")
+    is_paid_mode = settings.get("mentor_slots_paid_enabled") and int(slot.get("price_cents") or 0) > 0
+    redeemed_pack = None
+    if is_paid_mode:
+        if use_credit:
+            redeemed_pack = await _eligible_credit_pack(member["member_id"], slot["mentor_id"])
+            if not redeemed_pack:
+                raise HTTPException(status_code=400, detail="No eligible session credit available")
+        else:
+            raise HTTPException(status_code=402, detail="This is a paid slot. Use the checkout flow to book.")
+
     existing = await db.mentorship_bookings.find_one({"slot_id": slot_id, "member_id": member["member_id"]})
     if existing and existing.get("status") == "booked":
         raise HTTPException(status_code=400, detail="Already booked this slot")
@@ -429,6 +443,21 @@ async def member_book_slot(slot_id: str, request: Request):
         "status": status,
         "booked_at": datetime.now(timezone.utc).isoformat(),
     }
+    if redeemed_pack and status == "booked":
+        # Decrement one credit from the chosen pack, stamp the booking.
+        r = await db.credit_packs.update_one(
+            {"id": redeemed_pack["id"], "remaining": {"$gt": 0}},
+            {"$inc": {"remaining": -1}},
+        )
+        if r.modified_count == 0:
+            raise HTTPException(status_code=409, detail="Credit was just spent elsewhere — try again")
+        booking.update({
+            "credit_pack_id": redeemed_pack["id"],
+            "bundle_name": redeemed_pack.get("bundle_name"),
+            "payment_status": "credit",
+            "price_cents": int(slot.get("price_cents") or 0),
+            "currency": (slot.get("currency") or "usd"),
+        })
     await db.mentorship_bookings.insert_one(booking)
     await db.notifications.insert_one({
         "id": str(uuid.uuid4()),
@@ -461,6 +490,10 @@ async def member_cancel_booking(slot_id: str, request: Request):
     if not booking:
         raise HTTPException(status_code=404, detail="Booking not found")
     was_booked = booking.get("status") == "booked"
+    # Refund credit pack if this booking was redeemed from one.
+    credit_pack_id = booking.get("credit_pack_id")
+    if credit_pack_id and was_booked:
+        await db.credit_packs.update_one({"id": credit_pack_id}, {"$inc": {"remaining": 1}})
     await db.mentorship_bookings.delete_one({"slot_id": slot_id, "member_id": member["member_id"]})
     if was_booked:
         slot = await db.mentorship_slots.find_one({"id": slot_id}, {"_id": 0})

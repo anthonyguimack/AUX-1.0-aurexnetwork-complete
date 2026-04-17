@@ -251,6 +251,11 @@ export const adminAPI = {
   createBlockedDate: (data) => api.post('/admin/blocked-dates', data),
   updateBlockedDate: (id, data) => api.put(`/admin/blocked-dates/${id}`, data),
   deleteBlockedDate: (id) => api.delete(`/admin/blocked-dates/${id}`),
+  // Admin global bundles
+  getAdminBundles: () => api.get('/admin/bundles'),
+  createAdminBundle: (d) => api.post('/admin/bundles', d),
+  updateAdminBundle: (id, d) => api.put(`/admin/bundles/${id}`, d),
+  deleteAdminBundle: (id) => api.delete(`/admin/bundles/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
@@ -310,11 +315,21 @@ export const memberAPI = {
   updateMentorSlot: (id, data) => api.put(`/member/mentorship/slots/${id}`, data),
   deleteMentorSlot: (id) => api.delete(`/member/mentorship/slots/${id}`),
   getMentorCalendar: () => api.get('/member/mentor-calendar'),
-  bookMentorSlot: (id) => api.post(`/member/mentorship/book/${id}`),
+  bookMentorSlot: (id, data) => api.post(`/member/mentorship/book/${id}`, data || {}),
   cancelMentorBooking: (id) => api.post(`/member/mentorship/cancel/${id}`),
   getMyBookings: () => api.get('/member/my-bookings'),
   // Mentor earnings
   getMentorEarnings: () => api.get('/member/mentor/earnings'),
+  // Session Bundles
+  getBundles: () => api.get('/member/bundles'),
+  checkoutBundle: (id, data) => api.post(`/member/bundles/checkout/${id}`, data),
+  getBundleCheckoutStatus: (sid) => api.get(`/member/bundles/checkout/status/${sid}`),
+  getMyCredits: () => api.get('/member/credits'),
+  // Mentor personal bundles
+  getMyMentorBundles: () => api.get('/member/mentor/bundles'),
+  createMentorBundle: (d) => api.post('/member/mentor/bundles', d),
+  updateMentorBundle: (id, d) => api.put(`/member/mentor/bundles/${id}`, d),
+  deleteMentorBundle: (id) => api.delete(`/member/mentor/bundles/${id}`),
   // Mentor Slot Templates (public list, gated by setting server-side)
   getMentorSlotTemplates: () => api.get('/member/mentor-slot-templates'),
   // iCal subscription feed

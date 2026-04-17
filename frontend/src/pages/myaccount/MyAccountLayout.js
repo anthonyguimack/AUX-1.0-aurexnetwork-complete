@@ -3,7 +3,7 @@ import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI, memberAPI } from '../../lib/api';
 import {
-  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss, BarChart3
+  User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss, BarChart3, Package
 } from 'lucide-react';
 
 const ALL_NAV_ITEMS = [
@@ -17,6 +17,7 @@ const ALL_NAV_ITEMS = [
   { id: 'global-calendar', label: 'Calendar', icon: CalendarDays, href: '/my-account/global-calendar', dynamicLabel: true },
   { id: 'mentorship-calendar', label: 'My Calendar', icon: CalendarDays, href: '/my-account/mentorship-calendar', mentorOnly: true },
   { id: 'earnings', label: 'Earnings', icon: BarChart3, href: '/my-account/earnings', mentorOnly: true },
+  { id: 'bundles', label: 'Session Bundles', icon: Package, href: '/my-account/bundles' },
   { id: 'my-bookings', label: 'My Reservations', icon: BookOpen, href: '/my-account/my-bookings' },
   { id: 'calendar-sync', label: 'Calendar Sync', icon: Rss, href: '/my-account/calendar-sync' },
 ];
@@ -123,7 +124,7 @@ export default function MyAccountLayout() {
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
     if (item.mentorOnly && !isMentor) return false;
     // Calendar items are always visible (not gated by level permissions)
-    if (['global-calendar', 'mentorship-calendar', 'my-bookings', 'calendar-sync'].includes(item.id)) return true;
+    if (['global-calendar', 'mentorship-calendar', 'my-bookings', 'calendar-sync', 'bundles', 'earnings'].includes(item.id)) return true;
     return levelPerms.includes(item.id);
   }) : [];
   const permissionsLoading = levelPerms === null;

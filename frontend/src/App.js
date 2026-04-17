@@ -72,6 +72,9 @@ import MyBookings from './pages/myaccount/MyBookings';
 import CalendarSync from './pages/myaccount/CalendarSync';
 import MentorshipCheckoutSuccess from './pages/myaccount/MentorshipCheckoutSuccess';
 import MentorEarnings from './pages/myaccount/MentorEarnings';
+import BundlesBrowse from './pages/myaccount/BundlesBrowse';
+import BundleCheckoutSuccess from './pages/myaccount/BundleCheckoutSuccess';
+import AdminBundlesManager from './pages/admin/AdminBundlesManager';
 import EventDetail from './pages/myaccount/EventDetail';
 
 import LandingPage from './pages/LandingPage';
@@ -349,6 +352,8 @@ function AppRouter() {
           <Route path="calendar-sync" element={<CalendarSync />} />
           <Route path="mentorship/checkout-success" element={<MentorshipCheckoutSuccess />} />
           <Route path="earnings" element={<MentorEarnings />} />
+          <Route path="bundles" element={<BundlesBrowse />} />
+          <Route path="bundles/checkout-success" element={<BundleCheckoutSuccess />} />
         </Route>
       </Routes>
     );
@@ -399,6 +404,7 @@ function AppRouter() {
           <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
           <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
           <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
+          <Route path="calendar/bundles" element={<AdminBundlesManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
@@ -475,6 +481,7 @@ function AppRouter() {
           <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
           <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
           <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
+          <Route path="calendar/bundles" element={<AdminBundlesManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />

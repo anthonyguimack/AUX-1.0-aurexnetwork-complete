@@ -30,6 +30,12 @@ export default function MentorEarnings() {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paidEnabled, setPaidEnabled] = useState(false);
+  const [myBundles, setMyBundles] = useState([]);
+  const [editing, setEditing] = useState(null);
+  const [bundleOpen, setBundleOpen] = useState(false);
+  const [savingBundle, setSavingBundle] = useState(false);
+
+  const loadBundles = () => memberAPI.getMyMentorBundles().then(r => setMyBundles(r.data || [])).catch(() => setMyBundles([]));
 
   useEffect(() => {
     Promise.all([
@@ -40,7 +46,23 @@ export default function MentorEarnings() {
       setPaidEnabled(s.data?.mentor_slots_paid_enabled === true);
       setLoading(false);
     });
+    loadBundles();
   }, []);
+
+  const handleSaveBundle = async () => {
+    if (!editing?.name?.trim()) { toast.error('Name required'); return; }
+    setSavingBundle(true);
+    try {
+      if (editing.id) await memberAPI.updateMentorBundle(editing.id, editing);
+      else await memberAPI.createMentorBundle(editing);
+      toast.success('Saved'); setBundleOpen(false); loadBundles();
+    } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
+    finally { setSavingBundle(false); }
+  };
+  const handleDeleteBundle = async (id) => {
+    if (!window.confirm('Delete this bundle? Existing credits remain valid.')) return;
+    try { await memberAPI.deleteMentorBundle(id); toast.success('Deleted'); loadBundles(); } catch { toast.error('Error'); }
+  };
 
   if (loading) return <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin" style={{ color: v('text-muted', '#6b7280') }} /></div>;
   if (!data) return <div className="text-sm" style={{ color: v('text-muted', '#6b7280') }}>Could not load earnings.</div>;
@@ -91,7 +113,7 @@ export default function MentorEarnings() {
         </ResponsiveContainer>
       </div>
 
-      <div className="rounded-lg border overflow-x-auto" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid="earnings-txn-table">
+      <div className="rounded-lg border overflow-x-auto mb-6" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid="earnings-txn-table">
         <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
           <h2 className="text-sm font-semibold" style={{ color: v('text-primary', '#fff') }}>Paid sessions</h2>
           <span className="text-[11px]" style={{ color: v('text-muted', '#6b7280') }}>{data.transactions.length} record{data.transactions.length === 1 ? '' : 's'}</span>
@@ -136,6 +158,54 @@ export default function MentorEarnings() {
           </div>
         )}
       </div>
+
+      {/* Mentor personal bundles */}
+      <div className="rounded-lg border overflow-x-auto" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid="my-bundles-block">
+        <div className="px-4 py-3 flex items-center justify-between border-b" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+          <div className="flex items-center gap-2">
+            <Package className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} />
+            <h2 className="text-sm font-semibold" style={{ color: v('text-primary', '#fff') }}>My bundles</h2>
+          </div>
+          <button onClick={() => { setEditing({ name: '', description: '', session_count: 5, price_cents: 0, single_session_value_cents: 0, currency: 'usd', active: true }); setBundleOpen(true); }}
+            className="text-xs px-3 py-1.5 rounded font-medium flex items-center gap-1.5"
+            style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }}
+            data-testid="add-my-bundle-btn">
+            <Plus className="w-3 h-3" /> New bundle
+          </button>
+        </div>
+        <table className="w-full text-sm">
+          <thead>
+            <tr style={{ backgroundColor: v('input-bg', '#0d0f14') }}>
+              <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Name</th>
+              <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Sessions</th>
+              <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Price</th>
+              <th className="text-left p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Status</th>
+              <th className="text-right p-3 text-[11px] font-medium uppercase tracking-wider" style={{ color: v('text-muted', '#6b7280') }}>Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            {myBundles.map(b => (
+              <tr key={b.id} className="border-t" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+                <td className="p-3" style={{ color: v('text-primary', '#fff') }}>{b.name}</td>
+                <td className="p-3" style={{ color: v('text-secondary', '#9ca3af') }}>{b.session_count}</td>
+                <td className="p-3" style={{ color: v('accent', '#c9a84c') }}>{fmtMoney(b.price_cents, b.currency)}</td>
+                <td className="p-3"><span className={`text-[11px] px-2 py-0.5 rounded ${b.active ? 'bg-green-500/15 text-green-400' : 'bg-gray-500/15 text-gray-400'}`}>{b.active ? 'Active' : 'Hidden'}</span></td>
+                <td className="p-3 text-right">
+                  <button onClick={() => { setEditing({ ...b }); setBundleOpen(true); }} className="p-1.5" style={{ color: v('text-muted', '#6b7280') }}><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleDeleteBundle(b.id)} className="p-1.5 text-red-400"><Trash2 className="w-4 h-4" /></button>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+        {myBundles.length === 0 && (
+          <div className="p-8 text-center text-sm" style={{ color: v('text-muted', '#6b7280') }}>
+            Offer prepaid packs to lock in recurring revenue. Your bundles appear on the member-facing Session Bundles page.
+          </div>
+        )}
+      </div>
+
+      <BundleEditorDialog open={bundleOpen} onOpenChange={setBundleOpen} editing={editing} setEditing={setEditing} onSave={handleSaveBundle} saving={savingBundle} theme="mentor-dark" />
     </div>
   );
 }

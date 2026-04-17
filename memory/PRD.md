@@ -242,6 +242,27 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - New sidebar item **Earnings** (BarChart3 icon) in `MyAccountLayout.js`, gated by `mentorOnly: true` (matches existing My Calendar mentor-only pattern).
 - Verified via curl + screenshot: seeded 3 paid bookings (2 past delivered, 1 future upcoming) → dashboard correctly showed $225 lifetime, $175 this month, $100 pending, 2/3 delivered, plus monthly chart with Mar $75 / Apr $175 bars and 3-row transaction table.
 
+### Session Bundles — Iteration 64 (Apr 17, 2026)
+- New `routes/bundles.py`; new collections `session_bundles` + `credit_packs`.
+- **Two scopes**: admin-global bundles (`mentor_id: null`, redeemable against any paid slot) and per-mentor bundles (redeemable only on that mentor's slots). Eligibility priority at redemption: mentor-specific pack → global pack.
+- Endpoints:
+  - Admin CRUD: `GET/POST/PUT/DELETE /api/admin/bundles`
+  - Mentor CRUD: `GET/POST/PUT/DELETE /api/member/mentor/bundles`
+  - Member browse: `GET /api/member/bundles` (active only, enriched with mentor name)
+  - Purchase: `POST /api/member/bundles/checkout/{id}` → Stripe Checkout; poll `GET /api/member/bundles/checkout/status/{session_id}` materializes a `credit_pack` with `remaining = session_count` on `paid`.
+  - `GET /api/member/credits` — all packs owned by the member
+- **Booking integration** (in `routes/mentor_slots.py`):
+  - `POST /member/mentorship/book/{slot_id}` accepts `{use_credit: true}` — redeems one credit atomically, decrements pack `remaining`, marks booking `payment_status: credit`.
+  - Cancellation restores the credit (atomic `$inc: {remaining: 1}` when `credit_pack_id` is set).
+- Frontend:
+  - Reusable `BundleEditorDialog` (admin-light + mentor-dark themes) used by both CMS and Earnings pages.
+  - New CMS page `/admin/calendar/bundles` (AdminBundlesManager). Sidebar item **Calendar → Session Bundles**.
+  - New member page `/my-account/bundles` (BundlesBrowse) — cards show bundle name, price, sessions, discount callout (`$600 value — save $200`), rich description, mentor badge for mentor-owned bundles, owned credits panel at top.
+  - New `BundleCheckoutSuccess.js` at `/my-account/bundles/checkout-success` — polling + credit-count celebration card.
+  - Mentor Earnings page adds a **My Bundles** table with add/edit/delete (uses the shared dialog with dark theme).
+  - Booking dialog (`MentorCalendarView.js`) shows a new **Use 1 credit from "<Bundle>"** checkbox when the member has an eligible pack, updates CTA to **Book with Credit**.
+- Verified via curl: admin + mentor bundle CRUD, member browse, book-with-credit decrements 5→4, cancel restores 4→5, 402 still fires when trying to book without credit. Seeded 2 demo bundles → browse page renders correctly with savings copy. All seed data cleaned.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 

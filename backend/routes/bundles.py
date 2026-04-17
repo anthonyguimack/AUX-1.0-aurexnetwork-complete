@@ -1,0 +1,289 @@
+"""Session Bundles — prepaid session credit packs.
+
+Two scopes:
+  • Admin bundles  (mentor_id is None) → redeemable on any paid slot
+  • Mentor bundles (mentor_id set)     → redeemable only on that mentor's paid slots
+
+When a member purchases a bundle, a credit_pack document is created with
+`remaining = session_count`. Each time the member books a paid slot and
+elects to redeem, `remaining -= 1` on an eligible pack (global preferred
+last; mentor-specific first). On booking cancellation the credit is restored.
+"""
+from fastapi import APIRouter, HTTPException, Request, Depends
+from models.database import db, require_admin
+from datetime import datetime, timezone
+import os
+import uuid
+
+router = APIRouter()
+
+
+def _clean_bundle_body(body: dict) -> dict:
+    return {
+        "name": (body.get("name") or "").strip(),
+        "description": body.get("description") or "",
+        "session_count": max(1, int(body.get("session_count") or 1)),
+        "price_cents": max(0, int(body.get("price_cents") or 0)),
+        "single_session_value_cents": max(0, int(body.get("single_session_value_cents") or 0)),
+        "currency": (body.get("currency") or "usd").lower(),
+        "active": body.get("active", True),
+    }
+
+
+async def _eligible_credit_pack(member_id: str, mentor_id: str):
+    """Return the best credit pack the member can spend on this mentor,
+    prioritizing mentor-specific packs before global packs (to exhaust
+    narrow credits first). Returns None if nothing available."""
+    pack = await db.credit_packs.find_one(
+        {"member_id": member_id, "mentor_id": mentor_id, "remaining": {"$gt": 0}},
+        {"_id": 0},
+        sort=[("purchased_at", 1)],
+    )
+    if pack:
+        return pack
+    return await db.credit_packs.find_one(
+        {"member_id": member_id, "mentor_id": None, "remaining": {"$gt": 0}},
+        {"_id": 0},
+        sort=[("purchased_at", 1)],
+    )
+
+
+# ── Admin: global bundle catalog ──
+
+@router.get("/admin/bundles")
+async def admin_list_bundles(user: dict = Depends(require_admin)):
+    items = await db.session_bundles.find({"mentor_id": None}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return items
+
+
+@router.post("/admin/bundles")
+async def admin_create_bundle(request: Request, user: dict = Depends(require_admin)):
+    body = _clean_bundle_body(await request.json())
+    if not body["name"]:
+        raise HTTPException(status_code=400, detail="Bundle name required")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "mentor_id": None,
+        "created_by": "admin",
+        **body,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.session_bundles.insert_one(doc)
+    return await db.session_bundles.find_one({"id": doc["id"]}, {"_id": 0})
+
+
+@router.put("/admin/bundles/{bundle_id}")
+async def admin_update_bundle(bundle_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = _clean_bundle_body(await request.json())
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    r = await db.session_bundles.update_one({"id": bundle_id, "mentor_id": None}, {"$set": body})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    return await db.session_bundles.find_one({"id": bundle_id}, {"_id": 0})
+
+
+@router.delete("/admin/bundles/{bundle_id}")
+async def admin_delete_bundle(bundle_id: str, user: dict = Depends(require_admin)):
+    await db.session_bundles.delete_one({"id": bundle_id, "mentor_id": None})
+    return {"success": True}
+
+
+# ── Mentor: personal bundles ──
+
+@router.get("/member/mentor/bundles")
+async def mentor_list_bundles(request: Request):
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    items = await db.session_bundles.find({"mentor_id": member["member_id"]}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    return items
+
+
+@router.post("/member/mentor/bundles")
+async def mentor_create_bundle(request: Request):
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    body = _clean_bundle_body(await request.json())
+    if not body["name"]:
+        raise HTTPException(status_code=400, detail="Bundle name required")
+    doc = {
+        "id": str(uuid.uuid4()),
+        "mentor_id": member["member_id"],
+        "created_by": member["member_id"],
+        **body,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    await db.session_bundles.insert_one(doc)
+    return await db.session_bundles.find_one({"id": doc["id"]}, {"_id": 0})
+
+
+@router.put("/member/mentor/bundles/{bundle_id}")
+async def mentor_update_bundle(bundle_id: str, request: Request):
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    body = _clean_bundle_body(await request.json())
+    body["updated_at"] = datetime.now(timezone.utc).isoformat()
+    r = await db.session_bundles.update_one({"id": bundle_id, "mentor_id": member["member_id"]}, {"$set": body})
+    if r.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Not found")
+    return await db.session_bundles.find_one({"id": bundle_id}, {"_id": 0})
+
+
+@router.delete("/member/mentor/bundles/{bundle_id}")
+async def mentor_delete_bundle(bundle_id: str, request: Request):
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    await db.session_bundles.delete_one({"id": bundle_id, "mentor_id": member["member_id"]})
+    return {"success": True}
+
+
+# ── Member: browse + purchase + my credits ──
+
+@router.get("/member/bundles")
+async def member_list_bundles(request: Request):
+    """Active bundles visible to the member — admin-global + any mentor bundles."""
+    from routes.membership import get_current_member
+    await get_current_member(request)
+    items = await db.session_bundles.find({"active": True}, {"_id": 0}).sort("created_at", -1).to_list(500)
+    # Enrich mentor-owned bundles with mentor name
+    for b in items:
+        if b.get("mentor_id"):
+            m = await db.members.find_one({"member_id": b["mentor_id"]}, {"_id": 0, "password_hash": 0})
+            if m:
+                b["mentor_name"] = f"{m.get('first_name', '')} {m.get('last_name', '')}".strip()
+    return items
+
+
+@router.post("/member/bundles/checkout/{bundle_id}")
+async def member_bundle_checkout(bundle_id: str, request: Request):
+    """Start a Stripe session to purchase this bundle. On success, a credit_pack
+    is created via the status-poll endpoint."""
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    bundle = await db.session_bundles.find_one({"id": bundle_id, "active": True}, {"_id": 0})
+    if not bundle:
+        raise HTTPException(status_code=404, detail="Bundle not found")
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    if not settings.get("mentor_slots_paid_enabled"):
+        raise HTTPException(status_code=400, detail="Paid mentorship is currently disabled")
+    if int(bundle.get("price_cents") or 0) <= 0:
+        raise HTTPException(status_code=400, detail="This bundle has no price")
+
+    body = await request.json() if int(request.headers.get("content-length") or 0) > 0 else {}
+    origin_url = (body.get("origin_url") or "").rstrip("/")
+    if not origin_url:
+        raise HTTPException(status_code=400, detail="origin_url is required")
+
+    api_key = os.environ.get("STRIPE_API_KEY", "")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    success_url = f"{origin_url}/my-account/bundles/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/my-account/bundles"
+    metadata = {
+        "kind": "bundle_purchase",
+        "bundle_id": bundle_id,
+        "member_id": member["member_id"],
+    }
+    req = CheckoutSessionRequest(
+        amount=int(bundle["price_cents"]) / 100.0,
+        currency=(bundle.get("currency") or "usd").lower(),
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    session = await stripe_checkout.create_checkout_session(req)
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "session_id": session.session_id,
+        "kind": "bundle_purchase",
+        "bundle_id": bundle_id,
+        "member_id": member["member_id"],
+        "amount": int(bundle["price_cents"]) / 100.0,
+        "currency": (bundle.get("currency") or "usd").lower(),
+        "status": "initiated",
+        "payment_status": "pending",
+        "metadata": metadata,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"url": session.url, "session_id": session.session_id}
+
+
+@router.get("/member/bundles/checkout/status/{session_id}")
+async def member_bundle_checkout_status(session_id: str, request: Request):
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if not tx or tx.get("member_id") != member["member_id"] or tx.get("kind") != "bundle_purchase":
+        raise HTTPException(status_code=404, detail="Checkout session not found")
+
+    if tx.get("payment_status") == "paid":
+        pack = await db.credit_packs.find_one({"purchase_session_id": session_id}, {"_id": 0})
+        return {"payment_status": "paid", "credit_pack": pack}
+
+    api_key = os.environ.get("STRIPE_API_KEY", "")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    status = await stripe_checkout.get_checkout_status(session_id)
+
+    update = {"status": status.status, "payment_status": status.payment_status}
+    if status.payment_status == "paid":
+        update["paid_at"] = datetime.now(timezone.utc).isoformat()
+    await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update})
+
+    credit_pack = None
+    if status.payment_status == "paid":
+        existing = await db.credit_packs.find_one({"purchase_session_id": session_id}, {"_id": 0})
+        if not existing:
+            bundle = await db.session_bundles.find_one({"id": tx["bundle_id"]}, {"_id": 0})
+            if bundle:
+                pack = {
+                    "id": str(uuid.uuid4()),
+                    "member_id": member["member_id"],
+                    "bundle_id": bundle["id"],
+                    "bundle_name": bundle["name"],
+                    "mentor_id": bundle.get("mentor_id"),
+                    "session_count": int(bundle["session_count"]),
+                    "remaining": int(bundle["session_count"]),
+                    "single_session_value_cents": int(bundle.get("single_session_value_cents") or 0),
+                    "price_cents_paid": int(bundle["price_cents"]),
+                    "currency": (bundle.get("currency") or "usd").lower(),
+                    "purchase_session_id": session_id,
+                    "purchased_at": datetime.now(timezone.utc).isoformat(),
+                }
+                await db.credit_packs.insert_one(pack)
+                credit_pack = pack
+                await db.notifications.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "member_id": member["member_id"],
+                    "type": "bundle_purchased",
+                    "title": "Bundle Purchased",
+                    "message": f"You now have {pack['remaining']} session credit{'' if pack['remaining']==1 else 's'} from \"{pack['bundle_name']}\".",
+                    "link": "/my-account/bundles",
+                    "read": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+        else:
+            credit_pack = existing
+
+    return {
+        "payment_status": status.payment_status,
+        "status": status.status,
+        "credit_pack": credit_pack,
+    }
+
+
+@router.get("/member/credits")
+async def member_list_credits(request: Request):
+    """All credit packs owned by the member, with mentor display name enriched."""
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    packs = await db.credit_packs.find({"member_id": member["member_id"]}, {"_id": 0}).sort("purchased_at", -1).to_list(200)
+    for p in packs:
+        if p.get("mentor_id"):
+            m = await db.members.find_one({"member_id": p["mentor_id"]}, {"_id": 0, "password_hash": 0})
+            if m:
+                p["mentor_name"] = f"{m.get('first_name', '')} {m.get('last_name', '')}".strip()
+    return packs

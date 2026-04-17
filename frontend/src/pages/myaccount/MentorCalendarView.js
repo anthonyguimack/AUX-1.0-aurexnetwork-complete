@@ -97,6 +97,8 @@ export default function MentorCalendarView() {
   const [view, setView] = useState('month');
   const [selectedDay, setSelectedDay] = useState(null);
   const [paidEnabled, setPaidEnabled] = useState(false);
+  const [credits, setCredits] = useState([]);
+  const [useCredit, setUseCredit] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -109,13 +111,20 @@ export default function MentorCalendarView() {
   useEffect(load, []);
   useEffect(() => {
     publicAPI.getSettings().then(r => setPaidEnabled(r.data?.mentor_slots_paid_enabled === true)).catch(() => {});
+    memberAPI.getMyCredits().then(r => setCredits(r.data || [])).catch(() => setCredits([]));
   }, []);
+
+  const eligibleCreditFor = (mentorId) => {
+    // mirror backend priority: mentor-specific first, then global
+    return credits.find(c => c.remaining > 0 && c.mentor_id === mentorId) ||
+           credits.find(c => c.remaining > 0 && !c.mentor_id) || null;
+  };
 
   const handleBook = async (slot) => {
     const booked = slot.booked_count || 0;
     const max = slot.max_students || 1;
+    setUseCredit(false);
     if (booked >= max) {
-      // Full — show waitlist dialog (always free — waitlist never charges)
       setBookDialog({ ...slot, _isWaitlist: true });
     } else {
       setBookDialog(slot);
@@ -127,16 +136,19 @@ export default function MentorCalendarView() {
     try {
       const slot = data.slots.find(s => s.id === slotId);
       const isPaid = paidEnabled && (slot?.price_cents || 0) > 0 && !slot?._isWaitlist && !bookDialog?._isWaitlist;
-      if (isPaid) {
+      if (isPaid && useCredit) {
+        const r = await memberAPI.bookMentorSlot(slotId, { use_credit: true });
+        toast.success('Booked with credit!');
+        setBookDialog(null);
+        memberAPI.getMyCredits().then(r2 => setCredits(r2.data || [])).catch(() => {});
+        load();
+      } else if (isPaid) {
         const API = process.env.REACT_APP_BACKEND_URL;
         const token = localStorage.getItem('auth_token');
         const r = await axios.post(`${API}/api/member/mentorship/checkout/${slotId}`,
           { origin_url: window.location.origin },
           { headers: { Authorization: `Bearer ${token}` } });
-        if (r.data?.url) {
-          window.location.href = r.data.url;
-          return;
-        }
+        if (r.data?.url) { window.location.href = r.data.url; return; }
         toast.error('Checkout failed — no URL returned');
       } else {
         const r = await memberAPI.bookMentorSlot(slotId);
@@ -259,7 +271,7 @@ export default function MentorCalendarView() {
                 <button onClick={() => setBookDialog(null)} className="flex-1 py-2 rounded text-sm font-medium border" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }}>Cancel</button>
                 <button onClick={() => confirmBook(bookDialog.id)} disabled={booking} className="flex-1 py-2 rounded text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: bookDialog._isWaitlist ? '#2563eb' : v('button-bg', '#c9a84c'), color: bookDialog._isWaitlist ? '#fff' : v('button-text', '#0d0f14') }} data-testid="confirm-booking-btn">
                   {booking && <Loader2 className="w-3 h-3 animate-spin" />}
-                  {bookDialog._isWaitlist ? 'Join Waiting List' : (paidEnabled && (bookDialog.price_cents || 0) > 0 ? `Pay ${formatPrice(bookDialog.price_cents, bookDialog.currency)} & Book` : 'Confirm Booking')}
+                  {bookDialog._isWaitlist ? 'Join Waiting List' : (useCredit ? 'Book with Credit' : (paidEnabled && (bookDialog.price_cents || 0) > 0 ? `Pay ${formatPrice(bookDialog.price_cents, bookDialog.currency)} & Book` : 'Confirm Booking'))}
                 </button>
               </div>
             </div>
