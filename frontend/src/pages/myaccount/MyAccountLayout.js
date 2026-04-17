@@ -172,7 +172,7 @@ export default function MyAccountLayout() {
             </div>
           ) : (
             navItems.map(item => {
-              const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/');
+              const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/') || (item.id === 'global-calendar' && location.pathname.startsWith('/my-account/event/'));
               return (
                 <Link key={item.href} to={item.href} onClick={() => setSideOpen(false)}
                   className="flex items-center gap-3 px-5 py-2.5 text-sm transition-colors"
@@ -280,7 +280,10 @@ export default function MyAccountLayout() {
             <div className="flex items-center text-xs" style={{ color: v('text-muted', '#6b7280') }}>
               <span>My Account</span>
               <ChevronRight className="w-3 h-3 mx-1" />
-              <span style={{ color: v('text-secondary', '#9ca3af') }}>{ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href))?.label || 'Dashboard'}</span>
+              <span style={{ color: v('text-secondary', '#9ca3af') }}>{
+                location.pathname.startsWith('/my-account/event/') ? `${settings.aux_prefix || 'AUX'} Calendar` :
+                (() => { const item = ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href)); return item?.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item?.label || 'Dashboard'; })()
+              }</span>
             </div>
           </div>
         </header>

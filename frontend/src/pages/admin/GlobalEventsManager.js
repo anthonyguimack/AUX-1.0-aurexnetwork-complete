@@ -171,7 +171,8 @@ export default function GlobalEventsManager() {
         const days = []; for (let i = 0; i < firstDay; i++) days.push(null); for (let d = 1; d <= daysInMonth; d++) days.push(d);
         const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
         const getEventsForDay = (day) => { if (!day) return []; const ds = `${yr}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; return events.filter(e => e.date === ds); };
-        const sc = { active: '#22c55e', inactive: '#f59e0b', cancelled: '#ef4444' };
+        const todayD = new Date().toISOString().split('T')[0];
+        const ec = (e) => { if (e.status === 'cancelled' || e.date < todayD) return '#6b7280'; return '#22c55e'; };
         return (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -185,7 +186,7 @@ export default function GlobalEventsManager() {
                 const de = getEventsForDay(day);
                 return <div key={i} className="min-h-[80px] p-1.5 bg-white">
                   {day && <><span className="text-xs font-medium text-[#1a2332]">{day}</span>
-                    {de.map(e => <div key={e.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate cursor-pointer" onClick={() => { setEditing({...e}); setOpen(true); }} style={{ backgroundColor: (sc[e.status]||'#6b7280')+'20', color: sc[e.status]||'#6b7280', borderLeft: `2px solid ${sc[e.status]||'#6b7280'}` }}>{e.title}</div>)}
+                    {de.map(e => <div key={e.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate cursor-pointer" onClick={() => { setEditing({...e}); setOpen(true); }} style={{ backgroundColor: ec(e)+'20', color: ec(e), borderLeft: `2px solid ${ec(e)}` }}>{e.title}</div>)}
                   </>}
                 </div>;
               })}

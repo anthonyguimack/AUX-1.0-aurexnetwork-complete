@@ -272,10 +272,21 @@ async def member_register_event(event_id: str, request: Request):
     if event.get("status") != "active":
         raise HTTPException(status_code=400, detail="Event is not active")
     existing = await db.event_registrations.find_one({"event_id": event_id, "member_id": member["member_id"]})
-    if existing:
+    if existing and existing.get("status") == "registered":
         raise HTTPException(status_code=400, detail="Already registered for this event")
     registered_count = await db.event_registrations.count_documents({"event_id": event_id, "status": "registered"})
     max_cap = event.get("max_capacity", 50)
+    # Waitlisted member upgrading to registered
+    if existing and existing.get("status") == "waitlist" and registered_count < max_cap:
+        await db.event_registrations.update_one({"event_id": event_id, "member_id": member["member_id"]}, {"$set": {"status": "registered", "registered_at": datetime.now(timezone.utc).isoformat()}})
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()), "member_id": member["member_id"], "type": "event_registration",
+            "title": "Registration Confirmed", "message": f"You are now registered for \"{event.get('title', '')}\".",
+            "link": "/my-account/global-calendar", "read": False, "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return {"success": True, "status": "registered"}
+    if existing:
+        raise HTTPException(status_code=400, detail="Already on the waiting list")
     status = "registered" if registered_count < max_cap else "waitlist"
     reg = {
         "id": str(uuid.uuid4()),
@@ -497,11 +508,41 @@ async def member_book_slot(slot_id: str, request: Request):
     if slot.get("status") != "active":
         raise HTTPException(status_code=400, detail="Slot is not available")
     existing = await db.mentorship_bookings.find_one({"slot_id": slot_id, "member_id": member["member_id"]})
-    if existing:
+    if existing and existing.get("status") == "booked":
         raise HTTPException(status_code=400, detail="Already booked this slot")
     booked_count = await db.mentorship_bookings.count_documents({"slot_id": slot_id, "status": {"$in": ["booked", "completed"]}})
     max_students = slot.get("max_students", 1)
-    status = "booked" if booked_count < max_students else "waitlist"
+    if booked_count >= max_students and (not existing or existing.get("status") != "waitlist"):
+        # No spots, add to waitlist
+        if existing:
+            raise HTTPException(status_code=400, detail="Already on the waiting list")
+        status = "waitlist"
+    elif existing and existing.get("status") == "waitlist" and booked_count < max_students:
+        # Upgrade from waitlist to booked
+        await db.mentorship_bookings.update_one({"slot_id": slot_id, "member_id": member["member_id"]}, {"$set": {"status": "booked", "booked_at": datetime.now(timezone.utc).isoformat()}})
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "member_id": slot["mentor_id"],
+            "type": "mentorship_booking",
+            "title": "Booking Confirmed",
+            "message": f"{member.get('first_name', '')} {member.get('last_name', '')} confirmed their booking for {slot.get('session_type', 'session')} on {slot.get('date', '')}.",
+            "link": "/my-account/mentorship-calendar",
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        await db.notifications.insert_one({
+            "id": str(uuid.uuid4()),
+            "member_id": member["member_id"],
+            "type": "mentorship_confirmed",
+            "title": "Booking Confirmed",
+            "message": f"Your mentorship session on {slot.get('date', '')} has been confirmed.",
+            "link": "/my-account/my-bookings",
+            "read": False,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        return {"success": True, "status": "booked"}
+    else:
+        status = "booked" if booked_count < max_students else "waitlist"
     booking = {
         "id": str(uuid.uuid4()),
         "slot_id": slot_id,

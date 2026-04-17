@@ -142,7 +142,8 @@ export default function MentorshipScheduleManager() {
         const days = []; for (let i = 0; i < firstDay; i++) days.push(null); for (let d = 1; d <= daysInMonth; d++) days.push(d);
         const monthLabel = currentDate.toLocaleString('default', { month: 'long', year: 'numeric' });
         const getSlotsForDay = (day) => { if (!day) return []; const ds = `${year}-${String(mo+1).padStart(2,'0')}-${String(day).padStart(2,'0')}`; return slots.filter(s => s.date === ds); };
-        const sc = (s) => { if (s.status !== 'active') return '#6b7280'; const b = s.booked_count||0, mx = s.max_students||1; if (s.waitlist_count > 0) return '#38bdf8'; if (b >= mx) return '#ef4444'; if (b > 0) return '#eab308'; return '#22c55e'; };
+        const todayD = new Date().toISOString().split('T')[0];
+        const sc = (s) => { if (s.status === 'cancelled' || s.status === 'inactive' || s.date < todayD) return '#6b7280'; return '#22c55e'; };
         return (
           <>
             <div className="flex items-center justify-between mb-4">
@@ -156,7 +157,7 @@ export default function MentorshipScheduleManager() {
                 const ds = getSlotsForDay(day);
                 return <div key={i} className="min-h-[80px] p-1.5 bg-white">
                   {day && <><span className="text-xs font-medium text-[#1a2332]">{day}</span>
-                    {ds.map(s => <div key={s.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate cursor-pointer" onClick={() => openBookings(s)} style={{ backgroundColor: sc(s)+'20', color: sc(s), borderLeft: `2px solid ${sc(s)}` }}>{s.mentor_name?.split(' ')[0]} {s.start_time}</div>)}
+                    {ds.map(s => <div key={s.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate cursor-pointer" onClick={() => openBookings(s)} style={{ backgroundColor: sc(s)+'20', color: sc(s), borderLeft: `2px solid ${sc(s)}` }}>{s.title || s.mentor_name?.split(' ')[0]} {s.start_time}</div>)}
                   </>}
                 </div>;
               })}
@@ -228,15 +229,9 @@ export default function MentorshipScheduleManager() {
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Date *</Label><Input type="date" value={editing.date} onChange={e => setEditing({ ...editing, date: e.target.value })} className="mt-1" data-testid="slot-date" /></div>
                 <div><Label className="text-xs">Start *</Label>
-                  <select value={editing.start_time} onChange={e => setEditing({ ...editing, start_time: e.target.value })} className={inputCls + " mt-1"} data-testid="slot-start">
-                    <option value="">Select...</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select></div>
+                  <Input type="time" value={editing.start_time} onChange={e => setEditing({ ...editing, start_time: e.target.value })} className="mt-1" data-testid="slot-start" /></div>
                 <div><Label className="text-xs">End *</Label>
-                  <select value={editing.end_time} onChange={e => setEditing({ ...editing, end_time: e.target.value })} className={inputCls + " mt-1"} data-testid="slot-end">
-                    <option value="">Select...</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select></div>
+                  <Input type="time" value={editing.end_time} onChange={e => setEditing({ ...editing, end_time: e.target.value })} className="mt-1" data-testid="slot-end" /></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs">Session Type *</Label>

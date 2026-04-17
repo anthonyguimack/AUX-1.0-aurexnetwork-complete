@@ -225,15 +225,9 @@ export default function MentorshipCalendar() {
                 <Input type="date" value={editing.date || ''} onChange={e => setEditing(p => ({ ...p, date: e.target.value }))} className="mt-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-date" /></div>
               <div className="grid grid-cols-2 gap-3">
                 <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Start *</Label>
-                  <select value={editing.start_time || ''} onChange={e => setEditing(p => ({ ...p, start_time: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded text-sm" style={selectStyle} data-testid="slot-start">
-                    <option value="">Select...</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select></div>
+                  <Input type="time" value={editing.start_time || ''} onChange={e => setEditing(p => ({ ...p, start_time: e.target.value }))} className="mt-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-start" /></div>
                 <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>End *</Label>
-                  <select value={editing.end_time || ''} onChange={e => setEditing(p => ({ ...p, end_time: e.target.value }))} className="w-full mt-1 px-3 py-2 rounded text-sm" style={selectStyle} data-testid="slot-end">
-                    <option value="">Select...</option>
-                    {TIME_OPTIONS.map(t => <option key={t} value={t}>{t}</option>)}
-                  </select></div>
+                  <Input type="time" value={editing.end_time || ''} onChange={e => setEditing(p => ({ ...p, end_time: e.target.value }))} className="mt-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-end" /></div>
               </div>
               <div className="grid grid-cols-3 gap-3">
                 <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Type *</Label>
