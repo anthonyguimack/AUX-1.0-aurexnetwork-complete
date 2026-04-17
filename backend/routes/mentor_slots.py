@@ -78,6 +78,8 @@ async def admin_create_mentorship_slot(request: Request, user: dict = Depends(re
     body.setdefault("description", "")
     body.setdefault("virtual_link", "")
     body.setdefault("attachments", [])
+    body.setdefault("price_cents", 0)
+    body.setdefault("currency", "usd")
     if not body.get("mentor_id"):
         raise HTTPException(status_code=400, detail="mentor_id is required")
     if not body.get("date"):
@@ -380,6 +382,11 @@ async def member_book_slot(slot_id: str, request: Request):
         raise HTTPException(status_code=404, detail="Slot not found")
     if slot.get("status") != "active":
         raise HTTPException(status_code=400, detail="Slot is not available")
+    # Paid-slot gate: when global toggle is ON and the slot has a price,
+    # bookings must go through Stripe via /member/mentorship/checkout/{slot_id}
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    if settings.get("mentor_slots_paid_enabled") and int(slot.get("price_cents") or 0) > 0:
+        raise HTTPException(status_code=402, detail="This is a paid slot. Use the checkout flow to book.")
     existing = await db.mentorship_bookings.find_one({"slot_id": slot_id, "member_id": member["member_id"]})
     if existing and existing.get("status") == "booked":
         raise HTTPException(status_code=400, detail="Already booked this slot")
@@ -486,3 +493,185 @@ async def member_my_bookings(request: Request):
             else:
                 b["display_status"] = b["status"]
     return bookings
+
+
+
+# ── Paid booking via Stripe Checkout ──
+
+@router.post("/member/mentorship/checkout/{slot_id}")
+async def member_mentorship_checkout(slot_id: str, request: Request):
+    """Start a Stripe Checkout session for a paid mentorship slot.
+
+    Creates a `pending_payment` booking so the seat is soft-held until payment
+    clears. On payment success the status-poll endpoint flips it to `booked`.
+    """
+    import os
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+    slot = await db.mentorship_slots.find_one({"id": slot_id}, {"_id": 0})
+    if not slot:
+        raise HTTPException(status_code=404, detail="Slot not found")
+    if slot.get("status") != "active":
+        raise HTTPException(status_code=400, detail="Slot is not available")
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    if not settings.get("mentor_slots_paid_enabled"):
+        raise HTTPException(status_code=400, detail="Paid mentorship is currently disabled")
+    price_cents = int(slot.get("price_cents") or 0)
+    if price_cents <= 0:
+        raise HTTPException(status_code=400, detail="This slot has no price — use the free booking flow")
+
+    # Enforce the same seat/waitlist rules as the free path
+    existing = await db.mentorship_bookings.find_one({"slot_id": slot_id, "member_id": member["member_id"]})
+    if existing and existing.get("status") in ("booked", "pending_payment"):
+        raise HTTPException(status_code=400, detail="You already have an active booking or pending payment for this slot")
+    booked_count = await db.mentorship_bookings.count_documents({"slot_id": slot_id, "status": {"$in": ["booked", "completed", "pending_payment"]}})
+    if booked_count >= int(slot.get("max_students", 1)):
+        raise HTTPException(status_code=400, detail="Slot is full. Join the waiting list via the free booking flow.")
+
+    body = await request.json() if int(request.headers.get("content-length") or 0) > 0 else {}
+    origin_url = (body.get("origin_url") or "").rstrip("/")
+    if not origin_url:
+        raise HTTPException(status_code=400, detail="origin_url is required")
+
+    api_key = os.environ.get("STRIPE_API_KEY", "")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    success_url = f"{origin_url}/my-account/mentorship/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
+    cancel_url = f"{origin_url}/my-account/mentor-calendar"
+    metadata = {
+        "kind": "mentorship_booking",
+        "slot_id": slot_id,
+        "member_id": member["member_id"],
+        "member_email": member.get("email", ""),
+    }
+    currency = (slot.get("currency") or "usd").lower()
+    checkout_req = CheckoutSessionRequest(
+        amount=price_cents / 100.0,
+        currency=currency,
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
+    session = await stripe_checkout.create_checkout_session(checkout_req)
+
+    # Upsert a pending booking tied to this session
+    if existing:
+        await db.mentorship_bookings.update_one(
+            {"slot_id": slot_id, "member_id": member["member_id"]},
+            {"$set": {
+                "status": "pending_payment",
+                "payment_session_id": session.session_id,
+                "payment_status": "pending",
+                "price_cents": price_cents,
+                "currency": currency,
+                "booked_at": datetime.now(timezone.utc).isoformat(),
+            }},
+        )
+    else:
+        await db.mentorship_bookings.insert_one({
+            "id": str(uuid.uuid4()),
+            "slot_id": slot_id,
+            "member_id": member["member_id"],
+            "mentor_id": slot["mentor_id"],
+            "status": "pending_payment",
+            "payment_session_id": session.session_id,
+            "payment_status": "pending",
+            "price_cents": price_cents,
+            "currency": currency,
+            "booked_at": datetime.now(timezone.utc).isoformat(),
+        })
+
+    await db.payment_transactions.insert_one({
+        "id": str(uuid.uuid4()),
+        "session_id": session.session_id,
+        "kind": "mentorship_booking",
+        "slot_id": slot_id,
+        "member_id": member["member_id"],
+        "amount": price_cents / 100.0,
+        "currency": currency,
+        "status": "initiated",
+        "payment_status": "pending",
+        "metadata": metadata,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    })
+    return {"url": session.url, "session_id": session.session_id}
+
+
+@router.get("/member/mentorship/checkout/status/{session_id}")
+async def member_mentorship_checkout_status(session_id: str, request: Request):
+    """Poll Stripe for payment status. On `paid`, confirm the booking.
+
+    Safe to call repeatedly — if the booking is already confirmed, this
+    short-circuits and returns the cached `paid` state.
+    """
+    import os
+    from emergentintegrations.payments.stripe.checkout import StripeCheckout
+    from routes.membership import get_current_member
+    member = await get_current_member(request)
+
+    tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
+    if not tx or tx.get("member_id") != member["member_id"]:
+        raise HTTPException(status_code=404, detail="Checkout session not found")
+
+    if tx.get("payment_status") == "paid":
+        booking = await db.mentorship_bookings.find_one({"payment_session_id": session_id}, {"_id": 0})
+        return {"payment_status": "paid", "booking_status": booking.get("status") if booking else "booked"}
+
+    api_key = os.environ.get("STRIPE_API_KEY", "")
+    host_url = str(request.base_url).rstrip("/")
+    webhook_url = f"{host_url}api/webhook/stripe"
+    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    status = await stripe_checkout.get_checkout_status(session_id)
+
+    update = {"status": status.status, "payment_status": status.payment_status}
+    if status.payment_status == "paid":
+        update["paid_at"] = datetime.now(timezone.utc).isoformat()
+    await db.payment_transactions.update_one({"session_id": session_id}, {"$set": update})
+
+    booking_status = None
+    if status.payment_status == "paid":
+        booking = await db.mentorship_bookings.find_one({"payment_session_id": session_id}, {"_id": 0})
+        if booking and booking.get("status") == "pending_payment":
+            await db.mentorship_bookings.update_one(
+                {"payment_session_id": session_id},
+                {"$set": {
+                    "status": "booked",
+                    "payment_status": "paid",
+                    "paid_at": datetime.now(timezone.utc).isoformat(),
+                }},
+            )
+            slot = await db.mentorship_slots.find_one({"id": booking["slot_id"]}, {"_id": 0})
+            if slot:
+                await db.notifications.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "member_id": slot["mentor_id"],
+                    "type": "mentorship_booking",
+                    "title": "New Paid Booking",
+                    "message": f"Payment received for your {slot.get('session_type', 'session')} on {slot.get('date', '')}.",
+                    "link": "/my-account/mentorship-calendar",
+                    "read": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+                await db.notifications.insert_one({
+                    "id": str(uuid.uuid4()),
+                    "member_id": member["member_id"],
+                    "type": "mentorship_confirmed",
+                    "title": "Booking Confirmed",
+                    "message": f"Your paid mentorship session on {slot.get('date', '')} is confirmed.",
+                    "link": "/my-account/my-bookings",
+                    "read": False,
+                    "created_at": datetime.now(timezone.utc).isoformat(),
+                })
+            booking_status = "booked"
+        elif booking:
+            booking_status = booking.get("status")
+
+    return {
+        "payment_status": status.payment_status,
+        "status": status.status,
+        "booking_status": booking_status,
+        "amount_total": status.amount_total,
+        "currency": status.currency,
+    }

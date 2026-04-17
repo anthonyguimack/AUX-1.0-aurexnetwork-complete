@@ -33,6 +33,7 @@ export default function MentorshipScheduleManager() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [templates, setTemplates] = useState([]);
   const [templatesEnabled, setTemplatesEnabled] = useState(false);
+  const [paidEnabled, setPaidEnabled] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -47,7 +48,7 @@ export default function MentorshipScheduleManager() {
   };
   useEffect(load, []);
   useEffect(() => {
-    adminAPI.getSettings().then(r => setTemplatesEnabled(r.data?.mentor_slot_templates_enabled === true)).catch(() => {});
+    adminAPI.getSettings().then(r => { setTemplatesEnabled(r.data?.mentor_slot_templates_enabled === true); setPaidEnabled(r.data?.mentor_slots_paid_enabled === true); }).catch(() => {});
     adminAPI.getMentorSlotTemplates().then(r => setTemplates(r.data || [])).catch(() => setTemplates([]));
   }, []);
 
@@ -303,6 +304,22 @@ export default function MentorshipScheduleManager() {
                 </div></div>
               <div><Label className="text-xs">Virtual Link</Label>
                 <Input value={editing.virtual_link || ''} onChange={e => setEditing({ ...editing, virtual_link: e.target.value })} className="mt-1" placeholder="https://zoom.us/..." data-testid="slot-virtual-link" /></div>
+              {paidEnabled && (
+                <div className="p-3 rounded-sm bg-slate-50 border border-slate-200">
+                  <Label className="text-xs font-medium">Price (USD)</Label>
+                  <p className="text-[11px] text-slate-400 mb-1.5">Leave blank or 0 for a free slot. Paid slots require Stripe checkout.</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={((editing.price_cents || 0) / 100).toFixed(2)}
+                    onChange={e => setEditing({ ...editing, price_cents: Math.max(0, Math.round(parseFloat(e.target.value || '0') * 100)) })}
+                    placeholder="0.00"
+                    className="mt-1 max-w-[140px]"
+                    data-testid="slot-price-input"
+                  />
+                </div>
+              )}
               {!editing.id && (
                 <SlotRecurrencePicker
                   value={editing.recurrence}

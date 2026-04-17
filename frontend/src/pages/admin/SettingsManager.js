@@ -254,6 +254,21 @@ export default function SettingsManager() {
                 <span className="text-sm text-slate-600">{settings.mentor_slot_templates_enabled ? 'Enabled' : 'Disabled'}</span>
               </div>
             </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Paid Mentor Slots (Stripe)</h3>
+            <div>
+              <Label>Enable Paid Mentor Slots</Label>
+              <p className="text-xs text-slate-400 mb-2">When enabled, mentors can set a <strong>Price</strong> on each slot and members must pay via Stripe before the booking confirms. When disabled, all bookings stay free — no checkout ever appears, even if a price is saved. This toggle takes effect immediately without redeployment.</p>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={settings.mentor_slots_paid_enabled === true}
+                  onCheckedChange={(checked) => setSettings({ ...settings, mentor_slots_paid_enabled: checked })}
+                  data-testid="mentor-slots-paid-toggle"
+                />
+                <span className="text-sm text-slate-600">{settings.mentor_slots_paid_enabled ? 'Enabled — Stripe active on booking flow' : 'Disabled — bookings remain free'}</span>
+              </div>
+            </div>
           </div>
         </TabsContent>
 

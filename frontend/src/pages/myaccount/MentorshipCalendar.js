@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { memberAPI } from '../../lib/api';
+import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -38,6 +38,7 @@ export default function MentorshipCalendar() {
   const [viewSlot, setViewSlot] = useState(null);
   const [uploading, setUploading] = useState(false);
   const [templates, setTemplates] = useState([]);
+  const [paidEnabled, setPaidEnabled] = useState(false);
 
   const load = () => {
     setLoading(true);
@@ -55,6 +56,7 @@ export default function MentorshipCalendar() {
   useEffect(load, []); // eslint-disable-line
   useEffect(() => {
     memberAPI.getMentorSlotTemplates().then(r => setTemplates(r.data || [])).catch(() => setTemplates([]));
+    publicAPI.getSettings().then(r => setPaidEnabled(r.data?.mentor_slots_paid_enabled === true)).catch(() => {});
   }, []);
 
   const addMinutes = (hhmm, mins) => {
@@ -288,6 +290,23 @@ export default function MentorshipCalendar() {
               </div>
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Virtual Link</Label>
                 <Input value={editing.virtual_link || ''} onChange={e => setEditing(p => ({ ...p, virtual_link: e.target.value }))} className="mt-1" placeholder="https://zoom.us/..." style={{ backgroundColor: v('input-bg', '#0d0f14'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }} data-testid="slot-virtual-link" /></div>
+              {paidEnabled && (
+                <div className="p-3 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }}>
+                  <Label className="text-xs font-medium" style={{ color: v('text-secondary', '#9ca3af') }}>Price (USD)</Label>
+                  <p className="text-[11px] mb-1.5" style={{ color: v('text-muted', '#6b7280') }}>Leave blank or 0 for a free session. Paid sessions require member checkout via Stripe.</p>
+                  <Input
+                    type="number"
+                    min={0}
+                    step="0.01"
+                    value={((editing.price_cents || 0) / 100).toFixed(2)}
+                    onChange={e => setEditing(p => ({ ...p, price_cents: Math.max(0, Math.round(parseFloat(e.target.value || '0') * 100)) }))}
+                    placeholder="0.00"
+                    className="mt-1 max-w-[140px]"
+                    style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('input-border', 'rgba(255,255,255,0.1)'), color: v('text-primary', '#fff') }}
+                    data-testid="slot-price-input"
+                  />
+                </div>
+              )}
               <div><Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Description</Label>
                 <div className="mt-1 ma-quill-dark rounded" data-testid="slot-description-editor">
                   <RichTextEditor value={editing.description || ''} onChange={val => setEditing(p => ({ ...p, description: val }))} placeholder="Optional notes visible to students" />
