@@ -371,25 +371,25 @@ html {
 
 /* === Adaptive color-scheme for native form controls ===
    Browsers use `color-scheme` to tint native chrome on input[type=date|time|...],
-   select option lists, scrollbars, etc. We set it at the container level so that
-   all descendants inherit the correct scheme matching that container's background.
-
-   Rule: dark bg → color-scheme: dark (icons render light)
-         light bg → color-scheme: light (icons render dark)
+   select option lists, scrollbars, etc. The `--ma-color-scheme` / `--ad-color-scheme`
+   / `--me-color-scheme` CSS variables are computed in JS (see lib/themeColors.js)
+   by reading the luminance of each scope's card/form background — so they
+   automatically flip between `dark` and `light` whenever the admin changes the
+   theme in the CMS. Native icons therefore always contrast the configured bg.
 */
-
-/* Dark containers */
 [data-testid="myaccount-layout"],
 [data-testid="member-login-page"],
 [data-testid="member-register-page"],
-[data-testid="admin-layout"],
 [role="dialog"][data-state="open"] {
-  color-scheme: dark;
+  color-scheme: var(--ma-color-scheme, dark);
 }
 
-/* Light containers (enrollment wizard uses light theme by default) */
+[data-testid="admin-layout"] {
+  color-scheme: var(--ad-color-scheme, light);
+}
+
 [data-testid="membership-enrollment"] {
-  color-scheme: light;
+  color-scheme: var(--me-color-scheme, light);
 }
 
 /* Firefox: picker arrow uses inherited text color, make sure date/time inputs

@@ -1,5 +1,32 @@
 // Theme color definitions with defaults for all 3 groups
 
+// Luminance-based color-scheme detection: parses common CSS color formats
+// and returns "dark" if the color is perceptually dark, else "light".
+// Used to auto-toggle `color-scheme` so native form controls (date/time
+// pickers, select dropdowns) render with icons that contrast the theme.
+function getLuminance(color) {
+  if (!color || typeof color !== 'string') return 0;
+  let r, g, b;
+  const hex = color.trim().match(/^#([a-fA-F0-9]{3}|[a-fA-F0-9]{6})$/);
+  const rgb = color.match(/rgba?\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)/);
+  if (hex) {
+    let h = hex[1];
+    if (h.length === 3) h = h.split('').map(c => c + c).join('');
+    r = parseInt(h.slice(0, 2), 16);
+    g = parseInt(h.slice(2, 4), 16);
+    b = parseInt(h.slice(4, 6), 16);
+  } else if (rgb) {
+    r = +rgb[1]; g = +rgb[2]; b = +rgb[3];
+  } else {
+    return 0;
+  }
+  // ITU-R BT.601 perceptual luma
+  return (r * 299 + g * 587 + b * 114) / 1000 / 255;
+}
+export function schemeFor(color) {
+  return getLuminance(color) < 0.5 ? 'dark' : 'light';
+}
+
 export const WEBSITE_COLORS = [
   { key: 'primary', label: 'Primary Color', default: '#1a2332' },
   { key: 'accent', label: 'Accent Color', default: '#0D9488' },
@@ -172,12 +199,17 @@ export function injectThemeColors(themeColors) {
   MYACCOUNT_COLORS.forEach(c => {
     root.style.setProperty(`--ma-${c.key.replace(/_/g, '-')}`, ma[c.key] || c.default);
   });
+  // Auto-derive color-scheme from the card bg so native pickers/selects match theme
+  const maCardBg = ma.card_bg || MYACCOUNT_COLORS.find(c => c.key === 'card_bg').default;
+  root.style.setProperty('--ma-color-scheme', schemeFor(maCardBg));
 
   // Admin colors (--ad-*)
   const ad = themeColors?.admin || {};
   ADMIN_COLORS.forEach(c => {
     root.style.setProperty(`--ad-${c.key.replace(/_/g, '-')}`, ad[c.key] || c.default);
   });
+  const adCardBg = ad.card_bg || ADMIN_COLORS.find(c => c.key === 'card_bg').default;
+  root.style.setProperty('--ad-color-scheme', schemeFor(adCardBg));
 
   // Landing Page colors (--lp-*)
   const lp = themeColors?.landing_page || {};
@@ -190,6 +222,8 @@ export function injectThemeColors(themeColors) {
   ENROLLMENT_COLORS.forEach(c => {
     root.style.setProperty(`--me-${c.key.replace(/_/g, '-')}`, me[c.key] || c.default);
   });
+  const meFormBg = me.form_bg || ENROLLMENT_COLORS.find(c => c.key === 'form_bg').default;
+  root.style.setProperty('--me-color-scheme', schemeFor(meFormBg));
 }
 
 // Theme definitions
