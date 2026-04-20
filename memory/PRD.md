@@ -263,20 +263,29 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
   - Booking dialog (`MentorCalendarView.js`) shows a new **Use 1 credit from "<Bundle>"** checkbox when the member has an eligible pack, updates CTA to **Book with Credit**.
 - Verified via curl: admin + mentor bundle CRUD, member browse, book-with-credit decrements 5→4, cancel restores 4→5, 402 still fires when trying to book without credit. Seeded 2 demo bundles → browse page renders correctly with savings copy. All seed data cleaned.
 
-### Payout Ledger MVP — Iteration 65 (Apr 17, 2026)
-- New `routes/payouts.py` with manual payout ledger tied to a configurable `platform_fee_percent` CMS setting (default 15%).
-- Ledger math: `gross = sum(paid transactions per mentor)`, `fee = gross * fee%`, `net = gross - fee`, `balance_owed = net - paid_out`.
-- Endpoints:
-  - Admin: `GET /api/admin/payouts` (aggregated per-mentor ledger + payout history), `POST /api/admin/payouts` (record manual payout: mentor_id, amount_cents, method, reference, notes), `DELETE /api/admin/payouts/{id}` (void).
-  - Mentor: `GET /api/member/mentor/payouts` (own ledger + records).
-- Frontend:
-  - New admin page `/admin/payouts` (`AdminPayoutsManager.js`) — 5 KPI cards (Gross / Fee / Net Owed / Paid Out / Outstanding), mentor earnings ledger table with "Record payout" action per mentor, and payout history table with void action.
-  - `MentorEarnings.js` gets a new **Payouts** card at the bottom showing Gross / Fee / Paid Out / Balance Owed stats + payout history table, with platform fee badge.
-- **Bug discovered & fixed** during visual QA: MentorEarnings was missing imports for `Package`, `Plus`, `Edit2`, `Trash2`, `Send` (lucide-react), `toast` (sonner), and `BundleEditorDialog` → caused `Package is not defined` runtime ReferenceError on page mount. Also `loadPayouts()` was defined but never called in useEffect. All fixed.
-- Verified via curl (17/17 backend tests) + screenshots of both `/admin/payouts` and `/my-account/earnings` (Carlos mentor account) rendering correctly with empty and populated ledger states.
+### Iteration 58 — Multi-batch (Apr 20, 2026)
+**New Admin Settings (Settings → General):**
+- `paid_bundles_enabled` (Switch): Independent gate for session bundle Stripe checkout. Falls back to `mentor_slots_paid_enabled` for backwards compatibility when unset.
+- `my_account_color_scheme` (Radio `dark`|`light`): Authoritative override for `--ma-color-scheme`. Admin picks the scheme that matches their configured My Account bg — used for all native form control chrome (date/time pickers, selects, scrollbars). When unset, falls back to luminance auto-detection from `ma.card_bg`.
+
+**Session Bundles upgrade:**
+- New fields on bundle model: `summary` (short text for card) + `banner_url` (cover image).
+- `BundleEditorDialog` now has Banner URL + Summary + Rich Description inputs.
+- Member `/my-account/bundles` shows banner image at top of each card, summary text, and "Read more" link → new `/my-account/bundles/:id` details page (sidebar stays active via existing `pathname.startsWith`).
+- New `BundleDetail.js` page with hero banner, 3 KPI cards (Price / Sessions / Savings), rich-text About section, and Buy CTA that redirects to Stripe.
+- New backend endpoint `GET /api/member/bundles/{id}` for public details.
+
+**Bug fixes:**
+- **Document upload (.docx) failing**: `/member/upload-file` now falls back to file-extension whitelist when MIME is `application/octet-stream` (some browsers/proxies strip MIME for Office docs).
+- **Template selection not retained**: Converted `<select>` in MentorshipCalendar slot dialog to a controlled input driven by `appliedTemplateId` state; value resets only when "New Slot" is clicked.
+- **MentorshipProfile rich text HTML tags visible**: Card description now uses `stripHtml()`; Confirm Booking / Waitlist modal uses `dangerouslySetInnerHTML`. 
+- **Paid slot booking broken (402 error)**: `MentorshipProfile.confirmBook` now detects paid mode + redirects to `/member/mentorship/checkout/:id` for Stripe URL instead of free-book endpoint. Price badge + amount now shown on cards and in dialog CTA.
+
+**Testing**: iteration_58 testing agent → 16/16 backend tests pass, all frontend UI verified. Report: `/app/test_reports/iteration_58.json`.
 
 ## Credentials
 Admin: admin@consultant.com / Admin123!
+Mentor (Carlos): carlos@example.com / Mentor123!
 
 ## Pending/Backlog
 - (P2) S3/Cloud Image Storage migration
