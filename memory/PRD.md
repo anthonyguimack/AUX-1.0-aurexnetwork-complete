@@ -311,6 +311,12 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - New backend endpoint `GET /api/admin/coupons/analytics` aggregates the `coupon_redemptions` collection into: totals (redemptions / discounts given / revenue driven / active coupons), per-coupon performance (redemptions, discount_cents, revenue_cents, avg discount, slots-vs-bundles breakdown, last_used), top 5 redeemers (member name, count, lifetime discount).
 - `AdminCouponsManager` is now tabbed: **Coupons** (CRUD, unchanged) / **Analytics** (new).
 - Analytics tab renders: 4 KPI cards → Performance by Coupon table (sorted by revenue) → Top Redeemers leaderboard with rank chips.
+
+### Iteration 61 — Layout + Typography bugs (Apr 20, 2026)
+- **Horizontal scroll on My Account pages**: `<main>` and its parent flex col wrapper were missing `min-w-0` so wide description blocks inside bundle/event detail leaked past the viewport. Added `min-w-0 overflow-x-hidden` on both.
+- **Rich-text word hyphenation ("pru-eba", "t-exto")**: replaced every `word-break: break-word` (deprecated, forces mid-character break) with `overflow-wrap: break-word` + `hyphens: none` — words now wrap at natural boundaries and only break mid-character as a last resort. Applied in `.rich-text-content`, `.bio-rich-content`, `EventDetail.js` inline style.
+- **BundleDetail H1 grey on dark theme**: `.rich-text-content h1` had explicit `color: var(--color-heading, #1a2332)` (dark). Replaced with `color: inherit` + added a scoped override `[data-testid="myaccount-layout"] .rich-text-content *` → `color: inherit` so member-area rich content uses the theme's own text colors (white on dark).
+- **Mentor card description "TradingCuáles…" (no spaces between list items)**: `stripHtml()` used `textContent` which concatenates adjacent block elements. Rewrote helper to inject a separator after `</li>`, `</p>`, `</h1-6>`, `</div>`, `<br>` before stripping. Applied in `MentorshipProfile.js` + `MentorCalendarView.js`.
 - All formatted with tailwind colors (rose for discounts given, emerald for revenue driven) + lucide icons (Ticket, TrendingUp, Crown, Package).
 
 ## Credentials

@@ -65,9 +65,15 @@
 
 /* Rich text content styling */
 .rich-text-content {
-  overflow-wrap: anywhere;
-  word-break: break-word;
+  /* Break at word boundaries; only break mid-word as a last resort so long
+     Spanish phrases & URLs don't leak past the container, but regular words
+     stay intact (no mid-character hyphenation). */
+  overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: none;
+  width: 100%;
   max-width: 100%;
+  min-width: 0;
 }
 .rich-text-content img,
 .rich-text-content iframe,
@@ -87,7 +93,9 @@
 .rich-text-content h1 {
   @apply text-3xl font-bold mb-5 mt-8;
   font-family: 'Playfair Display', serif;
-  color: var(--color-heading, #1a2332);
+  /* Inherit so dark theme renders white and light theme renders dark. Pages
+     that need a specific heading color set it on a parent. */
+  color: inherit;
 }
 .rich-text-content h2 {
   @apply text-2xl font-semibold mb-4 mt-8;
@@ -114,6 +122,24 @@
 }
 .rich-text-content blockquote {
   @apply border-l-4 border-teal-500 pl-4 italic text-slate-500 my-4;
+}
+
+/* On dark surfaces (My Account area) the default slate-600/500 colors become
+   unreadable. Let rich-text inherit the parent text color so member-area
+   descriptions use the theme's own text-primary/secondary. */
+[data-testid="myaccount-layout"] .rich-text-content,
+[data-testid="myaccount-layout"] .rich-text-content p,
+[data-testid="myaccount-layout"] .rich-text-content ul,
+[data-testid="myaccount-layout"] .rich-text-content ol,
+[data-testid="myaccount-layout"] .rich-text-content li,
+[data-testid="myaccount-layout"] .rich-text-content blockquote,
+[data-testid="myaccount-layout"] .rich-text-content h1,
+[data-testid="myaccount-layout"] .rich-text-content h2,
+[data-testid="myaccount-layout"] .rich-text-content h3,
+[data-testid="myaccount-layout"] .rich-text-content h4,
+[data-testid="myaccount-layout"] .rich-text-content h5,
+[data-testid="myaccount-layout"] .rich-text-content h6 {
+  color: inherit;
 }
 
 /* Quill alignment classes */
@@ -157,8 +183,9 @@
 
 /* Bio modal rich text content (dark background) */
 .bio-rich-content {
-  word-break: break-word;
   overflow-wrap: break-word;
+  word-wrap: break-word;
+  hyphens: none;
 }
 .bio-rich-content h1 {
   font-size: 2rem;

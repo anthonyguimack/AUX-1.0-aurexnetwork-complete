@@ -210,7 +210,7 @@ export default function MyAccountLayout() {
       </aside>
 
       {/* Main */}
-      <div className="flex-1 flex flex-col min-h-screen">
+      <div className="flex-1 flex flex-col min-h-screen min-w-0">
         {/* Top Header with Quick Links */}
         <header className="sticky top-0 z-30" style={{ backgroundColor: v('header-bg', '#13161e'), borderBottom: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
           <div className="h-14 flex items-center px-4 lg:px-6 justify-between">
@@ -290,7 +290,7 @@ export default function MyAccountLayout() {
             </div>
           </div>
         </header>
-        <main className="flex-1 p-4 lg:p-8">
+        <main className="flex-1 p-4 lg:p-8 min-w-0 overflow-x-hidden">
           {isRouteAllowed === false || isRouteAllowed === null ? (
             <div className="flex items-center justify-center py-20">
               <Loader2 className="w-6 h-6 animate-spin" style={{ color: v('accent', '#c9a84c') }} />

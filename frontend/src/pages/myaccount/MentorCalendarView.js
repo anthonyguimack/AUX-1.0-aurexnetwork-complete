@@ -11,9 +11,17 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const stripHtml = (s) => {
   if (!s) return '';
+  // Insert separators before stripping so <li>/<p>/<br>/<div> block elements
+  // don't get concatenated into one run-together word (e.g. "TradingCuá…").
+  const withSep = String(s)
+    .replace(/<\/(li|p|h[1-6]|div|tr|td|blockquote)\s*>/gi, '</$1> ')
+    .replace(/<br\s*\/?>/gi, ' ');
   const tmp = document.createElement('div');
-  tmp.innerHTML = s;
-  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+  tmp.innerHTML = withSep;
+  let text = tmp.textContent || tmp.innerText || '';
+  // Second pass: strip any literal <tag> strings that survived double-encoding
+  text = text.replace(/<[^>]+>/g, ' ');
+  return text.replace(/\s+/g, ' ').trim();
 };
 const formatPrice = (cents, currency = 'usd') => {
   if (!cents) return null;
