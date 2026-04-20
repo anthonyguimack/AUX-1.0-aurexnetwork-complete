@@ -4,7 +4,8 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Loader2, Plus, Trash2, Edit2, Save, Ticket, Percent, DollarSign, Users, Calendar, ToggleLeft } from 'lucide-react';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
+import { Loader2, Plus, Trash2, Edit2, Save, Ticket, Percent, DollarSign, Users, Calendar, ToggleLeft, BarChart3, TrendingUp, Crown, Package } from 'lucide-react';
 
 const emptyCoupon = {
   code: '',
@@ -17,6 +18,7 @@ const emptyCoupon = {
   active: true,
 };
 
+const fmtMoney = (c) => `$${((c || 0) / 100).toFixed(2)}`;
 const fmtDiscount = (c) => {
   if (!c) return '';
   if (c.discount_type === 'percent') return `${c.discount_value}%`;
@@ -29,12 +31,18 @@ export default function AdminCouponsManager() {
   const [open, setOpen] = useState(false);
   const [editing, setEditing] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [analytics, setAnalytics] = useState(null);
+  const [loadingAnalytics, setLoadingAnalytics] = useState(false);
 
   const load = () => {
     setLoading(true);
     adminAPI.getCoupons().then(r => setCoupons(r.data || [])).catch(() => toast.error('Failed to load coupons')).finally(() => setLoading(false));
   };
-  useEffect(load, []);
+  const loadAnalytics = () => {
+    setLoadingAnalytics(true);
+    adminAPI.getCouponAnalytics().then(r => setAnalytics(r.data)).catch(() => toast.error('Failed to load analytics')).finally(() => setLoadingAnalytics(false));
+  };
+  useEffect(() => { load(); loadAnalytics(); }, []);
 
   const openNew = () => { setEditing({ ...emptyCoupon }); setOpen(true); };
   const openEdit = (c) => {
@@ -89,7 +97,14 @@ export default function AdminCouponsManager() {
         </button>
       </div>
 
-      <div className="rounded-lg border bg-white overflow-x-auto" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+      <Tabs defaultValue="coupons" className="w-full" onValueChange={(v) => { if (v === 'analytics') loadAnalytics(); }}>
+        <TabsList className="mb-4">
+          <TabsTrigger value="coupons" data-testid="tab-coupons"><Ticket className="w-3 h-3 mr-1" /> Coupons</TabsTrigger>
+          <TabsTrigger value="analytics" data-testid="tab-analytics"><BarChart3 className="w-3 h-3 mr-1" /> Analytics</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="coupons">
+          <div className="rounded-lg border bg-white overflow-x-auto" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
         {loading ? (
           <div className="p-12 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></div>
         ) : coupons.length === 0 ? (
@@ -144,6 +159,117 @@ export default function AdminCouponsManager() {
           </table>
         )}
       </div>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          {loadingAnalytics || !analytics ? (
+            <div className="rounded-lg border bg-white p-12 text-center" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+              <Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" />
+            </div>
+          ) : (
+            <div className="space-y-6" data-testid="coupon-analytics">
+              {/* KPI cards */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="rounded-lg border bg-white p-4" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid="analytics-kpi-redemptions">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><Ticket className="w-3 h-3" /> Redemptions</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)' }}>{analytics.totals.redemptions}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">across {analytics.totals.coupons_total} coupon{analytics.totals.coupons_total === 1 ? '' : 's'} ({analytics.totals.coupons_active} active)</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid="analytics-kpi-discount">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><Percent className="w-3 h-3" /> Discounts Given</p>
+                  <p className="text-2xl font-bold text-rose-600">−{fmtMoney(analytics.totals.discount_cents)}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">total savings delivered to members</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid="analytics-kpi-revenue">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><TrendingUp className="w-3 h-3" /> Revenue Driven</p>
+                  <p className="text-2xl font-bold text-emerald-600">{fmtMoney(analytics.totals.revenue_cents)}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">net revenue from couponed transactions</p>
+                </div>
+                <div className="rounded-lg border bg-white p-4" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid="analytics-kpi-avg">
+                  <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><DollarSign className="w-3 h-3" /> Avg. Ticket</p>
+                  <p className="text-2xl font-bold" style={{ color: 'var(--ad-heading, #1a2332)' }}>
+                    {analytics.totals.redemptions > 0 ? fmtMoney(analytics.totals.revenue_cents / analytics.totals.redemptions) : '$0.00'}
+                  </p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">avg. net per redemption</p>
+                </div>
+              </div>
+
+              {/* Per-coupon table (sorted by revenue) */}
+              <div className="rounded-lg border bg-white" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+                <div className="p-4 border-b" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+                  <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Performance by Coupon</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">Sorted by revenue driven. Zero-redemption codes appear at the bottom.</p>
+                </div>
+                {analytics.by_coupon.length === 0 ? (
+                  <div className="p-12 text-center text-sm text-slate-500">No coupon data yet.</div>
+                ) : (
+                  <div className="overflow-x-auto">
+                    <table className="w-full text-sm">
+                      <thead className="bg-slate-50">
+                        <tr>
+                          <th className="text-left p-3 font-medium text-xs text-slate-600">Code</th>
+                          <th className="text-right p-3 font-medium text-xs text-slate-600">Redemptions</th>
+                          <th className="text-right p-3 font-medium text-xs text-slate-600">Discounts Given</th>
+                          <th className="text-right p-3 font-medium text-xs text-slate-600">Revenue Driven</th>
+                          <th className="text-right p-3 font-medium text-xs text-slate-600">Avg. Discount</th>
+                          <th className="text-left p-3 font-medium text-xs text-slate-600">Slots / Bundles</th>
+                          <th className="text-left p-3 font-medium text-xs text-slate-600">Last Used</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {analytics.by_coupon.map(c => (
+                          <tr key={c.id} className="border-t" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid={`analytics-row-${c.id}`}>
+                            <td className="p-3">
+                              <div className="font-mono text-xs font-semibold">{c.code}</div>
+                              <div className="text-[10px] text-slate-400">{fmtDiscount(c)} off &middot; {c.applies_to} &middot; {c.active ? 'active' : 'inactive'}</div>
+                            </td>
+                            <td className="p-3 text-right text-xs font-semibold">{c.redemptions}</td>
+                            <td className="p-3 text-right text-xs text-rose-600">−{fmtMoney(c.discount_cents)}</td>
+                            <td className="p-3 text-right text-xs font-semibold text-emerald-600">{fmtMoney(c.revenue_cents)}</td>
+                            <td className="p-3 text-right text-xs text-slate-500">{fmtMoney(c.avg_discount_cents)}</td>
+                            <td className="p-3 text-xs text-slate-500">
+                              <span className="inline-flex items-center gap-1 mr-2"><Ticket className="w-3 h-3" /> {c.context_breakdown.slots}</span>
+                              <span className="inline-flex items-center gap-1"><Package className="w-3 h-3" /> {c.context_breakdown.bundles}</span>
+                            </td>
+                            <td className="p-3 text-xs text-slate-500">{c.last_used ? new Date(c.last_used).toLocaleDateString() : '—'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Top redeemers */}
+              <div className="rounded-lg border bg-white" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+                <div className="p-4 border-b flex items-center gap-2" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Top Redeemers</h3>
+                </div>
+                {analytics.top_redeemers.length === 0 ? (
+                  <div className="p-12 text-center text-sm text-slate-500">No redemptions yet.</div>
+                ) : (
+                  <ul className="divide-y" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
+                    {analytics.top_redeemers.map((m, i) => (
+                      <li key={m.member_id} className="p-3 flex items-center gap-3" data-testid={`top-redeemer-${i}`}>
+                        <span className="w-6 h-6 rounded-full bg-slate-100 text-slate-600 text-xs font-bold flex items-center justify-center">{i + 1}</span>
+                        <div className="flex-1">
+                          <p className="text-sm font-medium" style={{ color: 'var(--ad-heading, #1a2332)' }}>{m.name}</p>
+                          <p className="text-[11px] text-slate-400">{m.email || m.member_id}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>{m.count} redemption{m.count === 1 ? '' : 's'}</p>
+                          <p className="text-[11px] text-rose-600">saved {fmtMoney(m.total_discount_cents)}</p>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
 
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto" data-testid="coupon-dialog">

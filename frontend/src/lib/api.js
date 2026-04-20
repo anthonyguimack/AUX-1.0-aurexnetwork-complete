@@ -262,6 +262,7 @@ export const adminAPI = {
   deletePayout: (id) => api.delete(`/admin/payouts/${id}`),
   // Coupons
   getCoupons: () => api.get('/admin/coupons'),
+  getCouponAnalytics: () => api.get('/admin/coupons/analytics'),
   createCoupon: (d) => api.post('/admin/coupons', d),
   updateCoupon: (id, d) => api.put(`/admin/coupons/${id}`, d),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),

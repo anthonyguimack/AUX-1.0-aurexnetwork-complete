@@ -307,6 +307,12 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 
 **Testing**: iteration_59 testing agent → 17/17 backend tests pass, all frontend UI verified. Report: `/app/test_reports/iteration_59.json`.
 
+### Iteration 60 — Coupon Analytics (Apr 20, 2026)
+- New backend endpoint `GET /api/admin/coupons/analytics` aggregates the `coupon_redemptions` collection into: totals (redemptions / discounts given / revenue driven / active coupons), per-coupon performance (redemptions, discount_cents, revenue_cents, avg discount, slots-vs-bundles breakdown, last_used), top 5 redeemers (member name, count, lifetime discount).
+- `AdminCouponsManager` is now tabbed: **Coupons** (CRUD, unchanged) / **Analytics** (new).
+- Analytics tab renders: 4 KPI cards → Performance by Coupon table (sorted by revenue) → Top Redeemers leaderboard with rank chips.
+- All formatted with tailwind colors (rose for discounts given, emerald for revenue driven) + lucide icons (Ticket, TrendingUp, Crown, Package).
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!

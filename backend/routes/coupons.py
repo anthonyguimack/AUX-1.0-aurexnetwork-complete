@@ -127,6 +127,97 @@ async def admin_delete(cid: str, request: Request):
     return {"deleted": True}
 
 
+@router.get("/admin/coupons/analytics")
+async def admin_analytics(request: Request):
+    """Aggregate coupon performance for the admin dashboard.
+
+    Returns:
+      totals: { redemptions, discount_cents, revenue_cents, coupons_active }
+      by_coupon: [{ id, code, redemptions, discount_cents, revenue_cents, context_breakdown, avg_discount_cents, last_used }]
+      top_redeemers: [{ member_id, name, count, total_discount_cents }]
+    """
+    await require_admin(request)
+    coupons = await db.coupons.find({}, {"_id": 0}).to_list(500)
+    redemptions = await db.coupon_redemptions.find({}, {"_id": 0}).to_list(5000)
+
+    totals = {
+        "redemptions": len(redemptions),
+        "discount_cents": sum(int(r.get("discount_cents") or 0) for r in redemptions),
+        "revenue_cents": sum(int(r.get("original_cents") or 0) - int(r.get("discount_cents") or 0) for r in redemptions),
+        "coupons_total": len(coupons),
+        "coupons_active": sum(1 for c in coupons if c.get("active")),
+    }
+
+    # Group by coupon
+    from collections import defaultdict
+    by_id = defaultdict(lambda: {"redemptions": 0, "discount_cents": 0, "revenue_cents": 0, "context_breakdown": {"slots": 0, "bundles": 0}, "last_used": None})
+    for r in redemptions:
+        cid = r.get("coupon_id")
+        if not cid:
+            continue
+        g = by_id[cid]
+        g["redemptions"] += 1
+        g["discount_cents"] += int(r.get("discount_cents") or 0)
+        g["revenue_cents"] += int(r.get("original_cents") or 0) - int(r.get("discount_cents") or 0)
+        ctx = r.get("context") or "slots"
+        if ctx in g["context_breakdown"]:
+            g["context_breakdown"][ctx] += 1
+        ts = r.get("created_at")
+        if ts and (not g["last_used"] or ts > g["last_used"]):
+            g["last_used"] = ts
+
+    by_coupon = []
+    for c in coupons:
+        g = by_id.get(c["id"], {"redemptions": 0, "discount_cents": 0, "revenue_cents": 0, "context_breakdown": {"slots": 0, "bundles": 0}, "last_used": None})
+        avg = int(g["discount_cents"] / g["redemptions"]) if g["redemptions"] else 0
+        by_coupon.append({
+            "id": c["id"],
+            "code": c["code"],
+            "discount_type": c.get("discount_type"),
+            "discount_value": c.get("discount_value"),
+            "applies_to": c.get("applies_to"),
+            "active": bool(c.get("active")),
+            "usage_limit": int(c.get("usage_limit") or 0),
+            "usage_count": int(c.get("usage_count") or 0),
+            "expires_at": c.get("expires_at"),
+            "redemptions": g["redemptions"],
+            "discount_cents": g["discount_cents"],
+            "revenue_cents": g["revenue_cents"],
+            "avg_discount_cents": avg,
+            "context_breakdown": g["context_breakdown"],
+            "last_used": g["last_used"],
+        })
+    by_coupon.sort(key=lambda x: x["revenue_cents"], reverse=True)
+
+    # Top redeemers (by redemption count)
+    member_agg = defaultdict(lambda: {"count": 0, "total_discount_cents": 0})
+    for r in redemptions:
+        mid = r.get("member_id")
+        if not mid:
+            continue
+        member_agg[mid]["count"] += 1
+        member_agg[mid]["total_discount_cents"] += int(r.get("discount_cents") or 0)
+    # Enrich with name
+    top_ids = sorted(member_agg.keys(), key=lambda m: member_agg[m]["count"], reverse=True)[:5]
+    top_redeemers = []
+    for mid in top_ids:
+        m = await db.members.find_one({"member_id": mid}, {"_id": 0, "first_name": 1, "last_name": 1, "email": 1})
+        name = f"{m.get('first_name', '')} {m.get('last_name', '')}".strip() if m else mid
+        top_redeemers.append({
+            "member_id": mid,
+            "name": name or (m.get("email") if m else mid),
+            "email": m.get("email") if m else None,
+            "count": member_agg[mid]["count"],
+            "total_discount_cents": member_agg[mid]["total_discount_cents"],
+        })
+
+    return {
+        "totals": totals,
+        "by_coupon": by_coupon,
+        "top_redeemers": top_redeemers,
+    }
+
+
 # ── Member validation ──
 
 @router.post("/member/coupons/validate")
