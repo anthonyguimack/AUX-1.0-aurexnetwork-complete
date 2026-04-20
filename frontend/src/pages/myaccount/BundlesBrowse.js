@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { Link } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
+import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
 import { Loader2, Package, ShoppingCart, Users, Gift, CreditCard, ArrowRight } from 'lucide-react';
 
@@ -37,7 +38,7 @@ function BundleCard({ bundle, onBuy, buying }) {
           </div>
         )}
         {bundle.summary && (
-          <div className="text-xs mb-2 rich-text-content [&_p]:!mb-1 [&_p]:!text-inherit" style={{ color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bundle.summary }} />
+          <div className="text-xs mb-2 rich-text-content [&_p]:!mb-1 [&_p]:!text-inherit" style={{ color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: normalizeRichText(bundle.summary) }} />
         )}
         <Link to={`/my-account/bundles/${bundle.id}`} className="text-xs inline-flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }} data-testid={`bundle-read-more-${bundle.id}`}>
           Read more <ArrowRight className="w-3 h-3" />

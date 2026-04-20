@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { memberAPI, publicAPI } from '../../lib/api';
+import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
@@ -220,7 +221,7 @@ export default function MentorshipCalendar() {
               <p>Type: {viewSlot.session_type} &middot; Max: {viewSlot.max_students} &middot; Booked: {viewSlot.booked_count || 0} &middot; Waitlist: {viewSlot.waitlist_count || 0}</p>
               <p>Status: <span style={{ color: slotColor(viewSlot) }}>{viewSlot.status}</span></p>
               {viewSlot.virtual_link && <a href={viewSlot.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}><Video className="w-3 h-3" /> Virtual Link</a>}
-              {viewSlot.description && <div className="pt-1 rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" dangerouslySetInnerHTML={{ __html: viewSlot.description }} />}
+              {viewSlot.description && <div className="pt-1 rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" dangerouslySetInnerHTML={{ __html: normalizeRichText(viewSlot.description) }} />}
             </div>
             {/* Attachments */}
             {(viewSlot.attachments || []).length > 0 && (

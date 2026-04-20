@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { memberAPI, publicAPI } from '../../lib/api';
+import { normalizeRichText } from '../../lib/richText';
 import axios from 'axios';
 import { toast } from 'sonner';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
@@ -11,16 +12,14 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const stripHtml = (s) => {
   if (!s) return '';
-  // Insert separators before stripping so <li>/<p>/<br>/<div> block elements
-  // don't get concatenated into one run-together word (e.g. "TradingCuá…").
   const withSep = String(s)
+    .replace(/&nbsp;/gi, ' ')
     .replace(/<\/(li|p|h[1-6]|div|tr|td|blockquote)\s*>/gi, '</$1> ')
     .replace(/<br\s*\/?>/gi, ' ');
   const tmp = document.createElement('div');
   tmp.innerHTML = withSep;
   let text = tmp.textContent || tmp.innerText || '';
-  // Second pass: strip any literal <tag> strings that survived double-encoding
-  text = text.replace(/<[^>]+>/g, ' ');
+  text = text.replace(/<[^>]+>/g, ' ').replace(/\u00A0/g, ' ');
   return text.replace(/\s+/g, ' ').trim();
 };
 const formatPrice = (cents, currency = 'usd') => {
@@ -269,7 +268,7 @@ export default function MentorCalendarView() {
               {data.mentor && <div className="flex items-center gap-2 text-sm"><User className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Mentor: {data.mentor.name}</span></div>}
               <div className="flex items-center gap-2 text-sm"><Calendar className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Date: {bookDialog.date}</span></div>
               <div className="flex items-center gap-2 text-sm"><Clock className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Time: {bookDialog.start_time} — {bookDialog.end_time}</span></div>
-              {bookDialog.description && <div className="text-xs p-2 rounded rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bookDialog.description }} />}
+              {bookDialog.description && <div className="text-xs p-2 rounded rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!text-inherit [&_ol]:!text-inherit" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: normalizeRichText(bookDialog.description) }} />}
               <div className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>
                 Remaining: {Math.max(0, (bookDialog.max_students || 1) - (bookDialog.booked_count || 0))} / {bookDialog.max_students || 1}
               </div>

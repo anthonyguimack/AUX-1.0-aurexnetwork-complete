@@ -65,15 +65,38 @@
 
 /* Rich text content styling */
 .rich-text-content {
-  /* Break at word boundaries; only break mid-word as a last resort so long
-     Spanish phrases & URLs don't leak past the container, but regular words
-     stay intact (no mid-character hyphenation). */
+  /* Never break words mid-character. Only break at whitespace boundaries;
+     fall back to `anywhere` ONLY if a token (URL/code) would overflow.
+     NOTE: `word-break: break-word` is deprecated and causes mid-char splits. */
+  word-break: normal;
   overflow-wrap: break-word;
-  word-wrap: break-word;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
   hyphens: none;
   width: 100%;
   max-width: 100%;
   min-width: 0;
+}
+/* Cascade the same rules to every descendant so Tailwind utility classes
+   or user agent defaults don't reintroduce mid-word breaks. */
+.rich-text-content *,
+.rich-text-content p,
+.rich-text-content span,
+.rich-text-content li,
+.rich-text-content ul,
+.rich-text-content ol,
+.rich-text-content h1,
+.rich-text-content h2,
+.rich-text-content h3,
+.rich-text-content h4,
+.rich-text-content h5,
+.rich-text-content h6,
+.rich-text-content blockquote {
+  word-break: normal;
+  overflow-wrap: break-word;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
 }
 .rich-text-content img,
 .rich-text-content iframe,

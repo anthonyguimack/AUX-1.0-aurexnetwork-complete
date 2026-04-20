@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
+import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, Users, Video, Map, ExternalLink, Download, Paperclip, Loader2 } from 'lucide-react';
 
@@ -81,7 +82,7 @@ export default function EventDetail() {
       {event.description && (
         <div className="mb-6 p-4 rounded-lg border" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
           <h3 className="text-sm font-semibold mb-2" style={{ color: v('text-primary', '#fff') }}>Description</h3>
-          <div className="text-sm max-w-none [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-bold [&_em]:italic [&_a]:underline [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-1 [&_br]:block [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:opacity-80" style={{ color: v('text-secondary', '#9ca3af'), overflowWrap: 'break-word', wordWrap: 'break-word', hyphens: 'none', minWidth: 0 }} dangerouslySetInnerHTML={{ __html: event.description }} />
+          <div className="text-sm max-w-none [&_p]:mb-2 [&_ul]:list-disc [&_ul]:pl-5 [&_ol]:list-decimal [&_ol]:pl-5 [&_strong]:font-bold [&_em]:italic [&_a]:underline [&_h1]:text-xl [&_h1]:font-bold [&_h1]:mb-2 [&_h2]:text-lg [&_h2]:font-bold [&_h2]:mb-2 [&_h3]:text-base [&_h3]:font-semibold [&_h3]:mb-1 [&_br]:block [&_blockquote]:border-l-2 [&_blockquote]:pl-3 [&_blockquote]:italic [&_blockquote]:opacity-80" style={{ color: v('text-secondary', '#9ca3af'), overflowWrap: 'break-word', wordWrap: 'break-word', hyphens: 'none', minWidth: 0 }} dangerouslySetInnerHTML={{ __html: normalizeRichText(event.description) }} />
         </div>
       )}
 

@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import axios from 'axios';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
+import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
 import { Loader2, Package, ShoppingCart, Users, Gift, ArrowLeft } from 'lucide-react';
 
@@ -105,7 +106,7 @@ export default function BundleDetail() {
       {bundle.description && (
         <div className="rounded-lg p-6 mb-6" style={{ backgroundColor: v('card-bg', '#13161e'), border: `1px solid ${v('card-border', 'rgba(255,255,255,0.05)')}` }}>
           <h2 className="text-sm font-semibold mb-3 uppercase tracking-wider" style={{ color: v('text-secondary', '#9ca3af') }}>About this bundle</h2>
-          <div className="rich-text-content [&_p]:!text-inherit [&_ul]:!pl-4 [&_ol]:!pl-4" style={{ color: v('text-primary', '#fff') }} data-testid="bundle-detail-description" dangerouslySetInnerHTML={{ __html: bundle.description }} />
+          <div className="rich-text-content [&_p]:!text-inherit [&_ul]:!pl-4 [&_ol]:!pl-4" style={{ color: v('text-primary', '#fff') }} data-testid="bundle-detail-description" dangerouslySetInnerHTML={{ __html: normalizeRichText(bundle.description) }} />
         </div>
       )}
     </div>

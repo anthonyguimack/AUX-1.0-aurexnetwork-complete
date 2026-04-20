@@ -312,11 +312,10 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - `AdminCouponsManager` is now tabbed: **Coupons** (CRUD, unchanged) / **Analytics** (new).
 - Analytics tab renders: 4 KPI cards → Performance by Coupon table (sorted by revenue) → Top Redeemers leaderboard with rank chips.
 
-### Iteration 61 — Layout + Typography bugs (Apr 20, 2026)
-- **Horizontal scroll on My Account pages**: `<main>` and its parent flex col wrapper were missing `min-w-0` so wide description blocks inside bundle/event detail leaked past the viewport. Added `min-w-0 overflow-x-hidden` on both.
-- **Rich-text word hyphenation ("pru-eba", "t-exto")**: replaced every `word-break: break-word` (deprecated, forces mid-character break) with `overflow-wrap: break-word` + `hyphens: none` — words now wrap at natural boundaries and only break mid-character as a last resort. Applied in `.rich-text-content`, `.bio-rich-content`, `EventDetail.js` inline style.
-- **BundleDetail H1 grey on dark theme**: `.rich-text-content h1` had explicit `color: var(--color-heading, #1a2332)` (dark). Replaced with `color: inherit` + added a scoped override `[data-testid="myaccount-layout"] .rich-text-content *` → `color: inherit` so member-area rich content uses the theme's own text colors (white on dark).
-- **Mentor card description "TradingCuáles…" (no spaces between list items)**: `stripHtml()` used `textContent` which concatenates adjacent block elements. Rewrote helper to inject a separator after `</li>`, `</p>`, `</h1-6>`, `</div>`, `<br>` before stripping. Applied in `MentorshipProfile.js` + `MentorCalendarView.js`.
+### Iteration 62 — Mid-word breaks root cause (Apr 20, 2026)
+- **Root cause**: Quill/RichTextEditor was saving `&nbsp;` (non-breaking space) between every word in descriptions. Non-breaking spaces prevent wrapping at word boundaries → the whole paragraph becomes one "unbreakable token" → browser's `overflow-wrap: break-word` fallback breaks words mid-character on narrow viewports.
+- **Fix**: New `lib/richText.js::normalizeRichText(html)` helper converts `&nbsp;` and U+00A0 to regular spaces at render time. Applied across all `dangerouslySetInnerHTML` in my-account: `BundleDetail`, `BundlesBrowse` (summary card), `MentorshipProfile` dialog, `MentorCalendarView` dialog, `MentorshipCalendar` slot dialog, `EventDetail`. `stripHtml()` also normalizes `&nbsp;` before stripping.
+- Verified at 412px viewport: no horizontal scroll, no `&nbsp;` in rendered HTML, every Spanish word (inteligencia, negociación, financieros) wraps intact at whitespace boundaries.
 - All formatted with tailwind colors (rose for discounts given, emerald for revenue driven) + lucide icons (Ticket, TrendingUp, Crown, Package).
 
 ## Credentials
