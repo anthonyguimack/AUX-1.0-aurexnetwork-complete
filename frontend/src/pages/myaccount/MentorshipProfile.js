@@ -3,14 +3,19 @@ import axios from 'axios';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { User, Loader2, ChevronLeft, ChevronRight, Calendar, Clock, Users, List, Grid3X3, Video, Download, Paperclip, ExternalLink, Map, CreditCard } from 'lucide-react';
+import { User, Loader2, ChevronLeft, ChevronRight, Calendar, Clock, Users, List, Grid3X3, Video, Download, Paperclip, ExternalLink, Map, CreditCard, Ticket } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const nowTimeStr = () => { const d = new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
-const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const stripHtml = (s) => {
+  if (!s) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = s;
+  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+};
 const formatPrice = (cents, currency = 'usd') => {
   if (!cents) return null;
   try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (currency || 'usd').toUpperCase() }).format(cents / 100); }
@@ -110,6 +115,11 @@ export default function MentorshipProfile() {
   const [bookDialog, setBookDialog] = useState(null);
   const [booking, setBooking] = useState(false);
   const paidEnabled = settings?.mentor_slots_paid_enabled === true;
+  // Coupon state (scoped to current bookDialog)
+  const [couponInput, setCouponInput] = useState('');
+  const [couponInfo, setCouponInfo] = useState(null); // {code, discount_cents, final_cents, ...}
+  const [couponError, setCouponError] = useState('');
+  const [couponChecking, setCouponChecking] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -132,7 +142,23 @@ export default function MentorshipProfile() {
     const booked = slot.booked_count || 0;
     const max = slot.max_students || 1;
     setBookDialog({ ...slot, _isWaitlist: booked >= max && slot.my_status !== 'waitlist' });
+    setCouponInput(''); setCouponInfo(null); setCouponError('');
   };
+
+  const applyCoupon = async () => {
+    if (!bookDialog?.id || !couponInput.trim()) { setCouponError('Enter a code'); return; }
+    setCouponChecking(true); setCouponError('');
+    try {
+      const r = await memberAPI.validateCoupon({ code: couponInput.trim(), amount_cents: bookDialog.price_cents || 0, context: 'slots' });
+      setCouponInfo(r.data);
+      toast.success('Coupon applied');
+    } catch (e) {
+      setCouponError(e.response?.data?.detail || 'Invalid coupon');
+      setCouponInfo(null);
+    } finally { setCouponChecking(false); }
+  };
+
+  const removeCoupon = () => { setCouponInfo(null); setCouponInput(''); setCouponError(''); };
 
   const confirmBook = async (slotId) => {
     setBooking(true);
@@ -142,7 +168,7 @@ export default function MentorshipProfile() {
       if (isPaid) {
         const token = localStorage.getItem('auth_token');
         const r = await axios.post(`${API}/api/member/mentorship/checkout/${slotId}`,
-          { origin_url: window.location.origin },
+          { origin_url: window.location.origin, coupon_code: couponInfo?.code || '' },
           { headers: { Authorization: `Bearer ${token}` } });
         if (r.data?.url) { window.location.href = r.data.url; return; }
         toast.error('Checkout failed — no URL returned');
@@ -332,17 +358,66 @@ export default function MentorshipProfile() {
               {bookDialog.description && <div className="text-xs p-2 rounded rich-text-content [&_p]:!mb-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bookDialog.description }} />}
               <div className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Remaining: {Math.max(0, (bookDialog.max_students || 1) - (bookDialog.booked_count || 0))} / {bookDialog.max_students || 1}</div>
               {paidEnabled && (bookDialog.price_cents || 0) > 0 && !bookDialog._isWaitlist && (
-                <div className="flex items-center justify-between p-3 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }}>
-                  <span className="text-xs flex items-center gap-1.5" style={{ color: v('text-secondary', '#9ca3af') }}><CreditCard className="w-3.5 h-3.5" /> Price</span>
-                  <span className="text-sm font-semibold" style={{ color: v('accent', '#c9a84c') }} data-testid="dialog-price">{formatPrice(bookDialog.price_cents, bookDialog.currency)}</span>
-                </div>
+                <>
+                  <div className="flex items-center justify-between p-3 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }}>
+                    <span className="text-xs flex items-center gap-1.5" style={{ color: v('text-secondary', '#9ca3af') }}><CreditCard className="w-3.5 h-3.5" /> Price</span>
+                    <span className="text-sm font-semibold" style={{ color: v('accent', '#c9a84c') }} data-testid="dialog-price">{formatPrice(bookDialog.price_cents, bookDialog.currency)}</span>
+                  </div>
+                  {/* Coupon input */}
+                  <div>
+                    <label className="text-[11px] flex items-center gap-1 mb-1" style={{ color: v('text-secondary', '#9ca3af') }}>
+                      <Ticket className="w-3 h-3" /> Coupon code (optional)
+                    </label>
+                    {couponInfo ? (
+                      <div className="flex items-center justify-between p-2 rounded text-xs" style={{ backgroundColor: 'rgba(34,197,94,0.08)', border: '1px solid rgba(34,197,94,0.3)' }} data-testid="coupon-applied">
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-semibold" style={{ color: '#22c55e' }}>{couponInfo.code}</span>
+                          <span style={{ color: v('text-secondary', '#9ca3af') }}>−{formatPrice(couponInfo.discount_cents, bookDialog.currency)}</span>
+                        </div>
+                        <button onClick={removeCoupon} className="text-[10px] underline" style={{ color: v('text-muted', '#6b7280') }} data-testid="coupon-remove">Remove</button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <input
+                          type="text"
+                          value={couponInput}
+                          onChange={e => { setCouponInput(e.target.value.toUpperCase()); setCouponError(''); }}
+                          onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); applyCoupon(); } }}
+                          placeholder="SAVE20"
+                          className="flex-1 px-3 py-1.5 rounded text-xs font-mono"
+                          style={{ backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${couponError ? '#ef4444' : v('input-border', 'rgba(255,255,255,0.1)')}`, color: v('text-primary', '#fff') }}
+                          data-testid="coupon-input"
+                        />
+                        <button
+                          type="button"
+                          onClick={applyCoupon}
+                          disabled={couponChecking || !couponInput.trim()}
+                          className="px-3 rounded text-xs font-medium disabled:opacity-50 flex items-center gap-1.5"
+                          style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }}
+                          data-testid="coupon-apply-btn"
+                        >
+                          {couponChecking ? <Loader2 className="w-3 h-3 animate-spin" /> : null} Apply
+                        </button>
+                      </div>
+                    )}
+                    {couponError && <p className="text-[10px] mt-1 text-red-400" data-testid="coupon-error">{couponError}</p>}
+                  </div>
+                  {/* Price summary when coupon applied */}
+                  {couponInfo && (
+                    <div className="space-y-1 p-3 rounded text-xs" style={{ backgroundColor: v('card-bg', '#13161e'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }} data-testid="price-breakdown">
+                      <div className="flex justify-between"><span style={{ color: v('text-secondary', '#9ca3af') }}>Original</span><span style={{ color: v('text-primary', '#fff') }}>{formatPrice(couponInfo.original_cents, bookDialog.currency)}</span></div>
+                      <div className="flex justify-between"><span style={{ color: v('text-secondary', '#9ca3af') }}>Discount ({couponInfo.code})</span><span className="text-green-400">−{formatPrice(couponInfo.discount_cents, bookDialog.currency)}</span></div>
+                      <div className="flex justify-between pt-1 border-t font-semibold" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)') }}><span style={{ color: v('text-primary', '#fff') }}>Total</span><span style={{ color: v('accent', '#c9a84c') }} data-testid="dialog-final-price">{formatPrice(couponInfo.final_cents, bookDialog.currency)}</span></div>
+                    </div>
+                  )}
+                </>
               )}
               {bookDialog._isWaitlist && <p className="text-xs text-blue-400">This slot is full. You'll be added to the waiting list.</p>}
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setBookDialog(null)} className="flex-1 py-2 rounded text-sm font-medium border" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }}>Cancel</button>
                 <button onClick={() => confirmBook(bookDialog.id)} disabled={booking} className="flex-1 py-2 rounded text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: bookDialog._isWaitlist ? '#2563eb' : v('button-bg', '#c9a84c'), color: bookDialog._isWaitlist ? '#fff' : v('button-text', '#0d0f14') }} data-testid="confirm-booking-btn">
                   {booking && <Loader2 className="w-3 h-3 animate-spin" />}
-                  {bookDialog._isWaitlist ? 'Join Waiting List' : (paidEnabled && (bookDialog.price_cents || 0) > 0 ? `Pay ${formatPrice(bookDialog.price_cents, bookDialog.currency)} & Book` : 'Confirm Booking')}
+                  {bookDialog._isWaitlist ? 'Join Waiting List' : (paidEnabled && (bookDialog.price_cents || 0) > 0 ? `Pay ${formatPrice(couponInfo ? couponInfo.final_cents : bookDialog.price_cents, bookDialog.currency)} & Book` : 'Confirm Booking')}
                 </button>
               </div>
             </div>

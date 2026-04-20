@@ -260,6 +260,11 @@ export const adminAPI = {
   getPayouts: () => api.get('/admin/payouts'),
   createPayout: (d) => api.post('/admin/payouts', d),
   deletePayout: (id) => api.delete(`/admin/payouts/${id}`),
+  // Coupons
+  getCoupons: () => api.get('/admin/coupons'),
+  createCoupon: (d) => api.post('/admin/coupons', d),
+  updateCoupon: (id, d) => api.put(`/admin/coupons/${id}`, d),
+  deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
 };
 
 // Member API (unified - uses same auth_token)
@@ -328,6 +333,9 @@ export const memberAPI = {
   getBundles: () => api.get('/member/bundles'),
   getBundle: (id) => api.get(`/member/bundles/${id}`),
   checkoutBundle: (id, data) => api.post(`/member/bundles/checkout/${id}`, data),
+
+  // Coupons
+  validateCoupon: (data) => api.post('/member/coupons/validate', data),
   getBundleCheckoutStatus: (sid) => api.get(`/member/bundles/checkout/status/${sid}`),
   getMyCredits: () => api.get('/member/credits'),
   // Mentor personal bundles

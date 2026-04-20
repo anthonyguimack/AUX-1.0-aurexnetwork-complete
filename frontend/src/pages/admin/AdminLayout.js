@@ -5,7 +5,7 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign, Ticket
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -35,6 +35,7 @@ const sidebarItems = [
   { label: 'Mentor Slot Templates', icon: CalendarDays, href: '/admin/calendar/mentor-slot-templates', group: 'calendar' },
   { label: 'Blocked Dates', icon: CalendarDays, href: '/admin/calendar/blocked-dates', group: 'calendar' },
   { label: 'Session Bundles', icon: CalendarDays, href: '/admin/calendar/bundles', group: 'calendar' },
+  { label: 'Discount Coupons', icon: Ticket, href: '/admin/calendar/coupons', group: 'calendar' },
   { label: 'Payouts', icon: DollarSign, href: '/admin/payouts', group: 'calendar' },
   { type: 'divider', label: 'My Account' },
   { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount' },

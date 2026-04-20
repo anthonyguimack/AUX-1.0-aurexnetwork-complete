@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Loader2, Calendar, Video, ExternalLink, Rss } from 'lucide-react';
+import { Loader2, Calendar, Video, ExternalLink, Rss, CreditCard, Gift } from 'lucide-react';
 import CalendarSyncCard from '../../components/CalendarSyncCard';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
+const fmtMoney = (c, cur = 'usd') => { try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (cur || 'usd').toUpperCase() }).format((c || 0) / 100); } catch { return `$${((c || 0) / 100).toFixed(2)}`; } };
 
 const statusStyle = {
   upcoming: { bg: 'rgba(34,197,94,0.15)', color: '#22c55e', label: 'Upcoming' },
@@ -59,6 +60,7 @@ export default function MyBookings() {
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Time</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Mentor</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Type</th>
+              <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Billing</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Virtual Link</th>
               <th className="text-left p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Status</th>
               <th className="text-right p-3 font-medium text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Actions</th>
@@ -74,6 +76,19 @@ export default function MyBookings() {
                   <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{b.start_time} - {b.end_time}</td>
                   <td className="p-3 text-xs" style={{ color: v('text-primary', '#fff') }}>{b.mentor_name || '-'}</td>
                   <td className="p-3 text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>{b.session_type || '-'}</td>
+                  <td className="p-3 text-xs" data-testid={`booking-billing-${b.id}`}>
+                    {b.billing_type === 'paid' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-medium" style={{ backgroundColor: v('accent', '#c9a84c') + '20', color: v('accent', '#c9a84c') }}>
+                        <CreditCard className="w-3 h-3" /> Paid {fmtMoney(b.price_cents, b.currency)}
+                      </span>
+                    ) : b.billing_type === 'credit' ? (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-medium bg-purple-500/15 text-purple-400">
+                        <Gift className="w-3 h-3" /> Credit
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded font-medium bg-emerald-500/15 text-emerald-400">Free</span>
+                    )}
+                  </td>
                   <td className="p-3 text-xs">
                     {b.virtual_link && displayStatus === 'upcoming' ? (
                       <a href={b.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}>

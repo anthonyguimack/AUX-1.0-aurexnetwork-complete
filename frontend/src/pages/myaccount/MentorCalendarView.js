@@ -9,7 +9,12 @@ import CalendarGrid from '../../components/CalendarGrid';
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
-const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const stripHtml = (s) => {
+  if (!s) return '';
+  const tmp = document.createElement('div');
+  tmp.innerHTML = s;
+  return (tmp.textContent || tmp.innerText || '').replace(/\s+/g, ' ').trim();
+};
 const formatPrice = (cents, currency = 'usd') => {
   if (!cents) return null;
   try {

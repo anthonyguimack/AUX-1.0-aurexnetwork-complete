@@ -37,7 +37,7 @@ function BundleCard({ bundle, onBuy, buying }) {
           </div>
         )}
         {bundle.summary && (
-          <p className="text-xs mb-2" style={{ color: v('text-secondary', '#9ca3af') }}>{bundle.summary}</p>
+          <div className="text-xs mb-2 rich-text-content [&_p]:!mb-1 [&_p]:!text-inherit" style={{ color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bundle.summary }} />
         )}
         <Link to={`/my-account/bundles/${bundle.id}`} className="text-xs inline-flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }} data-testid={`bundle-read-more-${bundle.id}`}>
           Read more <ArrowRight className="w-3 h-3" />

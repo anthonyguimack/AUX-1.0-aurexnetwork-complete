@@ -10,7 +10,7 @@ const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
 const today = () => new Date().toISOString().split('T')[0];
 
-function MonthView({ events, year, month, onDayClick }) {
+function MonthView({ events, year, month, monthLabel, onPrevMonth, onNextMonth, onDayClick }) {
   const firstDay = new Date(year, month, 1).getDay();
   const daysInMonth = new Date(year, month + 1, 0).getDate();
   const days = [];
@@ -25,33 +25,42 @@ function MonthView({ events, year, month, onDayClick }) {
   };
 
   return (
-    <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
-      {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
-        <div key={d} className="p-2 text-center text-xs font-medium" style={{ backgroundColor: v('card-bg', '#13161e'), color: v('text-secondary', '#9ca3af') }}>{d}</div>
-      ))}
-      {days.map((day, i) => {
-        const dayEvents = getEventsForDay(day);
-        return (
-          <div key={i} className="min-h-[80px] p-1.5 cursor-pointer transition-colors hover:opacity-80" onClick={() => day && onDayClick(day, dayEvents)}
-            style={{ backgroundColor: day ? v('card-bg', '#13161e') : 'transparent' }} data-testid={day ? `cal-day-${day}` : undefined}>
-            {day && (
-              <>
-                <span className="text-xs font-medium" style={{ color: v('text-primary', '#fff') }}>{day}</span>
-                {dayEvents.map(e => {
-                  const isPast = e.date < todayStr;
-                  return (
-                    <div key={e.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate"
-                      style={{ backgroundColor: isPast ? '#374151' : '#22c55e', color: isPast ? '#9ca3af' : '#052e16' }}>
-                      {e.title}
-                    </div>
-                  );
-                })}
-              </>
-            )}
-          </div>
-        );
-      })}
-    </div>
+    <>
+      {monthLabel && (
+        <div className="flex items-center justify-between mb-3">
+          <button onClick={onPrevMonth} className="px-3 py-1.5 rounded text-xs font-medium transition-colors" style={{ color: v('text-secondary', '#9ca3af'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }} data-testid="cal-prev-month">‹ Prev</button>
+          <p className="text-sm font-semibold" style={{ color: v('text-primary', '#fff') }}>{monthLabel}</p>
+          <button onClick={onNextMonth} className="px-3 py-1.5 rounded text-xs font-medium transition-colors" style={{ color: v('text-secondary', '#9ca3af'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }} data-testid="cal-next-month">Next ›</button>
+        </div>
+      )}
+      <div className="grid grid-cols-7 gap-px rounded-lg overflow-hidden" style={{ backgroundColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
+        {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(d => (
+          <div key={d} className="p-2 text-center text-xs font-medium" style={{ backgroundColor: v('card-bg', '#13161e'), color: v('text-secondary', '#9ca3af') }}>{d}</div>
+        ))}
+        {days.map((day, i) => {
+          const dayEvents = getEventsForDay(day);
+          return (
+            <div key={i} className="min-h-[80px] p-1.5 cursor-pointer transition-colors hover:opacity-80" onClick={() => day && onDayClick(day, dayEvents)}
+              style={{ backgroundColor: day ? v('card-bg', '#13161e') : 'transparent' }} data-testid={day ? `cal-day-${day}` : undefined}>
+              {day && (
+                <>
+                  <span className="text-xs font-medium" style={{ color: v('text-primary', '#fff') }}>{day}</span>
+                  {dayEvents.map(e => {
+                    const isPast = e.date < todayStr;
+                    return (
+                      <div key={e.id} className="mt-0.5 px-1.5 py-0.5 rounded text-[10px] truncate"
+                        style={{ backgroundColor: isPast ? '#374151' : '#22c55e', color: isPast ? '#9ca3af' : '#052e16' }}>
+                        {e.title}
+                      </div>
+                    );
+                  })}
+                </>
+              )}
+            </div>
+          );
+        })}
+      </div>
+    </>
   );
 }
 
@@ -214,7 +223,9 @@ export default function GlobalCalendar() {
         <>
           <MonthView
             events={events}
-            currentDate={currentDate}
+            year={year}
+            month={month}
+            monthLabel={monthLabel}
             onPrevMonth={() => setCurrentDate(new Date(year, month - 1, 1))}
             onNextMonth={() => setCurrentDate(new Date(year, month + 1, 1))}
             onDayClick={(day) => setSelectedDay(day)}

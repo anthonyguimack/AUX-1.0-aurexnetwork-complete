@@ -77,6 +77,7 @@ import BundleDetail from './pages/myaccount/BundleDetail';
 import BundleCheckoutSuccess from './pages/myaccount/BundleCheckoutSuccess';
 import AdminBundlesManager from './pages/admin/AdminBundlesManager';
 import AdminPayoutsManager from './pages/admin/AdminPayoutsManager';
+import AdminCouponsManager from './pages/admin/AdminCouponsManager';
 import EventDetail from './pages/myaccount/EventDetail';
 
 import LandingPage from './pages/LandingPage';
@@ -408,6 +409,7 @@ function AppRouter() {
           <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
           <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
           <Route path="calendar/bundles" element={<AdminBundlesManager />} />
+          <Route path="calendar/coupons" element={<AdminCouponsManager />} />
           <Route path="payouts" element={<AdminPayoutsManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>
@@ -486,6 +488,7 @@ function AppRouter() {
           <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
           <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
           <Route path="calendar/bundles" element={<AdminBundlesManager />} />
+          <Route path="calendar/coupons" element={<AdminCouponsManager />} />
           <Route path="payouts" element={<AdminPayoutsManager />} />
           <Route path="geo" element={<GeoManager />} />
         </Route>

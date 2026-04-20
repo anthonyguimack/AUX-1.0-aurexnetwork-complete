@@ -197,6 +197,33 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
     if not origin_url:
         raise HTTPException(status_code=400, detail="origin_url is required")
 
+    # Optional coupon
+    base_cents = int(bundle["price_cents"])
+    coupon_code = (body.get("coupon_code") or "").strip().upper()
+    coupon_id = None
+    discount_cents = 0
+    original_cents = base_cents
+    final_cents = base_cents
+    if coupon_code:
+        from routes.coupons import _compute_discount, _is_expired
+        coupon = await db.coupons.find_one({"code": coupon_code}, {"_id": 0})
+        if not coupon or not coupon.get("active") or _is_expired(coupon):
+            raise HTTPException(status_code=400, detail="Coupon is not valid")
+        applies = coupon.get("applies_to", "both")
+        if applies not in ("both", "bundles"):
+            raise HTTPException(status_code=400, detail="Coupon not valid for bundles")
+        limit = int(coupon.get("usage_limit") or 0)
+        if limit > 0:
+            if coupon.get("usage_mode") == "per_member":
+                used = await db.coupon_redemptions.count_documents({"coupon_id": coupon["id"], "member_id": member["member_id"]})
+                if used >= limit:
+                    raise HTTPException(status_code=400, detail="You already used this coupon the max number of times")
+            elif int(coupon.get("usage_count") or 0) >= limit:
+                raise HTTPException(status_code=400, detail="Coupon usage limit reached")
+        discount_cents = _compute_discount(coupon, base_cents)
+        final_cents = max(0, base_cents - discount_cents)
+        coupon_id = coupon["id"]
+
     api_key = os.environ.get("STRIPE_API_KEY", "")
     host_url = str(request.base_url).rstrip("/")
     webhook_url = f"{host_url}api/webhook/stripe"
@@ -207,9 +234,13 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
         "kind": "bundle_purchase",
         "bundle_id": bundle_id,
         "member_id": member["member_id"],
+        "coupon_id": coupon_id or "",
+        "coupon_code": coupon_code or "",
+        "original_cents": str(original_cents),
+        "discount_cents": str(discount_cents),
     }
     req = CheckoutSessionRequest(
-        amount=int(bundle["price_cents"]) / 100.0,
+        amount=final_cents / 100.0,
         currency=(bundle.get("currency") or "usd").lower(),
         success_url=success_url,
         cancel_url=cancel_url,
@@ -222,10 +253,14 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
         "kind": "bundle_purchase",
         "bundle_id": bundle_id,
         "member_id": member["member_id"],
-        "amount": int(bundle["price_cents"]) / 100.0,
+        "amount": final_cents / 100.0,
         "currency": (bundle.get("currency") or "usd").lower(),
         "status": "initiated",
         "payment_status": "pending",
+        "coupon_id": coupon_id,
+        "coupon_code": coupon_code or None,
+        "original_cents": original_cents,
+        "discount_cents": discount_cents,
         "metadata": metadata,
         "created_at": datetime.now(timezone.utc).isoformat(),
     })
@@ -278,6 +313,17 @@ async def member_bundle_checkout_status(session_id: str, request: Request):
                 }
                 await db.credit_packs.insert_one(pack)
                 credit_pack = pack
+                # Record coupon redemption (idempotent: check if already recorded)
+                if tx.get("coupon_id"):
+                    existing_red = await db.coupon_redemptions.find_one({"reference_id": session_id})
+                    if not existing_red:
+                        from routes.coupons import record_redemption
+                        await record_redemption(
+                            tx["coupon_id"], member["member_id"], "bundles",
+                            int(tx.get("original_cents") or 0),
+                            int(tx.get("discount_cents") or 0),
+                            session_id,
+                        )
                 await db.notifications.insert_one({
                     "id": str(uuid.uuid4()),
                     "member_id": member["member_id"],

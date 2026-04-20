@@ -515,6 +515,21 @@ async def member_my_bookings(request: Request):
             b["end_time"] = slot.get("end_time", "")
             b["session_type"] = slot.get("session_type", "")
             b["virtual_link"] = slot.get("virtual_link", "")
+            # Payment / pricing info for "Paid or Free" column
+            slot_price = int(slot.get("price_cents") or 0)
+            b["price_cents"] = int(b.get("price_cents") or slot_price)
+            b["currency"] = b.get("currency") or slot.get("currency") or "usd"
+            # Billing type: free | paid | credit
+            pay_status = b.get("payment_status") or ""
+            if pay_status == "credit":
+                b["billing_type"] = "credit"
+            elif b["price_cents"] > 0 and pay_status in {"paid", "pending"}:
+                b["billing_type"] = "paid"
+            elif b["price_cents"] > 0:
+                b["billing_type"] = "paid"
+            else:
+                b["billing_type"] = "free"
+            b["payment_status"] = pay_status
             mentor = await db.members.find_one({"member_id": slot["mentor_id"]}, {"_id": 0, "password_hash": 0})
             b["mentor_name"] = f"{mentor.get('first_name', '')} {mentor.get('last_name', '')}".strip() if mentor else ""
             if slot.get("status") == "cancelled":
@@ -554,6 +569,36 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
     if price_cents <= 0:
         raise HTTPException(status_code=400, detail="This slot has no price — use the free booking flow")
 
+    # Optional coupon
+    body = await request.json() if int(request.headers.get("content-length") or 0) > 0 else {}
+    origin_url = (body.get("origin_url") or "").rstrip("/")
+    if not origin_url:
+        raise HTTPException(status_code=400, detail="origin_url is required")
+
+    coupon_code = (body.get("coupon_code") or "").strip().upper()
+    coupon_id = None
+    original_cents = price_cents
+    discount_cents = 0
+    if coupon_code:
+        from routes.coupons import _compute_discount, _is_expired
+        coupon = await db.coupons.find_one({"code": coupon_code}, {"_id": 0})
+        if not coupon or not coupon.get("active") or _is_expired(coupon):
+            raise HTTPException(status_code=400, detail="Coupon is not valid")
+        applies = coupon.get("applies_to", "both")
+        if applies not in ("both", "slots"):
+            raise HTTPException(status_code=400, detail="Coupon not valid for mentorship slots")
+        limit = int(coupon.get("usage_limit") or 0)
+        if limit > 0:
+            if coupon.get("usage_mode") == "per_member":
+                used = await db.coupon_redemptions.count_documents({"coupon_id": coupon["id"], "member_id": member["member_id"]})
+                if used >= limit:
+                    raise HTTPException(status_code=400, detail="You already used this coupon the max number of times")
+            elif int(coupon.get("usage_count") or 0) >= limit:
+                raise HTTPException(status_code=400, detail="Coupon usage limit reached")
+        discount_cents = _compute_discount(coupon, price_cents)
+        price_cents = max(0, price_cents - discount_cents)
+        coupon_id = coupon["id"]
+
     # Enforce the same seat/waitlist rules as the free path
     existing = await db.mentorship_bookings.find_one({"slot_id": slot_id, "member_id": member["member_id"]})
     if existing and existing.get("status") in ("booked", "pending_payment"):
@@ -562,10 +607,41 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
     if booked_count >= int(slot.get("max_students", 1)):
         raise HTTPException(status_code=400, detail="Slot is full. Join the waiting list via the free booking flow.")
 
-    body = await request.json() if int(request.headers.get("content-length") or 0) > 0 else {}
-    origin_url = (body.get("origin_url") or "").rstrip("/")
-    if not origin_url:
-        raise HTTPException(status_code=400, detail="origin_url is required")
+    # If the coupon dropped the price to zero, skip Stripe and just confirm the booking
+    if price_cents <= 0:
+        if existing:
+            await db.mentorship_bookings.update_one(
+                {"slot_id": slot_id, "member_id": member["member_id"]},
+                {"$set": {
+                    "status": "booked",
+                    "payment_status": "coupon_free",
+                    "price_cents": 0,
+                    "original_cents": original_cents,
+                    "discount_cents": discount_cents,
+                    "coupon_code": coupon_code,
+                    "coupon_id": coupon_id,
+                    "booked_at": datetime.now(timezone.utc).isoformat(),
+                }},
+            )
+        else:
+            await db.mentorship_bookings.insert_one({
+                "id": str(uuid.uuid4()),
+                "slot_id": slot_id,
+                "member_id": member["member_id"],
+                "mentor_id": slot["mentor_id"],
+                "status": "booked",
+                "payment_status": "coupon_free",
+                "price_cents": 0,
+                "original_cents": original_cents,
+                "discount_cents": discount_cents,
+                "coupon_code": coupon_code,
+                "coupon_id": coupon_id,
+                "booked_at": datetime.now(timezone.utc).isoformat(),
+            })
+        if coupon_id:
+            from routes.coupons import record_redemption
+            await record_redemption(coupon_id, member["member_id"], "slots", original_cents, discount_cents, slot_id)
+        return {"url": f"{origin_url}/my-account/my-bookings", "session_id": None, "zero_priced": True}
 
     api_key = os.environ.get("STRIPE_API_KEY", "")
     host_url = str(request.base_url).rstrip("/")
@@ -578,6 +654,10 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
         "slot_id": slot_id,
         "member_id": member["member_id"],
         "member_email": member.get("email", ""),
+        "coupon_id": coupon_id or "",
+        "coupon_code": coupon_code or "",
+        "original_cents": str(original_cents),
+        "discount_cents": str(discount_cents),
     }
     currency = (slot.get("currency") or "usd").lower()
     checkout_req = CheckoutSessionRequest(
@@ -598,6 +678,10 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
                 "payment_session_id": session.session_id,
                 "payment_status": "pending",
                 "price_cents": price_cents,
+                "original_cents": original_cents,
+                "discount_cents": discount_cents,
+                "coupon_code": coupon_code,
+                "coupon_id": coupon_id,
                 "currency": currency,
                 "booked_at": datetime.now(timezone.utc).isoformat(),
             }},
@@ -612,6 +696,10 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
             "payment_session_id": session.session_id,
             "payment_status": "pending",
             "price_cents": price_cents,
+            "original_cents": original_cents,
+            "discount_cents": discount_cents,
+            "coupon_code": coupon_code,
+            "coupon_id": coupon_id,
             "currency": currency,
             "booked_at": datetime.now(timezone.utc).isoformat(),
         })
@@ -675,6 +763,17 @@ async def member_mentorship_checkout_status(session_id: str, request: Request):
                     "paid_at": datetime.now(timezone.utc).isoformat(),
                 }},
             )
+            # Record coupon redemption if applicable (idempotent — only runs here once per session)
+            if booking.get("coupon_id"):
+                existing_red = await db.coupon_redemptions.find_one({"reference_id": session_id})
+                if not existing_red:
+                    from routes.coupons import record_redemption
+                    await record_redemption(
+                        booking["coupon_id"], member["member_id"], "slots",
+                        int(booking.get("original_cents") or booking.get("price_cents") or 0),
+                        int(booking.get("discount_cents") or 0),
+                        session_id,
+                    )
             slot = await db.mentorship_slots.find_one({"id": booking["slot_id"]}, {"_id": 0})
             if slot:
                 await db.notifications.insert_one({

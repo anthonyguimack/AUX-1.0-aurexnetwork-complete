@@ -64,6 +64,26 @@
 }
 
 /* Rich text content styling */
+.rich-text-content {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
+}
+.rich-text-content img,
+.rich-text-content iframe,
+.rich-text-content video,
+.rich-text-content pre {
+  max-width: 100%;
+  height: auto;
+}
+.rich-text-content pre {
+  white-space: pre-wrap;
+}
+.rich-text-content table {
+  max-width: 100%;
+  display: block;
+  overflow-x: auto;
+}
 .rich-text-content h1 {
   @apply text-3xl font-bold mb-5 mt-8;
   font-family: 'Playfair Display', serif;
@@ -379,8 +399,7 @@ html {
 */
 [data-testid="myaccount-layout"],
 [data-testid="member-login-page"],
-[data-testid="member-register-page"],
-[role="dialog"][data-state="open"] {
+[data-testid="member-register-page"] {
   color-scheme: var(--ma-color-scheme, dark);
 }
 
@@ -389,6 +408,21 @@ html {
 }
 
 [data-testid="membership-enrollment"] {
+  color-scheme: var(--me-color-scheme, light);
+}
+
+/* Radix dialogs portal to document.body outside their trigger scope. Infer the
+   current scope via `:has()` on body so dialog chrome (native selects, date
+   pickers) matches the originating area instead of defaulting to dark. */
+body:has([data-testid="admin-layout"]) [role="dialog"][data-state="open"] {
+  color-scheme: var(--ad-color-scheme, light);
+}
+body:has([data-testid="myaccount-layout"]) [role="dialog"][data-state="open"],
+body:has([data-testid="member-login-page"]) [role="dialog"][data-state="open"],
+body:has([data-testid="member-register-page"]) [role="dialog"][data-state="open"] {
+  color-scheme: var(--ma-color-scheme, dark);
+}
+body:has([data-testid="membership-enrollment"]) [role="dialog"][data-state="open"] {
   color-scheme: var(--me-color-scheme, light);
 }
 

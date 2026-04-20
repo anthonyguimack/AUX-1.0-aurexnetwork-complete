@@ -47,7 +47,7 @@ export default function BundleDetail() {
   const isGlobal = !bundle.mentor_id;
 
   return (
-    <div data-testid="bundle-detail-page">
+    <div data-testid="bundle-detail-page" className="max-w-full overflow-x-hidden">
       <Link to="/my-account/bundles" className="inline-flex items-center gap-1 text-xs mb-4 hover:opacity-80" style={{ color: v('text-secondary', '#9ca3af') }}>
         <ArrowLeft className="w-3 h-3" /> Back to Session Bundles
       </Link>
