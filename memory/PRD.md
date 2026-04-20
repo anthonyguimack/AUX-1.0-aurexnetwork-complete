@@ -283,6 +283,30 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 
 **Testing**: iteration_58 testing agent → 16/16 backend tests pass, all frontend UI verified. Report: `/app/test_reports/iteration_58.json`.
 
+### Iteration 59 — Coupons + Multi-batch (Apr 20, 2026)
+
+**NEW FEATURE — Discount Coupons** (`routes/coupons.py`):
+- Admin CRUD at `/admin/calendar/coupons` with fields:
+  - `code` (uppercase, unique), `discount_type` (percent|flat), `discount_value`
+  - `applies_to` (slots|bundles|both), `usage_mode` (total|per_member), `usage_limit` (0 = unlimited), `expires_at`, `active`
+- Member `POST /api/member/coupons/validate` returns `{valid, discount_cents, original_cents, final_cents}` with full error gating (inactive/expired/wrong-context/limit-exceeded)
+- Integrated into both paid flows: `/member/mentorship/checkout/{id}` + `/member/bundles/checkout/{id}` accept `coupon_code` in body; Stripe charges the discounted amount; redemption is recorded in `coupon_redemptions` collection on payment success (idempotent)
+- If a coupon drops slot price to $0, slot is booked directly (bypass Stripe)
+- Confirm Booking modal on `MentorshipProfile` has Ticket-iconed coupon input with Apply button, real-time validation, error messaging, and collapsible price breakdown (Original / Discount / Total)
+
+**Bundle UX upgrades**:
+- `BundleEditorDialog`: Banner image now accepts either URL paste OR upload button (uses `adminAPI.uploadImage`) with thumbnail preview; Summary converted from plain `<Input>` to `RichTextEditor`
+- `BundlesBrowse` card renders summary via `dangerouslySetInnerHTML`
+- `BundleDetail` page gets `max-w-full overflow-x-hidden` root + CSS `.rich-text-content { overflow-wrap: anywhere; word-break: break-word }` to kill horizontal scroll
+
+**Bug fixes**:
+- **HTML entities as text** (`&nbsp;` visible): `stripHtml()` in `MentorshipProfile.js` + `MentorCalendarView.js` rewritten to use a DOM decoder (`div.innerHTML → textContent`) so entities decode properly
+- **Admin New Event dialog dark bg on native selects/date** fields: replaced unscoped `[role="dialog"][data-state="open"]` rule with `body:has([data-testid="admin-layout"]) [role="dialog"]...` so admin-portaled dialogs inherit the admin `--ad-color-scheme` (light), while my-account dialogs continue to use `--ma-color-scheme`
+- **AUX Calendar monthly view not rendering**: `GlobalCalendar.MonthView` was missing `year` and `month` props; signature updated + callsite now passes `{ year, month, monthLabel, onPrev/Next }`
+- **My Reservations**: added "Billing" column with color-coded badges (Paid $amount / Credit / Free) — backend enriches `/member/my-bookings` with `billing_type`, `price_cents`, `currency`
+
+**Testing**: iteration_59 testing agent → 17/17 backend tests pass, all frontend UI verified. Report: `/app/test_reports/iteration_59.json`.
+
 ## Credentials
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
@@ -291,3 +315,4 @@ Mentor (Carlos): carlos@example.com / Mentor123!
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
 - (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
+- (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog (currently only MentorshipProfile has it)
