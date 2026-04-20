@@ -39,6 +39,7 @@ export default function MentorshipCalendar() {
   const [uploading, setUploading] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [paidEnabled, setPaidEnabled] = useState(false);
+  const [appliedTemplateId, setAppliedTemplateId] = useState('');
 
   const load = () => {
     setLoading(true);
@@ -148,7 +149,7 @@ export default function MentorshipCalendar() {
     <div data-testid="mentorship-calendar-page">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>My Calendar</h1>
-        <button onClick={() => { setEditing({ title: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '', attachments: [] }); setOpen(true); }} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
+        <button onClick={() => { setAppliedTemplateId(''); setEditing({ title: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '', attachments: [] }); setOpen(true); }} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
           style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid="add-slot-btn">
           <Plus className="w-4 h-4" /> Add Slot
         </button>
@@ -260,7 +261,17 @@ export default function MentorshipCalendar() {
               {templates.length > 0 && !editing.id && (
                 <div>
                   <Label className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Apply Template</Label>
-                  <select onChange={e => { if (e.target.value) { applyTemplate(e.target.value); e.target.value = ''; } }} className="w-full mt-1 px-3 py-2 rounded text-sm" style={selectStyle} data-testid="slot-apply-template" defaultValue="">
+                  <select
+                    value={appliedTemplateId}
+                    onChange={e => {
+                      const tplId = e.target.value;
+                      setAppliedTemplateId(tplId);
+                      if (tplId) applyTemplate(tplId);
+                    }}
+                    className="w-full mt-1 px-3 py-2 rounded text-sm"
+                    style={selectStyle}
+                    data-testid="slot-apply-template"
+                  >
                     <option value="">Select a template to pre-fill…</option>
                     {templates.map(t => <option key={t.id} value={t.id}>{t.name} ({t.default_duration_minutes} min)</option>)}
                   </select>

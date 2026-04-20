@@ -73,6 +73,7 @@ import CalendarSync from './pages/myaccount/CalendarSync';
 import MentorshipCheckoutSuccess from './pages/myaccount/MentorshipCheckoutSuccess';
 import MentorEarnings from './pages/myaccount/MentorEarnings';
 import BundlesBrowse from './pages/myaccount/BundlesBrowse';
+import BundleDetail from './pages/myaccount/BundleDetail';
 import BundleCheckoutSuccess from './pages/myaccount/BundleCheckoutSuccess';
 import AdminBundlesManager from './pages/admin/AdminBundlesManager';
 import AdminPayoutsManager from './pages/admin/AdminPayoutsManager';
@@ -113,8 +114,8 @@ function SettingsProvider({ children }) {
     if (!themeColors.website && settings.colors) {
       themeColors.website = settings.colors;
     }
-    injectThemeColors(themeColors);
-  }, [settings.theme_colors, settings.colors]);
+    injectThemeColors(themeColors, { my_account_color_scheme: settings.my_account_color_scheme });
+  }, [settings.theme_colors, settings.colors, settings.my_account_color_scheme]);
 
   // Dynamic favicon
   useEffect(() => {
@@ -355,6 +356,7 @@ function AppRouter() {
           <Route path="earnings" element={<MentorEarnings />} />
           <Route path="bundles" element={<BundlesBrowse />} />
           <Route path="bundles/checkout-success" element={<BundleCheckoutSuccess />} />
+          <Route path="bundles/:id" element={<BundleDetail />} />
         </Route>
       </Routes>
     );

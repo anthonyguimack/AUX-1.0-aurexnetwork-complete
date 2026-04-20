@@ -425,7 +425,7 @@ async def member_upload_file(file: UploadFile = File(...), member: dict = Depend
 @router.post("/member/upload-file")
 async def member_upload_document(file: UploadFile = File(...), member: dict = Depends(get_current_member)):
     """Upload endpoint for member documents (PDF, PPT, DOC, images, etc.)."""
-    allowed = {
+    allowed_mimes = {
         "application/pdf", "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         "application/vnd.ms-powerpoint",
@@ -436,10 +436,16 @@ async def member_upload_document(file: UploadFile = File(...), member: dict = De
         "image/jpeg", "image/png", "image/gif", "image/webp",
         "application/zip", "application/x-zip-compressed",
     }
-    if file.content_type not in allowed:
-        raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type}")
+    # Some browsers (and proxies) send `application/octet-stream` or a generic
+    # mime for docx/xlsx/pptx — fall back to checking the extension.
+    allowed_exts = {"pdf", "doc", "docx", "ppt", "pptx", "xls", "xlsx", "txt", "csv",
+                    "jpg", "jpeg", "png", "gif", "webp", "zip"}
+    ext = (file.filename.rsplit(".", 1)[-1] if "." in (file.filename or "") else "").lower()
+    if file.content_type not in allowed_mimes and ext not in allowed_exts:
+        raise HTTPException(status_code=400, detail=f"File type not allowed: {file.content_type or ext or 'unknown'}")
     max_size = 25 * 1024 * 1024
-    ext = file.filename.rsplit(".", 1)[-1] if "." in file.filename else "bin"
+    if not ext:
+        ext = "bin"
     filename = f"{uuid.uuid4().hex}.{ext}"
     filepath = UPLOAD_DIR / filename
     total = 0

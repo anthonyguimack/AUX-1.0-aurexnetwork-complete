@@ -280,6 +280,43 @@ export default function SettingsManager() {
                 data-testid="platform-fee-input"
               />
             </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Paid Session Bundles (Stripe)</h3>
+            <div>
+              <Label>Enable Paid Session Bundles</Label>
+              <p className="text-xs text-slate-400 mb-2">Independent of the per-slot toggle above. When enabled, members can purchase prepaid session bundles (credit packs) via Stripe. When disabled, bundle checkout is blocked even if the per-slot toggle is on.</p>
+              <div className="flex items-center gap-3">
+                <Switch
+                  checked={settings.paid_bundles_enabled === true}
+                  onCheckedChange={(checked) => setSettings({ ...settings, paid_bundles_enabled: checked })}
+                  data-testid="paid-bundles-toggle"
+                />
+                <span className="text-sm text-slate-600">{settings.paid_bundles_enabled ? 'Enabled — Stripe active on bundle checkout' : 'Disabled — bundles cannot be purchased'}</span>
+              </div>
+            </div>
+
+            <hr className="border-slate-200" />
+            <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>My Account Color Scheme</h3>
+            <div>
+              <Label>Native form control color-scheme</Label>
+              <p className="text-xs text-slate-400 mb-2">Controls the native chrome of date/time pickers, select dropdowns and scrollbars across the My Account area. Choose the scheme that matches your configured My Account background colors so native icons remain visible.</p>
+              <div className="flex items-center gap-6" data-testid="my-account-color-scheme">
+                {['dark', 'light'].map(opt => (
+                  <label key={opt} className="flex items-center gap-2 text-sm cursor-pointer" style={{ color: 'var(--ad-text-primary, #334155)' }}>
+                    <input
+                      type="radio"
+                      name="my_account_color_scheme"
+                      value={opt}
+                      checked={(settings.my_account_color_scheme || 'dark') === opt}
+                      onChange={() => setSettings({ ...settings, my_account_color_scheme: opt })}
+                      data-testid={`ma-scheme-${opt}`}
+                    />
+                    <span className="capitalize">{opt}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         </TabsContent>
 

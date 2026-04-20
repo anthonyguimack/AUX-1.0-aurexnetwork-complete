@@ -1,14 +1,21 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import axios from 'axios';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { User, Loader2, ChevronLeft, ChevronRight, Calendar, Clock, Users, List, Grid3X3, Video, Download, Paperclip, ExternalLink, Map } from 'lucide-react';
+import { User, Loader2, ChevronLeft, ChevronRight, Calendar, Clock, Users, List, Grid3X3, Video, Download, Paperclip, ExternalLink, Map, CreditCard } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
 const todayStr = () => new Date().toISOString().split('T')[0];
 const nowTimeStr = () => { const d = new Date(); return `${String(d.getHours()).padStart(2,'0')}:${String(d.getMinutes()).padStart(2,'0')}`; };
+const stripHtml = (s) => (s || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+const formatPrice = (cents, currency = 'usd') => {
+  if (!cents) return null;
+  try { return new Intl.NumberFormat(undefined, { style: 'currency', currency: (currency || 'usd').toUpperCase() }).format(cents / 100); }
+  catch { return `$${(cents / 100).toFixed(2)}`; }
+};
 
 const formatDate = (d) => {
   if (!d) return '-';
@@ -31,23 +38,28 @@ const slotColor = (slot) => {
 
 const isSlotPast = (slot) => slot.date < todayStr() || (slot.date === todayStr() && slot.start_time < nowTimeStr());
 
-function SlotCard({ slot, onBook, onCancel }) {
+function SlotCard({ slot, onBook, onCancel, paidEnabled }) {
   const isPast = isSlotPast(slot);
   const booked = slot.booked_count || 0;
   const max = slot.max_students || 1;
   const isFull = booked >= max;
   const color = slotColor(slot);
+  const priceLabel = paidEnabled ? formatPrice(slot.price_cents, slot.currency) : null;
+  const isPaid = paidEnabled && (slot.price_cents || 0) > 0;
 
   return (
     <div className="rounded-lg border overflow-hidden" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)'), borderLeft: `3px solid ${color}`, opacity: isPast ? 0.6 : 1 }} data-testid={`slot-card-${slot.id}`}>
       <div className="p-4">
         {slot.title && <p className="text-xs font-semibold mb-1" style={{ color: v('text-primary', '#fff') }}>{slot.title}</p>}
+        <div className="flex items-center gap-2 mb-2 flex-wrap">
+          {priceLabel && <span className="text-[10px] px-2 py-0.5 rounded font-medium flex items-center gap-1" style={{ backgroundColor: v('accent', '#c9a84c') + '20', color: v('accent', '#c9a84c') }} data-testid={`slot-price-${slot.id}`}><CreditCard className="w-2.5 h-2.5" /> {priceLabel}</span>}
+        </div>
         <div className="space-y-1 text-xs mb-2" style={{ color: v('text-secondary', '#9ca3af') }}>
           <div className="flex items-center gap-1.5"><Clock className="w-3 h-3" />{slot.date} &middot; {slot.start_time} - {slot.end_time}</div>
           <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{Math.max(0, max - booked)} / {max} spots &middot; {slot.session_type}</div>
           {slot.virtual_link && slot.my_status === 'booked' && <a href={slot.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}><Video className="w-3 h-3" /> Virtual Link <ExternalLink className="w-2.5 h-2.5" /></a>}
         </div>
-        {slot.description && <p className="text-xs mb-2 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }}>{slot.description}</p>}
+        {slot.description && <p className="text-xs mb-2 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }}>{stripHtml(slot.description)}</p>}
         {(slot.attachments || []).length > 0 && (
           <div className="mb-2 space-y-1">
             {slot.attachments.map((att, idx) => (
@@ -73,7 +85,9 @@ function SlotCard({ slot, onBook, onCancel }) {
             ) : isFull ? (
               <button onClick={() => onBook(slot)} className="text-xs px-3 py-1.5 rounded font-medium bg-blue-500/15 text-blue-400">Waiting List</button>
             ) : (
-              <button onClick={() => onBook(slot)} className="text-xs px-4 py-1.5 rounded font-medium" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }}>Book this slot</button>
+              <button onClick={() => onBook(slot)} className="text-xs px-4 py-1.5 rounded font-medium flex items-center gap-1.5" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid={`book-slot-btn-${slot.id}`}>
+                {isPaid ? <><CreditCard className="w-3 h-3" /> Pay &amp; Book {priceLabel}</> : 'Book this slot'}
+              </button>
             )}
           </div>
         )}
@@ -95,6 +109,7 @@ export default function MentorshipProfile() {
   const [selectedDay, setSelectedDay] = useState(null);
   const [bookDialog, setBookDialog] = useState(null);
   const [booking, setBooking] = useState(false);
+  const paidEnabled = settings?.mentor_slots_paid_enabled === true;
 
   useEffect(() => {
     Promise.all([
@@ -122,9 +137,20 @@ export default function MentorshipProfile() {
   const confirmBook = async (slotId) => {
     setBooking(true);
     try {
-      const r = await memberAPI.bookMentorSlot(slotId);
-      toast.success(r.data.status === 'booked' ? 'Booking confirmed!' : 'Added to waiting list');
-      setBookDialog(null); loadCalendar();
+      const slot = calData.slots.find(s => s.id === slotId);
+      const isPaid = paidEnabled && (slot?.price_cents || 0) > 0 && !bookDialog?._isWaitlist;
+      if (isPaid) {
+        const token = localStorage.getItem('auth_token');
+        const r = await axios.post(`${API}/api/member/mentorship/checkout/${slotId}`,
+          { origin_url: window.location.origin },
+          { headers: { Authorization: `Bearer ${token}` } });
+        if (r.data?.url) { window.location.href = r.data.url; return; }
+        toast.error('Checkout failed — no URL returned');
+      } else {
+        const r = await memberAPI.bookMentorSlot(slotId);
+        toast.success(r.data.status === 'booked' ? 'Booking confirmed!' : 'Added to waiting list');
+        setBookDialog(null); loadCalendar();
+      }
     } catch (e) { toast.error(e.response?.data?.detail || 'Failed'); }
     finally { setBooking(false); }
   };
@@ -278,7 +304,7 @@ export default function MentorshipProfile() {
               </div>
               {selectedDay && daySlots.length > 0 && (
                 <div className="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                  {daySlots.map(s => <SlotCard key={s.id} slot={s} onBook={handleBook} onCancel={handleCancelBooking} />)}
+                  {daySlots.map(s => <SlotCard key={s.id} slot={s} onBook={handleBook} onCancel={handleCancelBooking} paidEnabled={paidEnabled} />)}
                 </div>
               )}
             </>
@@ -287,7 +313,7 @@ export default function MentorshipProfile() {
           {calView === 'list' && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {calData.slots.length === 0 ? <p className="text-sm col-span-3 text-center py-12" style={{ color: v('text-muted', '#6b7280') }}>No available slots</p> :
-                calData.slots.map(s => <SlotCard key={s.id} slot={s} onBook={handleBook} onCancel={handleCancelBooking} />)}
+                calData.slots.map(s => <SlotCard key={s.id} slot={s} onBook={handleBook} onCancel={handleCancelBooking} paidEnabled={paidEnabled} />)}
             </div>
           )}
         </>
@@ -303,13 +329,20 @@ export default function MentorshipProfile() {
               {bookDialog.title && <p className="text-sm font-semibold" style={{ color: v('text-primary', '#fff') }}>{bookDialog.title}</p>}
               <div className="flex items-center gap-2 text-sm"><Calendar className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Date: {bookDialog.date}</span></div>
               <div className="flex items-center gap-2 text-sm"><Clock className="w-4 h-4" style={{ color: v('accent', '#c9a84c') }} /> <span>Time: {bookDialog.start_time} — {bookDialog.end_time}</span></div>
-              {bookDialog.description && <div className="text-xs p-2 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }}>{bookDialog.description}</div>}
+              {bookDialog.description && <div className="text-xs p-2 rounded rich-text-content [&_p]:!mb-1" style={{ backgroundColor: v('input-bg', '#0d0f14'), color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bookDialog.description }} />}
               <div className="text-xs" style={{ color: v('text-secondary', '#9ca3af') }}>Remaining: {Math.max(0, (bookDialog.max_students || 1) - (bookDialog.booked_count || 0))} / {bookDialog.max_students || 1}</div>
+              {paidEnabled && (bookDialog.price_cents || 0) > 0 && !bookDialog._isWaitlist && (
+                <div className="flex items-center justify-between p-3 rounded" style={{ backgroundColor: v('input-bg', '#0d0f14'), border: `1px solid ${v('input-border', 'rgba(255,255,255,0.1)')}` }}>
+                  <span className="text-xs flex items-center gap-1.5" style={{ color: v('text-secondary', '#9ca3af') }}><CreditCard className="w-3.5 h-3.5" /> Price</span>
+                  <span className="text-sm font-semibold" style={{ color: v('accent', '#c9a84c') }} data-testid="dialog-price">{formatPrice(bookDialog.price_cents, bookDialog.currency)}</span>
+                </div>
+              )}
               {bookDialog._isWaitlist && <p className="text-xs text-blue-400">This slot is full. You'll be added to the waiting list.</p>}
               <div className="flex gap-2 pt-2">
                 <button onClick={() => setBookDialog(null)} className="flex-1 py-2 rounded text-sm font-medium border" style={{ borderColor: v('card-border', 'rgba(255,255,255,0.1)'), color: v('text-secondary', '#9ca3af') }}>Cancel</button>
                 <button onClick={() => confirmBook(bookDialog.id)} disabled={booking} className="flex-1 py-2 rounded text-sm font-medium disabled:opacity-50 flex items-center justify-center gap-2" style={{ backgroundColor: bookDialog._isWaitlist ? '#2563eb' : v('button-bg', '#c9a84c'), color: bookDialog._isWaitlist ? '#fff' : v('button-text', '#0d0f14') }} data-testid="confirm-booking-btn">
-                  {booking && <Loader2 className="w-3 h-3 animate-spin" />} {bookDialog._isWaitlist ? 'Join Waiting List' : 'Confirm Booking'}
+                  {booking && <Loader2 className="w-3 h-3 animate-spin" />}
+                  {bookDialog._isWaitlist ? 'Join Waiting List' : (paidEnabled && (bookDialog.price_cents || 0) > 0 ? `Pay ${formatPrice(bookDialog.price_cents, bookDialog.currency)} & Book` : 'Confirm Booking')}
                 </button>
               </div>
             </div>

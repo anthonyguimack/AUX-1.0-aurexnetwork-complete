@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Link } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
-import { Loader2, Package, ShoppingCart, Users, Gift, CreditCard } from 'lucide-react';
+import { Loader2, Package, ShoppingCart, Users, Gift, CreditCard, ArrowRight } from 'lucide-react';
 
 const v = (name, fb) => `var(--ma-${name}, ${fb})`;
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -13,6 +14,11 @@ function BundleCard({ bundle, onBuy, buying }) {
   const isGlobal = !bundle.mentor_id;
   return (
     <div className="rounded-lg border overflow-hidden flex flex-col" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid={`bundle-card-${bundle.id}`}>
+      {bundle.banner_url && (
+        <div className="w-full h-36 overflow-hidden" data-testid={`bundle-banner-${bundle.id}`}>
+          <img src={bundle.banner_url} alt={bundle.name} className="w-full h-full object-cover" />
+        </div>
+      )}
       <div className="p-5 flex-1">
         <div className="flex items-center gap-2 mb-2">
           {isGlobal
@@ -30,7 +36,12 @@ function BundleCard({ bundle, onBuy, buying }) {
             &nbsp;— save {fmtMoney(savings, bundle.currency)}
           </div>
         )}
-        {bundle.description && <div className="text-xs rich-text-content [&_p]:!text-inherit" style={{ color: v('text-secondary', '#9ca3af') }} dangerouslySetInnerHTML={{ __html: bundle.description }} />}
+        {bundle.summary && (
+          <p className="text-xs mb-2" style={{ color: v('text-secondary', '#9ca3af') }}>{bundle.summary}</p>
+        )}
+        <Link to={`/my-account/bundles/${bundle.id}`} className="text-xs inline-flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }} data-testid={`bundle-read-more-${bundle.id}`}>
+          Read more <ArrowRight className="w-3 h-3" />
+        </Link>
       </div>
       <button onClick={() => onBuy(bundle)} disabled={buying === bundle.id} className="py-3 text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50 border-t" style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }} data-testid={`buy-bundle-${bundle.id}`}>
         {buying === bundle.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShoppingCart className="w-4 h-4" />}

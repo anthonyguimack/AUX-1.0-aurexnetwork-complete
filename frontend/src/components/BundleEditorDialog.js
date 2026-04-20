@@ -55,6 +55,15 @@ export default function BundleEditorDialog({ open, onOpenChange, editing, setEdi
               </p>
             )}
             <div>
+              <Label className="text-xs">Banner image URL</Label>
+              <Input value={editing.banner_url || ''} onChange={e => setEditing({ ...editing, banner_url: e.target.value })} className="mt-1" placeholder="https://…/banner.jpg" style={inputStyle} data-testid="bundle-banner-url" />
+              <p className="text-[10px] mt-1" style={{ color: dark ? v('text-muted', '#6b7280') : '#64748b' }}>Shown at the top of the bundle card (matches AUX Calendar list view).</p>
+            </div>
+            <div>
+              <Label className="text-xs">Summary (short)</Label>
+              <Input value={editing.summary || ''} onChange={e => setEditing({ ...editing, summary: e.target.value })} className="mt-1" placeholder="Displayed on the bundle card with a Read more link." style={inputStyle} data-testid="bundle-summary" />
+            </div>
+            <div>
               <Label className="text-xs">Description</Label>
               <div className={`mt-1 ${dark ? 'ma-quill-dark' : ''}`} data-testid="bundle-description-editor">
                 <RichTextEditor value={editing.description || ''} onChange={val => setEditing({ ...editing, description: val })} placeholder="What members get…" />

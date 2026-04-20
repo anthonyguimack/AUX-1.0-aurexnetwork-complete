@@ -326,6 +326,7 @@ export const memberAPI = {
   getMentorEarnings: () => api.get('/member/mentor/earnings'),
   // Session Bundles
   getBundles: () => api.get('/member/bundles'),
+  getBundle: (id) => api.get(`/member/bundles/${id}`),
   checkoutBundle: (id, data) => api.post(`/member/bundles/checkout/${id}`, data),
   getBundleCheckoutStatus: (sid) => api.get(`/member/bundles/checkout/status/${sid}`),
   getMyCredits: () => api.get('/member/credits'),

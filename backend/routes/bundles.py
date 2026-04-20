@@ -21,7 +21,9 @@ router = APIRouter()
 def _clean_bundle_body(body: dict) -> dict:
     return {
         "name": (body.get("name") or "").strip(),
+        "summary": body.get("summary") or "",
         "description": body.get("description") or "",
+        "banner_url": (body.get("banner_url") or "").strip(),
         "session_count": max(1, int(body.get("session_count") or 1)),
         "price_cents": max(0, int(body.get("price_cents") or 0)),
         "single_session_value_cents": max(0, int(body.get("single_session_value_cents") or 0)),
@@ -153,6 +155,21 @@ async def member_list_bundles(request: Request):
     return items
 
 
+@router.get("/member/bundles/{bundle_id}")
+async def member_get_bundle(bundle_id: str, request: Request):
+    """Full bundle record (for the public details page)."""
+    from routes.membership import get_current_member
+    await get_current_member(request)
+    b = await db.session_bundles.find_one({"id": bundle_id, "active": True}, {"_id": 0})
+    if not b:
+        raise HTTPException(status_code=404, detail="Bundle not found")
+    if b.get("mentor_id"):
+        m = await db.members.find_one({"member_id": b["mentor_id"]}, {"_id": 0, "password_hash": 0})
+        if m:
+            b["mentor_name"] = f"{m.get('first_name', '')} {m.get('last_name', '')}".strip()
+    return b
+
+
 @router.post("/member/bundles/checkout/{bundle_id}")
 async def member_bundle_checkout(bundle_id: str, request: Request):
     """Start a Stripe session to purchase this bundle. On success, a credit_pack
@@ -164,8 +181,14 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
     if not bundle:
         raise HTTPException(status_code=404, detail="Bundle not found")
     settings = await db.settings.find_one({}, {"_id": 0}) or {}
-    if not settings.get("mentor_slots_paid_enabled"):
-        raise HTTPException(status_code=400, detail="Paid mentorship is currently disabled")
+    # Paid bundles are gated by their own independent setting. Fallback to
+    # mentor_slots_paid_enabled for backwards compatibility if admin hasn't
+    # explicitly set paid_bundles_enabled yet.
+    bundles_paid = settings.get("paid_bundles_enabled")
+    if bundles_paid is None:
+        bundles_paid = settings.get("mentor_slots_paid_enabled", False)
+    if not bundles_paid:
+        raise HTTPException(status_code=400, detail="Paid session bundles are currently disabled")
     if int(bundle.get("price_cents") or 0) <= 0:
         raise HTTPException(status_code=400, detail="This bundle has no price")
 

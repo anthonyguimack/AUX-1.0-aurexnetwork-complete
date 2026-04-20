@@ -172,8 +172,11 @@ function getDefault(group, key) {
   return groups[group]?.find(c => c.key === key)?.default || '#000000';
 }
 
-// Inject all CSS variables from theme_colors settings
-export function injectThemeColors(themeColors) {
+// Inject all CSS variables from theme_colors settings.
+// `overrides` can pin a specific color-scheme explicitly, e.g.:
+//   { my_account_color_scheme: 'dark' | 'light' }
+// When an override is provided it takes precedence over the luminance-derived scheme.
+export function injectThemeColors(themeColors, overrides = {}) {
   const root = document.documentElement;
 
   // Website colors (--color-* for backwards compat)
@@ -199,9 +202,13 @@ export function injectThemeColors(themeColors) {
   MYACCOUNT_COLORS.forEach(c => {
     root.style.setProperty(`--ma-${c.key.replace(/_/g, '-')}`, ma[c.key] || c.default);
   });
-  // Auto-derive color-scheme from the card bg so native pickers/selects match theme
+  // Auto-derive color-scheme from the card bg so native pickers/selects match theme,
+  // unless an explicit admin override is set in CMS Settings.
   const maCardBg = ma.card_bg || MYACCOUNT_COLORS.find(c => c.key === 'card_bg').default;
-  root.style.setProperty('--ma-color-scheme', schemeFor(maCardBg));
+  const maScheme = (overrides.my_account_color_scheme === 'dark' || overrides.my_account_color_scheme === 'light')
+    ? overrides.my_account_color_scheme
+    : schemeFor(maCardBg);
+  root.style.setProperty('--ma-color-scheme', maScheme);
 
   // Admin colors (--ad-*)
   const ad = themeColors?.admin || {};
