@@ -64,7 +64,7 @@ function SlotCard({ slot, mentor, onBook, onCancel, paidEnabled }) {
           <div className="flex items-center gap-1.5"><Users className="w-3 h-3" />{Math.max(0, max - booked)} / {max} spots</div>
           {slot.virtual_link && !isPast && <a href={slot.virtual_link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}><Video className="w-3 h-3" /> Virtual Link <ExternalLink className="w-2.5 h-2.5" /></a>}
         </div>
-        {slot.description && <p className="text-xs mb-2 line-clamp-2" style={{ color: v('text-muted', '#6b7280') }}>{stripHtml(slot.description)}</p>}
+        {slot.description && <div className="text-xs mb-2 line-clamp-2 rich-text-content [&_p]:!text-inherit [&_p]:!mb-1 [&_ul]:!pl-4 [&_ol]:!pl-4 [&_ul]:list-disc [&_ol]:list-decimal" style={{ color: v('text-muted', '#6b7280') }} dangerouslySetInnerHTML={{ __html: normalizeRichText(slot.description) }} />}
         {(slot.attachments || []).length > 0 && (
           <div className="mb-2 space-y-1">
             {slot.attachments.map((att, idx) => (
