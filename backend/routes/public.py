@@ -127,8 +127,20 @@ async def get_public_sections():
     if not settings:
         return {}
     sections = settings.get("sections", {})
-    section_order = settings.get("section_order", ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"])
-    return {"sections": sections, "section_order": section_order}
+    active_theme = settings.get("active_theme", "default")
+    # Legacy global order (for default/modern/classic themes)
+    legacy_order = settings.get("section_order", ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"])
+    # Per-theme order: fall back to legacy if Aurex has no theme-specific order yet
+    orders = settings.get("section_orders", {}) or {}
+    aurex_default = ["hero", "about", "aurex_audience", "services", "aurex_process", "aurex_pricing", "aurex_team", "testimonials", "aurex_events", "news", "blog", "aurex_partners", "aurex_clients", "map", "contact"]
+    section_order = orders.get(active_theme) or (aurex_default if active_theme == "aurex" else legacy_order)
+    section_configs = (settings.get("section_configs") or {}).get(active_theme, {})
+    return {
+        "sections": sections,
+        "section_order": section_order,
+        "active_theme": active_theme,
+        "section_configs": section_configs,
+    }
 
 @router.get("/public/page/{page_type}")
 async def get_public_page(page_type: str):

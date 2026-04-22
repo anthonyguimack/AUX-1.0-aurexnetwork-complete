@@ -160,8 +160,10 @@ export const adminAPI = {
   bulkDelete: (collection, ids) => api.post('/admin/bulk-delete', { collection, ids }),
   bulkUpdate: (collection, ids, update) => api.post('/admin/bulk-update', { collection, ids, update }),
   // Section Order
-  getSectionOrder: () => api.get('/admin/section-order'),
-  updateSectionOrder: (order) => api.put('/admin/section-order', { order }),
+  getSectionOrder: (theme) => api.get('/admin/section-order', { params: theme ? { theme } : {} }),
+  updateSectionOrder: (order, theme) => api.put('/admin/section-order', theme ? { order, theme } : { order }),
+  getSectionConfig: (theme = 'aurex') => api.get('/admin/section-config', { params: { theme } }),
+  updateSectionConfig: (configs, theme = 'aurex') => api.put('/admin/section-config', { configs, theme }),
   // SEO
   getSeo: () => api.get('/admin/seo'),
   updateSeo: (pagePath, data) => api.put(`/admin/seo/${pagePath}`, data),

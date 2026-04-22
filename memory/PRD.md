@@ -313,9 +313,32 @@ MapBlock crash fix, Maps "Open in new tab" fix, Global Maps Language (11 languag
 - Analytics tab renders: 4 KPI cards → Performance by Coupon table (sorted by revenue) → Top Redeemers leaderboard with rank chips.
 
 ### Iteration 62 — Mid-word breaks root cause (Apr 20, 2026)
-- **Root cause**: Quill/RichTextEditor was saving `&nbsp;` (non-breaking space) between every word in descriptions. Non-breaking spaces prevent wrapping at word boundaries → the whole paragraph becomes one "unbreakable token" → browser's `overflow-wrap: break-word` fallback breaks words mid-character on narrow viewports.
-- **Fix**: New `lib/richText.js::normalizeRichText(html)` helper converts `&nbsp;` and U+00A0 to regular spaces at render time. Applied across all `dangerouslySetInnerHTML` in my-account: `BundleDetail`, `BundlesBrowse` (summary card), `MentorshipProfile` dialog, `MentorCalendarView` dialog, `MentorshipCalendar` slot dialog, `EventDetail`. `stripHtml()` also normalizes `&nbsp;` before stripping.
-- Verified at 412px viewport: no horizontal scroll, no `&nbsp;` in rendered HTML, every Spanish word (inteligencia, negociación, financieros) wraps intact at whitespace boundaries.
+[truncated — see above]
+
+### Iteration 63 — Aurex One-page Theme (Phase 1 of 4, Apr 22, 2026)
+
+**Foundation — infrastructure for new theme + 7 new sections**
+
+Backend (`routes/admin_tools.py` + `routes/public.py`):
+- Added `DEFAULT_SECTION_ORDER` (legacy) + `AUREX_DEFAULT_ORDER` (15-section list including `aurex_audience`, `aurex_process`, `aurex_pricing`, `aurex_team`, `aurex_events`, `aurex_partners`, `aurex_clients`).
+- `/admin/section-order` now accepts a `?theme=` query → stored in `settings.section_orders.<theme>` (per-theme ordering as user requested).
+- New `/admin/section-config` endpoints (GET/PUT) → stores `{ bg_color, font_family }` per section under `settings.section_configs.<theme>.<section_key>`.
+- `/api/public/sections` returns `active_theme`, theme-specific `section_order`, and `section_configs`.
+
+Frontend:
+- `lib/themeColors.js`: added `AUREX_PALETTE` (7 official swatches), `AUREX_FONTS` (Sora / Inter / Playfair Display / Space Grotesk / DM Sans), `aurexContrastFor(hex)` luminance-based contrast helper. Added Aurex as 4th THEMES entry.
+- `public/index.html` loads the 5 theme fonts via Google Fonts.
+- `SettingsManager` themes tab now shows a 4-col grid with a custom Aurex preview (monochromatic mock: white header → gray hero → white cards → dark process → black footer).
+- **`SectionOrderManager` rebuilt**: preserves existing drag-drop (dnd-kit) + adds a **theme scope selector** ("legacy" vs Aurex), and for Aurex mode each card shows:
+  - A live preview chip (bg + font)
+  - 7-swatch background picker with live ring-highlight on selection
+  - Font dropdown (theme default or 1 of 5) with each option rendered in its own font
+  - Enable/disable toggle
+- Automatic text contrast flips via `aurexContrastFor()` — admin never picks text color manually.
+
+**Verified**: Backend curl tests return correct per-theme data. Frontend admin UI renders all 15 section cards with 105 swatches + 15 font selectors at `/admin/section-order`.
+
+**Phase 1 = DONE.** Phase 2 (new section CRUD), Phase 3 (frontend rendering), Phase 4 (polish) remain for subsequent sessions.
 - All formatted with tailwind colors (rose for discounts given, emerald for revenue driven) + lucide icons (Ticket, TrendingUp, Crown, Package).
 
 ## Credentials

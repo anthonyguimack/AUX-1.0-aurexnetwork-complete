@@ -106,19 +106,62 @@ async def bulk_update(request: Request, user: dict = Depends(require_admin)):
     result = await db[collection].update_many({"id": {"$in": ids}}, {"$set": update})
     return {"modified": result.modified_count}
 
-# Section Ordering
+# Section Ordering (per-theme)
+DEFAULT_SECTION_ORDER = ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]
+# Aurex theme includes 7 additional sections
+AUREX_DEFAULT_ORDER = [
+    "hero", "about", "aurex_audience", "services", "aurex_process", "aurex_pricing",
+    "aurex_team", "testimonials", "aurex_events", "news", "blog", "aurex_partners", "aurex_clients",
+    "map", "contact",
+]
+
+def _default_order_for(theme: str) -> list[str]:
+    return AUREX_DEFAULT_ORDER if theme == "aurex" else DEFAULT_SECTION_ORDER
+
+
 @router.get("/admin/section-order")
-async def get_section_order(user: dict = Depends(require_admin)):
-    settings = await db.settings.find_one({}, {"_id": 0})
-    default = ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]
-    return settings.get("section_order", default) if settings else default
+async def get_section_order(user: dict = Depends(require_admin), theme: str | None = None):
+    """Return the section order. If `theme` query param provided, return that
+    theme's order; else return the legacy global order (default theme)."""
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    if theme:
+        orders = settings.get("section_orders", {}) or {}
+        return orders.get(theme, _default_order_for(theme))
+    return settings.get("section_order", DEFAULT_SECTION_ORDER)
+
 
 @router.put("/admin/section-order")
 async def update_section_order(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
     order = body.get("order", [])
-    await db.settings.update_one({}, {"$set": {"section_order": order, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
-    return {"order": order}
+    theme = body.get("theme")
+    update_doc = {"updated_at": datetime.now(timezone.utc).isoformat()}
+    if theme:
+        update_doc[f"section_orders.{theme}"] = order
+    else:
+        update_doc["section_order"] = order
+    await db.settings.update_one({}, {"$set": update_doc}, upsert=True)
+    return {"order": order, "theme": theme}
+
+
+@router.get("/admin/section-config")
+async def get_section_config(user: dict = Depends(require_admin), theme: str = "aurex"):
+    """Per-section config { bg_color, font_family, enabled } for a theme."""
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    configs = (settings.get("section_configs") or {}).get(theme, {})
+    return configs
+
+
+@router.put("/admin/section-config")
+async def update_section_config(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    theme = body.get("theme") or "aurex"
+    configs = body.get("configs") or {}
+    await db.settings.update_one({}, {"$set": {
+        f"section_configs.{theme}": configs,
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }}, upsert=True)
+    return {"theme": theme, "configs": configs}
 
 # SEO Meta
 @router.get("/admin/seo")

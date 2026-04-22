@@ -250,4 +250,36 @@ export const THEMES = [
     name: 'Classic',
     description: 'Traditional corporate look with a boxed layout, bordered sections, and serif-heavy typography for a distinguished feel.',
   },
+  {
+    id: 'aurex',
+    name: 'Aurex One-page',
+    description: 'Monochromatic one-page template — clean whites/grays/darks, per-section background & font picker, and global drag-drop ordering.',
+  },
 ];
+
+// ── Aurex theme: official monochromatic palette ──────────────────────────
+// Only these 7 swatches are allowed as section backgrounds. Text color
+// flips automatically to the opposite end of the contrast curve.
+export const AUREX_PALETTE = [
+  { key: 'white',    label: 'Pure White', hex: '#FFFFFF' },
+  { key: 'gray_50',  label: 'Gray 50',    hex: '#F9FAFB' },
+  { key: 'gray_100', label: 'Gray 100',   hex: '#F4F6F8' },
+  { key: 'gray_200', label: 'Gray 200',   hex: '#E5E7EB' },
+  { key: 'gray_700', label: 'Gray 700',   hex: '#374151' },
+  { key: 'gray_800', label: 'Gray 800',   hex: '#1F2937' },
+  { key: 'gray_900', label: 'Gray 900',   hex: '#111827' },
+];
+
+// Font picker — Google Fonts loaded in public/index.html when Aurex theme active.
+export const AUREX_FONTS = [
+  { key: 'sora',           label: 'Sora',           css: "'Sora', sans-serif",           note: 'Modern, geometric' },
+  { key: 'inter',          label: 'Inter',          css: "'Inter', sans-serif",          note: 'Neutral, legible' },
+  { key: 'playfair',       label: 'Playfair Display', css: "'Playfair Display', serif",  note: 'Elegant serif' },
+  { key: 'space_grotesk',  label: 'Space Grotesk',  css: "'Space Grotesk', sans-serif",  note: 'Technical' },
+  { key: 'dm_sans',        label: 'DM Sans',        css: "'DM Sans', sans-serif",        note: 'Friendly' },
+];
+
+// Returns 'dark' or 'light' based on bg luminance — used for auto-contrast.
+export function aurexContrastFor(hex) {
+  return schemeFor(hex) === 'dark' ? 'light' : 'dark';
+}

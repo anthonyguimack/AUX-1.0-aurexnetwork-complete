@@ -372,7 +372,7 @@ export default function SettingsManager() {
           <div className="bg-white rounded-sm border border-slate-100 p-6" data-testid="themes-tab">
             <h3 className="font-semibold mb-1" style={{ color: 'var(--ad-heading, #1a2332)' }}>Website Theme</h3>
             <p className="text-sm text-slate-500 mb-6">Select a layout template for the public website. This only affects the frontend — Admin Panel and My Account are not changed.</p>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
               {THEMES.map(theme => (
                 <button key={theme.id}
                   onClick={() => setSettings(prev => ({ ...prev, active_theme: theme.id }))}
@@ -637,6 +637,54 @@ function ThemePreview({ themeId }) {
           </div>
         </div>
         <div className="bg-[#2c1810] h-[12%]" />
+      </div>
+    );
+  }
+  if (themeId === 'aurex') {
+    return (
+      <div className="w-full h-full bg-white flex flex-col text-[3px]" style={{ fontFamily: "'Sora', sans-serif" }}>
+        {/* Header */}
+        <div className="bg-white h-[8%] border-b border-[#E5E7EB] flex items-center px-[5%]">
+          <div className="w-[10%] h-[50%] bg-[#111827] rounded-sm" />
+          <div className="flex-1 flex justify-end gap-[3%]">
+            <div className="w-[8%] h-[40%] bg-[#374151]/60 rounded-full" />
+            <div className="w-[8%] h-[40%] bg-[#374151]/60 rounded-full" />
+            <div className="w-[12%] h-[50%] bg-[#111827] rounded-sm" />
+          </div>
+        </div>
+        {/* Hero */}
+        <div className="h-[28%] bg-[#F4F6F8] flex items-center justify-center">
+          <div className="text-center">
+            <div className="w-[50%] mx-auto h-[4px] bg-[#111827] rounded mb-1" />
+            <div className="w-[35%] mx-auto h-[2px] bg-[#374151]/50 rounded mb-2" />
+            <div className="w-[18%] mx-auto h-[5px] bg-[#111827] rounded-sm" />
+          </div>
+        </div>
+        {/* Services (white) */}
+        <div className="h-[18%] bg-white flex gap-[3%] px-[5%] py-[2%]">
+          <div className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-sm" />
+          <div className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-sm" />
+          <div className="flex-1 bg-[#F9FAFB] border border-[#E5E7EB] rounded-sm" />
+        </div>
+        {/* Our Process (dark) */}
+        <div className="h-[18%] bg-[#1F2937] relative px-[5%] py-[2%]">
+          <div className="absolute left-1/2 top-[10%] bottom-[10%] w-[1px] bg-white/30 -translate-x-1/2" />
+          <div className="flex justify-start mb-[4%]">
+            <div className="w-[45%] h-[3px] bg-white/70 rounded" />
+          </div>
+          <div className="flex justify-end">
+            <div className="w-[45%] h-[3px] bg-white/70 rounded" />
+          </div>
+        </div>
+        {/* Partners (darker) */}
+        <div className="h-[10%] bg-[#111827] flex items-center justify-around px-[5%]">
+          <div className="w-[10%] h-[40%] bg-white/20 rounded" />
+          <div className="w-[10%] h-[40%] bg-white/20 rounded" />
+          <div className="w-[10%] h-[40%] bg-white/20 rounded" />
+          <div className="w-[10%] h-[40%] bg-white/20 rounded" />
+        </div>
+        {/* Footer */}
+        <div className="flex-1 bg-[#111827]" />
       </div>
     );
   }
