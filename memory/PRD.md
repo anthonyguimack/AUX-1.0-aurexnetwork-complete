@@ -339,6 +339,23 @@ Frontend:
 **Verified**: Backend curl tests return correct per-theme data. Frontend admin UI renders all 15 section cards with 105 swatches + 15 font selectors at `/admin/section-order`.
 
 **Phase 1 = DONE.** Phase 2 (new section CRUD), Phase 3 (frontend rendering), Phase 4 (polish) remain for subsequent sessions.
+
+### Iteration 64 — Aurex Phase 2: CMS CRUD for 7 sections (Apr 22, 2026)
+
+Backend (`routes/aurex_sections.py` — NEW):
+- **Polymorphic CRUD**: single generic route handles all 7 sections via path param `/api/admin/aurex/{section}/...`
+- Storage: `aurex_section_configs` (one doc per section) + `aurex_section_items` (N rows per section with `section` discriminator + `order` + `visible`)
+- 9 endpoints: GET/PUT config, GET/POST/PUT/DELETE items, PUT reorder, + public GET
+- **Special case `aurex_events`**: config-only; public endpoint pulls from `calendar_events` respecting `max_items` + `only_upcoming` config flags — so events sync automatically from AUX Calendar with zero duplication.
+
+Frontend:
+- `lib/aurexSchemas.js` — NEW: schema-driven field definitions for all 7 sections (text/textarea/url/number/bool/image/icon/select). Drives polymorphic admin UI.
+- `pages/admin/AurexSectionsManager.js` — NEW: tabbed admin page with 7 tabs (icons: Users/Workflow/DollarSign/UserCircle/Calendar/Building2/Award), each driven by its schema. Handles: section config save, item CRUD with dialog, inline visibility toggle, auto-incrementing order, image upload via `adminAPI.uploadImage`.
+- Sidebar "Aurex Sections" entry, route `/admin/aurex-sections`.
+
+**Testing**: iteration 60 testing_agent → 27/27 backend tests pass; all frontend UI (7 tabs, config forms, items CRUD) verified.
+
+**Still remaining** (Phases 3-4): frontend rendering of the 7 sections on the public website + visual adaptation of existing 9 sections + scroll animations + responsive polish.
 - All formatted with tailwind colors (rose for discounts given, emerald for revenue driven) + lucide icons (Ticket, TrendingUp, Crown, Package).
 
 ## Credentials
