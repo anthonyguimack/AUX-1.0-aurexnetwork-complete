@@ -28,7 +28,11 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') : '';
 
 import HeroSection from '../components/HeroSection';
-import { AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections } from '../components/AurexSections';
+import {
+  AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections,
+  AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
+  AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
+} from '../components/AurexSections';
 import { AUREX_FONTS } from '../lib/themeColors';
 
 /* ==================== ABOUT ==================== */
@@ -617,20 +621,20 @@ export default function HomePage() {
 
   const sectionMap = {
     hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
-    about: <AboutSection key="about" data={about} theme={theme} />,
-    services: <ServicesSection key="services" services={services} theme={theme} />,
-    news: <NewsSection key="news" posts={posts} theme={theme} />,
-    blog: <ExternalBlogSection key="blog" theme={theme} />,
-    reading_list: <ReadingListSection key="reading" books={books} theme={theme} />,
-    map: <MapSection key="map" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
-    locations: <MapSection key="locations" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
-    map_global: <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" mapsLang={mapsLang} />,
-    map_conferences: <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" mapsLang={mapsLang} />,
-    map_recommended: <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" mapsLang={mapsLang} />,
-    portfolio: <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
-    gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
-    testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
-    contact: <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
+    about: isAurex ? <AurexAboutMono key="about" data={about} /> : <AboutSection key="about" data={about} theme={theme} />,
+    services: isAurex ? <AurexServicesMono key="services" services={services} /> : <ServicesSection key="services" services={services} theme={theme} />,
+    news: isAurex ? <AurexNewsMono key="news" posts={posts} /> : <NewsSection key="news" posts={posts} theme={theme} />,
+    blog: isAurex ? <AurexBlogMono key="blog" /> : <ExternalBlogSection key="blog" theme={theme} />,
+    reading_list: isAurex ? <AurexReadingMono key="reading" books={books} /> : <ReadingListSection key="reading" books={books} theme={theme} />,
+    map: isAurex ? <AurexMapMono key="map" maps={maps} locations={locations} mapsLang={mapsLang} /> : <MapSection key="map" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
+    locations: isAurex ? <AurexMapMono key="locations" maps={maps} locations={locations} mapsLang={mapsLang} /> : <MapSection key="locations" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
+    map_global: isAurex ? <AurexMapMono key="map_global" maps={maps} locations={locations} title="Global Business Presence" mapsLang={mapsLang} /> : <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" mapsLang={mapsLang} />,
+    map_conferences: isAurex ? <AurexMapMono key="map_conferences" maps={maps} locations={locConferences} title="Conferences" mapsLang={mapsLang} /> : <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" mapsLang={mapsLang} />,
+    map_recommended: isAurex ? <AurexMapMono key="map_recommended" maps={maps} locations={locRecommended} title="Recommended Sites" mapsLang={mapsLang} /> : <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" mapsLang={mapsLang} />,
+    portfolio: isAurex ? <AurexPortfolioMono key="portfolio" items={portfolio} /> : <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
+    gallery: isAurex ? <AurexGalleryMono key="gallery" items={gallery} /> : <GallerySection key="gallery" items={gallery} theme={theme} />,
+    testimonials: isAurex ? <AurexTestimonialsMono key="testimonials" items={testimonials} /> : <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
+    contact: isAurex ? <AurexContactMono key="contact" contactSettings={settings.contact_settings} /> : <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
     // Aurex Theme 2.0 sections — only meaningful when active_theme = 'aurex'
     aurex_audience: aurexSection('aurex_audience', AurexAudience),
     aurex_process: aurexSection('aurex_process', AurexProcess),

@@ -365,7 +365,30 @@ Frontend (`HomePage.js`):
 - ✅ Partners (#111827 / Space Grotesk): dark strip, autoscrolling logos, grayscale hover
 - ✅ Clients (#F4F6F8 / DM Sans): light gallery style
 
-**Phase 3 = DONE.** Phase 4 (adapt existing 9 sections to monochromatic when Aurex active + scroll animations) remains.
+**Phase 3 = DONE.**
+
+### Iteration 66 — Aurex Phase 4: Monochrome Adaptation + Scroll Reveal (Apr 22, 2026)
+
+**All 9 existing homepage sections now render in the Aurex monochrome aesthetic when `active_theme === 'aurex'` + scroll-reveal animations added throughout.**
+
+New code in `components/AurexSections.js`:
+- `<Reveal>` component — IntersectionObserver-driven wrapper (opacity + 24px translateY → 0 on enter). `delay` prop enables staggered children. Honors `prefers-reduced-motion`.
+- 10 new exported mono variants: `AurexAboutMono`, `AurexServicesMono`, `AurexNewsMono`, `AurexBlogMono`, `AurexReadingMono`, `AurexMapMono`, `AurexPortfolioMono`, `AurexGalleryMono`, `AurexTestimonialsMono`, `AurexContactMono`. Each follows the same design language:
+  - White / gray-50 / dark surfaces only (no brand teal accents)
+  - 1px `#E5E7EB` borders in place of heavy shadows
+  - Uppercase `text-[11px] tracking-[0.3em] text-gray-500` eyebrows
+  - Inter-family headings (global h1–h4 Playfair rule neutered via scoped `.aurex-section` CSS override)
+  - Grayscale filter on news/blog/portfolio/gallery/testimonial imagery (removes on hover)
+  - Dark #111827 contact form with white fields, pill CTA
+- Scroll-reveal also retrofitted into the 7 existing Phase-3 Aurex sections (section headers + staggered item cards with `delay={idx * 80…120}`).
+- Shared `aurex-section` class on every Aurex-era section scopes the `font-family: inherit` override so per-section font pickers actually take effect.
+
+`HomePage.js`:
+- `sectionMap` now swaps between legacy and Aurex variants via `isAurex ? <AurexXxxMono .../> : <XxxSection .../>` for all 9 shared keys — no changes to the legacy 3 themes.
+
+**Verified via Playwright** (1440×900, 10 scroll positions covering the full 10.1k-px page): About/Services/News/Blog/Pricing/Contact all render in the new monochrome style; about-title computed font = `Inter, sans-serif` (was Playfair before the CSS scope fix); contact bg = `rgb(17,24,39)`; services bg = `rgb(249,250,251)`.
+
+**Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
 ### Iteration 64 — Aurex Phase 2: CMS CRUD for 7 sections (Apr 22, 2026)
 
