@@ -31,8 +31,16 @@ db = client[os.environ["DB_NAME"]]
 VALID_SECTIONS = {
     "aurex_audience", "aurex_process", "aurex_pricing",
     "aurex_team", "aurex_partners", "aurex_clients", "aurex_events", "aurex_video",
+    # Config-only "section header" entries that let the admin edit title/
+    # subtitle/CTA for legacy sections rendered by the Aurex mono variants.
+    "aurex_services_cfg", "aurex_testimonials_cfg", "aurex_news_cfg",
+    "aurex_blog_cfg", "aurex_locations_cfg",
 }
-ITEM_SECTIONS = VALID_SECTIONS - {"aurex_events", "aurex_video"}
+ITEM_SECTIONS = VALID_SECTIONS - {
+    "aurex_events", "aurex_video",
+    "aurex_services_cfg", "aurex_testimonials_cfg", "aurex_news_cfg",
+    "aurex_blog_cfg", "aurex_locations_cfg",
+}
 
 
 def _check(section: str):

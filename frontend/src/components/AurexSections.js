@@ -418,7 +418,10 @@ const SECTIONS_ITEMIZED = ['aurex_audience', 'aurex_process', 'aurex_pricing', '
 export function useAurexSections() {
   const [data, setData] = useState({});
   useEffect(() => {
-    const keys = [...SECTIONS_ITEMIZED, 'aurex_events', 'aurex_video'];
+    const keys = [
+      ...SECTIONS_ITEMIZED, 'aurex_events', 'aurex_video',
+      'aurex_services_cfg', 'aurex_testimonials_cfg', 'aurex_news_cfg', 'aurex_blog_cfg', 'aurex_locations_cfg',
+    ];
     Promise.all(keys.map(k => fetch(`${API}/api/public/aurex/${k}`).then(r => r.ok ? r.json() : { config: {}, items: [] }).catch(() => ({ config: {}, items: [] }))))
       .then(results => {
         const map = {};
@@ -462,6 +465,25 @@ function monoStyle(bg, font, fallbackBg = '#FFFFFF') {
   };
 }
 
+// Unified button used everywhere in the Aurex mono template. Rectangular
+// (not pill), 1.5px border, matches the section's contrast automatically.
+// Honors admin's "open in new tab" config per button.
+function MonoButton({ href, text, newTab, m, extraClass = '', dataTestId, children }) {
+  if (!text && !children) return null;
+  return (
+    <a
+      href={href || '#'}
+      target={newTab ? '_blank' : '_self'}
+      rel={newTab ? 'noopener noreferrer' : undefined}
+      className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80 ${extraClass}`}
+      style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}
+      data-testid={dataTestId}
+    >
+      {children || <>{text} <ArrowRight className="w-4 h-4" /></>}
+    </a>
+  );
+}
+
 const monoShell = 'aurex-section px-6 sm:px-10 md:px-16 lg:px-24 py-20 md:py-28';
 const monoText = { color: '#111827', fontFamily: "'Inter', sans-serif" };
 
@@ -470,9 +492,6 @@ export function AurexAboutMono({ data, bg, font }) {
   if (!data?.title) return null;
   const img = resolveImg(data.image);
   const m = monoStyle(bg, font, '#FFFFFF');
-  const btnText = data.button_text;
-  const btnUrl = data.button_url;
-  const btnTarget = data.button_open_in_new_tab ? '_blank' : '_self';
   return (
     <section className={monoShell} style={m.style} id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
@@ -485,15 +504,7 @@ export function AurexAboutMono({ data, bg, font }) {
             {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}><Phone className="w-4 h-4" /></div><div><p className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>Call us</p><p className="text-sm font-semibold">{data.phone}</p></div></div>}
             {data.signature_name && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{data.signature_name}</p><p className={`text-xs ${m.mutedClass}`}>{data.signature_title}</p></div>}
           </div>
-          {btnText && (
-            <a href={btnUrl || '#'} target={btnTarget} rel={btnTarget === '_blank' ? 'noopener noreferrer' : undefined}
-              className="inline-flex items-center gap-2 px-7 py-2.5 mt-8 rounded-sm text-sm font-semibold transition-all hover:opacity-80"
-              style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827' }}
-              data-testid="about-cta-btn"
-            >
-              {btnText} <ArrowRight className="w-4 h-4" />
-            </a>
-          )}
+          {data.button_text && <div className="mt-8"><MonoButton href={data.button_url} text={data.button_text} newTab={data.button_open_in_new_tab} m={m} dataTestId="about-cta-btn" /></div>}
         </Reveal>
         {img && <Reveal delay={120}><img src={img} alt="" className="w-full rounded-xl object-cover aspect-[4/3]" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }} /></Reveal>}
       </div>
@@ -502,50 +513,58 @@ export function AurexAboutMono({ data, bg, font }) {
 }
 
 // Services
-export function AurexServicesMono({ services, bg, font }) {
+export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
   if (!services?.length) return null;
   const m = monoStyle(bg, font, '#F9FAFB');
   const clean = (html) => (html || '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').replace(/<[^>]*>/g, '');
+  // Each service card becomes a link: external_url if present (honors open_in_new_tab),
+  // else an internal service detail page.
+  const serviceHref = (s) => s.external_url || `/service/${s.id}`;
+  const serviceTarget = (s) => s.external_url && s.open_in_new_tab ? '_blank' : '_self';
   return (
     <section className={monoShell} style={m.style} id="services" data-testid="services-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>What we offer</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">¿Qué obtienes dentro de Aurex?</h2>
+          {(cmsConfig.eyebrow || !cmsConfig.eyebrow === undefined) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'What we offer'}</p>}
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">{cmsConfig.title || 'Our Services'}</h2>
+          {cmsConfig.subtitle && <p className={`mt-4 max-w-2xl mx-auto ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
         </Reveal>
-        {/* Mockup layout: image-top cards in a 3-column grid, title centered below,
-            short description centered, and a single "See All Services" CTA below the grid. */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
-          {services.slice(0, 6).map((s, idx) => (
-            <Reveal delay={idx * 80} key={s.id} className="flex flex-col items-center text-center group" data-testid={`service-card-${s.id}`}>
-              {s.image ? (
-                <div className="w-full aspect-[4/3] rounded-lg overflow-hidden mb-6 relative">
-                  <img src={resolveImg(s.image)} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: m.isDark ? 'grayscale(15%)' : 'grayscale(25%)' }} />
-                </div>
-              ) : (
-                <div className="w-full aspect-[4/3] rounded-lg mb-6 flex items-center justify-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6' }}>
-                  <lucide.Briefcase className="w-10 h-10 opacity-30" />
-                </div>
-              )}
-              <h3 className="font-bold text-xl md:text-2xl mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>{s.title}</h3>
-              {(s.short_description || s.description) && (
-                <p className={`text-sm leading-relaxed ${m.mutedClass} max-w-xs`}>{clean(s.short_description || s.description).slice(0, 130)}</p>
-              )}
-            </Reveal>
-          ))}
+          {services.slice(0, 6).map((s, idx) => {
+            const href = serviceHref(s);
+            const target = serviceTarget(s);
+            const isExternalNewTab = target === '_blank';
+            return (
+              <Reveal as="a" href={href} target={target} rel={isExternalNewTab ? 'noopener noreferrer' : undefined} delay={idx * 80} key={s.id} className="flex flex-col items-center text-center group cursor-pointer" data-testid={`service-card-${s.id}`}>
+                {s.image ? (
+                  <div className="w-full aspect-[4/3] rounded-lg overflow-hidden mb-6 relative">
+                    <img src={resolveImg(s.image)} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: m.isDark ? 'grayscale(15%)' : 'grayscale(25%)' }} />
+                  </div>
+                ) : (
+                  <div className="w-full aspect-[4/3] rounded-lg mb-6 flex items-center justify-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6' }}>
+                    <lucide.Briefcase className="w-10 h-10 opacity-30" />
+                  </div>
+                )}
+                <h3 className="font-bold text-xl md:text-2xl mb-3 group-hover:underline underline-offset-4" style={{ fontFamily: "'Playfair Display', serif" }}>{s.title}</h3>
+                {(s.short_description || s.description) && (
+                  <p className={`text-sm leading-relaxed ${m.mutedClass} max-w-xs`}>{clean(s.short_description || s.description).slice(0, 130)}</p>
+                )}
+              </Reveal>
+            );
+          })}
         </div>
-        <Reveal delay={200} className="text-center mt-14">
-          <Link to="/services" className="inline-flex items-center gap-2 px-10 py-3 rounded-full text-sm font-medium transition-colors hover:opacity-80" style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827' }} data-testid="services-view-all">
-            See All Services <ArrowRight className="w-4 h-4" />
-          </Link>
-        </Reveal>
+        {(cmsConfig.cta_text !== '' && (cmsConfig.cta_text || 'See All Services')) && (
+          <Reveal delay={200} className="text-center mt-14">
+            <MonoButton href={cmsConfig.cta_url || '/services'} text={cmsConfig.cta_text || 'See All Services'} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="services-view-all" />
+          </Reveal>
+        )}
       </div>
     </section>
   );
 }
 
 // News
-export function AurexNewsMono({ posts, bg, font }) {
+export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
   if (!posts?.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
@@ -553,10 +572,11 @@ export function AurexNewsMono({ posts, bg, font }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Latest News</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="news-title">From our desk</h2>
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Latest News'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="news-title">{cmsConfig.title || 'From our desk'}</h2>
+            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
           </div>
-          <Link to="/news" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid="news-view-all">View all <ArrowRight className="w-4 h-4" /></Link>
+          <MonoButton href={cmsConfig.cta_url || '/news'} text={cmsConfig.cta_text || 'View all'} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="news-view-all" />
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {posts.slice(0, 3).map((p, idx) => (
@@ -576,7 +596,7 @@ export function AurexNewsMono({ posts, bg, font }) {
 }
 
 // External Blog
-export function AurexBlogMono({ bg, font }) {
+export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
   const settings = useSettings();
   const m = monoStyle(bg, font, '#F9FAFB');
   const [posts, setPosts] = useState([]);
@@ -587,9 +607,13 @@ export function AurexBlogMono({ bg, font }) {
   return (
     <section className={monoShell} style={m.style} id="blog" data-testid="blog-section">
       <div className="max-w-7xl mx-auto">
-        <Reveal className="mb-12">
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Blog</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="blog-title">Writing</h2>
+        <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
+          <div>
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Blog'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="blog-title">{cmsConfig.title || 'Writing'}</h2>
+            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
+          </div>
+          {cmsConfig.cta_text && <MonoButton href={cmsConfig.cta_url} text={cmsConfig.cta_text} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="blog-view-all" />}
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {posts.slice(0, 3).map((p, i) => (
@@ -643,7 +667,7 @@ export function AurexReadingMono({ books, bg, font }) {
 }
 
 // Map
-export function AurexMapMono({ maps, locations, title, mapsLang, bg, font }) {
+export function AurexMapMono({ maps, locations, title, mapsLang, bg, font, cmsConfig = {} }) {
   const all = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
   if (!all.length) return null;
   const m = monoStyle(bg, font, '#F4F6F8');
@@ -653,8 +677,9 @@ export function AurexMapMono({ maps, locations, title, mapsLang, bg, font }) {
     <section className={monoShell} style={m.style} id="locations" data-testid="map-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-12">
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Presence</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="map-title">{title || 'Our Locations'}</h2>
+          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Presence'}</p>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="map-title">{cmsConfig.title || title || 'Our Locations'}</h2>
+          {cmsConfig.subtitle && <p className={`mt-3 max-w-2xl mx-auto ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
         </Reveal>
         <Reveal className="rounded-xl overflow-hidden h-[420px]" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
           <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}>
@@ -729,7 +754,7 @@ export function AurexGalleryMono({ items, bg, font }) {
 }
 
 // Testimonials — carousel: arrows + dots, 3 visible on desktop, 1 on mobile.
-export function AurexTestimonialsMono({ items, bg, font }) {
+export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
   const m = monoStyle(bg, font, '#FFFFFF');
   const [page, setPage] = useState(0);
   const [perView, setPerView] = useState(3);
@@ -747,25 +772,29 @@ export function AurexTestimonialsMono({ items, bg, font }) {
     <section className={monoShell} style={m.style} id="testimonials" data-testid="testimonials-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-3" data-testid="testimonials-title" style={{ fontFamily: "'Playfair Display', serif" }}>Testimonials</h2>
-          <p className={`text-sm ${m.mutedClass}`}>Find out why so many companies prefer us over others!</p>
+          {cmsConfig.eyebrow && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow}</p>}
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-3" data-testid="testimonials-title" style={{ fontFamily: "'Playfair Display', serif" }}>{cmsConfig.title || 'Testimonials'}</h2>
+          <p className={`text-sm ${m.mutedClass}`}>{cmsConfig.subtitle || 'Find out why so many companies prefer us over others!'}</p>
         </Reveal>
         <div className="relative">
-          {/* Prev arrow */}
           <button onClick={() => go(page - 1)} aria-label="Previous testimonials" className={`absolute -left-2 md:-left-8 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 ${m.isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} data-testid="testimonials-prev">
             <lucide.ChevronLeft className="w-5 h-5" />
           </button>
           <div className="grid gap-6 px-2" style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))` }}>
             {visible.map((t, idx) => (
               <Reveal delay={idx * 100} key={`${page}-${t.id}`} className="rounded-xl p-8 text-center flex flex-col items-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#F3F4F6' }} data-testid={`testimonial-card-${t.id}`}>
+                {/* Order per CMS feedback: quote → photo → name → role */}
                 <p className={`text-sm md:text-base italic leading-relaxed mb-6 ${m.mutedClass}`}>"{t.content}"</p>
-                {t.avatar && <img src={resolveImg(t.avatar)} alt="" className="w-20 h-20 rounded-full object-cover mb-5" style={{ filter: 'grayscale(100%)' }} />}
+                {t.avatar ? (
+                  <img src={resolveImg(t.avatar)} alt={t.name} className="w-20 h-20 rounded-full object-cover mb-5 border-2" style={{ borderColor: m.isDark ? 'rgba(255,255,255,0.15)' : '#E5E7EB' }} />
+                ) : (
+                  <div className="w-20 h-20 rounded-full bg-gray-200 mb-5 flex items-center justify-center text-xl font-bold text-gray-400">{t.name?.[0] || '?'}</div>
+                )}
                 <h3 className="font-bold text-lg md:text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{t.name}</h3>
-                {(t.role || t.company) && <p className={`text-[11px] uppercase tracking-[0.2em] mt-2 ${m.eyebrowClass}`}>{t.role || t.company}</p>}
+                {(t.role || t.company) && <p className={`text-[11px] uppercase tracking-[0.2em] mt-2 ${m.eyebrowClass}`}>{[t.role, t.company].filter(Boolean).join(' · ')}</p>}
               </Reveal>
             ))}
           </div>
-          {/* Next arrow */}
           <button onClick={() => go(page + 1)} aria-label="Next testimonials" className={`absolute -right-2 md:-right-8 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 ${m.isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} data-testid="testimonials-next">
             <lucide.ChevronRight className="w-5 h-5" />
           </button>
@@ -776,6 +805,11 @@ export function AurexTestimonialsMono({ items, bg, font }) {
               <button key={i} onClick={() => setPage(i)} className={`rounded-full transition-all ${i === page ? 'w-6' : 'w-2 hover:opacity-60'} h-2`} style={{ backgroundColor: i === page ? (m.isDark ? '#FFFFFF' : '#111827') : (m.isDark ? 'rgba(255,255,255,0.3)' : 'rgba(17,24,39,0.3)') }} aria-label={`Page ${i + 1}`} data-testid={`testimonials-dot-${i}`} />
             ))}
           </div>
+        )}
+        {cmsConfig.cta_text && (
+          <Reveal delay={150} className="text-center mt-10">
+            <MonoButton href={cmsConfig.cta_url} text={cmsConfig.cta_text} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="testimonials-cta" />
+          </Reveal>
         )}
       </div>
     </section>

@@ -1,6 +1,6 @@
 // Aurex section schemas — drive the polymorphic admin UI.
 // Each entry defines: config fields (page-level) + item fields (CRUD rows).
-import { Users, Workflow, DollarSign, UserCircle, Calendar, Building2, Award, Film } from 'lucide-react';
+import { Users, Workflow, DollarSign, UserCircle, Calendar, Building2, Award, Film, Briefcase, MessageCircle, Newspaper, BookOpen, MapPin } from 'lucide-react';
 
 // Field types: 'text' | 'textarea' | 'url' | 'number' | 'bool' | 'image' | 'icon' | 'rich' | 'social_links'
 // (social_links is dynamic — it reads settings.social_links and renders
@@ -103,6 +103,79 @@ export const AUREX_SECTIONS = {
         { value: '1/1',  label: '1:1 (square)' },
         { value: '21/9', label: '21:9 (ultrawide)' },
       ] },
+    ],
+    itemFields: null,
+  },
+
+  // Config-only entries: these let the admin edit the header copy + single CTA
+  // for the legacy sections that are rendered by the Aurex mono variants.
+  // Their items come from their respective dedicated managers (Services /
+  // Testimonials / News / Blog / Maps), so these schemas only expose
+  // `configFields` and no item CRUD.
+  aurex_services_cfg: {
+    label: 'Services — Section Configuration',
+    icon: Briefcase,
+    description: 'Override the Services section header + CTA (items are managed in the existing Services manager).',
+    configFields: [
+      { key: 'eyebrow',  label: 'Eyebrow (above title)', type: 'text', placeholder: 'What we offer' },
+      { key: 'title',    label: 'Section title',         type: 'text', placeholder: 'Our Services' },
+      { key: 'subtitle', label: 'Subtitle',              type: 'textarea' },
+      { key: 'cta_text', label: 'Button text',           type: 'text', placeholder: 'See All Services' },
+      { key: 'cta_url',  label: 'Button URL',            type: 'text', placeholder: '/services' },
+      { key: 'cta_new_tab', label: 'Open in new window', type: 'bool' },
+    ],
+    itemFields: null,
+  },
+  aurex_testimonials_cfg: {
+    label: 'Testimonials — Section Configuration',
+    icon: MessageCircle,
+    description: 'Override the Testimonials header + CTA (testimonials themselves live in the Testimonials manager).',
+    configFields: [
+      { key: 'eyebrow',  label: 'Eyebrow',  type: 'text', placeholder: 'Testimonials' },
+      { key: 'title',    label: 'Title',    type: 'text', placeholder: 'Testimonials' },
+      { key: 'subtitle', label: 'Subtitle', type: 'textarea', placeholder: 'Find out why so many companies prefer us over others!' },
+      { key: 'cta_text', label: 'Button text (optional)', type: 'text' },
+      { key: 'cta_url',  label: 'Button URL',             type: 'text' },
+      { key: 'cta_new_tab', label: 'Open in new window', type: 'bool' },
+    ],
+    itemFields: null,
+  },
+  aurex_news_cfg: {
+    label: 'Latest News — Section Configuration',
+    icon: Newspaper,
+    description: 'Override the Latest News header + CTA (posts come from the News manager).',
+    configFields: [
+      { key: 'eyebrow',  label: 'Eyebrow',  type: 'text', placeholder: 'Latest News' },
+      { key: 'title',    label: 'Title',    type: 'text', placeholder: 'From our desk' },
+      { key: 'subtitle', label: 'Subtitle', type: 'textarea' },
+      { key: 'cta_text', label: 'View-all text', type: 'text', placeholder: 'View all' },
+      { key: 'cta_url',  label: 'View-all URL',  type: 'text', placeholder: '/news' },
+      { key: 'cta_new_tab', label: 'Open in new window', type: 'bool' },
+    ],
+    itemFields: null,
+  },
+  aurex_blog_cfg: {
+    label: 'Blog — Section Configuration',
+    icon: BookOpen,
+    description: 'Override the external Blog header + CTA (posts come from the external blog API).',
+    configFields: [
+      { key: 'eyebrow',  label: 'Eyebrow',  type: 'text', placeholder: 'Blog' },
+      { key: 'title',    label: 'Title',    type: 'text', placeholder: 'Writing' },
+      { key: 'subtitle', label: 'Subtitle', type: 'textarea' },
+      { key: 'cta_text', label: 'View-all text (optional)', type: 'text' },
+      { key: 'cta_url',  label: 'View-all URL',             type: 'text' },
+      { key: 'cta_new_tab', label: 'Open in new window', type: 'bool' },
+    ],
+    itemFields: null,
+  },
+  aurex_locations_cfg: {
+    label: 'Our Locations — Section Configuration',
+    icon: MapPin,
+    description: 'Override the Map / Locations header (pins come from the Maps & Locations managers).',
+    configFields: [
+      { key: 'eyebrow',  label: 'Eyebrow',  type: 'text', placeholder: 'Presence' },
+      { key: 'title',    label: 'Title',    type: 'text', placeholder: 'Our Locations' },
+      { key: 'subtitle', label: 'Subtitle', type: 'textarea' },
     ],
     itemFields: null,
   },

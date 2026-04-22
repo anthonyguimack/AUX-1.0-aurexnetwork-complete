@@ -390,7 +390,34 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
-### Iteration 72 — Big CMS + Frontend batch (Apr 22, 2026)
+### Iteration 73 — Section Configs + Unified Button Shape + Carousel Polish (Apr 22, 2026)
+
+**CMS — 5 new "Section Configuration" entries in the Aurex Sections manager:**
+- Added `aurex_services_cfg`, `aurex_testimonials_cfg`, `aurex_news_cfg`, `aurex_blog_cfg`, `aurex_locations_cfg` to `VALID_SECTIONS` (backend) and to `AUREX_SECTIONS` schema map (frontend). Each defines config-only fields: `eyebrow`, `title`, `subtitle`, and — where appropriate — `cta_text`/`cta_url`/`cta_new_tab`. No `itemFields` — item data continues to come from the existing dedicated managers (Services / Testimonials / News / Blog / Maps). Admin now sees a dedicated card for each of these in Aurex Sections Manager alongside the full-fledged sections.
+- `useAurexSections` hook pulls all 5 configs in parallel. `HomePage.js` routes each Aurex mono variant its matching override via `aurexMono(key).cmsConfig`. Mono variants accept a new `cmsConfig` prop and fall back to hardcoded copy when CMS hasn't been edited.
+
+**Unified button shape (frontend):**
+- New shared `<MonoButton>` helper in `components/AurexSections.js`. Rectangular `rounded-sm`, 1.5px currentColor border, auto-contrast via `monoStyle()`, arrow icon on CTAs. Adopted across About, Services, News, Blog, Testimonials. Services "See All Services" was `rounded-full px-10 py-3` → now `rounded-sm px-7 py-2.5`. Legacy pill stylings removed to match the "About: Read About Us" button.
+- Playwright measured `about-cta-btn`, `services-view-all`, `news-view-all` all at `border-radius: 0px` (confirms `rounded-sm` with no Tailwind pill style overrides).
+
+**Services section — per-service link:**
+- Each service card is now a clickable `<Reveal as="a">`. `href` resolves to `s.external_url` when present (honors `s.open_in_new_tab` → `target="_blank" rel="noopener noreferrer"`), else falls back to internal `/service/:id`. Title gets hover-underline to signal interactivity.
+
+**Testimonials carousel — added photo + role per card:**
+- Card render order now matches admin feedback: quote → avatar → name → role/company. Avatar is a 80×80 round crop bordered `2px` with the contrast-matching border color. Missing avatar falls back to a circular initial placeholder. `title`/`role` from `t.role` + `t.company` joined with `·`.
+
+**Rich-text rendering fix:**
+- Added full typography styles under `.rich-text-content` in `/app/frontend/src/index.css`: `<p>` margins, `<h1-h4>` weights+sizes, `<ul>` disc, `<ol>` decimal, `<blockquote>` with left border, `<a>` underline, `<code>` inline background. Tailwind's preflight had been stripping these defaults. About "description" and any Aurex item `type: 'rich'` field now render with proper paragraph spacing, lists, and headings.
+
+**Page Builder — auto-append new Aurex sections:**
+- `SectionOrderManager` now merges any known Aurex keys (including `aurex_video` and the 5 new cfg keys are already in AUREX_SECTIONS) into the displayed order if they're missing from the saved `section_orders.aurex`. Admin no longer needs to re-save after we add new Aurex section types.
+
+**Verified via curl + Playwright**:
+- Seeded all 5 config-only endpoints with admin overrides; public endpoints return them correctly.
+- Homepage probe returned `services_title: "¿Qué obtienes dentro de Aurex?"` (CMS override), `services_view_all: "See All Services"`, `testimonials_title: "Testimonials"`, `news_title: "From our desk"`, all three CTA buttons at `border-radius: 0px`.
+- Testimonials cards show avatar fallback + name + role.
+
+
 
 Shipped in one push after detailed user feedback (Spanish/English mix). All 11 items:
 

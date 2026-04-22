@@ -627,11 +627,24 @@ export default function HomePage() {
     return <Comp key={key} config={data.config || {}} items={data.items || []} bg={cfg.bg_color} font={font} />;
   };
 
-  // Pulls per-section bg + font for a legacy section rendered in its Aurex mono variant.
+  // Pulls per-section bg + font for a legacy section rendered in its Aurex mono variant,
+  // plus the CMS-editable header/CTA overrides stored under the matching `aurex_<key>_cfg` entry.
   const aurexMono = (key) => {
     const cfg = aurexConfigs[key] || {};
     const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : undefined;
-    return { bg: cfg.bg_color, font };
+    const overrideKey = {
+      services: 'aurex_services_cfg',
+      testimonials: 'aurex_testimonials_cfg',
+      news: 'aurex_news_cfg',
+      blog: 'aurex_blog_cfg',
+      map: 'aurex_locations_cfg',
+      locations: 'aurex_locations_cfg',
+      map_global: 'aurex_locations_cfg',
+      map_conferences: 'aurex_locations_cfg',
+      map_recommended: 'aurex_locations_cfg',
+    }[key];
+    const override = overrideKey ? (aurexData[overrideKey]?.config || {}) : {};
+    return { bg: cfg.bg_color, font, cmsConfig: override };
   };
 
   const sectionMap = {

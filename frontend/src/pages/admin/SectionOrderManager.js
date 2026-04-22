@@ -150,7 +150,15 @@ export default function SectionOrderManager() {
         adminAPI.getSettings(),
         theme === 'aurex' ? adminAPI.getSectionConfig('aurex') : Promise.resolve({ data: {} }),
       ]);
-      setOrder(orderRes.data || []);
+      let nextOrder = orderRes.data || [];
+      // Ensure any newly added Aurex section types automatically appear in
+      // the builder even if the admin saved the order before we added them.
+      if (theme === 'aurex') {
+        const known = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+        const missing = known.filter(k => !nextOrder.includes(k));
+        if (missing.length) nextOrder = [...nextOrder, ...missing];
+      }
+      setOrder(nextOrder);
       setSections(settingsRes.data?.sections || {});
       setConfigs(configRes.data || {});
     } catch (e) { console.error(e); }
