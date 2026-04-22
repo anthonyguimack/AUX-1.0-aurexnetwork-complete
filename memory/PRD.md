@@ -390,6 +390,20 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
+### Iteration 70 — Aurex Navbar + Hero ⇒ Modern Theme (Apr 22, 2026)
+
+**User feedback: "The header and hero should be the same as the modern theme, giving it a modern touch."**
+
+Resolved by treating `active_theme === 'aurex'` as a modern-theme variant for those two components only (all 16 other Aurex section components untouched).
+
+- `components/layout/Navbar.js` — router branch now reads `if (theme === 'modern' || theme === 'aurex') return <ModernNavbar />`. Aurex now inherits the transparent-to-solid-on-scroll header with blur, logo-on-1/logo-on-2 swap, uppercase tracked nav links, pill-shaped teal Login button, mobile hamburger.
+- `components/HeroSection.js` — introduced `isModernLike = theme === 'modern' || theme === 'aurex'` covering both the `min-h-[800px]` height and the dark `linear-gradient(135deg, rgba(15,23,42,0.85), rgba(30,41,59,0.7))` overlay.
+- `pages/HomePage.js` — removed the `isAurex ? <AurexHeroMono/> : <HeroSection/>` swap; `AurexHeroMono` is no longer imported or mounted on the home page (the component stays in the file for future use / rollback). All hero CMS data (countdown, multi-CTA, A/B testing) remain functional via `HeroSection` or can be added there later if needed.
+
+**Verified via Playwright**: probe confirms `position: fixed` navbar with `rgba(0,0,0,0)` background (transparent) at scrollY=0, 800px hero height. Screenshots show the Playfair "AurexNetwork" headline + teal accent "Team Work" eyebrow over the dark photo overlay + the modern solid-white navbar after scrolling.
+
+**Future note for Phase 5 (optional):** If you want the 3-CTA row, parallax bg, and A/B testing to live on the modern hero as well, those features would need to be ported from `AurexHeroMono` into `HeroSection`. Currently they're inactive (modern hero only uses `button_text` / `button_url`). A/B tracking continues to work for any other component that opts in.
+
 ### Iteration 69 — Hero CTA A/B Testing System (Apr 22, 2026)
 
 **End-to-end A/B testing for hero CTA copy**, asked as the "potential improvement" after Iteration 68. Consultants/membership businesses can now ship two headline variants for the same CTA and see which actually converts.

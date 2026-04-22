@@ -11,7 +11,7 @@ const socialIconMap = { facebook: Facebook, twitter: Twitter, instagram: Instagr
 
 export default function Navbar() {
   const theme = useTheme();
-  if (theme === 'modern') return <ModernNavbar />;
+  if (theme === 'modern' || theme === 'aurex') return <ModernNavbar />;
   if (theme === 'classic') return <ClassicNavbar />;
   return <DefaultNavbar />;
 }

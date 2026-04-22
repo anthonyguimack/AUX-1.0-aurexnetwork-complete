@@ -31,7 +31,7 @@ import HeroSection from '../components/HeroSection';
 import {
   AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections,
   AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
-  AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono, AurexHeroMono,
+  AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
 } from '../components/AurexSections';
 import { AUREX_FONTS } from '../lib/themeColors';
 
@@ -620,7 +620,7 @@ export default function HomePage() {
   };
 
   const sectionMap = {
-    hero: homeSlides.length > 0 ? (isAurex ? <AurexHeroMono key="hero" slides={homeSlides} data={homeSlides[0]} /> : <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} />) : null,
+    hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
     about: isAurex ? <AurexAboutMono key="about" data={about} /> : <AboutSection key="about" data={about} theme={theme} />,
     services: isAurex ? <AurexServicesMono key="services" services={services} /> : <ServicesSection key="services" services={services} theme={theme} />,
     news: isAurex ? <AurexNewsMono key="news" posts={posts} /> : <NewsSection key="news" posts={posts} theme={theme} />,
