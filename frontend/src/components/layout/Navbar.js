@@ -3,6 +3,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../lib/auth';
 import { publicAPI } from '../../lib/api';
 import { useSettings, useTheme } from '../../App';
+import LanguageSwitcher from '../LanguageSwitcher';
 import { Menu, X, LogIn, LogOut, Facebook, Twitter, Instagram, Linkedin, Github, Youtube, Search } from 'lucide-react';
 import LoginModal from '../LoginModal';
 import SearchBar from '../SearchBar';
@@ -218,6 +219,7 @@ function ModernNavbar() {
             ) : (
               <button onClick={() => setLoginOpen(true)} className="text-sm font-medium px-5 py-2.5 rounded-full flex items-center gap-2 transition-colors" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#ffffff' }} data-testid="login-btn"><LogIn className="w-3.5 h-3.5" /> Login</button>
             )}
+            <LanguageSwitcher dark={!showSolid} />
             <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2" style={{ color: textColor }}>
               {mobileOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
             </button>

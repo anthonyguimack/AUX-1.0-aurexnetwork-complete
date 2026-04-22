@@ -5,7 +5,8 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages } from 'lucide-react';
+import { LANGUAGE_LABELS } from '../../lib/i18n';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
 import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, THEMES } from '../../lib/themeColors';
@@ -144,6 +145,7 @@ export default function SettingsManager() {
           <TabsTrigger value="themes"><Layout className="w-3 h-3 mr-1" />Themes</TabsTrigger>
           <TabsTrigger value="sections"><Shield className="w-3 h-3 mr-1" />Sections</TabsTrigger>
           <TabsTrigger value="social"><Globe className="w-3 h-3 mr-1" />Social Links</TabsTrigger>
+          <TabsTrigger value="languages"><Languages className="w-3 h-3 mr-1" />Languages</TabsTrigger>
           <TabsTrigger value="email"><Mail className="w-3 h-3 mr-1" />Email/SMTP</TabsTrigger>
           <TabsTrigger value="blogapi"><Rss className="w-3 h-3 mr-1" />Blog API</TabsTrigger>
           <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
@@ -430,6 +432,47 @@ export default function SettingsManager() {
               ))}
             </div>
             <button onClick={addSocialLink} className="mt-3 flex items-center gap-2 text-sm hover:underline" style={{ color: 'var(--ad-accent, #0D9488)' }} data-testid="add-social-link-btn"><Plus className="w-4 h-4" /> Add Social Link</button>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="languages">
+          <div className="bg-white rounded-sm border border-slate-100 p-6" data-testid="languages-panel">
+            <div className="flex items-center gap-2 mb-4">
+              <Languages className="w-5 h-5 text-[#0D9488]" />
+              <h3 className="font-semibold" style={{ color: 'var(--ad-heading, #1a2332)' }}>Languages</h3>
+            </div>
+            <p className="text-sm text-slate-500 mb-5">Select which languages your site supports. Visitors see a language switcher in the navbar (auto-hidden when only one language is enabled). Admins can fill translations per field in each CMS manager.</p>
+            <div>
+              <Label className="text-xs text-slate-600 uppercase tracking-wider">Enabled languages</Label>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-2 mt-2">
+                {Object.entries(LANGUAGE_LABELS).map(([code, info]) => {
+                  const enabled = (settings.languages || ['en']).includes(code);
+                  return (
+                    <button key={code} type="button" onClick={() => {
+                      const cur = settings.languages || ['en'];
+                      let next = enabled ? cur.filter(l => l !== code) : [...cur, code];
+                      if (next.length === 0) next = ['en'];
+                      let nextDefault = settings.default_language || 'en';
+                      if (!next.includes(nextDefault)) nextDefault = next[0];
+                      setSettings({ ...settings, languages: next, default_language: nextDefault });
+                    }} className={`flex items-center gap-2 px-3 py-2 rounded-sm border text-sm transition-colors ${enabled ? 'bg-[#0D9488]/10 border-[#0D9488] text-[#0D9488]' : 'bg-white border-slate-200 text-slate-600 hover:border-slate-400'}`} data-testid={`lang-toggle-${code}`}>
+                      {enabled ? <Check className="w-3.5 h-3.5" /> : <div className="w-3.5 h-3.5" />}
+                      <span className="font-semibold">{info.short}</span>
+                      <span className="text-xs opacity-70">{info.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-5">
+              <Label className="text-xs text-slate-600 uppercase tracking-wider">Default language (fallback when a translation is missing)</Label>
+              <select value={settings.default_language || 'en'} onChange={e => setSettings({ ...settings, default_language: e.target.value })} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-2" data-testid="default-language-select">
+                {(settings.languages || ['en']).map(l => (
+                  <option key={l} value={l}>{LANGUAGE_LABELS[l]?.name || l.toUpperCase()} ({l})</option>
+                ))}
+              </select>
+            </div>
+            <p className="text-[11px] text-slate-400 mt-4">💡 Tip: legacy content (written before enabling a language) automatically falls back to the plain string value, so enabling a new language won't erase any existing text.</p>
           </div>
         </TabsContent>
 

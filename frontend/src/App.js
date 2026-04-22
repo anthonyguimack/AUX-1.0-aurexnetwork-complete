@@ -94,6 +94,7 @@ import MentorSlotTemplatesManager from './pages/admin/MentorSlotTemplatesManager
 import BlockedDatesManager from './pages/admin/BlockedDatesManager';
 
 import { injectThemeColors } from './lib/themeColors';
+import { LanguageProvider } from './lib/i18n';
 
 // Global settings context for colors and theme
 export const SettingsContext = createContext({});
@@ -148,7 +149,9 @@ function SettingsProvider({ children }) {
   return (
     <SettingsContext.Provider value={settings}>
       <ThemeContext.Provider value={activeTheme}>
-        {children}
+        <LanguageProvider settings={settings}>
+          {children}
+        </LanguageProvider>
       </ThemeContext.Provider>
     </SettingsContext.Provider>
   );

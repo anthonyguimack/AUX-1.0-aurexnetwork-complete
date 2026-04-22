@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { AUREX_FONTS, AUREX_PALETTE, aurexContrastFor } from '../lib/themeColors';
+import { useT } from '../lib/i18n';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { contactAPI, blogExternalAPI, checkoutAPI } from '../lib/api';
 import { useSettings } from '../App';
@@ -82,11 +83,14 @@ function SectionShell({ bg, font, contrast, className = '', children, ...rest })
 }
 
 function SectionHeader({ title, subtitle, contrast, centered = true }) {
-  if (!title && !subtitle) return null;
+  const tt = useT();
+  const t1 = tt(title);
+  const t2 = tt(subtitle);
+  if (!t1 && !t2) return null;
   return (
     <Reveal className={`${centered ? 'text-center' : ''} mb-12 md:mb-16`}>
-      {title && <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{title}</h2>}
-      {subtitle && <p className={`mt-4 max-w-2xl ${centered ? 'mx-auto' : ''} ${contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{subtitle}</p>}
+      {t1 && <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t1}</h2>}
+      {t2 && <p className={`mt-4 max-w-2xl ${centered ? 'mx-auto' : ''} ${contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{t2}</p>}
     </Reveal>
   );
 }
@@ -469,17 +473,19 @@ function monoStyle(bg, font, fallbackBg = '#FFFFFF') {
 // (not pill), 1.5px border, matches the section's contrast automatically.
 // Honors admin's "open in new tab" config per button.
 function MonoButton({ href, text, newTab, m, extraClass = '', dataTestId, children }) {
-  if (!text && !children) return null;
+  const tt = useT();
+  const label = tt(text);
+  if (!label && !children) return null;
   return (
     <a
-      href={href || '#'}
+      href={tt(href) || '#'}
       target={newTab ? '_blank' : '_self'}
       rel={newTab ? 'noopener noreferrer' : undefined}
       className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80 ${extraClass}`}
       style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}
       data-testid={dataTestId}
     >
-      {children || <>{text} <ArrowRight className="w-4 h-4" /></>}
+      {children || <>{label} <ArrowRight className="w-4 h-4" /></>}
     </a>
   );
 }
@@ -489,6 +495,7 @@ const monoText = { color: '#111827', fontFamily: "'Inter', sans-serif" };
 
 // About
 export function AurexAboutMono({ data, bg, font }) {
+  const tt = useT();
   if (!data?.title) return null;
   const img = resolveImg(data.image);
   const m = monoStyle(bg, font, '#FFFFFF');
@@ -496,13 +503,13 @@ export function AurexAboutMono({ data, bg, font }) {
     <section className={monoShell} style={m.style} id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         <Reveal>
-          {data.label && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{data.label}</p>}
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6" data-testid="about-title">{data.title}</h2>
+          {data.label && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(data.label)}</p>}
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6" data-testid="about-title">{tt(data.title)}</h2>
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.8)' : '#111827' }} />
-          <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: data.description || '' }} />
+          <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(data.description) || '' }} />
           <div className="flex items-center gap-6 mt-8 flex-wrap">
             {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}><Phone className="w-4 h-4" /></div><div><p className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>Call us</p><p className="text-sm font-semibold">{data.phone}</p></div></div>}
-            {data.signature_name && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{data.signature_name}</p><p className={`text-xs ${m.mutedClass}`}>{data.signature_title}</p></div>}
+            {data.signature_name && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{tt(data.signature_name)}</p><p className={`text-xs ${m.mutedClass}`}>{tt(data.signature_title)}</p></div>}
           </div>
           {data.button_text && <div className="mt-8"><MonoButton href={data.button_url} text={data.button_text} newTab={data.button_open_in_new_tab} m={m} dataTestId="about-cta-btn" /></div>}
         </Reveal>
