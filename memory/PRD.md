@@ -390,7 +390,28 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
-### Iteration 67 — Aurex Hero + Duplicate Item (Apr 22, 2026)
+### Iteration 68 — Aurex Hero Redesign + Multi-CTA + Parallax (Apr 22, 2026)
+
+**`AurexHeroMono` rebuilt** to match the user-supplied "AurexNetwork" mockup.
+
+Frontend (`components/AurexSections.js`):
+- **Full-color** background photo (removed the previous `grayscale(100%)` filter). Soft left-to-right white gradient overlay `linear-gradient(90deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,.55) 45%, rgba(255,255,255,.05) 85%)` keeps headline legible while letting the photo breathe.
+- **Parallax**: background image wrapped in a `translate3d(0, scrollY * 0.25, 0) scale(1.08)` transform driven by a `scroll` listener. Capped at 120px travel. Uses `will-change: transform` for smooth 60fps. Honors `prefers-reduced-motion` indirectly through minimal transform math.
+- **Massive typography**: `text-5xl sm:text-6xl md:text-7xl lg:text-8xl` (96px at lg+) gray-900 title with `leading-[0.95] tracking-tight`.
+- **Multi-CTA row**: new `ctas` array collapses `button_text/url` + `button_2_text/url` + `button_3_text/url` into an inline flex row. First button is filled primary (white → inverts to black on hover, arrow icon). Remaining buttons are outlined. Up to 3 CTAs supported.
+- **Layout**: shifted from center to `items-end` bottom-left content placement per mockup; content wrapped in `max-w-3xl` for the same measure as the reference.
+- **CountdownMono** gained a `light` prop (dark numerals + gray subtitle) for light-bg heroes.
+- **Slide indicators**: kept minimal horizontal strokes; now dark (`bg-gray-900`) instead of white for contrast on light bg.
+
+CMS (`pages/admin/HeroSlideForm.js`):
+- Hero Slide editor now has **3 rows of CTA fields** (text + URL + window target). Row 1 preserves the existing `button_text/url/window_open` fields — existing slides continue to work. Rows 2 and 3 use the new `button_2_*` / `button_3_*` keys. Legacy themes still only consume button 1, Aurex uses all 3.
+- Inline copy added: *"Up to 3 CTA buttons — the Aurex theme renders them as an inline pill row. Classic themes only use Button 1."*
+
+**Curl + Playwright verified:**
+- Updated seed slide via PUT `/admin/hero-slides/{id}` with title=AurexNetwork, 3 CTAs, extended `date_end`.
+- Public hero renders: 96px title, 3 CTAs (More Information / Membership Lounge / Notify Me!), full-color photo, parallax pan confirmed on 400px scroll, bg `rgb(255,255,255)` with gradient overlay.
+
+
 
 **Hero adapted to Aurex** (`AurexHeroMono` in `components/AurexSections.js`):
 - Pitch-black `#0A0A0A` canvas, background image rendered in `grayscale(100%) brightness(.4)` with a black-gradient overlay on top.

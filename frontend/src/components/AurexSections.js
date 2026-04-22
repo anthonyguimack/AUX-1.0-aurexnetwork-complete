@@ -695,7 +695,7 @@ function countdownParts(target) {
   return { days, hours, mins, secs };
 }
 
-function CountdownMono({ target }) {
+function CountdownMono({ target, light = false }) {
   const [parts, setParts] = useState(() => countdownParts(target));
   useEffect(() => {
     if (!target) return;
@@ -708,8 +708,8 @@ function CountdownMono({ target }) {
     <div className="flex gap-6 md:gap-10 my-8" data-testid="hero-countdown">
       {units.map(([lbl, n]) => (
         <div key={lbl}>
-          <div className="text-4xl md:text-6xl font-bold tabular-nums leading-none">{String(n).padStart(2, '0')}</div>
-          <div className="text-[10px] uppercase tracking-[0.25em] text-white/50 mt-2">{lbl}</div>
+          <div className={`text-4xl md:text-6xl font-bold tabular-nums leading-none ${light ? 'text-gray-900' : ''}`}>{String(n).padStart(2, '0')}</div>
+          <div className={`text-[10px] uppercase tracking-[0.25em] mt-2 ${light ? 'text-gray-600' : 'text-white/50'}`}>{lbl}</div>
         </div>
       ))}
     </div>
@@ -721,57 +721,80 @@ const stripHtml = (h) => (h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' 
 export function AurexHeroMono({ slides, data }) {
   const allSlides = (slides && slides.length > 0 ? slides : (data?.title ? [data] : []));
   const [idx, setIdx] = useState(0);
+  const [scrollY, setScrollY] = useState(0);
   useEffect(() => {
     if (allSlides.length <= 1) return;
     const delay = allSlides[idx]?.delay || 9400;
     const t = setTimeout(() => setIdx(i => (i + 1) % allSlides.length), delay);
     return () => clearTimeout(t);
   }, [idx, allSlides]);
+  useEffect(() => {
+    const onScroll = () => setScrollY(window.scrollY);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
   if (allSlides.length === 0) return null;
   const s = allSlides[idx];
   const bg = s.background || s.background_image || '';
-  const photo = s.photo;
-  const hasMedia = !!photo;
+
+  // Collect up to 3 CTAs into a single array
+  const ctas = [
+    { text: s.button_text,   url: s.button_url   || s.button_link, target: s.window_open === 'new' ? '_blank' : '_self' },
+    { text: s.button_2_text, url: s.button_2_url, target: s.button_2_window_open === 'new' ? '_blank' : '_self' },
+    { text: s.button_3_text, url: s.button_3_url, target: s.button_3_window_open === 'new' ? '_blank' : '_self' },
+  ].filter(c => c.text);
+
+  // Parallax: image translates 0 → +80px as user scrolls 0 → 600px
+  const parallax = Math.min(scrollY * 0.25, 120);
+
   return (
-    <section className="aurex-section relative overflow-hidden bg-[#0A0A0A] text-white" data-testid="hero-section" style={{ fontFamily: "'Inter', sans-serif" }}>
+    <section className="aurex-section relative overflow-hidden bg-white" data-testid="hero-section" style={{ fontFamily: "'Inter', sans-serif" }}>
       {bg && (
         <>
-          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bg})`, filter: 'grayscale(100%) brightness(0.4)' }} />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black" />
+          <div className="absolute inset-0 bg-cover bg-center will-change-transform" style={{ backgroundImage: `url(${bg})`, transform: `translate3d(0, ${parallax}px, 0) scale(1.08)` }} />
+          {/* Soft light overlay that fades from bright-left to transparent-right to keep text legible without killing the photo */}
+          <div className="absolute inset-0" style={{ background: 'linear-gradient(90deg, rgba(255,255,255,0.85) 0%, rgba(255,255,255,0.55) 45%, rgba(255,255,255,0.05) 85%)' }} />
         </>
       )}
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 py-24 md:py-32 min-h-[600px] md:min-h-[720px] flex items-center">
-        <div className={`w-full grid gap-14 items-center ${hasMedia ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
-          <div>
-            {s.subtitle && (
-              <Reveal>
-                <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-white/60 mb-6" data-testid="hero-subtitle" dangerouslySetInnerHTML={{ __html: stripHtml(s.subtitle) }} />
-              </Reveal>
-            )}
-            {s.title && (
-              <Reveal delay={100}>
-                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight max-w-3xl" data-testid="hero-title">
-                  {typeof s.title === 'string' && s.title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: s.title }} /> : s.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-white/80' : ''}>{line}</span></React.Fragment>)}
-                </h1>
-              </Reveal>
-            )}
-            {s.countdown_to && <Reveal delay={200}><CountdownMono target={s.countdown_to} /></Reveal>}
-            {s.description && (
-              <Reveal delay={250}>
-                <div className="text-base md:text-lg text-white/60 mt-7 max-w-xl leading-relaxed rich-text-content" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: s.description }} />
-              </Reveal>
-            )}
-            {s.button_text && (
-              <Reveal delay={300}>
-                <a href={s.button_url || s.button_link || '#contact'} target={s.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-9 px-8 py-3.5 rounded-full bg-white text-gray-900 font-medium text-sm hover:gap-3 transition-all" data-testid="hero-cta-btn">
-                  {s.button_text} <ArrowRight className="w-4 h-4" />
-                </a>
-              </Reveal>
-            )}
-          </div>
-          {hasMedia && (
-            <Reveal delay={200} className="relative">
-              <img src={photo} alt="" className="w-full rounded-xl object-cover aspect-[4/5] md:aspect-square" style={{ filter: 'grayscale(100%) contrast(1.05)' }} />
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 py-24 md:py-36 min-h-[620px] md:min-h-[760px] flex items-end">
+        <div className="w-full max-w-3xl">
+          {s.subtitle && (
+            <Reveal>
+              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-gray-700 mb-5" data-testid="hero-subtitle" dangerouslySetInnerHTML={{ __html: stripHtml(s.subtitle) }} />
+            </Reveal>
+          )}
+          {s.title && (
+            <Reveal delay={100}>
+              <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-gray-900 mb-8" data-testid="hero-title">
+                {typeof s.title === 'string' && s.title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: s.title }} /> : s.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-gray-700' : ''}>{line}</span></React.Fragment>)}
+              </h1>
+            </Reveal>
+          )}
+          {s.countdown_to && <Reveal delay={200}><CountdownMono target={s.countdown_to} light /></Reveal>}
+          {s.description && (
+            <Reveal delay={250}>
+              <div className="text-base md:text-lg text-gray-700 max-w-xl leading-relaxed rich-text-content mb-10" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: s.description }} />
+            </Reveal>
+          )}
+          {ctas.length > 0 && (
+            <Reveal delay={300}>
+              <div className="flex flex-wrap items-center gap-3" data-testid="hero-cta-row">
+                {ctas.map((c, i) => {
+                  const primary = i === 0;
+                  return (
+                    <a
+                      key={i}
+                      href={c.url || '#'}
+                      target={c.target}
+                      rel="noopener noreferrer"
+                      className={`inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold transition-all hover:gap-3 ${primary ? 'bg-white text-gray-900 border border-gray-900 hover:bg-gray-900 hover:text-white' : 'bg-transparent text-gray-900 border-2 border-gray-900/80 hover:bg-gray-900 hover:text-white'}`}
+                      data-testid={`hero-cta-btn-${i}`}
+                    >
+                      {c.text} {primary && <ArrowRight className="w-4 h-4" />}
+                    </a>
+                  );
+                })}
+              </div>
             </Reveal>
           )}
         </div>
@@ -779,7 +802,7 @@ export function AurexHeroMono({ slides, data }) {
       {allSlides.length > 1 && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
           {allSlides.map((_, i) => (
-            <button key={i} onClick={() => setIdx(i)} className={`h-[2px] transition-all ${i === idx ? 'w-10 bg-white' : 'w-6 bg-white/30 hover:bg-white/60'}`} aria-label={`Slide ${i + 1}`} data-testid={`hero-dot-${i}`} />
+            <button key={i} onClick={() => setIdx(i)} className={`h-[2px] transition-all ${i === idx ? 'w-10 bg-gray-900' : 'w-6 bg-gray-900/30 hover:bg-gray-900/60'}`} aria-label={`Slide ${i + 1}`} data-testid={`hero-dot-${i}`} />
           ))}
         </div>
       )}

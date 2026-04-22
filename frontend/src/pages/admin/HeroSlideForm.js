@@ -94,6 +94,8 @@ const defaultSlide = {
   date_start: '', date_end: '',
   title: '', subtitle: '', description: '',
   button_text: '', button_url: '', window_open: 'same',
+  button_2_text: '', button_2_url: '', button_2_window_open: 'same',
+  button_3_text: '', button_3_url: '', button_3_window_open: 'same',
   slide_type: 'photo', video_embed: '', photo: '',
   background: '',
   title_effect: 'top', subtitle_effect: 'right', description_effect: 'bottom',
@@ -219,23 +221,32 @@ export default function HeroSlideForm() {
       {/* Links and Navigation */}
       <div className={sectionCls}>
         <h2 className={sectionTitle}>Links and Navigation</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <Label className="text-xs text-slate-500">Text Button URL</Label>
-            <Input value={form.button_text} onChange={set('button_text')} className="mt-1" placeholder="e.g. Learn More" data-testid="slide-btn-text" />
-          </div>
-          <div>
-            <Label className="text-xs text-slate-500">URL</Label>
-            <Input value={form.button_url} onChange={set('button_url')} className="mt-1" placeholder="https://..." data-testid="slide-btn-url" />
-          </div>
-          <div>
-            <Label className="text-xs text-slate-500">Window Open</Label>
-            <select value={form.window_open} onChange={set('window_open')} className={`mt-1 ${selectCls}`} data-testid="slide-window-open">
-              <option value="same">Same window</option>
-              <option value="new">New window</option>
-            </select>
-          </div>
-        </div>
+        <p className="text-xs text-slate-500 mb-4">Up to 3 CTA buttons — the Aurex theme renders them as an inline pill row. Classic themes only use Button 1.</p>
+        {[1, 2, 3].map(n => {
+          const suf = n === 1 ? '' : `_${n}`;
+          const textKey = `button${suf}_text`;
+          const urlKey  = `button${suf}_url`;
+          const winKey  = n === 1 ? 'window_open' : `button_${n}_window_open`;
+          return (
+            <div key={n} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
+              <div>
+                <Label className="text-xs text-slate-500">Button {n} text</Label>
+                <Input value={form[textKey] || ''} onChange={set(textKey)} className="mt-1" placeholder={n === 1 ? 'e.g. Learn More' : 'Optional'} data-testid={`slide-btn${suf}-text`} />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-500">URL</Label>
+                <Input value={form[urlKey] || ''} onChange={set(urlKey)} className="mt-1" placeholder="https://..." data-testid={`slide-btn${suf}-url`} />
+              </div>
+              <div>
+                <Label className="text-xs text-slate-500">Window Open</Label>
+                <select value={form[winKey] || 'same'} onChange={set(winKey)} className={`mt-1 ${selectCls}`} data-testid={`slide-window-open${suf}`}>
+                  <option value="same">Same window</option>
+                  <option value="new">New window</option>
+                </select>
+              </div>
+            </div>
+          );
+        })}
       </div>
 
       {/* Slide Type */}
