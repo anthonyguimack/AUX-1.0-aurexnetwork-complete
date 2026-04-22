@@ -53,10 +53,10 @@ function SortableItem({ id, label, enabled, config, onToggle, onConfigChange, sh
       </div>
       {/* Aurex-only per-section color + font controls */}
       {showAurexControls && (
-        <div className="flex items-start gap-4 pl-8 pt-1">
+        <div className="flex items-start gap-4 pl-8 pt-1 flex-wrap">
           <div>
             <p className="text-[10px] uppercase tracking-wider text-slate-500 mb-1 flex items-center gap-1"><Palette className="w-3 h-3" /> Background</p>
-            <div className="flex gap-1.5">
+            <div className="flex gap-1.5 items-center">
               {AUREX_PALETTE.map(sw => (
                 <button key={sw.key} type="button" onClick={() => onConfigChange(id, { ...config, bg_color: sw.hex })}
                   className={`w-6 h-6 rounded transition-all ${bgHex === sw.hex ? 'ring-2 ring-[#0D9488] ring-offset-1' : 'ring-1 ring-slate-200 hover:ring-slate-400'}`}
@@ -65,6 +65,37 @@ function SortableItem({ id, label, enabled, config, onToggle, onConfigChange, sh
                   data-testid={`swatch-${id}-${sw.key}`}
                 />
               ))}
+              {/* Custom hex color input — native picker + free-text hex entry */}
+              <label className="flex items-center gap-1 ml-1 border border-slate-200 rounded px-1.5 py-0.5 bg-white hover:border-slate-400 transition-colors cursor-pointer" title="Custom color (any hex)">
+                <input
+                  type="color"
+                  value={(bgHex || '#FFFFFF').slice(0, 7)}
+                  onChange={(e) => onConfigChange(id, { ...config, bg_color: e.target.value.toUpperCase() })}
+                  className="w-5 h-5 rounded cursor-pointer border-0 p-0 bg-transparent"
+                  style={{ appearance: 'none' }}
+                  data-testid={`color-picker-${id}`}
+                />
+                <input
+                  type="text"
+                  value={bgHex || ''}
+                  onChange={(e) => {
+                    const v = e.target.value;
+                    // Accept partial/typing input, only commit if it matches #RRGGBB
+                    onConfigChange(id, { ...config, bg_color: v });
+                  }}
+                  onBlur={(e) => {
+                    const v = e.target.value.trim();
+                    if (!v) return;
+                    const hex = v.startsWith('#') ? v : `#${v}`;
+                    if (/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(hex)) {
+                      onConfigChange(id, { ...config, bg_color: hex.toUpperCase() });
+                    }
+                  }}
+                  placeholder="#RRGGBB"
+                  className="w-[74px] text-[11px] font-mono border-0 focus:outline-none bg-transparent text-slate-600"
+                  data-testid={`hex-input-${id}`}
+                />
+              </label>
             </div>
           </div>
           <div className="flex-1 min-w-0">

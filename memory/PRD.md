@@ -390,7 +390,41 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
-### Iteration 70 — Aurex Navbar + Hero ⇒ Modern Theme (Apr 22, 2026)
+### Iteration 71 — Per-section color for legacy sections + custom hex picker (Apr 22, 2026)
+
+**User feedback (both parts resolved):**
+1. *"Changing the colors of each section only affects new sections, not old ones."*
+2. *"Enter any other color for each section's colors, as in Settings → Colors."*
+
+**Bug #1 — Legacy Aurex mono variants were ignoring `section_configs.aurex[key]`.**
+
+The 10 `AurexXxxMono` components (About/Services/News/Blog/Reading/Map/Portfolio/Gallery/Testimonials/Contact) had their backgrounds hardcoded as Tailwind classes (`bg-white`, `bg-[#F9FAFB]`, `bg-[#111827]`). They now accept `bg` and `font` props and use them via a shared helper:
+
+```js
+function monoStyle(bg, font, fallbackBg) {
+  const effectiveBg = bg || fallbackBg;
+  const isDark = aurexContrastFor(effectiveBg) === 'light';
+  return { style: {backgroundColor, color, fontFamily}, textClass, mutedClass,
+           eyebrowClass, borderColor, isDark };
+}
+```
+
+Each mono variant now wraps its JSX in `<section style={m.style}>` and uses `m.eyebrowClass`, `m.mutedClass`, `m.borderColor`, `m.isDark` for all text/border tokens — so any admin-picked background (light OR dark) automatically gets readable text and subtle borders via luminance math (`aurexContrastFor`). Fallbacks preserve the old look when CMS hasn't set anything.
+
+`HomePage.js` now passes `{ bg, font }` to each mono variant via a tiny `aurexMono(key)` helper that reads `settings.section_configs.aurex[key]` and resolves `font_family` through `AUREX_FONTS` (same mechanism the new Aurex sections already use).
+
+**Feature #2 — Custom hex color input.**
+
+`SectionOrderManager`'s per-section color row now shows, after the 7 preset swatches, a combined custom-color chip:
+- `<input type="color">` — native OS color wheel (click the chip to open)
+- `<input type="text">` — free-text hex entry (`#RRGGBB` with 3 or 6 hex digits accepted on blur)
+Controlled by the same `bg_color` key — changes are saved/loaded identically. Presets remain untouched (single click, `ring-2 ring-[#0D9488]` highlight for active).
+
+**Verified end-to-end via curl + Playwright:**
+- Set custom colors (`#0F172A` for About, `#FEF3C7` for Services, `#4C1D95` for News, `#DCFCE7` for Testimonials, `#F9A8D4` for Contact). Public DOM probe returns exactly those `rgb(…)` backgrounds and auto-switched text colors (white on dark, dark on light). Then reset to neutral defaults.
+- Admin Page Builder (Aurex scope): 15 sections × 7 swatches = 105 swatches present; 15 color pickers + 15 hex inputs present and pre-populated from CMS state.
+
+
 
 **User feedback: "The header and hero should be the same as the modern theme, giving it a modern touch."**
 
