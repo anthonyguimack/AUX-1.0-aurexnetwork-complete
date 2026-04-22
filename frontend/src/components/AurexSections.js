@@ -102,7 +102,7 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
           return (
             <div key={step.id} className={`relative flex items-start gap-6 mb-12 ${isLeft ? 'md:flex-row' : 'md:flex-row-reverse'}`} data-testid={`process-step-${step.id}`}>
               {/* Node */}
-              <div className="absolute left-8 md:left-1/2 md:-translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold ring-4" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF', ringColor: c.bg }}>
+              <div className="absolute left-8 md:left-1/2 md:-translate-x-1/2 w-10 h-10 rounded-full flex items-center justify-center text-sm font-bold" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF', boxShadow: `0 0 0 4px ${c.bg}` }}>
                 {step.step_number || (idx + 1)}
               </div>
               <div className={`pl-20 md:pl-0 md:w-1/2 ${isLeft ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
@@ -238,8 +238,8 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
                   <div className={`text-[10px] uppercase tracking-wider mt-1 ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{month}</div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base md:text-lg">{e.title}</h3>
-                  <p className={`text-sm ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
+                  <h3 className="font-semibold text-base md:text-lg truncate">{e.title}</h3>
+                  <p className={`text-sm truncate ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
                     {e.start_time}{e.end_time ? ` – ${e.end_time}` : ''}{e.location ? ` · ${e.location}` : ''}
                   </p>
                 </div>

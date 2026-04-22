@@ -29,6 +29,7 @@ const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/
 
 import HeroSection from '../components/HeroSection';
 import { AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections } from '../components/AurexSections';
+import { AUREX_FONTS } from '../lib/themeColors';
 
 /* ==================== ABOUT ==================== */
 function AboutSection({ data, theme }) {
@@ -597,13 +598,22 @@ export default function HomePage() {
   const sections = settings.sections || {};
   const isAurex = (settings.active_theme || 'default') === 'aurex';
   const aurexData = useAurexSections();
-  const aurexConfigs = (settings.section_configs && settings.section_configs.aurex) || settings.section_configs || {};
+  const aurexConfigs = (settings.section_configs && settings.section_configs.aurex) || {};
   const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
   const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
-  const sectionOrder = settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
+  const perThemeOrder = settings.section_orders && settings.section_orders[settings.active_theme || 'default'];
+  const sectionOrder = perThemeOrder || settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
   const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
   const mapsLang = settings.maps_language || 'local';
+
+  // Renders an Aurex section with per-section bg + font pulled from CMS.
+  const aurexSection = (key, Comp) => {
+    const cfg = aurexConfigs[key] || {};
+    const data = aurexData[key] || { config: {}, items: [] };
+    const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : undefined;
+    return <Comp key={key} config={data.config || {}} items={data.items || []} bg={cfg.bg_color} font={font} />;
+  };
 
   const sectionMap = {
     hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
@@ -621,6 +631,14 @@ export default function HomePage() {
     gallery: <GallerySection key="gallery" items={gallery} theme={theme} />,
     testimonials: <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
     contact: <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
+    // Aurex Theme 2.0 sections — only meaningful when active_theme = 'aurex'
+    aurex_audience: aurexSection('aurex_audience', AurexAudience),
+    aurex_process: aurexSection('aurex_process', AurexProcess),
+    aurex_pricing: aurexSection('aurex_pricing', AurexPricing),
+    aurex_team: aurexSection('aurex_team', AurexTeam),
+    aurex_events: aurexSection('aurex_events', AurexEvents),
+    aurex_partners: aurexSection('aurex_partners', AurexPartners),
+    aurex_clients: aurexSection('aurex_clients', AurexClients),
   };
 
   return (

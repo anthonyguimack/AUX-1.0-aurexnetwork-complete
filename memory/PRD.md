@@ -340,6 +340,33 @@ Frontend:
 
 **Phase 1 = DONE.** Phase 2 (new section CRUD), Phase 3 (frontend rendering), Phase 4 (polish) remain for subsequent sessions.
 
+### Iteration 65 — Aurex Phase 3: Frontend Rendering (Apr 22, 2026)
+
+**Public site now renders all 7 Aurex sections when active_theme = 'aurex'.**
+
+Frontend (`HomePage.js`):
+- Added `sectionMap` entries for `aurex_audience / aurex_process / aurex_pricing / aurex_team / aurex_events / aurex_partners / aurex_clients`, each wired to its React component in `components/AurexSections.js`.
+- `aurexSection(key, Comp)` helper pulls per-section config from `settings.section_configs.aurex[key]` (bg_color + font_family → looked up in `AUREX_FONTS`), merged with page data from `useAurexSections()` which fetches `/api/public/aurex/<section>` for all 7 in parallel.
+- Respects per-theme ordering: reads `settings.section_orders.<active_theme>` first, falls back to legacy `section_order`, finally to hardcoded Aurex defaults.
+- Contrast (text color) auto-derived via `aurexContrastFor(bg)` luminance calc — admin never picks text color manually.
+
+`components/AurexSections.js`:
+- Fixed `ringColor` (invalid CSS prop) → switched to `boxShadow: 0 0 0 4px <bg>` for process-timeline node rings.
+- Added `truncate` on Events section title + meta line so long zoom URLs in `event.location` no longer overflow into the View button.
+
+**Seed data** (one-time admin curl): 3 audience cards, 4 process steps, 3 pricing plans (one featured), 3 team members, 6 partner logos, 6 client logos + config titles/subtitles. Aurex theme activated with per-section bg/font map applied.
+
+**Verified via Playwright screenshot** (1440×900):
+- ✅ Audience (#FFFFFF / Inter): 3 icon cards + CTA
+- ✅ Process (#1F2937 / Sora): dark bg, alternating vertical timeline with 4 numbered nodes
+- ✅ Pricing (#F4F6F8 / Inter): 3 plans, "Signature" featured & scaled up
+- ✅ Team (#FFFFFF / Playfair): 3 photos with hover overlays, name+role below
+- ✅ Events (#F9FAFB / Inter): date-stacked list pulled from `calendar_events`
+- ✅ Partners (#111827 / Space Grotesk): dark strip, autoscrolling logos, grayscale hover
+- ✅ Clients (#F4F6F8 / DM Sans): light gallery style
+
+**Phase 3 = DONE.** Phase 4 (adapt existing 9 sections to monochromatic when Aurex active + scroll animations) remains.
+
 ### Iteration 64 — Aurex Phase 2: CMS CRUD for 7 sections (Apr 22, 2026)
 
 Backend (`routes/aurex_sections.py` — NEW):
