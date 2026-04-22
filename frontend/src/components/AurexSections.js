@@ -679,6 +679,114 @@ export function AurexContactMono({ contactSettings }) {
   );
 }
 
+// ─── Hero (Aurex monochrome) ─────────────────────────────────────────────
+// Supports CMS slides + countdown + single-column typography-forward layout.
+// Falls back to the optional photo — rendered in grayscale — as a side column.
+
+function countdownParts(target) {
+  if (!target) return null;
+  const t = new Date(target).getTime();
+  const diff = t - Date.now();
+  if (isNaN(t) || diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const mins = Math.floor((diff % 3600000) / 60000);
+  const secs = Math.floor((diff % 60000) / 1000);
+  return { days, hours, mins, secs };
+}
+
+function CountdownMono({ target }) {
+  const [parts, setParts] = useState(() => countdownParts(target));
+  useEffect(() => {
+    if (!target) return;
+    const id = setInterval(() => setParts(countdownParts(target)), 1000);
+    return () => clearInterval(id);
+  }, [target]);
+  if (!parts) return null;
+  const units = [['Days', parts.days], ['Hours', parts.hours], ['Min', parts.mins], ['Sec', parts.secs]];
+  return (
+    <div className="flex gap-6 md:gap-10 my-8" data-testid="hero-countdown">
+      {units.map(([lbl, n]) => (
+        <div key={lbl}>
+          <div className="text-4xl md:text-6xl font-bold tabular-nums leading-none">{String(n).padStart(2, '0')}</div>
+          <div className="text-[10px] uppercase tracking-[0.25em] text-white/50 mt-2">{lbl}</div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+const stripHtml = (h) => (h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
+
+export function AurexHeroMono({ slides, data }) {
+  const allSlides = (slides && slides.length > 0 ? slides : (data?.title ? [data] : []));
+  const [idx, setIdx] = useState(0);
+  useEffect(() => {
+    if (allSlides.length <= 1) return;
+    const delay = allSlides[idx]?.delay || 9400;
+    const t = setTimeout(() => setIdx(i => (i + 1) % allSlides.length), delay);
+    return () => clearTimeout(t);
+  }, [idx, allSlides]);
+  if (allSlides.length === 0) return null;
+  const s = allSlides[idx];
+  const bg = s.background || s.background_image || '';
+  const photo = s.photo;
+  const hasMedia = !!photo;
+  return (
+    <section className="aurex-section relative overflow-hidden bg-[#0A0A0A] text-white" data-testid="hero-section" style={{ fontFamily: "'Inter', sans-serif" }}>
+      {bg && (
+        <>
+          <div className="absolute inset-0 bg-cover bg-center" style={{ backgroundImage: `url(${bg})`, filter: 'grayscale(100%) brightness(0.4)' }} />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/50 via-black/60 to-black" />
+        </>
+      )}
+      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 py-24 md:py-32 min-h-[600px] md:min-h-[720px] flex items-center">
+        <div className={`w-full grid gap-14 items-center ${hasMedia ? 'md:grid-cols-2' : 'grid-cols-1'}`}>
+          <div>
+            {s.subtitle && (
+              <Reveal>
+                <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-white/60 mb-6" data-testid="hero-subtitle" dangerouslySetInnerHTML={{ __html: stripHtml(s.subtitle) }} />
+              </Reveal>
+            )}
+            {s.title && (
+              <Reveal delay={100}>
+                <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.05] tracking-tight max-w-3xl" data-testid="hero-title">
+                  {typeof s.title === 'string' && s.title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: s.title }} /> : s.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-white/80' : ''}>{line}</span></React.Fragment>)}
+                </h1>
+              </Reveal>
+            )}
+            {s.countdown_to && <Reveal delay={200}><CountdownMono target={s.countdown_to} /></Reveal>}
+            {s.description && (
+              <Reveal delay={250}>
+                <div className="text-base md:text-lg text-white/60 mt-7 max-w-xl leading-relaxed rich-text-content" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: s.description }} />
+              </Reveal>
+            )}
+            {s.button_text && (
+              <Reveal delay={300}>
+                <a href={s.button_url || s.button_link || '#contact'} target={s.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer" className="inline-flex items-center gap-2 mt-9 px-8 py-3.5 rounded-full bg-white text-gray-900 font-medium text-sm hover:gap-3 transition-all" data-testid="hero-cta-btn">
+                  {s.button_text} <ArrowRight className="w-4 h-4" />
+                </a>
+              </Reveal>
+            )}
+          </div>
+          {hasMedia && (
+            <Reveal delay={200} className="relative">
+              <img src={photo} alt="" className="w-full rounded-xl object-cover aspect-[4/5] md:aspect-square" style={{ filter: 'grayscale(100%) contrast(1.05)' }} />
+            </Reveal>
+          )}
+        </div>
+      </div>
+      {allSlides.length > 1 && (
+        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2 z-10">
+          {allSlides.map((_, i) => (
+            <button key={i} onClick={() => setIdx(i)} className={`h-[2px] transition-all ${i === idx ? 'w-10 bg-white' : 'w-6 bg-white/30 hover:bg-white/60'}`} aria-label={`Slide ${i + 1}`} data-testid={`hero-dot-${i}`} />
+          ))}
+        </div>
+      )}
+    </section>
+  );
+}
+
 // CSS keyframe + reveal styles (injected once)
 if (typeof document !== 'undefined' && !document.getElementById('aurex-keyframes')) {
   const style = document.createElement('style');

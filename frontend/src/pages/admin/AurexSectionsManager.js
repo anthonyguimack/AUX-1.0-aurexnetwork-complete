@@ -6,7 +6,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X } from 'lucide-react';
+import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X, Copy } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -109,6 +109,21 @@ function SectionEditor({ sectionKey }) {
     catch (err) { toast.error('Update failed'); }
   };
 
+  const handleDuplicate = async (item) => {
+    try {
+      // Strip server-managed fields so the backend assigns a fresh id + order.
+      // eslint-disable-next-line no-unused-vars
+      const { id, order, section, _id, created_at, updated_at, ...rest } = item;
+      const clone = { ...rest, visible: item.visible !== false };
+      // Append "(Copy)" to the first text-like field so the user can tell them apart.
+      const nameField = ['name', 'title'].find(k => typeof clone[k] === 'string' && clone[k]);
+      if (nameField) clone[nameField] = `${clone[nameField]} (Copy)`;
+      await adminAPI.createAurexItem(sectionKey, clone);
+      toast.success('Duplicated');
+      await loadAll();
+    } catch (err) { toast.error(err.response?.data?.detail || 'Duplicate failed'); }
+  };
+
   return (
     <div data-testid={`aurex-editor-${sectionKey}`}>
       <div className="mb-4">
@@ -163,6 +178,7 @@ function SectionEditor({ sectionKey }) {
                   <button onClick={() => toggleVisible(item)} className="p-1.5 hover:bg-slate-100 rounded" data-testid={`toggle-${item.id}`}>
                     {item.visible !== false ? <Eye className="w-4 h-4 text-emerald-500" /> : <EyeOff className="w-4 h-4 text-slate-300" />}
                   </button>
+                  <button onClick={() => handleDuplicate(item)} className="p-1.5 hover:bg-slate-100 rounded text-slate-500" title="Duplicate" data-testid={`duplicate-${item.id}`}><Copy className="w-3.5 h-3.5" /></button>
                   <button onClick={() => { setEditing({ ...item }); setOpen(true); }} className="p-1.5 hover:bg-slate-100 rounded" data-testid={`edit-${item.id}`}><Edit2 className="w-3.5 h-3.5" /></button>
                   <button onClick={() => handleDelete(item.id, schema.itemPreview(item))} className="p-1.5 hover:bg-red-50 text-red-500 rounded" data-testid={`delete-${item.id}`}><Trash2 className="w-3.5 h-3.5" /></button>
                 </li>

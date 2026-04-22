@@ -390,6 +390,22 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
+### Iteration 67 — Aurex Hero + Duplicate Item (Apr 22, 2026)
+
+**Hero adapted to Aurex** (`AurexHeroMono` in `components/AurexSections.js`):
+- Pitch-black `#0A0A0A` canvas, background image rendered in `grayscale(100%) brightness(.4)` with a black-gradient overlay on top.
+- Massive Inter typography — `text-4xl sm:text-5xl md:text-6xl lg:text-7xl` title with `leading-[1.05] tracking-tight`. Newline-separated lines get italic/light styling on subsequent lines for editorial rhythm.
+- Uppercase `tracking-[0.3em]` eyebrow subtitle, quiet `text-white/60` description, pill-shaped white-on-ink CTA.
+- Optional side photo rendered in `grayscale(100%)` as a second column (auto-detected from `slide.photo`); falls back to single-column typography-forward layout when no media.
+- `CountdownMono` — minimal 4-unit Days/Hours/Min/Sec counter, tabular-nums, no boxes. Renders when the slide has `countdown_to`.
+- Slide indicators reimagined as thin horizontal strokes (active = wider/brighter). Staggered Reveal entrance (subtitle → title → countdown → description → CTA, 100-300ms delays).
+- Wired into `HomePage.js`: `hero: isAurex ? <AurexHeroMono/> : <HeroSection/>`. Legacy themes untouched.
+
+**Duplicate-item button** (`pages/admin/AurexSectionsManager.js`):
+- Added `Copy` icon button between Toggle-visible and Edit in every item row (all 6 itemized Aurex sections: audience/process/pricing/team/partners/clients).
+- `handleDuplicate(item)` strips server-managed fields (`id`, `order`, `section`, `_id`, `created_at`, `updated_at`), appends " (Copy)" to `name` or `title` (whichever the section uses), and POSTs to the existing `/admin/aurex/{section}/items` — which auto-assigns a fresh uuid and next `order`.
+- Curl verified end-to-end: 3 audience items → duplicate → 4 items; new row appears with `order=3`, id=new uuid, title="Founders & Operators (Copy)". Cleanup also verified.
+
 ### Iteration 64 — Aurex Phase 2: CMS CRUD for 7 sections (Apr 22, 2026)
 
 Backend (`routes/aurex_sections.py` — NEW):
