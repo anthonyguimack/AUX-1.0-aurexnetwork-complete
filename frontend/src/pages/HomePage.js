@@ -28,6 +28,7 @@ const API = process.env.REACT_APP_BACKEND_URL;
 const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') : '';
 
 import HeroSection from '../components/HeroSection';
+import { AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections } from '../components/AurexSections';
 
 /* ==================== ABOUT ==================== */
 function AboutSection({ data, theme }) {
@@ -594,7 +595,12 @@ export default function HomePage() {
   }, []);
 
   const sections = settings.sections || {};
-  const sectionOrder = settings.section_order || ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
+  const isAurex = (settings.active_theme || 'default') === 'aurex';
+  const aurexData = useAurexSections();
+  const aurexConfigs = (settings.section_configs && settings.section_configs.aurex) || settings.section_configs || {};
+  const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+  const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
+  const sectionOrder = settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
   const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
   const mapsLang = settings.maps_language || 'local';
