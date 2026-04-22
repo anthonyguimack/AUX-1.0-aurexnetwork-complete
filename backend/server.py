@@ -36,6 +36,7 @@ from routes.bundles import router as bundles_router
 from routes.payouts import router as payouts_router
 from routes.coupons import router as coupons_router
 from routes.aurex_sections import router as aurex_sections_router
+from routes.hero_ab import router as hero_ab_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -53,6 +54,7 @@ api_router.include_router(bundles_router)
 api_router.include_router(payouts_router)
 api_router.include_router(coupons_router)
 api_router.include_router(aurex_sections_router)
+api_router.include_router(hero_ab_router)
 
 # Import seed data function
 from seed import seed_data

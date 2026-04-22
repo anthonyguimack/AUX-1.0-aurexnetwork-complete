@@ -12,6 +12,7 @@ const sidebarItems = [
   { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
   { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
   { label: 'Hero', icon: Image, href: '/admin/hero' },
+  { label: 'Hero A/B', icon: BarChart3, href: '/admin/hero-ab' },
   { label: 'About Us', icon: Info, href: '/admin/about' },
   { label: 'Services', icon: Package, href: '/admin/services' },
   { label: 'Blog', icon: FileText, href: '/admin/blog' },

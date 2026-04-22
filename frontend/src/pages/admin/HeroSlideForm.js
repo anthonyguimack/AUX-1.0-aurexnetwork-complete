@@ -96,6 +96,8 @@ const defaultSlide = {
   button_text: '', button_url: '', window_open: 'same',
   button_2_text: '', button_2_url: '', button_2_window_open: 'same',
   button_3_text: '', button_3_url: '', button_3_window_open: 'same',
+  ab_testing_enabled: false,
+  button_text_variant_b: '', button_2_text_variant_b: '', button_3_text_variant_b: '',
   slide_type: 'photo', video_embed: '', photo: '',
   background: '',
   title_effect: 'top', subtitle_effect: 'right', description_effect: 'bottom',
@@ -227,26 +229,56 @@ export default function HeroSlideForm() {
           const textKey = `button${suf}_text`;
           const urlKey  = `button${suf}_url`;
           const winKey  = n === 1 ? 'window_open' : `button_${n}_window_open`;
+          const variantBKey = `button${suf}_text_variant_b`;
           return (
-            <div key={n} className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
-              <div>
-                <Label className="text-xs text-slate-500">Button {n} text</Label>
-                <Input value={form[textKey] || ''} onChange={set(textKey)} className="mt-1" placeholder={n === 1 ? 'e.g. Learn More' : 'Optional'} data-testid={`slide-btn${suf}-text`} />
+            <div key={n} className="mb-4">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div>
+                  <Label className="text-xs text-slate-500">Button {n} text</Label>
+                  <Input value={form[textKey] || ''} onChange={set(textKey)} className="mt-1" placeholder={n === 1 ? 'e.g. Learn More' : 'Optional'} data-testid={`slide-btn${suf}-text`} />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">URL</Label>
+                  <Input value={form[urlKey] || ''} onChange={set(urlKey)} className="mt-1" placeholder="https://..." data-testid={`slide-btn${suf}-url`} />
+                </div>
+                <div>
+                  <Label className="text-xs text-slate-500">Window Open</Label>
+                  <select value={form[winKey] || 'same'} onChange={set(winKey)} className={`mt-1 ${selectCls}`} data-testid={`slide-window-open${suf}`}>
+                    <option value="same">Same window</option>
+                    <option value="new">New window</option>
+                  </select>
+                </div>
               </div>
-              <div>
-                <Label className="text-xs text-slate-500">URL</Label>
-                <Input value={form[urlKey] || ''} onChange={set(urlKey)} className="mt-1" placeholder="https://..." data-testid={`slide-btn${suf}-url`} />
-              </div>
-              <div>
-                <Label className="text-xs text-slate-500">Window Open</Label>
-                <select value={form[winKey] || 'same'} onChange={set(winKey)} className={`mt-1 ${selectCls}`} data-testid={`slide-window-open${suf}`}>
-                  <option value="same">Same window</option>
-                  <option value="new">New window</option>
-                </select>
-              </div>
+              {form.ab_testing_enabled && (
+                <div className="mt-2 pl-3 border-l-2 border-amber-300 bg-amber-50/40 rounded-r py-2 pr-3">
+                  <Label className="text-xs text-amber-700 font-semibold flex items-center gap-1.5">
+                    <span className="inline-block w-4 h-4 rounded-full bg-amber-400 text-white text-[10px] flex items-center justify-center font-bold leading-none">B</span>
+                    Variant B text (Button {n})
+                  </Label>
+                  <Input value={form[variantBKey] || ''} onChange={set(variantBKey)} className="mt-1" placeholder={`Alternative copy — leave blank to disable A/B for button ${n}`} data-testid={`slide-btn${suf}-variant-b`} />
+                </div>
+              )}
             </div>
           );
         })}
+      </div>
+
+      {/* A/B Testing */}
+      <div className={sectionCls}>
+        <h2 className={sectionTitle}>A/B Testing</h2>
+        <div className="flex items-start gap-3">
+          <div className="pt-1">
+            <input type="checkbox" checked={!!form.ab_testing_enabled} onChange={e => setForm(p => ({ ...p, ab_testing_enabled: e.target.checked }))} className="w-4 h-4 accent-[#0D9488]" data-testid="slide-ab-toggle" />
+          </div>
+          <div className="flex-1">
+            <label className="text-sm font-medium text-slate-700 cursor-pointer" onClick={() => setForm(p => ({ ...p, ab_testing_enabled: !p.ab_testing_enabled }))}>
+              Enable A/B testing for this slide's CTAs
+            </label>
+            <p className="text-xs text-slate-500 mt-1">
+              Visitors are randomly (50/50, persisted per browser) shown Variant A or Variant B copy. Impressions and clicks are logged — compare performance at <span className="font-mono text-slate-700">Admin → Hero A/B</span>. Only buttons with both A and B text set participate in the test.
+            </p>
+          </div>
+        </div>
       </div>
 
       {/* Slide Type */}

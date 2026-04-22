@@ -390,7 +390,40 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
-### Iteration 68 — Aurex Hero Redesign + Multi-CTA + Parallax (Apr 22, 2026)
+### Iteration 69 — Hero CTA A/B Testing System (Apr 22, 2026)
+
+**End-to-end A/B testing for hero CTA copy**, asked as the "potential improvement" after Iteration 68. Consultants/membership businesses can now ship two headline variants for the same CTA and see which actually converts.
+
+Backend (`routes/hero_ab.py` — NEW, mounted on `api_router`):
+- `POST /api/public/hero-cta-event` — fire-and-forget tracking endpoint. Body `{ slide_id, button_index (0-2), variant ('A'|'B'), event_type ('impression'|'click'), visitor_id }`. Inserts to `hero_cta_events` collection. Strict validation on `event_type` and `variant`.
+- `GET /api/admin/hero-ab/analytics` (admin-only via `require_admin` dep). Runs a single Mongo `$group` pipeline over `hero_cta_events`, then joins against the ab-enabled slides to emit structured rows:
+  `{ slide_id, slide_title, button_index, button_label, variant_a: {text, impressions, clicks, rate}, variant_b: {...}, uplift_pct }`. Overall `totals.impressions/clicks/rate` included.
+- Slides flagged with `ab_testing_enabled: true` and matching `button{_N}_text_variant_b` drive what's reported. Buttons missing either variant are excluded.
+
+Schema extension (no migration — Mongo is schema-less):
+- Hero slide doc now carries `ab_testing_enabled`, `button_text_variant_b`, `button_2_text_variant_b`, `button_3_text_variant_b`.
+
+Frontend:
+- **`AurexHeroMono`** (`components/AurexSections.js`):
+  - Deterministic 50/50 bucket per browser: `getVariantFor(slideId)` returns 'A'/'B', persisted in `localStorage.aurex_ab_<slide_id>` so a returning visitor sees the same variant.
+  - Anonymous visitor id persisted in `localStorage.aurex_visitor_id` (allows future cohort analysis without PII).
+  - New `pickText(base, variantB)` helper swaps CTA text per variant (falls back to base if variant B is blank).
+  - `useEffect` fires one `impression` event per ab-tracked button when the slide becomes active. Runs before the early `return null` guard so React hook rules are respected.
+  - CTA `onClick` handler fires a `click` event (only for buttons with both variants defined). Uses `fetch({ keepalive: true })` so the beacon survives page-nav clicks.
+- **CMS — `HeroSlideForm`**:
+  - New "A/B Testing" section with a checkbox toggle + explanatory copy.
+  - When enabled, each of the 3 button rows expands to show a Variant B text input in a soft amber callout. "Only buttons with both A and B text set participate in the test."
+- **Admin — `HeroAbAnalytics`** (NEW): `/admin/hero-ab` (also added to sidebar right after "Hero"):
+  - 3 summary stat cards (impressions, clicks, overall CTR).
+  - Per-button comparison cards: side-by-side A vs B panels, trophy icon + green border for the winner, emerald/rose uplift badge at top right, CTR in large numerals.
+  - Empty state with setup instructions.
+  - Refresh button + axios wired through `lib/api` (interceptor injects `auth_token` so admin session is honored).
+
+**Verified end-to-end:**
+- Seeded 480 events across 3 buttons (imp+clk mix). Backend analytics returns: Button 1 A=8% / B=12% (+50% uplift), Button 2 A=6.25% / B=5% (-20%), Button 3 A=16.67% / B=8.33% (-50%). Totals: 480 imp, 44 clk, 9.17% overall CTR. Admin dashboard renders all 3 rows with correct winner highlighting.
+- Public hero on /: Playwright landed on variant B bucket and correctly rendered "Join Aurex Now" / "Enter Members Area" / "Get Early Access" instead of the A copy.
+
+
 
 **`AurexHeroMono` rebuilt** to match the user-supplied "AurexNetwork" mockup.
 

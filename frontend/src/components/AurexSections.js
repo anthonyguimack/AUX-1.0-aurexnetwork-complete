@@ -683,6 +683,40 @@ export function AurexContactMono({ contactSettings }) {
 // Supports CMS slides + countdown + single-column typography-forward layout.
 // Falls back to the optional photo — rendered in grayscale — as a side column.
 
+// A/B testing helpers — deterministic per-browser bucket, persisted in localStorage.
+function getVisitorId() {
+  try {
+    let v = localStorage.getItem('aurex_visitor_id');
+    if (!v) {
+      v = `v_${Math.random().toString(36).slice(2)}_${Date.now().toString(36)}`;
+      localStorage.setItem('aurex_visitor_id', v);
+    }
+    return v;
+  } catch { return 'anon'; }
+}
+function getVariantFor(slideId) {
+  if (!slideId) return 'A';
+  try {
+    const key = `aurex_ab_${slideId}`;
+    let v = localStorage.getItem(key);
+    if (!v) {
+      v = Math.random() < 0.5 ? 'A' : 'B';
+      localStorage.setItem(key, v);
+    }
+    return v;
+  } catch { return 'A'; }
+}
+function logHeroEvent(payload) {
+  try {
+    fetch(`${API}/api/public/hero-cta-event`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      keepalive: true, // allow tracking on click-navigate
+    }).catch(() => {});
+  } catch { /* noop */ }
+}
+
 function countdownParts(target) {
   if (!target) return null;
   const t = new Date(target).getTime();
@@ -733,16 +767,46 @@ export function AurexHeroMono({ slides, data }) {
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  // Fire impressions for the visible slide's A/B-tracked buttons. Runs on every
+  // slide change but only emits when ab_testing is on and the button has both
+  // A and B variant text set.
+  const curSlide = allSlides[idx];
+  const curVariant = curSlide?.ab_testing_enabled ? getVariantFor(curSlide.id) : 'A';
+  useEffect(() => {
+    if (!curSlide?.ab_testing_enabled || !curSlide?.id) return;
+    const vid = getVisitorId();
+    [0, 1, 2].forEach(i => {
+      const key = i === 0 ? '' : `_${i + 1}`;
+      const textA = curSlide[`button${key}_text`];
+      const textB = curSlide[`button${key}_text_variant_b`];
+      if (textA && textB) {
+        logHeroEvent({ slide_id: curSlide.id, button_index: i, variant: curVariant, event_type: 'impression', visitor_id: vid });
+      }
+    });
+  }, [curSlide?.id, curVariant]); // eslint-disable-line react-hooks/exhaustive-deps
   if (allSlides.length === 0) return null;
   const s = allSlides[idx];
   const bg = s.background || s.background_image || '';
 
+  // A/B testing: decide variant once per slide per visitor (persisted in localStorage).
+  const abOn = !!s.ab_testing_enabled;
+  const variant = abOn ? getVariantFor(s.id) : 'A';
+  const pickText = (baseText, variantBText) => (abOn && variant === 'B' && variantBText ? variantBText : baseText);
+
   // Collect up to 3 CTAs into a single array
   const ctas = [
-    { text: s.button_text,   url: s.button_url   || s.button_link, target: s.window_open === 'new' ? '_blank' : '_self' },
-    { text: s.button_2_text, url: s.button_2_url, target: s.button_2_window_open === 'new' ? '_blank' : '_self' },
-    { text: s.button_3_text, url: s.button_3_url, target: s.button_3_window_open === 'new' ? '_blank' : '_self' },
+    { text: pickText(s.button_text,   s.button_text_variant_b),   url: s.button_url   || s.button_link, target: s.window_open === 'new' ? '_blank' : '_self' },
+    { text: pickText(s.button_2_text, s.button_2_text_variant_b), url: s.button_2_url, target: s.button_2_window_open === 'new' ? '_blank' : '_self' },
+    { text: pickText(s.button_3_text, s.button_3_text_variant_b), url: s.button_3_url, target: s.button_3_window_open === 'new' ? '_blank' : '_self' },
   ].filter(c => c.text);
+
+  const onCtaClick = (buttonIndex) => {
+    if (!abOn || !s?.id) return;
+    const key = buttonIndex === 0 ? '' : `_${buttonIndex + 1}`;
+    // Only track buttons that have a B variant (ie. actually in the test)
+    if (!s[`button${key}_text_variant_b`]) return;
+    logHeroEvent({ slide_id: s.id, button_index: buttonIndex, variant, event_type: 'click', visitor_id: getVisitorId() });
+  };
 
   // Parallax: image translates 0 → +80px as user scrolls 0 → 600px
   const parallax = Math.min(scrollY * 0.25, 120);
@@ -787,6 +851,7 @@ export function AurexHeroMono({ slides, data }) {
                       href={c.url || '#'}
                       target={c.target}
                       rel="noopener noreferrer"
+                      onClick={() => onCtaClick(i)}
                       className={`inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold transition-all hover:gap-3 ${primary ? 'bg-white text-gray-900 border border-gray-900 hover:bg-gray-900 hover:text-white' : 'bg-transparent text-gray-900 border-2 border-gray-900/80 hover:bg-gray-900 hover:text-white'}`}
                       data-testid={`hero-cta-btn-${i}`}
                     >
