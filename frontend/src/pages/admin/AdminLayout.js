@@ -5,7 +5,7 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign, Ticket
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign, Ticket, Sparkles
 } from 'lucide-react';
 
 const sidebarItems = [
@@ -49,6 +49,7 @@ const sidebarItems = [
   { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings' },
   { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
   { label: 'Sections', icon: Layers, href: '/admin/section-order' },
+  { label: 'Aurex Sections', icon: Sparkles, href: '/admin/aurex-sections' },
   { label: 'SEO', icon: Globe, href: '/admin/seo' },
   { label: 'Countries, States, Cities', icon: MapPin, href: '/admin/geo' },
   { label: 'Documentation', icon: ScrollText, href: '/admin/documentation' },

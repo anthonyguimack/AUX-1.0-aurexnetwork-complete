@@ -268,6 +268,14 @@ export const adminAPI = {
   createCoupon: (d) => api.post('/admin/coupons', d),
   updateCoupon: (id, d) => api.put(`/admin/coupons/${id}`, d),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
+  // Aurex Sections (generic CRUD for all 7 new one-page sections)
+  getAurexConfig: (section) => api.get(`/admin/aurex/${section}/config`),
+  saveAurexConfig: (section, data) => api.put(`/admin/aurex/${section}/config`, data),
+  getAurexItems: (section) => api.get(`/admin/aurex/${section}/items`),
+  createAurexItem: (section, data) => api.post(`/admin/aurex/${section}/items`, data),
+  updateAurexItem: (section, id, data) => api.put(`/admin/aurex/${section}/items/${id}`, data),
+  deleteAurexItem: (section, id) => api.delete(`/admin/aurex/${section}/items/${id}`),
+  reorderAurexItems: (section, order) => api.put(`/admin/aurex/${section}/reorder`, { order }),
 };
 
 // Member API (unified - uses same auth_token)

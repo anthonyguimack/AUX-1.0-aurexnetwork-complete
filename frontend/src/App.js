@@ -78,6 +78,7 @@ import BundleCheckoutSuccess from './pages/myaccount/BundleCheckoutSuccess';
 import AdminBundlesManager from './pages/admin/AdminBundlesManager';
 import AdminPayoutsManager from './pages/admin/AdminPayoutsManager';
 import AdminCouponsManager from './pages/admin/AdminCouponsManager';
+import AurexSectionsManager from './pages/admin/AurexSectionsManager';
 import EventDetail from './pages/myaccount/EventDetail';
 
 import LandingPage from './pages/LandingPage';
@@ -395,6 +396,7 @@ function AppRouter() {
           <Route path="seo" element={<SeoManager />} />
           <Route path="backup" element={<BackupManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
+          <Route path="aurex-sections" element={<AurexSectionsManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
           <Route path="landing-hero" element={<LandingHeroManager />} />
           <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
@@ -474,6 +476,7 @@ function AppRouter() {
           <Route path="seo" element={<SeoManager />} />
           <Route path="backup" element={<BackupManager />} />
           <Route path="section-order" element={<SectionOrderManager />} />
+          <Route path="aurex-sections" element={<AurexSectionsManager />} />
           <Route path="landing-content" element={<LandingContentManager />} />
           <Route path="landing-hero" element={<LandingHeroManager />} />
           <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
