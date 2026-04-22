@@ -25,6 +25,35 @@ function VideoEmbed({ url, style, className }) {
   );
 }
 
+// Renders up to 3 CTAs as an inline pill row. First is the solid primary,
+// rest are outlined secondary. Order/visibility is admin-controlled via the
+// respective button_text fields on the slide.
+function HeroButtonsRow({ slide, size = 'md', dataTestId }) {
+  const buttons = [
+    { text: slide.button_text,   url: slide.button_url   || slide.button_link, target: slide.window_open === 'new' ? '_blank' : '_self' },
+    { text: slide.button_2_text, url: slide.button_2_url, target: slide.button_2_window_open === 'new' ? '_blank' : '_self' },
+    { text: slide.button_3_text, url: slide.button_3_url, target: slide.button_3_window_open === 'new' ? '_blank' : '_self' },
+  ].filter(b => b.text);
+  if (buttons.length === 0) return null;
+  const padding = size === 'sm' ? 'px-6 py-2.5' : 'px-8 py-3';
+  return (
+    <div className="flex flex-wrap items-center gap-3" data-testid={dataTestId || 'hero-cta-row'}>
+      {buttons.map((b, i) => {
+        const primary = i === 0;
+        return (
+          <a key={i} href={b.url || '#'} target={b.target} rel="noopener noreferrer"
+            className={`inline-flex items-center gap-2 ${padding} rounded-sm font-medium transition-all text-sm hover:opacity-90 ${primary ? 'bg-white' : 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#1a2332]'}`}
+            style={primary ? { color: 'var(--color-primary, #1a2332)' } : undefined}
+            data-testid={`hero-cta-btn-${i}`}
+          >
+            {b.text} {primary && <ArrowRight className="w-4 h-4" />}
+          </a>
+        );
+      })}
+    </div>
+  );
+}
+
 export default function HeroSection({ data, slides }) {
   const theme = useTheme();
   const [currentSlide, setCurrentSlide] = useState(0);
@@ -89,9 +118,7 @@ export default function HeroSection({ data, slides }) {
               {slide.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic' : ''}>{line}</span></React.Fragment>)}
             </h1>
             <p className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed" data-testid="hero-description">{slide.description}</p>
-            <a href={slide.button_link || '#contact'} className="inline-flex items-center gap-2 mt-8 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
-              {slide.button_text || 'Get Started'} <ArrowRight className="w-4 h-4" />
-            </a>
+            <div className="mt-8"><HeroButtonsRow slide={slide} /></div>
           </>
         ) : (
           <>
@@ -112,13 +139,9 @@ export default function HeroSection({ data, slides }) {
                   <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
                 </div>
               )}
-              {slide.button_text && (
+              {(slide.button_text || slide.button_2_text || slide.button_3_text) && (
                 <div className="absolute" style={{ left: `${(slide.button_x || 100) / 7}%`, top: `${(slide.button_y || 180) / 3}%`, ...effectStyle(slide.button_effect, slide.button_start) }}>
-                  <a href={slide.button_url || '#'} target={slide.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-white px-8 py-3 rounded-sm font-medium hover:opacity-90 transition-all text-sm"
-                    style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn-lg">
-                    {slide.button_text} <ArrowRight className="w-4 h-4" />
-                  </a>
+                  <HeroButtonsRow slide={slide} dataTestId="hero-cta-btn-lg" />
                 </div>
               )}
               {(slide.slide_type === 'video' && slide.video_embed) && (
@@ -160,13 +183,9 @@ export default function HeroSection({ data, slides }) {
                   <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
                 </div>
               )}
-              {slide.button_text && (
+              {(slide.button_text || slide.button_2_text || slide.button_3_text) && (
                 <div style={effectStyle(slide.button_effect, slide.button_start)} className="mt-2">
-                  <a href={slide.button_url || '#'} target={slide.window_open === 'new' ? '_blank' : '_self'} rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 bg-white px-6 py-2.5 rounded-sm font-medium hover:opacity-90 transition-all text-sm"
-                    style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="hero-cta-btn">
-                    {slide.button_text} <ArrowRight className="w-4 h-4" />
-                  </a>
+                  <HeroButtonsRow slide={slide} size="sm" />
                 </div>
               )}
             </div>

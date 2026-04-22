@@ -1,8 +1,10 @@
 // Aurex section schemas — drive the polymorphic admin UI.
 // Each entry defines: config fields (page-level) + item fields (CRUD rows).
-import { Users, Workflow, DollarSign, UserCircle, Calendar, Building2, Award } from 'lucide-react';
+import { Users, Workflow, DollarSign, UserCircle, Calendar, Building2, Award, Film } from 'lucide-react';
 
-// Field types: 'text' | 'textarea' | 'url' | 'number' | 'bool' | 'image' | 'icon' | 'rich'
+// Field types: 'text' | 'textarea' | 'url' | 'number' | 'bool' | 'image' | 'icon' | 'rich' | 'social_links'
+// (social_links is dynamic — it reads settings.social_links and renders
+//  one URL input per enabled network. See AurexSectionsManager.)
 
 export const AUREX_SECTIONS = {
   aurex_audience: {
@@ -16,9 +18,9 @@ export const AUREX_SECTIONS = {
       { key: 'cta_url',      label: 'CTA button URL',       type: 'url',      placeholder: '/enrollment' },
     ],
     itemFields: [
-      { key: 'icon',        label: 'Icon (lucide name)', type: 'icon',     placeholder: 'briefcase' },
+      { key: 'icon',        label: 'Icon', type: 'icon',     placeholder: 'briefcase' },
       { key: 'title',       label: 'Title',              type: 'text',     required: true },
-      { key: 'description', label: 'Description',        type: 'textarea' },
+      { key: 'description', label: 'Description',        type: 'rich' },
     ],
     itemPreview: (i) => i.title,
   },
@@ -34,7 +36,7 @@ export const AUREX_SECTIONS = {
     itemFields: [
       { key: 'step_number', label: 'Step #',      type: 'number', placeholder: 'auto' },
       { key: 'title',       label: 'Step title',  type: 'text',   required: true },
-      { key: 'description', label: 'Description', type: 'textarea' },
+      { key: 'description', label: 'Description', type: 'rich' },
     ],
     itemPreview: (i) => `${i.step_number || '·'}. ${i.title}`,
   },
@@ -80,11 +82,29 @@ export const AUREX_SECTIONS = {
       { key: 'role',         label: 'Position / role', type: 'text' },
       { key: 'photo_url',    label: 'Photo',           type: 'image' },
       { key: 'bio',          label: 'Short bio (≤120 chars)', type: 'textarea' },
-      { key: 'linkedin_url', label: 'LinkedIn URL',    type: 'url' },
-      { key: 'twitter_url',  label: 'Twitter/X URL',   type: 'url' },
-      { key: 'other_url',    label: 'Other social URL', type: 'url' },
+      { key: 'social_links', label: 'Social profile URLs (per enabled network)', type: 'social_links' },
     ],
     itemPreview: (i) => `${i.name}${i.role ? ' · ' + i.role : ''}`,
+  },
+
+  aurex_video: {
+    label: 'Video',
+    icon: Film,
+    description: 'A single video embed (YouTube / Vimeo / direct MP4 URL) with an optional section title.',
+    configFields: [
+      { key: 'title',    label: 'Section title (optional)', type: 'text',     placeholder: '' },
+      { key: 'subtitle', label: 'Subtitle',                 type: 'textarea' },
+      { key: 'video_url', label: 'Video URL (YouTube, Vimeo, or .mp4)', type: 'url', placeholder: 'https://www.youtube.com/watch?v=…' },
+      { key: 'poster_url', label: 'Poster image (optional)', type: 'image' },
+      { key: 'autoplay',   label: 'Autoplay (muted)',         type: 'bool' },
+      { key: 'aspect_ratio', label: 'Aspect ratio', type: 'select', options: [
+        { value: '16/9', label: '16:9 (widescreen)' },
+        { value: '4/3',  label: '4:3'  },
+        { value: '1/1',  label: '1:1 (square)' },
+        { value: '21/9', label: '21:9 (ultrawide)' },
+      ] },
+    ],
+    itemFields: null,
   },
 
   aurex_events: {

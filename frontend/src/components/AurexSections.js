@@ -112,7 +112,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
           <Reveal as="article" delay={idx * 100} key={i.id} className="border rounded-xl p-8" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB' }} data-testid={`audience-card-${i.id}`}>
             <LucideIcon name={i.icon} className="w-9 h-9 mb-5" />
             <h3 className="text-xl font-semibold mb-2">{i.title}</h3>
-            {i.description && <p className={`text-sm leading-relaxed ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{i.description}</p>}
+            {i.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: i.description }} />}
           </Reveal>
         ))}
       </div>
@@ -147,7 +147,7 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
               </div>
               <div className={`pl-20 md:pl-0 md:w-1/2 ${isLeft ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
                 <h3 className="text-lg md:text-xl font-semibold mb-2">{step.title}</h3>
-                {step.description && <p className={`text-sm leading-relaxed ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{step.description}</p>}
+                {step.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: step.description }} />}
               </div>
             </Reveal>
           );
@@ -218,34 +218,57 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
 // ─── 4. Our Team ─────────────────────────────────────────────────────────
 
 export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
+  const settings = useSettings();
+  const networks = (settings.social_links || []).filter(n => n.platform);
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const limit = config.max_visible ? Number(config.max_visible) : items.length;
   const visible = items.slice(0, limit);
+  const iconFor = (network) => {
+    const key = String(network.icon || network.platform || '').toLowerCase().replace(/[^a-z]/g, '');
+    const map = { linkedin: Linkedin, twitter: Twitter, x: Twitter, facebook: lucide.Facebook, instagram: lucide.Instagram, youtube: lucide.Youtube, github: lucide.Github, globe: Globe };
+    return map[key] || Globe;
+  };
   return (
     <SectionShell {...c} data-testid="aurex-section-team">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-        {visible.map((m, idx) => (
-          <Reveal as="article" delay={idx * 100} key={m.id} className="group relative overflow-hidden rounded-xl" data-testid={`team-card-${m.id}`}>
-            <div className="aspect-square bg-gray-100 overflow-hidden">
-              {m.photo_url ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full flex items-center justify-center text-4xl text-gray-300">{m.name?.[0]}</div>}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-colors flex items-end p-5 opacity-0 group-hover:opacity-100" style={{ transitionDuration: '300ms' }}>
-                <div className="text-white">
-                  {m.bio && <p className="text-xs leading-relaxed mb-2">{m.bio}</p>}
-                  <div className="flex gap-2">
-                    {m.linkedin_url && <a href={m.linkedin_url} target="_blank" rel="noreferrer" className="p-1.5 bg-white/15 rounded hover:bg-white/30" aria-label="LinkedIn"><Linkedin className="w-3.5 h-3.5" /></a>}
-                    {m.twitter_url && <a href={m.twitter_url} target="_blank" rel="noreferrer" className="p-1.5 bg-white/15 rounded hover:bg-white/30" aria-label="Twitter"><Twitter className="w-3.5 h-3.5" /></a>}
-                    {m.other_url && <a href={m.other_url} target="_blank" rel="noreferrer" className="p-1.5 bg-white/15 rounded hover:bg-white/30" aria-label="Website"><Globe className="w-3.5 h-3.5" /></a>}
+        {visible.map((m, idx) => {
+          // `m.social_links` is a dict { [networkId]: url }. Fall back to legacy fields.
+          const memberSocial = m.social_links || {};
+          const entries = networks.map(n => {
+            const url = memberSocial[n.id]
+              || (n.platform?.toLowerCase() === 'linkedin' ? m.linkedin_url : null)
+              || (n.platform?.toLowerCase() === 'twitter' || n.platform?.toLowerCase() === 'x' ? m.twitter_url : null);
+            return url ? { ...n, url, Icon: iconFor(n) } : null;
+          }).filter(Boolean);
+          return (
+            <Reveal as="article" delay={idx * 100} key={m.id} className="group" data-testid={`team-card-${m.id}`}>
+              <div className="relative aspect-square rounded-xl overflow-hidden bg-gray-100">
+                {m.photo_url ? <img src={m.photo_url} alt={m.name} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" /> : <div className="w-full h-full flex items-center justify-center text-4xl text-gray-300">{m.name?.[0]}</div>}
+                {/* Bottom bio strip — fades in on hover, strictly inside the photo. */}
+                {(m.bio || entries.length > 0) && (
+                  <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 via-black/60 to-transparent text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                    {m.bio && <p className="text-xs leading-relaxed mb-2 line-clamp-3">{m.bio}</p>}
+                    {entries.length > 0 && (
+                      <div className="flex gap-2 flex-wrap">
+                        {entries.map(s => (
+                          <a key={s.id} href={s.url} target="_blank" rel="noreferrer" title={s.platform} className="p-1.5 bg-white/15 rounded hover:bg-white/35 backdrop-blur-sm transition-colors" aria-label={s.platform}>
+                            <s.Icon className="w-3.5 h-3.5" />
+                          </a>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                </div>
+                )}
               </div>
-            </div>
-            <div className="pt-4">
-              <h3 className="font-semibold text-base">{m.name}</h3>
-              {m.role && <p className={`text-sm ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{m.role}</p>}
-            </div>
-          </Reveal>
-        ))}
+              {/* Name + role: always outside the photo so they never overlap icons. */}
+              <div className="pt-4 text-center">
+                <h3 className="font-semibold text-base">{m.name}</h3>
+                {m.role && <p className={`text-xs uppercase tracking-wider mt-1 ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{m.role}</p>}
+              </div>
+            </Reveal>
+          );
+        })}
       </div>
       {config.show_view_all && config.view_all_url && (
         <div className="text-center mt-12">
@@ -345,6 +368,49 @@ export function AurexClients({ config = {}, items = [], bg, font, contrast }) {
   );
 }
 
+// ─── 8. Video ─────────────────────────────────────────────────────────────
+// Single embedded video + optional title. Supports YouTube, Vimeo and direct
+// video URLs. Render picks the right <iframe> or <video> automatically.
+
+function buildEmbedUrl(url, autoplay) {
+  if (!url) return null;
+  const yt = url.match(/(?:youtube\.com\/(?:.*v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{6,})/);
+  if (yt) {
+    const params = autoplay ? '?autoplay=1&mute=1&loop=1&playlist=' + yt[1] : '';
+    return `https://www.youtube.com/embed/${yt[1]}${params}`;
+  }
+  const vm = url.match(/vimeo\.com\/(\d+)/);
+  if (vm) return `https://player.vimeo.com/video/${vm[1]}${autoplay ? '?autoplay=1&muted=1&loop=1' : ''}`;
+  return null;
+}
+
+export function AurexVideo({ config = {}, bg, font, contrast }) {
+  const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
+  const url = config.video_url;
+  const embed = buildEmbedUrl(url, config.autoplay);
+  const aspect = config.aspect_ratio || '16/9';
+  const isDirect = url && !embed && /\.(mp4|webm|ogg)$/i.test(url);
+  if (!url) return null;
+  return (
+    <SectionShell {...c} data-testid="aurex-section-video">
+      {(config.title || config.subtitle) && (
+        <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      )}
+      <Reveal className="max-w-5xl mx-auto">
+        <div className="relative rounded-xl overflow-hidden shadow-2xl" style={{ aspectRatio: aspect, backgroundColor: '#000' }}>
+          {embed ? (
+            <iframe src={embed} className="absolute inset-0 w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title={config.title || 'Video'} />
+          ) : isDirect ? (
+            <video src={url} poster={config.poster_url || undefined} controls={!config.autoplay} autoPlay={!!config.autoplay} muted={!!config.autoplay} loop={!!config.autoplay} playsInline className="absolute inset-0 w-full h-full object-cover" />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-white/60 text-sm">Unsupported video URL.</div>
+          )}
+        </div>
+      </Reveal>
+    </SectionShell>
+  );
+}
+
 // ─── Data hook: fetch all Aurex sections in parallel ─────────────────────
 
 const SECTIONS_ITEMIZED = ['aurex_audience', 'aurex_process', 'aurex_pricing', 'aurex_team', 'aurex_partners', 'aurex_clients'];
@@ -352,7 +418,7 @@ const SECTIONS_ITEMIZED = ['aurex_audience', 'aurex_process', 'aurex_pricing', '
 export function useAurexSections() {
   const [data, setData] = useState({});
   useEffect(() => {
-    const keys = [...SECTIONS_ITEMIZED, 'aurex_events'];
+    const keys = [...SECTIONS_ITEMIZED, 'aurex_events', 'aurex_video'];
     Promise.all(keys.map(k => fetch(`${API}/api/public/aurex/${k}`).then(r => r.ok ? r.json() : { config: {}, items: [] }).catch(() => ({ config: {}, items: [] }))))
       .then(results => {
         const map = {};
@@ -404,6 +470,9 @@ export function AurexAboutMono({ data, bg, font }) {
   if (!data?.title) return null;
   const img = resolveImg(data.image);
   const m = monoStyle(bg, font, '#FFFFFF');
+  const btnText = data.button_text;
+  const btnUrl = data.button_url;
+  const btnTarget = data.button_open_in_new_tab ? '_blank' : '_self';
   return (
     <section className={monoShell} style={m.style} id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
@@ -411,11 +480,20 @@ export function AurexAboutMono({ data, bg, font }) {
           {data.label && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{data.label}</p>}
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6" data-testid="about-title">{data.title}</h2>
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.8)' : '#111827' }} />
-          <p className={`${m.mutedClass} leading-relaxed`}>{data.description}</p>
+          <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: data.description || '' }} />
           <div className="flex items-center gap-6 mt-8 flex-wrap">
             {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}><Phone className="w-4 h-4" /></div><div><p className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>Call us</p><p className="text-sm font-semibold">{data.phone}</p></div></div>}
             {data.signature_name && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{data.signature_name}</p><p className={`text-xs ${m.mutedClass}`}>{data.signature_title}</p></div>}
           </div>
+          {btnText && (
+            <a href={btnUrl || '#'} target={btnTarget} rel={btnTarget === '_blank' ? 'noopener noreferrer' : undefined}
+              className="inline-flex items-center gap-2 px-7 py-2.5 mt-8 rounded-sm text-sm font-semibold transition-all hover:opacity-80"
+              style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827' }}
+              data-testid="about-cta-btn"
+            >
+              {btnText} <ArrowRight className="w-4 h-4" />
+            </a>
+          )}
         </Reveal>
         {img && <Reveal delay={120}><img src={img} alt="" className="w-full rounded-xl object-cover aspect-[4/3]" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }} /></Reveal>}
       </div>
@@ -424,44 +502,43 @@ export function AurexAboutMono({ data, bg, font }) {
 }
 
 // Services
-const monoIconMap = { 'briefcase': lucide.Briefcase, 'trending-up': lucide.TrendingUp, 'bar-chart-3': lucide.BarChart3, 'monitor': lucide.Monitor };
 export function AurexServicesMono({ services, bg, font }) {
   if (!services?.length) return null;
   const m = monoStyle(bg, font, '#F9FAFB');
-  const clean = (html) => (html || '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ');
-  const handleCheckout = async (s) => {
-    if (!s.stripe_price_id) { toast.info('No pricing configured'); return; }
-    try { const r = await checkoutAPI.create({ price_id: s.stripe_price_id, service_name: s.title, amount: s.price }); if (r.data.url) window.location.href = r.data.url; } catch { toast.error('Checkout error'); }
-  };
+  const clean = (html) => (html || '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').replace(/<[^>]*>/g, '');
   return (
     <section className={monoShell} style={m.style} id="services" data-testid="services-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
           <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>What we offer</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">Our Services</h2>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">¿Qué obtienes dentro de Aurex?</h2>
         </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((s, idx) => {
-            const Icon = monoIconMap[s.icon] || lucide.Briefcase;
-            return (
-              <Reveal delay={idx * 80} key={s.id} className="rounded-xl p-8 transition-colors group" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
-                <Icon className="w-7 h-7 mb-5" />
-                <h3 className="font-semibold text-lg mb-2">{s.title}</h3>
-                <div className={`text-sm ${m.mutedClass} leading-relaxed mb-4 rich-text-content`} dangerouslySetInnerHTML={{ __html: clean(s.short_description || s.description || '') }} />
-                <div className="flex items-center justify-between pt-4 mt-4" style={{ borderTop: `1px solid ${m.borderColor}` }}>
-                  {s.external_url ? (
-                    <a href={s.external_url} target={s.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-xs font-medium inline-flex items-center gap-1 group-hover:gap-2 transition-all" data-testid={`service-link-${s.id}`}>Read more <ArrowRight className="w-3.5 h-3.5" /></a>
-                  ) : (
-                    <Link to={`/service/${s.id}`} className="text-xs font-medium inline-flex items-center gap-1 group-hover:gap-2 transition-all" data-testid={`service-link-${s.id}`}>Read more <ArrowRight className="w-3.5 h-3.5" /></Link>
-                  )}
-                  {s.price > 0 && (
-                    <button onClick={() => handleCheckout(s)} className="text-xs font-medium px-4 py-2 rounded-full transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }}>${s.price}</button>
-                  )}
+        {/* Mockup layout: image-top cards in a 3-column grid, title centered below,
+            short description centered, and a single "See All Services" CTA below the grid. */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
+          {services.slice(0, 6).map((s, idx) => (
+            <Reveal delay={idx * 80} key={s.id} className="flex flex-col items-center text-center group" data-testid={`service-card-${s.id}`}>
+              {s.image ? (
+                <div className="w-full aspect-[4/3] rounded-lg overflow-hidden mb-6 relative">
+                  <img src={resolveImg(s.image)} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: m.isDark ? 'grayscale(15%)' : 'grayscale(25%)' }} />
                 </div>
-              </Reveal>
-            );
-          })}
+              ) : (
+                <div className="w-full aspect-[4/3] rounded-lg mb-6 flex items-center justify-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6' }}>
+                  <lucide.Briefcase className="w-10 h-10 opacity-30" />
+                </div>
+              )}
+              <h3 className="font-bold text-xl md:text-2xl mb-3" style={{ fontFamily: "'Playfair Display', serif" }}>{s.title}</h3>
+              {(s.short_description || s.description) && (
+                <p className={`text-sm leading-relaxed ${m.mutedClass} max-w-xs`}>{clean(s.short_description || s.description).slice(0, 130)}</p>
+              )}
+            </Reveal>
+          ))}
         </div>
+        <Reveal delay={200} className="text-center mt-14">
+          <Link to="/services" className="inline-flex items-center gap-2 px-10 py-3 rounded-full text-sm font-medium transition-colors hover:opacity-80" style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827' }} data-testid="services-view-all">
+            See All Services <ArrowRight className="w-4 h-4" />
+          </Link>
+        </Reveal>
       </div>
     </section>
   );
@@ -651,33 +728,55 @@ export function AurexGalleryMono({ items, bg, font }) {
   );
 }
 
-// Testimonials
+// Testimonials — carousel: arrows + dots, 3 visible on desktop, 1 on mobile.
 export function AurexTestimonialsMono({ items, bg, font }) {
-  if (!items?.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
+  const [page, setPage] = useState(0);
+  const [perView, setPerView] = useState(3);
+  useEffect(() => {
+    const calc = () => setPerView(window.innerWidth < 640 ? 1 : window.innerWidth < 1024 ? 2 : 3);
+    calc();
+    window.addEventListener('resize', calc);
+    return () => window.removeEventListener('resize', calc);
+  }, []);
+  if (!items?.length) return null;
+  const pageCount = Math.max(1, Math.ceil(items.length / perView));
+  const go = (n) => setPage((n + pageCount) % pageCount);
+  const visible = items.slice(page * perView, page * perView + perView);
   return (
     <section className={monoShell} style={m.style} id="testimonials" data-testid="testimonials-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Testimonials</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="testimonials-title">What clients say</h2>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-3" data-testid="testimonials-title" style={{ fontFamily: "'Playfair Display', serif" }}>Testimonials</h2>
+          <p className={`text-sm ${m.mutedClass}`}>Find out why so many companies prefer us over others!</p>
         </Reveal>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {items.slice(0, 3).map((t, idx) => (
-            <Reveal delay={idx * 100} key={t.id} className="rounded-xl p-8 relative" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
-              <Quote className="w-7 h-7 mb-5 opacity-40" />
-              <p className={`text-sm leading-relaxed ${m.mutedClass} mb-6`}>{t.content}</p>
-              <div className="flex items-center gap-3 pt-5" style={{ borderTop: `1px solid ${m.borderColor}` }}>
-                {t.avatar && <img src={resolveImg(t.avatar)} alt="" className="w-10 h-10 rounded-full object-cover" style={{ filter: 'grayscale(100%)' }} />}
-                <div>
-                  <p className="font-semibold text-sm">{t.name}</p>
-                  <p className={`text-xs ${m.mutedClass}`}>{t.role || t.company}</p>
-                </div>
-                <div className="ml-auto flex gap-0.5">{[1,2,3,4,5].map(s => <Star key={s} className="w-3 h-3" style={{ color: s <= (t.rating || 5) ? (m.isDark ? '#FFFFFF' : '#111827') : (m.isDark ? 'rgba(255,255,255,0.2)' : '#E5E7EB'), fill: s <= (t.rating || 5) ? (m.isDark ? '#FFFFFF' : '#111827') : 'none' }} />)}</div>
-              </div>
-            </Reveal>
-          ))}
+        <div className="relative">
+          {/* Prev arrow */}
+          <button onClick={() => go(page - 1)} aria-label="Previous testimonials" className={`absolute -left-2 md:-left-8 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 ${m.isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} data-testid="testimonials-prev">
+            <lucide.ChevronLeft className="w-5 h-5" />
+          </button>
+          <div className="grid gap-6 px-2" style={{ gridTemplateColumns: `repeat(${perView}, minmax(0, 1fr))` }}>
+            {visible.map((t, idx) => (
+              <Reveal delay={idx * 100} key={`${page}-${t.id}`} className="rounded-xl p-8 text-center flex flex-col items-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#F3F4F6' }} data-testid={`testimonial-card-${t.id}`}>
+                <p className={`text-sm md:text-base italic leading-relaxed mb-6 ${m.mutedClass}`}>"{t.content}"</p>
+                {t.avatar && <img src={resolveImg(t.avatar)} alt="" className="w-20 h-20 rounded-full object-cover mb-5" style={{ filter: 'grayscale(100%)' }} />}
+                <h3 className="font-bold text-lg md:text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{t.name}</h3>
+                {(t.role || t.company) && <p className={`text-[11px] uppercase tracking-[0.2em] mt-2 ${m.eyebrowClass}`}>{t.role || t.company}</p>}
+              </Reveal>
+            ))}
+          </div>
+          {/* Next arrow */}
+          <button onClick={() => go(page + 1)} aria-label="Next testimonials" className={`absolute -right-2 md:-right-8 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 ${m.isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} data-testid="testimonials-next">
+            <lucide.ChevronRight className="w-5 h-5" />
+          </button>
         </div>
+        {pageCount > 1 && (
+          <div className="flex justify-center gap-2 mt-10">
+            {Array.from({ length: pageCount }).map((_, i) => (
+              <button key={i} onClick={() => setPage(i)} className={`rounded-full transition-all ${i === page ? 'w-6' : 'w-2 hover:opacity-60'} h-2`} style={{ backgroundColor: i === page ? (m.isDark ? '#FFFFFF' : '#111827') : (m.isDark ? 'rgba(255,255,255,0.3)' : 'rgba(17,24,39,0.3)') }} aria-label={`Page ${i + 1}`} data-testid={`testimonials-dot-${i}`} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );

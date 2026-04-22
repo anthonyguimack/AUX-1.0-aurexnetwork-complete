@@ -22,6 +22,7 @@ const sectionLabels = {
   aurex_events: 'Events (from AUX Calendar)',
   aurex_partners: 'Partners',
   aurex_clients: 'Our Clients',
+  aurex_video: 'Video',
 };
 
 function SortableItem({ id, label, enabled, config, onToggle, onConfigChange, showAurexControls }) {
@@ -123,11 +124,26 @@ export default function SectionOrderManager() {
   const [sections, setSections] = useState({});
   const [configs, setConfigs] = useState({});
   const [loading, setLoading] = useState(false);
-  const [activeTheme, setActiveTheme] = useState('default');
-  const [theme, setTheme] = useState('default'); // theme being edited
+  const [activeTheme, setActiveTheme] = useState(null);
+  const [theme, setTheme] = useState(null); // theme being edited — initialised to the site's active theme on mount
+  const [bootstrapped, setBootstrapped] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 5 } }));
 
+  // Bootstrap — read the site's active theme once and open the manager with that scope preselected.
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await adminAPI.getSettings();
+        const at = r.data?.active_theme || 'default';
+        setActiveTheme(at);
+        setTheme(prev => prev || at);
+      } catch { setActiveTheme('default'); setTheme('default'); }
+      finally { setBootstrapped(true); }
+    })();
+  }, []);
+
   const loadAll = useCallback(async () => {
+    if (!theme) return;
     try {
       const [orderRes, settingsRes, configRes] = await Promise.all([
         adminAPI.getSectionOrder(theme === 'default' ? null : theme),
@@ -137,13 +153,10 @@ export default function SectionOrderManager() {
       setOrder(orderRes.data || []);
       setSections(settingsRes.data?.sections || {});
       setConfigs(configRes.data || {});
-      if (!activeTheme || activeTheme === 'default') {
-        setActiveTheme(settingsRes.data?.active_theme || 'default');
-      }
     } catch (e) { console.error(e); }
-  }, [theme]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [theme]);
 
-  useEffect(() => { loadAll(); }, [loadAll]);
+  useEffect(() => { if (bootstrapped) loadAll(); }, [loadAll, bootstrapped]);
 
   const handleDragEnd = (event) => {
     const { active, over } = event;
@@ -181,13 +194,13 @@ export default function SectionOrderManager() {
             Page Builder
             {showAurexControls && <Sparkles className="w-5 h-5 text-amber-500" />}
           </h1>
-          <p className="text-sm text-slate-500 mt-1">Drag to reorder, toggle visibility. Select Aurex to unlock per-section background & font pickers.</p>
-          <p className="text-[11px] text-slate-400 mt-0.5">Active theme on website: <strong className="uppercase">{activeTheme}</strong></p>
+          <p className="text-sm text-slate-500 mt-1">Drag to reorder, toggle visibility. {showAurexControls ? 'Aurex scope lets you pick a custom background colour and font per section.' : 'Select Aurex to unlock per-section background & font pickers.'}</p>
+          <p className="text-[11px] text-slate-400 mt-0.5">Active theme on website: <strong className="uppercase">{activeTheme || '…'}</strong>{activeTheme && activeTheme !== theme && <span className="ml-2 text-amber-600">· You are editing the <strong className="uppercase">{theme}</strong> scope (changes will not affect the live theme).</span>}</p>
         </div>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2">
             <label className="text-xs text-slate-500">Editing:</label>
-            <select value={theme} onChange={(e) => setTheme(e.target.value)} className="text-sm border border-slate-200 rounded px-3 py-1.5 bg-white" data-testid="theme-scope-select">
+            <select value={theme || ''} onChange={(e) => setTheme(e.target.value)} className="text-sm border border-slate-200 rounded px-3 py-1.5 bg-white" data-testid="theme-scope-select">
               <option value="default">Default / Modern / Classic (legacy order)</option>
               {THEMES.filter(t => t.id === 'aurex').map(t => <option key={t.id} value={t.id}>{t.name} — full config</option>)}
             </select>

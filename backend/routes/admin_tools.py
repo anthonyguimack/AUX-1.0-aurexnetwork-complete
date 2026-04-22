@@ -110,7 +110,7 @@ async def bulk_update(request: Request, user: dict = Depends(require_admin)):
 DEFAULT_SECTION_ORDER = ["hero", "about", "services", "news", "blog", "reading_list", "map", "portfolio", "gallery", "testimonials", "contact"]
 # Aurex theme includes 7 additional sections
 AUREX_DEFAULT_ORDER = [
-    "hero", "about", "aurex_audience", "services", "aurex_process", "aurex_pricing",
+    "hero", "about", "aurex_audience", "services", "aurex_process", "aurex_video", "aurex_pricing",
     "aurex_team", "testimonials", "aurex_events", "news", "blog", "aurex_partners", "aurex_clients",
     "map", "contact",
 ]

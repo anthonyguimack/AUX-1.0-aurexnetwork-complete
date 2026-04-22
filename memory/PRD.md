@@ -390,7 +390,50 @@ New code in `components/AurexSections.js`:
 
 **Phase 4 = DONE.** Full 4-phase Aurex One-page theme now shippable end-to-end.
 
-### Iteration 71 — Per-section color for legacy sections + custom hex picker (Apr 22, 2026)
+### Iteration 72 — Big CMS + Frontend batch (Apr 22, 2026)
+
+Shipped in one push after detailed user feedback (Spanish/English mix). All 11 items:
+
+**CMS**
+
+1. **Hero 3-button CMS preview** — `HeroSlidePreview` inside `HeroSlideForm` now renders up to 3 pill-shaped preview chips in a flex-wrap row at the `button_x/y` coordinate. First is filled primary, rest are outlined; `hasContent` also checks `button_2_text` / `button_3_text`. Preview refreshes live as admin types in the new fields. Layer-positioning stays with a single `button_x/y` anchor (matches how the public site renders them).
+
+2. **New Aurex section: `aurex_video`** — polymorphic backend added the key to `VALID_SECTIONS` (and excluded from `ITEM_SECTIONS` since video is config-only). Schema `aurex_video` defines config fields `title, subtitle, video_url, poster_url, autoplay, aspect_ratio`. Added to the admin Page Builder's `sectionLabels`, default Aurex order, and the `useAurexSections` fetch hook.
+
+3. **About Us Manager** — added `Call-to-action Button` section with three fields: `button_text`, `button_url` (accepts `/path`, `#anchor`, or external URL), and `button_open_in_new_tab` checkbox. No DB migration needed (schema-less).
+
+4. **Aurex item icons = searchable dropdown** — new `IconPicker` component inside `AurexSectionsManager`. Curated list (`lib/aurexIconList.js`, ~80 lucide names) shown in a 6-col grid with live search. Selected icon previewed on the trigger button. Replaces the free-text input for the `icon` field in any section whose schema declares `type: 'icon'`.
+
+5. **Aurex item descriptions = rich text** — added `type: 'rich'` to `aurex_audience` and `aurex_process` item schemas. `FieldInput` renders them with the existing `RichTextEditor` (TipTap). Frontend renders via `dangerouslySetInnerHTML` inside `.rich-text-content` so formatting (bold / italic / lists / links) carries through.
+
+6. **Our Team dynamic social icons** — replaced the 3 fixed fields (`linkedin_url`, `twitter_url`, `other_url`) with a new `type: 'social_links'` which reads `settings.social_links` (the list already configured at Settings → Social Links) and renders one URL input per enabled network with its icon prefix. Items store them as `{ [network_id]: url }` so adding/removing platforms in Settings just works — the frontend auto-renders only the filled ones.
+
+7. **Page Builder default scope = active theme** — `SectionOrderManager` now bootstraps from `settings.active_theme` on mount (was hardcoded to `'default'`). Added a warning banner when the edited scope differs from the active theme. Admin can still switch scopes via the select but doesn't have to every time.
+
+**Website (frontend)**
+
+8. **Hero 3 buttons on public** — extracted `HeroButtonsRow` helper inside `HeroSection.js` and replaced the 3 button-render sites (legacy-layout, positioned desktop, mobile stacked). Primary button = filled white pill with arrow; secondary / tertiary = outlined transparent pills. Respects each button's `window_open` target individually.
+
+9. **Section Video component** — `AurexVideo` in `components/AurexSections.js`. `buildEmbedUrl()` detects YouTube (`youtube.com`, `youtu.be`, `shorts/`) and Vimeo patterns and converts to proper embed URLs with optional autoplay+mute+loop; direct `.mp4`/`.webm`/`.ogg` URLs render as `<video>` with poster/controls; unsupported URLs show a graceful fallback. Respects admin's `aspect_ratio` choice (16:9 / 4:3 / 1:1 / 21:9) via CSS `aspectRatio`. Resilience: HomePage now appends any known Aurex keys missing from the saved `section_orders.aurex` (fixes pre-existing orders not containing the new `aurex_video`).
+
+10. **About button** — rendered below the signature block as an outlined pill with arrow. Auto-contrast border+text via the shared `monoStyle` helper so it works on any bg color the admin picks.
+
+11. **Services redesign** (per `section_services.png`) — image-top cards in a 3×2 grid: `4/3` cover image with subtle grayscale → color on hover, Playfair-serif title centered, short description centered, single "See All Services" outlined CTA below the grid. Dropped the bordered-card + inline checkout button pattern (checkout still accessible via /service/:id).
+
+12. **Testimonials carousel** (per `section_testimonials.png`) — `AurexTestimonialsMono` rewritten. Responsive `perView` (3 desktop / 2 tablet / 1 mobile). Arrows positioned `-left-8 / -right-8` with circular bg. Page dots stretch when active (`w-6` vs `w-2`). Italic quotes centered, round avatar (grayscale), Playfair name, uppercase-tracked role. All `data-testid` hooks exposed (`testimonials-prev`, `testimonials-next`, `testimonials-dot-{i}`, `testimonial-card-{id}`).
+
+13. **Our Team hover fix** — name + role always sit **outside** the `aspect-square` photo container (separate `pt-4 text-center` div below). Overlay (bio + social icons) is strictly absolute-positioned inside the photo via `.absolute.inset-x-0.bottom-0.bg-gradient-to-t.opacity-0.group-hover:opacity-100`. No more overlap with name/role.
+
+**Verified end-to-end via Playwright on /**:
+- `hero_buttons: ["More Information 2", "Membership Lounge", "Notify Me!"]` (all 3 rendered + variant B bucket in effect)
+- `about_btn_text: "Learn About Aurex"`
+- `services_cards: 3` + `services_view_all: true`
+- `video_section: true` + `video_iframe_src: "https://www.youtube.com/embed/dQw4w9WgXcQ"`
+- `testimonials_prev / next / dots: 2`
+- Team photos render with name/role below, overlay opacity-0 by default (probed)
+- Lint clean across 7 frontend files + Python route.
+
+
 
 **User feedback (both parts resolved):**
 1. *"Changing the colors of each section only affects new sections, not old ones."*

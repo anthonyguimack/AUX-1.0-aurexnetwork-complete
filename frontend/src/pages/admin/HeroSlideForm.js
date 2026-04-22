@@ -32,7 +32,7 @@ function HeroSlidePreview({ form }) {
   const photoSrc = resolveSrc(form.photo);
   const videoEmbedUrl = resolveVideoUrl(form.video_embed);
 
-  const hasContent = form.title || form.subtitle || form.description || form.button_text ||
+  const hasContent = form.title || form.subtitle || form.description || form.button_text || form.button_2_text || form.button_3_text ||
     (form.slide_type === 'photo' && form.photo) || (form.slide_type === 'video' && form.video_embed);
 
   if (!hasContent) return (
@@ -66,11 +66,17 @@ function HeroSlidePreview({ form }) {
             <div className="text-[10px] md:text-xs leading-relaxed [&_p]:m-0" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: form.description }} />
           </div>
         )}
-        {form.button_text && (
-          <div className="absolute px-1" style={{ left: `${(form.button_x || 100) / 7}%`, top: `${(form.button_y || 180) / 3}%` }}>
-            <span className="inline-flex items-center gap-1 bg-white px-3 py-1 md:px-4 md:py-1.5 rounded-sm font-medium text-[10px] md:text-xs" style={{ color: '#1a2332' }}>
-              {form.button_text} <ArrowRight className="w-2.5 h-2.5" />
-            </span>
+        {(form.button_text || form.button_2_text || form.button_3_text) && (
+          <div className="absolute px-1 flex flex-wrap gap-1.5" style={{ left: `${(form.button_x || 100) / 7}%`, top: `${(form.button_y || 180) / 3}%` }}>
+            {[
+              { t: form.button_text, primary: true },
+              { t: form.button_2_text, primary: false },
+              { t: form.button_3_text, primary: false },
+            ].filter(b => b.t).map((b, i) => (
+              <span key={i} className={`inline-flex items-center gap-1 px-3 py-1 md:px-4 md:py-1.5 rounded-sm font-medium text-[10px] md:text-xs ${b.primary ? 'bg-white' : 'bg-transparent border border-white text-white'}`} style={b.primary ? { color: '#1a2332' } : undefined}>
+                {b.t} {b.primary && <ArrowRight className="w-2.5 h-2.5" />}
+              </span>
+            ))}
           </div>
         )}
         {form.slide_type === 'video' && videoEmbedUrl && (

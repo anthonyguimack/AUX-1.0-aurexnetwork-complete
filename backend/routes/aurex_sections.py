@@ -30,9 +30,9 @@ db = client[os.environ["DB_NAME"]]
 
 VALID_SECTIONS = {
     "aurex_audience", "aurex_process", "aurex_pricing",
-    "aurex_team", "aurex_partners", "aurex_clients", "aurex_events",
+    "aurex_team", "aurex_partners", "aurex_clients", "aurex_events", "aurex_video",
 }
-ITEM_SECTIONS = VALID_SECTIONS - {"aurex_events"}
+ITEM_SECTIONS = VALID_SECTIONS - {"aurex_events", "aurex_video"}
 
 
 def _check(section: str):

@@ -2,13 +2,81 @@ import React, { useEffect, useState, useRef } from 'react';
 import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { AUREX_SECTIONS } from '../../lib/aurexSchemas';
+import { useSettings } from '../../App';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X, Copy } from 'lucide-react';
+import RichTextEditor from '../../components/RichTextEditor';
+import { AUREX_ITEM_ICONS } from '../../lib/aurexIconList';
+import * as lucide from 'lucide-react';
+import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X, Copy, Search } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
+
+function IconPicker({ value, onChange, fieldKey }) {
+  const [open, setOpen] = useState(false);
+  const [q, setQ] = useState('');
+  const filtered = AUREX_ITEM_ICONS.filter(n => n.toLowerCase().includes(q.toLowerCase()));
+  const Current = value ? (lucide[pascal(value)] || lucide.Circle) : lucide.Circle;
+  return (
+    <div className="relative mt-1">
+      <button type="button" onClick={() => setOpen(o => !o)} className="w-full flex items-center gap-2 px-3 py-2 border border-slate-200 rounded-sm text-sm bg-white hover:border-slate-400" data-testid={`field-${fieldKey}`}>
+        <Current className="w-4 h-4 text-slate-600" />
+        <span className="flex-1 text-left font-mono text-xs">{value || '— pick an icon —'}</span>
+        <span className="text-xs text-slate-400">{open ? '▲' : '▼'}</span>
+      </button>
+      {open && (
+        <div className="absolute z-50 mt-1 w-full max-h-72 overflow-hidden rounded-sm border border-slate-200 bg-white shadow-xl flex flex-col">
+          <div className="p-2 border-b border-slate-100 flex items-center gap-2">
+            <Search className="w-3.5 h-3.5 text-slate-400" />
+            <input autoFocus value={q} onChange={e => setQ(e.target.value)} placeholder="Search icons…" className="flex-1 text-sm outline-none" />
+          </div>
+          <div className="overflow-y-auto p-2 grid grid-cols-6 gap-1">
+            {filtered.map(name => {
+              const Ico = lucide[pascal(name)];
+              if (!Ico) return null;
+              const selected = value === name;
+              return (
+                <button key={name} type="button" onClick={() => { onChange(name); setOpen(false); setQ(''); }} title={name} className={`aspect-square flex items-center justify-center rounded hover:bg-slate-100 ${selected ? 'bg-[#0D9488]/10 ring-1 ring-[#0D9488]' : ''}`}>
+                  <Ico className="w-4 h-4" />
+                </button>
+              );
+            })}
+            {filtered.length === 0 && <div className="col-span-6 text-center text-xs text-slate-400 py-4">No icons match "{q}"</div>}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function SocialLinksField({ value, onChange, fieldKey }) {
+  const settings = useSettings();
+  const networks = (settings.social_links || []).filter(n => n.platform);
+  const map = value || {};
+  if (networks.length === 0) {
+    return <p className="text-xs text-slate-400 italic mt-1">Add social networks at <span className="font-mono">Settings → Social Links</span> first. They'll appear here for each team member.</p>;
+  }
+  return (
+    <div className="mt-1 space-y-2" data-testid={`field-${fieldKey}`}>
+      {networks.map(n => {
+        const Ico = lucide[pascal(n.icon || 'globe')] || lucide.Globe;
+        return (
+          <div key={n.id} className="flex items-center gap-2">
+            <div className="w-9 h-9 flex items-center justify-center bg-slate-100 rounded-sm text-slate-600 flex-shrink-0"><Ico className="w-4 h-4" /></div>
+            <Input type="url" value={map[n.id] || ''} onChange={e => onChange({ ...(map || {}), [n.id]: e.target.value })} placeholder={`${n.platform} URL (optional)`} />
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function pascal(s) {
+  if (!s) return '';
+  return String(s).replace(/(^|[-_ ])(\w)/g, (_, __, c) => c.toUpperCase()).replace(/[-_ ]/g, '');
+}
 
 function FieldInput({ field, value, onChange }) {
   const fileRef = useRef(null);
@@ -26,6 +94,15 @@ function FieldInput({ field, value, onChange }) {
     finally { setUploading(false); if (fileRef.current) fileRef.current.value = ''; }
   };
 
+  if (field.type === 'rich') {
+    return <div className="mt-1" data-testid={`field-${field.key}`}><RichTextEditor value={value || ''} onChange={onChange} placeholder={field.placeholder} /></div>;
+  }
+  if (field.type === 'icon') {
+    return <IconPicker value={value} onChange={onChange} fieldKey={field.key} />;
+  }
+  if (field.type === 'social_links') {
+    return <SocialLinksField value={value} onChange={onChange} fieldKey={field.key} />;
+  }
   if (field.type === 'textarea') {
     return <textarea value={value || ''} onChange={e => onChange(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-sm text-sm min-h-[70px]" placeholder={field.placeholder} data-testid={`field-${field.key}`} />;
   }

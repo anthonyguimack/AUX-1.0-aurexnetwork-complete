@@ -29,7 +29,7 @@ const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/
 
 import HeroSection from '../components/HeroSection';
 import {
-  AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, useAurexSections,
+  AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, AurexVideo, useAurexSections,
   AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
   AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
 } from '../components/AurexSections';
@@ -603,10 +603,18 @@ export default function HomePage() {
   const isAurex = (settings.active_theme || 'default') === 'aurex';
   const aurexData = useAurexSections();
   const aurexConfigs = (settings.section_configs && settings.section_configs.aurex) || {};
-  const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+  const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
   const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
   const perThemeOrder = settings.section_orders && settings.section_orders[settings.active_theme || 'default'];
-  const sectionOrder = perThemeOrder || settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
+  let sectionOrder = perThemeOrder || settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
+  // If Aurex theme is active, append any known Aurex keys that the stored order
+  // is missing (can happen after we add new Aurex sections like `aurex_video`
+  // without asking the admin to re-save).
+  if (isAurex && perThemeOrder) {
+    const knownAurexKeys = aurexDefaultOrder.filter(k => k.startsWith('aurex_'));
+    const missing = knownAurexKeys.filter(k => !sectionOrder.includes(k));
+    if (missing.length) sectionOrder = [...sectionOrder, ...missing];
+  }
   const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
 
   const mapsLang = settings.maps_language || 'local';
@@ -650,6 +658,7 @@ export default function HomePage() {
     aurex_events: aurexSection('aurex_events', AurexEvents),
     aurex_partners: aurexSection('aurex_partners', AurexPartners),
     aurex_clients: aurexSection('aurex_clients', AurexClients),
+    aurex_video: aurexSection('aurex_video', AurexVideo),
   };
 
   return (
