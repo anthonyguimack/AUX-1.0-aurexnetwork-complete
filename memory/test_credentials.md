@@ -1,12 +1,15 @@
 # Test Credentials
 
 ## Admin
-- Email: admin@consultant.com
-- Password: Admin123!
+- Email: `admin@consultant.com`
+- Password: `Admin123!`
+- Role: admin
 
-## Member (Test)
-- Generate an invite code via admin account to test the enrollment wizard
+## Mentor (sample member)
+- Email: `carlos@example.com`
+- Password: `Mentor123!`
+- Role: member (mentor-enabled)
 
-## Mentor (for Earnings/Payouts testing)
-- Email: carlos@example.com
-- Password: Mentor123!
+## Notes
+- Used for all admin/CMS flows including `/admin/settings`, `/admin/aurex-sections`, `/admin/hero-ab`, etc.
+- Member login at `/my-account/register` and standard public login modal.

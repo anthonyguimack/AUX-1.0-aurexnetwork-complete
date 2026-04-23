@@ -600,7 +600,32 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
+### Iteration 74 — Multi-Language (EN+ES) Complete (Apr 23, 2026)
+
+**Complete bilingual frontend + CMS wiring.** The scaffolding (i18n.js, LanguageSwitcher, LocalizedField, Settings Languages tab) was built previously; this session finished wiring it into every component.
+
+**Frontend consumption (`tt()` helper):**
+- `AurexSections.js` — added `const tt = useT()` + wrapped every user-facing string in all 7 Aurex sections (Audience, Process, Pricing, Team, Events, Partners, Clients) and 10 mono variants (About, Services, News, Blog, Reading, Map, Portfolio, Gallery, Testimonials, Contact). `MonoButton`, `SectionHeader` and `AurexHeroMono` also localize `text`/`href`/`title`/`subtitle`/`description`/`button_*` via `tt()`.
+- `HeroSection.js` — added `useT()` + wrapped every slide field (title, subtitle, description, button_text/url) in both legacy and modern+aurex layouts, plus `HeroButtonsRow`.
+
+**CMS — LocalizedField integration:**
+- `AurexSectionsManager.js` `FieldInput` now wraps `text`, `textarea`, and `rich` field types with `<LocalizedField>`. URLs, numbers, booleans, selects, images, icons, and social_links remain scalar.
+- Each localized field shows EN/ES tabs with a green dot indicating which locale is filled in.
+- Fixed import path bug in `LocalizedField.js` (was `../lib/i18n`, corrected to `../../lib/i18n`).
+
+**Locale initialization race fix:**
+- `LanguageProvider` previously read `localStorage.aurex_locale` and `?lang=` on mount, but `settings` was still empty at that point — the `enabled.includes(candidate)` check rejected stored locales. Now re-runs in a `useEffect` after settings arrive (one-time `initialized` flag).
+
+**Backend** — no schema changes needed. `aurex_section_configs` / `aurex_section_items` are stored as raw dicts, so `{title: {en: "…", es: "…"}}` round-trips transparently through existing PUT/GET endpoints.
+
+**Verified end-to-end:**
+- iteration_61 testing agent → 19/19 backend tests pass.
+- Playwright visual: seeded Audience config as `{en: "Aurex is for you", es: "Aurex es para ti"}` → homepage renders EN title by default; click `[data-testid="language-switcher"]` → select ES → title updates to "Aurex es para ti" and CTA to "Comienza tu camino" without reload.
+- URL `?lang=es` forces ES regardless of localStorage.
+- Switcher auto-hides when only one language is enabled.
+
 ## Pending/Backlog
+- (P2) SEO pre-render: nightly job to emit hydrated `/index.html` with meta tags + critical above-the-fold content (important for bilingual SEO).
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
 - (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
