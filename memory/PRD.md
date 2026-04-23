@@ -600,6 +600,36 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
+### Iteration 77 — Blog summary rich-text + Contact + Settings i18n (Apr 23, 2026)
+
+**Verified iteration_64: 15/15 backend + frontend pass. Testing agent fixed a critical bug in HomePage.js ContactSection.**
+
+**Blog summary (rich text + HTML rendering):**
+- `BlogManager.js` — `summary` field switched from `textarea` → `RichTextEditor` wrapped in `LocalizedField`. Admin can now format the teaser.
+- `NewsPage.js` — renders post summary as HTML via `dangerouslySetInnerHTML` with `line-clamp-3` + `rich-text-content` styling. Uses `tt()` on title/summary. Filters posts by `itemHasLocale(p.title, lang)`.
+- `NewsDetailPage.js` — summary now renders as italic intro block above main content; `tt()` applied to title/summary/content.
+
+**Contact Section CMS localized (`ContactSettingsManager.js`):**
+- 7 fields wrapped with `<LocalizedField>`: `title`, `subtitle`, `description`, `name_placeholder`, `email_placeholder`, `message_placeholder`, `submit_text`.
+- `HomePage.js` `ContactSection` now imports and uses `useT()` — fixed a crash that occurred when switching to ES with localized contact settings (testing agent caught this and applied the fix).
+
+**Settings → General CMS localized (`SettingsManager.js`):**
+- Added `LocalizedField` to 6 general-tab fields: `brand_name`, `tagline`, `meta_title`, `meta_description`, `footer_description`, `footer_copyright`.
+
+**Public consumers updated:**
+- `components/layout/Footer.js` — `tt()` for `brand_name`, `footer_description`, `footer_copyright`.
+- `components/layout/Navbar.js` — all 3 variants (Default, Modern/Aurex, Classic) use `tt()` on `brand_name`/`tagline`.
+- `App.js` `document.title` — reads localized tagline/brand_name via direct `i18nT()` helper (no hook dependency).
+
+**Backend** — no changes; existing endpoints accept and persist raw dicts.
+
+## Pending/Backlog
+- (P2) SEO pre-render: nightly job emitting hydrated `/index.html` with meta tags + above-the-fold content (important for bilingual SEO).
+- (P2) S3/Cloud Image Storage migration
+- (P2) Production SMTP Configuration
+- (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
+- (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog (currently only MentorshipProfile has it)
+
 ### Iteration 76 — Locale-scoped items + 5 managers with LocalizedField (Apr 23, 2026)
 
 **Per-item locale scoping.** Items (cards, testimonials, posts, etc.) now auto-hide when their primary field has no content in the current locale. Verified via iteration_63: 28/28 backend + frontend manual tests pass.
