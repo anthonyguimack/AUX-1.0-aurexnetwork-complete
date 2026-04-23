@@ -149,13 +149,20 @@
   font-family: 'Playfair Display', serif;
 }
 .rich-text-content p {
-  @apply mb-4 leading-relaxed text-slate-600;
+  @apply mb-4 leading-relaxed;
+  /* Inherit color from the containing block so dark-themed sections (Our
+     Process on #1F2937, Audience on dark bg, hero descriptions, etc.) render
+     with their configured muted color class (text-gray-300/400) instead of
+     being hard-pinned to slate-600. */
+  color: inherit;
 }
 .rich-text-content ul {
-  @apply list-disc pl-6 mb-4 space-y-2 text-slate-600;
+  @apply list-disc pl-6 mb-4 space-y-2;
+  color: inherit;
 }
 .rich-text-content ol {
-  @apply list-decimal pl-6 mb-4 space-y-2 text-slate-600;
+  @apply list-decimal pl-6 mb-4 space-y-2;
+  color: inherit;
 }
 .rich-text-content ul ul,
 .rich-text-content ol ol,
@@ -164,7 +171,9 @@
   @apply mt-2 mb-0;
 }
 .rich-text-content blockquote {
-  @apply border-l-4 border-teal-500 pl-4 italic text-slate-500 my-4;
+  @apply border-l-4 border-teal-500 pl-4 italic my-4;
+  color: inherit;
+  opacity: .85;
 }
 
 /* On dark surfaces (My Account area) the default slate-600/500 colors become
