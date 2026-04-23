@@ -57,16 +57,24 @@ const LangContext = createContext({ lang: 'en', setLang: () => {}, enabled: ['en
 export function LanguageProvider({ settings, children }) {
   const enabled = useMemo(() => (settings?.languages && settings.languages.length ? settings.languages : ['en']), [settings?.languages]);
   const defaultLang = settings?.default_language || enabled[0] || 'en';
-  // Resolve initial language: URL ?lang= → localStorage → default.
-  const [lang, setLangState] = useState(() => {
-    if (typeof window === 'undefined') return defaultLang;
+  // Start with default; we'll re-check after settings load.
+  const [lang, setLangState] = useState('en');
+  const [initialized, setInitialized] = useState(false);
+
+  // Re-check URL param and localStorage after settings load (enabled list is populated).
+  useEffect(() => {
+    if (!settings?.languages || settings.languages.length === 0) return; // settings not loaded yet
+    if (initialized) return; // already initialized
     const urlLang = new URLSearchParams(window.location.search).get('lang');
     const stored = localStorage.getItem('aurex_locale');
     const candidate = urlLang || stored || defaultLang;
-    return enabled.includes(candidate) ? candidate : defaultLang;
-  });
+    const resolved = enabled.includes(candidate) ? candidate : defaultLang;
+    setLangState(resolved);
+    setInitialized(true);
+  }, [settings?.languages, enabled, defaultLang, initialized]);
+
   // If admin removes the active language from settings, fall back gracefully.
-  useEffect(() => { if (!enabled.includes(lang)) setLangState(defaultLang); }, [enabled, lang, defaultLang]);
+  useEffect(() => { if (initialized && !enabled.includes(lang)) setLangState(defaultLang); }, [enabled, lang, defaultLang, initialized]);
   const setLang = (l) => {
     if (!enabled.includes(l)) return;
     setLangState(l);

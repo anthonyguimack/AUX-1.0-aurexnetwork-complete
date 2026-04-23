@@ -106,8 +106,11 @@ function LucideIcon({ name, className = 'w-8 h-8' }) {
 // ─── 1. Aurex is for you (target audience) ───────────────────────────────
 
 export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const cols = Math.min(items.length, 3);
+  const ctaText = tt(config.cta_text);
+  const ctaUrl = tt(config.cta_url);
   return (
     <SectionShell {...c} data-testid="aurex-section-audience">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
@@ -115,15 +118,15 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
         {items.map((i, idx) => (
           <Reveal as="article" delay={idx * 100} key={i.id} className="border rounded-xl p-8" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB' }} data-testid={`audience-card-${i.id}`}>
             <LucideIcon name={i.icon} className="w-9 h-9 mb-5" />
-            <h3 className="text-xl font-semibold mb-2">{i.title}</h3>
-            {i.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: i.description }} />}
+            <h3 className="text-xl font-semibold mb-2">{tt(i.title)}</h3>
+            {i.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: tt(i.description) }} />}
           </Reveal>
         ))}
       </div>
-      {config.cta_text && config.cta_url && (
+      {ctaText && ctaUrl && (
         <div className="text-center mt-12">
-          <a href={config.cta_url} className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium transition-all hover:shadow-lg" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF' }} data-testid="audience-cta">
-            {config.cta_text} <ArrowRight className="w-4 h-4" />
+          <a href={ctaUrl} className="inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-medium transition-all hover:shadow-lg" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF' }} data-testid="audience-cta">
+            {ctaText} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
       )}
@@ -134,6 +137,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
 // ─── 2. Our Process (vertical timeline, alternating) ─────────────────────
 
 export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const c = { bg: bg || '#1F2937', font, contrast: contrast || aurexContrastFor(bg || '#1F2937') };
   return (
     <SectionShell {...c} data-testid="aurex-section-process">
@@ -150,8 +154,8 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
                 {step.step_number || (idx + 1)}
               </div>
               <div className={`pl-20 md:pl-0 md:w-1/2 ${isLeft ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
-                <h3 className="text-lg md:text-xl font-semibold mb-2">{step.title}</h3>
-                {step.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: step.description }} />}
+                <h3 className="text-lg md:text-xl font-semibold mb-2">{tt(step.title)}</h3>
+                {step.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: tt(step.description) }} />}
               </div>
             </Reveal>
           );
@@ -171,6 +175,7 @@ function parseFeatures(raw) {
 }
 
 export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
   const [annual, setAnnual] = useState(false);
   return (
@@ -193,12 +198,12 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
           return (
             <Reveal as="article" delay={idx * 100} key={plan.id} className={`rounded-2xl p-8 flex flex-col border transition-all ${featured ? 'scale-[1.03] lg:scale-[1.05] shadow-xl' : ''}`} style={{ borderColor: featured ? '#111827' : (c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB'), backgroundColor: featured && c.contrast === 'dark' ? '#FFFFFF' : undefined, color: featured && c.contrast === 'dark' ? '#111827' : undefined, borderWidth: featured ? 2 : 1 }} data-testid={`plan-card-${plan.id}`}>
               {plan.badge && (
-                <span className="inline-block self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: '#111827', color: '#FFFFFF' }}>{plan.badge}</span>
+                <span className="inline-block self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider mb-4" style={{ backgroundColor: '#111827', color: '#FFFFFF' }}>{tt(plan.badge)}</span>
               )}
-              <h3 className="text-xl font-semibold mb-2">{plan.name}</h3>
+              <h3 className="text-xl font-semibold mb-2">{tt(plan.name)}</h3>
               <div className="mb-6">
                 <span className="text-4xl font-bold">{plan.currency || '$'}{price}</span>
-                {plan.period && <span className="text-sm text-gray-500 ml-1">{plan.period}</span>}
+                {plan.period && <span className="text-sm text-gray-500 ml-1">{tt(plan.period)}</span>}
               </div>
               <ul className="flex-1 space-y-3 mb-8">
                 {features.map((f, i) => (
@@ -209,7 +214,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
                 ))}
               </ul>
               {plan.cta_text && (
-                <a href={plan.cta_url || '#'} className={`w-full text-center py-2.5 rounded-full text-sm font-medium transition-colors`} style={{ backgroundColor: featured ? '#111827' : 'transparent', color: featured ? '#FFFFFF' : 'inherit', border: featured ? 'none' : '1px solid currentColor' }}>{plan.cta_text}</a>
+                <a href={plan.cta_url || '#'} className={`w-full text-center py-2.5 rounded-full text-sm font-medium transition-colors`} style={{ backgroundColor: featured ? '#111827' : 'transparent', color: featured ? '#FFFFFF' : 'inherit', border: featured ? 'none' : '1px solid currentColor' }}>{tt(plan.cta_text)}</a>
               )}
             </Reveal>
           );
@@ -222,6 +227,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
 // ─── 4. Our Team ─────────────────────────────────────────────────────────
 
 export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const settings = useSettings();
   const networks = (settings.social_links || []).filter(n => n.platform);
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
@@ -252,7 +258,7 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
                 {/* Bottom bio strip — fades in on hover, strictly inside the photo. */}
                 {(m.bio || entries.length > 0) && (
                   <div className="absolute inset-x-0 bottom-0 p-4 bg-gradient-to-t from-black/85 via-black/60 to-transparent text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                    {m.bio && <p className="text-xs leading-relaxed mb-2 line-clamp-3">{m.bio}</p>}
+                    {m.bio && <p className="text-xs leading-relaxed mb-2 line-clamp-3">{tt(m.bio)}</p>}
                     {entries.length > 0 && (
                       <div className="flex gap-2 flex-wrap">
                         {entries.map(s => (
@@ -267,8 +273,8 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
               </div>
               {/* Name + role: always outside the photo so they never overlap icons. */}
               <div className="pt-4 text-center">
-                <h3 className="font-semibold text-base">{m.name}</h3>
-                {m.role && <p className={`text-xs uppercase tracking-wider mt-1 ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{m.role}</p>}
+                <h3 className="font-semibold text-base">{tt(m.name)}</h3>
+                {m.role && <p className={`text-xs uppercase tracking-wider mt-1 ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{tt(m.role)}</p>}
               </div>
             </Reveal>
           );
@@ -276,7 +282,7 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
       </div>
       {config.show_view_all && config.view_all_url && (
         <div className="text-center mt-12">
-          <a href={config.view_all_url} className="inline-flex items-center gap-2 text-sm font-medium hover:opacity-70">{config.view_all_text || 'View full team'} <ArrowRight className="w-4 h-4" /></a>
+          <a href={config.view_all_url} className="inline-flex items-center gap-2 text-sm font-medium hover:opacity-70">{tt(config.view_all_text) || 'View full team'} <ArrowRight className="w-4 h-4" /></a>
         </div>
       )}
     </SectionShell>
@@ -286,12 +292,13 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
 // ─── 5. Events (from AUX Calendar) ───────────────────────────────────────
 
 export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   return (
     <SectionShell {...c} data-testid="aurex-section-events">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       {items.length === 0 ? (
-        <p className="text-center text-sm" style={{ color: c.contrast === 'light' ? 'rgba(255,255,255,.6)' : '#6b7280' }}>{config.empty_message || 'No upcoming events.'}</p>
+        <p className="text-center text-sm" style={{ color: c.contrast === 'light' ? 'rgba(255,255,255,.6)' : '#6b7280' }}>{tt(config.empty_message) || 'No upcoming events.'}</p>
       ) : (
         <ul className="divide-y max-w-4xl mx-auto" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.1)' : '#E5E7EB' }}>
           {items.map((e, idx) => {
@@ -305,12 +312,12 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
                   <div className={`text-[10px] uppercase tracking-wider mt-1 ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>{month}</div>
                 </div>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold text-base md:text-lg truncate">{e.title}</h3>
+                  <h3 className="font-semibold text-base md:text-lg truncate">{tt(e.title)}</h3>
                   <p className={`text-sm truncate ${c.contrast === 'light' ? 'text-gray-400' : 'text-gray-500'}`}>
                     {e.start_time}{e.end_time ? ` – ${e.end_time}` : ''}{e.location ? ` · ${e.location}` : ''}
                   </p>
                 </div>
-                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium transition-colors" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF' }}>View <ArrowRight className="w-3 h-3" /></Link>
+                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-medium transition-colors" style={{ backgroundColor: c.contrast === 'light' ? '#FFFFFF' : '#111827', color: c.contrast === 'light' ? '#111827' : '#FFFFFF' }}>{tt(config.view_text) || 'View'} <ArrowRight className="w-3 h-3" /></Link>
               </Reveal>
             );
           })}
@@ -318,7 +325,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
       )}
       {config.view_all_url && items.length > 0 && (
         <div className="text-center mt-10">
-          <a href={config.view_all_url} className="inline-flex items-center gap-2 text-sm font-medium hover:opacity-70">{config.view_all_text || 'View all events'} <ArrowRight className="w-4 h-4" /></a>
+          <a href={config.view_all_url} className="inline-flex items-center gap-2 text-sm font-medium hover:opacity-70">{tt(config.view_all_text) || 'View all events'} <ArrowRight className="w-4 h-4" /></a>
         </div>
       )}
     </SectionShell>
@@ -351,10 +358,11 @@ function LogoRow({ items, autoscroll, scrollSpeed, contrast, className = '' }) {
 }
 
 export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const c = { bg: bg || '#111827', font, contrast: contrast || aurexContrastFor(bg || '#111827') };
   return (
     <SectionShell {...c} className="!py-12 md:!py-16" data-testid="aurex-section-partners">
-      {config.title && <h2 className="text-center text-xl md:text-2xl font-semibold mb-8">{config.title}</h2>}
+      {config.title && <h2 className="text-center text-xl md:text-2xl font-semibold mb-8">{tt(config.title)}</h2>}
       <LogoRow items={items} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed} contrast={c.contrast} />
     </SectionShell>
   );
@@ -521,6 +529,7 @@ export function AurexAboutMono({ data, bg, font }) {
 
 // Services
 export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   if (!services?.length) return null;
   const m = monoStyle(bg, font, '#F9FAFB');
   const clean = (html) => (html || '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').replace(/<[^>]*>/g, '');
@@ -532,9 +541,9 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
     <section className={monoShell} style={m.style} id="services" data-testid="services-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
-          {(cmsConfig.eyebrow || !cmsConfig.eyebrow === undefined) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'What we offer'}</p>}
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">{cmsConfig.title || 'Our Services'}</h2>
-          {cmsConfig.subtitle && <p className={`mt-4 max-w-2xl mx-auto ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
+          {(cmsConfig.eyebrow || !cmsConfig.eyebrow === undefined) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'What we offer'}</p>}
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="services-title">{tt(cmsConfig.title) || 'Our Services'}</h2>
+          {cmsConfig.subtitle && <p className={`mt-4 max-w-2xl mx-auto ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
         </Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
           {services.slice(0, 6).map((s, idx) => {
@@ -545,16 +554,16 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
               <Reveal as="a" href={href} target={target} rel={isExternalNewTab ? 'noopener noreferrer' : undefined} delay={idx * 80} key={s.id} className="flex flex-col items-center text-center group cursor-pointer" data-testid={`service-card-${s.id}`}>
                 {s.image ? (
                   <div className="w-full aspect-[4/3] rounded-lg overflow-hidden mb-6 relative">
-                    <img src={resolveImg(s.image)} alt={s.title} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: m.isDark ? 'grayscale(15%)' : 'grayscale(25%)' }} />
+                    <img src={resolveImg(s.image)} alt={tt(s.title)} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: m.isDark ? 'grayscale(15%)' : 'grayscale(25%)' }} />
                   </div>
                 ) : (
                   <div className="w-full aspect-[4/3] rounded-lg mb-6 flex items-center justify-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F3F4F6' }}>
                     <lucide.Briefcase className="w-10 h-10 opacity-30" />
                   </div>
                 )}
-                <h3 className="font-bold text-xl md:text-2xl mb-3 group-hover:underline underline-offset-4" style={{ fontFamily: "'Playfair Display', serif" }}>{s.title}</h3>
+                <h3 className="font-bold text-xl md:text-2xl mb-3 group-hover:underline underline-offset-4" style={{ fontFamily: "'Playfair Display', serif" }}>{tt(s.title)}</h3>
                 {(s.short_description || s.description) && (
-                  <p className={`text-sm leading-relaxed ${m.mutedClass} max-w-xs`}>{clean(s.short_description || s.description).slice(0, 130)}</p>
+                  <p className={`text-sm leading-relaxed ${m.mutedClass} max-w-xs`}>{clean(tt(s.short_description) || tt(s.description)).slice(0, 130)}</p>
                 )}
               </Reveal>
             );
@@ -572,6 +581,7 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
 
 // News
 export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   if (!posts?.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
@@ -579,9 +589,9 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Latest News'}</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="news-title">{cmsConfig.title || 'From our desk'}</h2>
-            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Latest News'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="news-title">{tt(cmsConfig.title) || 'From our desk'}</h2>
+            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
           <MonoButton href={cmsConfig.cta_url || '/news'} text={cmsConfig.cta_text || 'View all'} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="news-view-all" />
         </Reveal>
@@ -591,8 +601,8 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
               {p.image && <div className="aspect-[16/10] overflow-hidden" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB' }}><img src={resolveImg(p.image)} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: 'grayscale(10%)' }} /></div>}
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3"><Clock className={`w-3 h-3 ${m.eyebrowClass}`} /><span className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>{new Date(p.created_at).toLocaleDateString()}</span></div>
-                <h3 className="font-semibold text-lg mb-2 line-clamp-2">{p.title}</h3>
-                <p className={`text-sm ${m.mutedClass} line-clamp-2`}>{p.excerpt || (p.content || '').replace(/<[^>]*>/g, '').slice(0, 120)}</p>
+                <h3 className="font-semibold text-lg mb-2 line-clamp-2">{tt(p.title)}</h3>
+                <p className={`text-sm ${m.mutedClass} line-clamp-2`}>{tt(p.excerpt) || (tt(p.content) || '').replace(/<[^>]*>/g, '').slice(0, 120)}</p>
               </div>
             </Reveal>
           ))}
@@ -604,6 +614,7 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
 
 // External Blog
 export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
+  const tt = useT();
   const settings = useSettings();
   const m = monoStyle(bg, font, '#F9FAFB');
   const [posts, setPosts] = useState([]);
@@ -616,9 +627,9 @@ export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Blog'}</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="blog-title">{cmsConfig.title || 'Writing'}</h2>
-            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Blog'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="blog-title">{tt(cmsConfig.title) || 'Writing'}</h2>
+            {cmsConfig.subtitle && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
           {cmsConfig.cta_text && <MonoButton href={cmsConfig.cta_url} text={cmsConfig.cta_text} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="blog-view-all" />}
         </Reveal>
@@ -675,6 +686,7 @@ export function AurexReadingMono({ books, bg, font }) {
 
 // Map
 export function AurexMapMono({ maps, locations, title, mapsLang, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   const all = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
   if (!all.length) return null;
   const m = monoStyle(bg, font, '#F4F6F8');
@@ -684,9 +696,9 @@ export function AurexMapMono({ maps, locations, title, mapsLang, bg, font, cmsCo
     <section className={monoShell} style={m.style} id="locations" data-testid="map-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-12">
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow || 'Presence'}</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="map-title">{cmsConfig.title || title || 'Our Locations'}</h2>
-          {cmsConfig.subtitle && <p className={`mt-3 max-w-2xl mx-auto ${m.mutedClass}`}>{cmsConfig.subtitle}</p>}
+          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Presence'}</p>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="map-title">{tt(cmsConfig.title) || tt(title) || 'Our Locations'}</h2>
+          {cmsConfig.subtitle && <p className={`mt-3 max-w-2xl mx-auto ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
         </Reveal>
         <Reveal className="rounded-xl overflow-hidden h-[420px]" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
           <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}>
@@ -762,6 +774,7 @@ export function AurexGalleryMono({ items, bg, font }) {
 
 // Testimonials — carousel: arrows + dots, 3 visible on desktop, 1 on mobile.
 export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   const m = monoStyle(bg, font, '#FFFFFF');
   const [page, setPage] = useState(0);
   const [perView, setPerView] = useState(3);
@@ -779,9 +792,9 @@ export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
     <section className={monoShell} style={m.style} id="testimonials" data-testid="testimonials-section">
       <div className="max-w-7xl mx-auto">
         <Reveal className="text-center mb-14">
-          {cmsConfig.eyebrow && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{cmsConfig.eyebrow}</p>}
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-3" data-testid="testimonials-title" style={{ fontFamily: "'Playfair Display', serif" }}>{cmsConfig.title || 'Testimonials'}</h2>
-          <p className={`text-sm ${m.mutedClass}`}>{cmsConfig.subtitle || 'Find out why so many companies prefer us over others!'}</p>
+          {cmsConfig.eyebrow && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow)}</p>}
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-3" data-testid="testimonials-title" style={{ fontFamily: "'Playfair Display', serif" }}>{tt(cmsConfig.title) || 'Testimonials'}</h2>
+          <p className={`text-sm ${m.mutedClass}`}>{tt(cmsConfig.subtitle) || 'Find out why so many companies prefer us over others!'}</p>
         </Reveal>
         <div className="relative">
           <button onClick={() => go(page - 1)} aria-label="Previous testimonials" className={`absolute -left-2 md:-left-8 top-1/2 -translate-y-1/2 z-10 w-10 h-10 rounded-full flex items-center justify-center transition-colors hover:opacity-80 ${m.isDark ? 'bg-white/10 text-white hover:bg-white/20' : 'bg-gray-100 text-gray-600 hover:bg-gray-200'}`} data-testid="testimonials-prev">
@@ -791,14 +804,14 @@ export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
             {visible.map((t, idx) => (
               <Reveal delay={idx * 100} key={`${page}-${t.id}`} className="rounded-xl p-8 text-center flex flex-col items-center" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#F3F4F6' }} data-testid={`testimonial-card-${t.id}`}>
                 {/* Order per CMS feedback: quote → photo → name → role */}
-                <p className={`text-sm md:text-base italic leading-relaxed mb-6 ${m.mutedClass}`}>"{t.content}"</p>
+                <p className={`text-sm md:text-base italic leading-relaxed mb-6 ${m.mutedClass}`}>"{tt(t.content)}"</p>
                 {t.avatar ? (
-                  <img src={resolveImg(t.avatar)} alt={t.name} className="w-20 h-20 rounded-full object-cover mb-5 border-2" style={{ borderColor: m.isDark ? 'rgba(255,255,255,0.15)' : '#E5E7EB' }} />
+                  <img src={resolveImg(t.avatar)} alt={tt(t.name)} className="w-20 h-20 rounded-full object-cover mb-5 border-2" style={{ borderColor: m.isDark ? 'rgba(255,255,255,0.15)' : '#E5E7EB' }} />
                 ) : (
-                  <div className="w-20 h-20 rounded-full bg-gray-200 mb-5 flex items-center justify-center text-xl font-bold text-gray-400">{t.name?.[0] || '?'}</div>
+                  <div className="w-20 h-20 rounded-full bg-gray-200 mb-5 flex items-center justify-center text-xl font-bold text-gray-400">{tt(t.name)?.[0] || '?'}</div>
                 )}
-                <h3 className="font-bold text-lg md:text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{t.name}</h3>
-                {(t.role || t.company) && <p className={`text-[11px] uppercase tracking-[0.2em] mt-2 ${m.eyebrowClass}`}>{[t.role, t.company].filter(Boolean).join(' · ')}</p>}
+                <h3 className="font-bold text-lg md:text-xl" style={{ fontFamily: "'Playfair Display', serif" }}>{tt(t.name)}</h3>
+                {(t.role || t.company) && <p className={`text-[11px] uppercase tracking-[0.2em] mt-2 ${m.eyebrowClass}`}>{[tt(t.role), tt(t.company)].filter(Boolean).join(' · ')}</p>}
               </Reveal>
             ))}
           </div>
@@ -825,6 +838,7 @@ export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
 
 // Contact
 export function AurexContactMono({ contactSettings, bg, font }) {
+  const tt = useT();
   const cs = contactSettings || {};
   const m = monoStyle(bg, font, '#111827');
   const [form, setForm] = useState({ name: '', email: '', message: '' });
@@ -843,16 +857,16 @@ export function AurexContactMono({ contactSettings, bg, font }) {
     <section className={monoShell} style={m.style} id="contact" data-testid="contact-section">
       <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         <Reveal>
-          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{cs.title || 'Contact'}</p>
-          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5" data-testid="contact-title">{cs.subtitle || "Let's work together"}</h2>
+          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(cs.title) || 'Contact'}</p>
+          <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5" data-testid="contact-title">{tt(cs.subtitle) || "Let's work together"}</h2>
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.4)' : '#111827' }} />
-          <p className={`${m.mutedClass} leading-relaxed`}>{cs.description || 'Have a project in mind? Let us know and we\'ll be in touch.'}</p>
+          <p className={`${m.mutedClass} leading-relaxed`}>{tt(cs.description) || 'Have a project in mind? Let us know and we\'ll be in touch.'}</p>
         </Reveal>
         <Reveal delay={120} as="form" onSubmit={submit} className="space-y-4">
-          <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your name" className={inputClass} style={{ color: 'inherit' }} />
-          <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your email" className={inputClass} style={{ color: 'inherit' }} />
-          <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your message" rows={5} className={`${inputClass} resize-none`} style={{ color: 'inherit' }} />
-          <button type="submit" disabled={sending} className="w-full py-3.5 rounded-full font-medium text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send message</button>
+          <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder={tt(cs.name_placeholder) || 'Your name'} className={inputClass} style={{ color: 'inherit' }} />
+          <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder={tt(cs.email_placeholder) || 'Your email'} className={inputClass} style={{ color: 'inherit' }} />
+          <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder={tt(cs.message_placeholder) || 'Your message'} rows={5} className={`${inputClass} resize-none`} style={{ color: 'inherit' }} />
+          <button type="submit" disabled={sending} className="w-full py-3.5 rounded-full font-medium text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {tt(cs.submit_text) || 'Send message'}</button>
         </Reveal>
       </div>
     </section>
@@ -933,6 +947,7 @@ function CountdownMono({ target, light = false }) {
 const stripHtml = (h) => (h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
 export function AurexHeroMono({ slides, data }) {
+  const tt = useT();
   const allSlides = (slides && slides.length > 0 ? slides : (data?.title ? [data] : []));
   const [idx, setIdx] = useState(0);
   const [scrollY, setScrollY] = useState(0);
@@ -1004,20 +1019,20 @@ export function AurexHeroMono({ slides, data }) {
         <div className="w-full max-w-3xl">
           {s.subtitle && (
             <Reveal>
-              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-gray-700 mb-5" data-testid="hero-subtitle" dangerouslySetInnerHTML={{ __html: stripHtml(s.subtitle) }} />
+              <p className="text-[11px] uppercase tracking-[0.3em] font-semibold text-gray-700 mb-5" data-testid="hero-subtitle" dangerouslySetInnerHTML={{ __html: stripHtml(tt(s.subtitle)) }} />
             </Reveal>
           )}
           {s.title && (
             <Reveal delay={100}>
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-gray-900 mb-8" data-testid="hero-title">
-                {typeof s.title === 'string' && s.title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: s.title }} /> : s.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-gray-700' : ''}>{line}</span></React.Fragment>)}
+                {(() => { const title = tt(s.title); return typeof title === 'string' && title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: title }} /> : title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-gray-700' : ''}>{line}</span></React.Fragment>); })()}
               </h1>
             </Reveal>
           )}
           {s.countdown_to && <Reveal delay={200}><CountdownMono target={s.countdown_to} light /></Reveal>}
           {s.description && (
             <Reveal delay={250}>
-              <div className="text-base md:text-lg text-gray-700 max-w-xl leading-relaxed rich-text-content mb-10" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: s.description }} />
+              <div className="text-base md:text-lg text-gray-700 max-w-xl leading-relaxed rich-text-content mb-10" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: tt(s.description) }} />
             </Reveal>
           )}
           {ctas.length > 0 && (
@@ -1028,14 +1043,14 @@ export function AurexHeroMono({ slides, data }) {
                   return (
                     <a
                       key={i}
-                      href={c.url || '#'}
+                      href={tt(c.url) || '#'}
                       target={c.target}
                       rel="noopener noreferrer"
                       onClick={() => onCtaClick(i)}
                       className={`inline-flex items-center gap-2 px-7 py-3 rounded-full text-sm font-semibold transition-all hover:gap-3 ${primary ? 'bg-white text-gray-900 border border-gray-900 hover:bg-gray-900 hover:text-white' : 'bg-transparent text-gray-900 border-2 border-gray-900/80 hover:bg-gray-900 hover:text-white'}`}
                       data-testid={`hero-cta-btn-${i}`}
                     >
-                      {c.text} {primary && <ArrowRight className="w-4 h-4" />}
+                      {tt(c.text)} {primary && <ArrowRight className="w-4 h-4" />}
                     </a>
                   );
                 })}

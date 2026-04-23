@@ -12,7 +12,7 @@
  * preserve it under the currently active admin-edit lang.
  */
 import React, { useState } from 'react';
-import { useLang, getLocaleValue, setLocaleValue, LANGUAGE_LABELS } from '../lib/i18n';
+import { useLang, getLocaleValue, setLocaleValue, LANGUAGE_LABELS } from '../../lib/i18n';
 
 export default function LocalizedField({ value, onChange, render, disabled = false }) {
   const { enabled, defaultLang } = useLang();

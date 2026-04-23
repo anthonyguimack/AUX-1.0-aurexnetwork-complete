@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTheme } from '../App';
+import { useT } from '../lib/i18n';
 
 function resolveVideoEmbed(url) {
   if (!url) return null;
@@ -29,11 +30,12 @@ function VideoEmbed({ url, style, className }) {
 // rest are outlined secondary. Order/visibility is admin-controlled via the
 // respective button_text fields on the slide.
 function HeroButtonsRow({ slide, size = 'md', dataTestId }) {
+  const tt = useT();
   const buttons = [
     { text: slide.button_text,   url: slide.button_url   || slide.button_link, target: slide.window_open === 'new' ? '_blank' : '_self' },
     { text: slide.button_2_text, url: slide.button_2_url, target: slide.button_2_window_open === 'new' ? '_blank' : '_self' },
     { text: slide.button_3_text, url: slide.button_3_url, target: slide.button_3_window_open === 'new' ? '_blank' : '_self' },
-  ].filter(b => b.text);
+  ].filter(b => tt(b.text));
   if (buttons.length === 0) return null;
   const padding = size === 'sm' ? 'px-6 py-2.5' : 'px-8 py-3';
   return (
@@ -41,12 +43,12 @@ function HeroButtonsRow({ slide, size = 'md', dataTestId }) {
       {buttons.map((b, i) => {
         const primary = i === 0;
         return (
-          <a key={i} href={b.url || '#'} target={b.target} rel="noopener noreferrer"
+          <a key={i} href={tt(b.url) || '#'} target={b.target} rel="noopener noreferrer"
             className={`inline-flex items-center gap-2 ${padding} rounded-sm font-medium transition-all text-sm hover:opacity-90 ${primary ? 'bg-white' : 'bg-transparent border-2 border-white text-white hover:bg-white hover:text-[#1a2332]'}`}
             style={primary ? { color: 'var(--color-primary, #1a2332)' } : undefined}
             data-testid={`hero-cta-btn-${i}`}
           >
-            {b.text} {primary && <ArrowRight className="w-4 h-4" />}
+            {tt(b.text)} {primary && <ArrowRight className="w-4 h-4" />}
           </a>
         );
       })}
@@ -56,6 +58,7 @@ function HeroButtonsRow({ slide, size = 'md', dataTestId }) {
 
 export default function HeroSection({ data, slides }) {
   const theme = useTheme();
+  const tt = useT();
   const [currentSlide, setCurrentSlide] = useState(0);
   const [animKey, setAnimKey] = useState(0);
   const allSlides = useMemo(() => slides && slides.length > 0 ? slides : (data?.title ? [data] : []), [slides, data]);
@@ -113,11 +116,11 @@ export default function HeroSection({ data, slides }) {
       <div className="relative max-w-7xl mx-auto px-6 md:px-12 py-20 w-full" key={animKey}>
         {isLegacy ? (
           <>
-            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="hero-subtitle">{slide.subtitle}</p>
+            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="hero-subtitle">{tt(slide.subtitle)}</p>
             <h1 className="text-4xl sm:text-5xl lg:text-6xl font-bold text-white leading-tight max-w-2xl" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="hero-title">
-              {slide.title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic' : ''}>{line}</span></React.Fragment>)}
+              {tt(slide.title)?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic' : ''}>{line}</span></React.Fragment>)}
             </h1>
-            <p className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed" data-testid="hero-description">{slide.description}</p>
+            <p className="text-white/70 mt-6 max-w-xl text-base md:text-lg leading-relaxed" data-testid="hero-description">{tt(slide.description)}</p>
             <div className="mt-8"><HeroButtonsRow slide={slide} /></div>
           </>
         ) : (
@@ -126,17 +129,17 @@ export default function HeroSection({ data, slides }) {
             <div className="relative w-full hidden lg:block" style={{ minHeight: '400px' }}>
               {slide.title && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.title_x || 100) / 7}%`, top: `${(slide.title_y || 50) / 3}%`, ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
-                  <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                  <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.title) }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.subtitle_x || 100) / 7}%`, top: `${(slide.subtitle_y || 80) / 3}%`, ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle-lg">
-                  <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                  <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.subtitle) }} />
                 </div>
               )}
               {slide.description && (
                 <div className="absolute max-w-[45%]" style={{ left: `${(slide.description_x || 100) / 7}%`, top: `${(slide.description_y || 120) / 3}%`, ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description-lg">
-                  <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
+                  <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: tt(slide.description) }} />
                 </div>
               )}
               {(slide.button_text || slide.button_2_text || slide.button_3_text) && (
@@ -170,17 +173,17 @@ export default function HeroSection({ data, slides }) {
               )}
               {slide.title && (
                 <div style={effectStyle(slide.title_effect, slide.title_start)} data-testid="hero-title">
-                  <div className="text-3xl sm:text-4xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.title }} />
+                  <div className="text-3xl sm:text-4xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.title) }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
-                  <div className="text-base sm:text-lg font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: slide.subtitle }} />
+                  <div className="text-base sm:text-lg font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.subtitle) }} />
                 </div>
               )}
               {slide.description && (
                 <div style={effectStyle(slide.description_effect, slide.description_start)} data-testid="hero-description">
-                  <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: slide.description }} />
+                  <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: tt(slide.description) }} />
                 </div>
               )}
               {(slide.button_text || slide.button_2_text || slide.button_3_text) && (

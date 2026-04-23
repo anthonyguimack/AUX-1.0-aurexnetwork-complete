@@ -8,6 +8,7 @@ import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import RichTextEditor from '../../components/RichTextEditor';
+import LocalizedField from '../../components/admin/LocalizedField';
 import { AUREX_ITEM_ICONS } from '../../lib/aurexIconList';
 import * as lucide from 'lucide-react';
 import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X, Copy, Search } from 'lucide-react';
@@ -95,7 +96,13 @@ function FieldInput({ field, value, onChange }) {
   };
 
   if (field.type === 'rich') {
-    return <div className="mt-1" data-testid={`field-${field.key}`}><RichTextEditor value={value || ''} onChange={onChange} placeholder={field.placeholder} /></div>;
+    return (
+      <div className="mt-1" data-testid={`field-${field.key}`}>
+        <LocalizedField value={value} onChange={onChange} render={({ value: v, onChange: oc }) => (
+          <RichTextEditor value={v || ''} onChange={oc} placeholder={field.placeholder} />
+        )} />
+      </div>
+    );
   }
   if (field.type === 'icon') {
     return <IconPicker value={value} onChange={onChange} fieldKey={field.key} />;
@@ -104,7 +111,11 @@ function FieldInput({ field, value, onChange }) {
     return <SocialLinksField value={value} onChange={onChange} fieldKey={field.key} />;
   }
   if (field.type === 'textarea') {
-    return <textarea value={value || ''} onChange={e => onChange(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-sm text-sm min-h-[70px]" placeholder={field.placeholder} data-testid={`field-${field.key}`} />;
+    return (
+      <LocalizedField value={value} onChange={onChange} render={({ value: v, onChange: oc }) => (
+        <textarea value={v || ''} onChange={e => oc(e.target.value)} className="w-full mt-1 px-3 py-2 border border-slate-200 rounded-sm text-sm min-h-[70px]" placeholder={field.placeholder} data-testid={`field-${field.key}`} />
+      )} />
+    );
   }
   if (field.type === 'number') {
     return <Input type="number" value={value ?? ''} onChange={e => onChange(e.target.value === '' ? null : Number(e.target.value))} className="mt-1" placeholder={field.placeholder} data-testid={`field-${field.key}`} />;
@@ -132,8 +143,15 @@ function FieldInput({ field, value, onChange }) {
       </div>
     );
   }
-  // text, url, icon
-  return <Input type={field.type === 'url' ? 'url' : 'text'} value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" placeholder={field.placeholder} data-testid={`field-${field.key}`} />;
+  // text, url: URLs stay scalar, text fields get localized
+  if (field.type === 'url') {
+    return <Input type="url" value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" placeholder={field.placeholder} data-testid={`field-${field.key}`} />;
+  }
+  return (
+    <LocalizedField value={value} onChange={onChange} render={({ value: v, onChange: oc }) => (
+      <Input type="text" value={v || ''} onChange={e => oc(e.target.value)} className="mt-1" placeholder={field.placeholder} data-testid={`field-${field.key}`} />
+    )} />
+  );
 }
 
 function SectionEditor({ sectionKey }) {
