@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, ArrowRight, Send } from 'lucide-react';
 import { useSettings } from '../../App';
 import { publicAPI } from '../../lib/api';
+import { useT } from '../../lib/i18n';
 
 const socialIconMap = { facebook: Facebook, twitter: Twitter, instagram: Instagram, linkedin: Linkedin, youtube: Youtube };
 
@@ -24,9 +25,11 @@ function useFooterData() {
 }
 
 function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc, theme }) {
+  const tt = useT();
   const isClassic = theme === 'classic';
   const fontFamily = isClassic ? "'Playfair Display', serif" : undefined;
   const API = process.env.REACT_APP_BACKEND_URL;
+  const brandName = tt(settings.brand_name) || 'Legacy';
 
   // Split footer pages into two columns
   const half = Math.ceil(footerPages.length / 2);
@@ -57,18 +60,18 @@ function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc
           <div>
             <div className="flex items-center gap-3 mb-4">
               {logoSrc ? (
-                <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="footer-logo-img" />
+                <img src={logoSrc} alt={brandName} className="h-10 w-auto object-contain" data-testid="footer-logo-img" />
               ) : (
                 <>
                   <div className="w-9 h-9 flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)', borderRadius: isClassic ? 0 : '0.25rem' }}>
-                    <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily || 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                    <span className="text-white font-bold text-sm" style={{ fontFamily: fontFamily || 'Playfair Display, serif' }}>{brandName[0]}</span>
                   </div>
-                  <span className="text-lg font-bold" style={{ fontFamily: fontFamily || 'Playfair Display, serif' }}>{settings.brand_name || 'Legacy'}</span>
+                  <span className="text-lg font-bold" style={{ fontFamily: fontFamily || 'Playfair Display, serif' }}>{brandName}</span>
                 </>
               )}
             </div>
             <p className="text-white/50 text-sm leading-relaxed" style={fontFamily ? { fontFamily } : {}}>
-              {settings.footer_description || 'Strategic consulting for businesses seeking sustainable growth and lasting impact.'}
+              {tt(settings.footer_description) || 'Strategic consulting for businesses seeking sustainable growth and lasting impact.'}
             </p>
           </div>
 
@@ -120,7 +123,7 @@ function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc
       </div>
       <div className="border-t border-white/10 py-4">
         <p className="text-center text-white/30 text-xs" style={fontFamily ? { fontFamily } : {}}>
-          {settings.footer_copyright || 'Legacy Consulting - All rights reserved.'}
+          {tt(settings.footer_copyright) || 'Legacy Consulting - All rights reserved.'}
         </p>
       </div>
     </>

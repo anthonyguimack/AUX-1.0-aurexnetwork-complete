@@ -127,8 +127,9 @@ export default function BlogManager() {
                 )} />
               </div>
               <div><Label>Summary</Label>
+                <p className="text-xs text-slate-400 mb-1">Rich text — shown below the title on the blog list.</p>
                 <LocalizedField value={editing.summary} onChange={v => setEditing({...editing, summary: v})} render={({ value, onChange }) => (
-                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-summary-input" />
+                  <RichTextEditor value={value || ''} onChange={onChange} placeholder="Short rich-text teaser..." />
                 )} />
               </div>
               <div><Label>Content</Label>

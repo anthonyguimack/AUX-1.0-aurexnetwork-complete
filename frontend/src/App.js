@@ -95,6 +95,7 @@ import BlockedDatesManager from './pages/admin/BlockedDatesManager';
 
 import { injectThemeColors } from './lib/themeColors';
 import { LanguageProvider } from './lib/i18n';
+import { t as i18nT } from './lib/i18n';
 
 // Global settings context for colors and theme
 export const SettingsContext = createContext({});
@@ -135,14 +136,19 @@ function SettingsProvider({ children }) {
     link.href = src;
   }, [settings.favicon]);
 
-  // Dynamic page title from tagline
+  // Dynamic page title from tagline — pick the admin's default language
+  // (multi-language tab update is not critical here; fresh load always gets
+  // the right one).
   useEffect(() => {
-    if (settings.tagline) {
-      document.title = settings.tagline;
-    } else if (settings.brand_name) {
-      document.title = settings.brand_name;
+    const lang = localStorage.getItem('aurex_locale') || settings.default_language || 'en';
+    const tagline = i18nT(settings.tagline, lang);
+    const brand = i18nT(settings.brand_name, lang);
+    if (tagline) {
+      document.title = tagline;
+    } else if (brand) {
+      document.title = brand;
     }
-  }, [settings.tagline, settings.brand_name]);
+  }, [settings.tagline, settings.brand_name, settings.default_language]);
 
   const activeTheme = settings.active_theme || 'default';
 

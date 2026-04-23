@@ -7,6 +7,7 @@ import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
 import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages } from 'lucide-react';
 import { LANGUAGE_LABELS } from '../../lib/i18n';
+import LocalizedField from '../../components/admin/LocalizedField';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
 import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, THEMES } from '../../lib/themeColors';
@@ -155,11 +156,27 @@ export default function SettingsManager() {
         <TabsContent value="general">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
             <div className="grid grid-cols-2 gap-4">
-              <div><Label>Brand Name</Label><Input value={settings.brand_name || ''} onChange={e => setSettings({...settings, brand_name: e.target.value})} className="mt-1" data-testid="settings-brand-name" /></div>
-              <div><Label>Tagline</Label><Input value={settings.tagline || ''} onChange={e => setSettings({...settings, tagline: e.target.value})} className="mt-1" /></div>
+              <div><Label>Brand Name</Label>
+                <LocalizedField value={settings.brand_name} onChange={v => setSettings({...settings, brand_name: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="settings-brand-name" />
+                )} />
+              </div>
+              <div><Label>Tagline</Label>
+                <LocalizedField value={settings.tagline} onChange={v => setSettings({...settings, tagline: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+                )} />
+              </div>
             </div>
-            <div><Label>Meta Title</Label><Input value={settings.meta_title || ''} onChange={e => setSettings({...settings, meta_title: e.target.value})} className="mt-1" /></div>
-            <div><Label>Meta Description</Label><textarea value={settings.meta_description || ''} onChange={e => setSettings({...settings, meta_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+            <div><Label>Meta Title</Label>
+              <LocalizedField value={settings.meta_title} onChange={v => setSettings({...settings, meta_title: v})} render={({ value, onChange }) => (
+                <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+              )} />
+            </div>
+            <div><Label>Meta Description</Label>
+              <LocalizedField value={settings.meta_description} onChange={v => setSettings({...settings, meta_description: v})} render={({ value, onChange }) => (
+                <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+              )} />
+            </div>
 
             <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Logo &amp; Favicon</h3>
@@ -190,8 +207,16 @@ export default function SettingsManager() {
 
             <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Footer Text</h3>
-            <div><Label>Footer Description</Label><p className="text-xs text-slate-400 mb-1">Text shown below the logo in the footer.</p><textarea value={settings.footer_description || ''} onChange={e => setSettings({...settings, footer_description: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="settings-footer-description" /></div>
-            <div><Label>Footer Copyright</Label><p className="text-xs text-slate-400 mb-1">Copyright text at the bottom of the footer.</p><Input value={settings.footer_copyright || ''} onChange={e => setSettings({...settings, footer_copyright: e.target.value})} className="mt-1" data-testid="settings-footer-copyright" /></div>
+            <div><Label>Footer Description</Label><p className="text-xs text-slate-400 mb-1">Text shown below the logo in the footer.</p>
+              <LocalizedField value={settings.footer_description} onChange={v => setSettings({...settings, footer_description: v})} render={({ value, onChange }) => (
+                <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="settings-footer-description" />
+              )} />
+            </div>
+            <div><Label>Footer Copyright</Label><p className="text-xs text-slate-400 mb-1">Copyright text at the bottom of the footer.</p>
+              <LocalizedField value={settings.footer_copyright} onChange={v => setSettings({...settings, footer_copyright: v})} render={({ value, onChange }) => (
+                <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="settings-footer-copyright" />
+              )} />
+            </div>
 
             <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}><Map className="w-4 h-4" /> Maps Configuration</h3>

@@ -374,7 +374,15 @@ async def get_contact_settings(user: dict = Depends(require_admin)):
 @router.put("/admin/contact-settings")
 async def update_contact_settings(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
-    cs = {"title": body.get("title", "Contact"), "subtitle": body.get("subtitle", ""), "description": body.get("description", "")}
+    cs = {
+        "title": body.get("title", "Contact"),
+        "subtitle": body.get("subtitle", ""),
+        "description": body.get("description", ""),
+        "name_placeholder": body.get("name_placeholder", ""),
+        "email_placeholder": body.get("email_placeholder", ""),
+        "message_placeholder": body.get("message_placeholder", ""),
+        "submit_text": body.get("submit_text", ""),
+    }
     await db.settings.update_one({}, {"$set": {"contact_settings": cs, "updated_at": datetime.now(timezone.utc).isoformat()}}, upsert=True)
     return cs
 

@@ -4,6 +4,7 @@ import { useAuth } from '../../lib/auth';
 import { publicAPI } from '../../lib/api';
 import { useSettings, useTheme } from '../../App';
 import LanguageSwitcher from '../LanguageSwitcher';
+import { useT } from '../../lib/i18n';
 import { Menu, X, LogIn, LogOut, Facebook, Twitter, Instagram, Linkedin, Github, Youtube, Search } from 'lucide-react';
 import LoginModal from '../LoginModal';
 import SearchBar from '../SearchBar';
@@ -75,12 +76,14 @@ function NavLinks({ headerPages, isExternal, handlePageClick, location, user }) 
 }
 
 function DefaultNavbar() {
+  const tt = useT();
   const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
   // Default theme always has solid bg, so use logo_on_2 (or fallback to logo_on_1)
   const logoSrc = resolveSrc(settings.logo_on_2 || settings.logo_on_1 || settings.logo_on);
+  const brandName = tt(settings.brand_name) || 'Legacy';
   const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   if (isAdmin) return null;
@@ -99,13 +102,13 @@ function DefaultNavbar() {
         <div className="max-w-7xl mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-2" data-testid="brand-logo">
             {logoSrc ? (
-              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-8 w-auto object-contain" data-testid="navbar-logo-img" />
+              <img src={logoSrc} alt={brandName} className="h-8 w-auto object-contain" data-testid="navbar-logo-img" />
             ) : settingsLoaded ? (
               <>
                 <div className="w-8 h-8 rounded-sm flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
-                  <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                  <span className="text-white font-bold text-sm" style={{ fontFamily: 'Playfair Display, serif' }}>{brandName[0]}</span>
                 </div>
-                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading-color, #1a2332)' }}>{settings.brand_name || 'Legacy'}</span>
+                <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading-color, #1a2332)' }}>{brandName}</span>
               </>
             ) : <div className="h-8 w-24" />}
           </Link>
@@ -145,6 +148,7 @@ function DefaultNavbar() {
 }
 
 function ModernNavbar() {
+  const tt = useT();
   const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
@@ -153,6 +157,7 @@ function ModernNavbar() {
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
   const logoOn1 = resolveSrc(settings.logo_on_1 || settings.logo_on);
   const logoOn2 = resolveSrc(settings.logo_on_2 || settings.logo_on);
+  const brandName = tt(settings.brand_name) || 'Legacy';
   const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   useEffect(() => {
@@ -188,14 +193,14 @@ function ModernNavbar() {
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
             {(() => {
               const currentLogo = showSolid ? logoOn2 : logoOn1;
-              if (currentLogo) return <img src={currentLogo} alt={settings.brand_name || 'Logo'} className="h-10 w-auto object-contain" data-testid="navbar-logo-img" />;
+              if (currentLogo) return <img src={currentLogo} alt={brandName} className="h-10 w-auto object-contain" data-testid="navbar-logo-img" />;
               if (!settingsLoaded) return <div className="h-10 w-28" />;
               return (
                 <>
                   <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>
-                    <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>{(settings.brand_name || 'L')[0]}</span>
+                    <span className="text-white font-bold text-base" style={{ fontFamily: 'Playfair Display, serif' }}>{brandName[0]}</span>
                   </div>
-                  <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>{settings.brand_name || 'Legacy'}</span>
+                  <span className="text-xl font-bold" style={{ fontFamily: 'Playfair Display, serif', color: textColor }}>{brandName}</span>
                 </>
               );
             })()}
@@ -241,11 +246,14 @@ function ModernNavbar() {
 }
 
 function ClassicNavbar() {
+  const tt = useT();
   const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
   const logoSrc = resolveSrc(settings.logo_on_2 || settings.logo_on_1 || settings.logo_on);
+  const brandName = tt(settings.brand_name) || 'Legacy';
+  const tagline = tt(settings.tagline) || 'Consulting';
   const settingsLoaded = !!settings.brand_name || !!settings.id;
 
   if (isAdmin) return null;
@@ -281,15 +289,15 @@ function ClassicNavbar() {
         <div className="max-w-6xl mx-auto px-6 flex items-center justify-between h-16">
           <Link to="/" className="flex items-center gap-3" data-testid="brand-logo">
             {logoSrc ? (
-              <img src={logoSrc} alt={settings.brand_name || 'Logo'} className="h-9 w-auto object-contain" data-testid="navbar-logo-img" />
+              <img src={logoSrc} alt={brandName} className="h-9 w-auto object-contain" data-testid="navbar-logo-img" />
             ) : settingsLoaded ? (
               <>
                 <div className="w-9 h-9 rounded-none flex items-center justify-center border-2" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: 'var(--color-primary, #1a2332)' }}>
-                  <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>{(settings.brand_name || 'L')[0]}</span>
+                  <span className="text-white font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif" }}>{brandName[0]}</span>
                 </div>
                 <div>
-                  <span className="text-lg font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading-color, #1a2332)' }}>{settings.brand_name || 'Legacy'}</span>
-                  <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>{settings.tagline || 'Consulting'}</span>
+                  <span className="text-lg font-bold block leading-tight" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading-color, #1a2332)' }}>{brandName}</span>
+                  <span className="text-[9px] uppercase tracking-[0.2em]" style={{ color: 'var(--color-accent, #0D9488)' }}>{tagline}</span>
                 </div>
               </>
             ) : <div className="h-9 w-28" />}

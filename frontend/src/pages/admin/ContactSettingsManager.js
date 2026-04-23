@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Save, Loader2, MessageSquare } from 'lucide-react';
+import LocalizedField from '../../components/admin/LocalizedField';
 
 export default function ContactSettingsManager() {
   const [form, setForm] = useState({ title: 'Contact', subtitle: "Let's Work Together", description: 'Have a project in mind? Let\'s discuss how we can help' });
@@ -36,16 +37,46 @@ export default function ContactSettingsManager() {
         <div className="space-y-4">
           <div>
             <Label className="text-xs text-slate-500">Title</Label>
-            <Input value={form.title} onChange={e => setForm({ ...form, title: e.target.value })} className="mt-1" data-testid="contact-title-input" />
+            <LocalizedField value={form.title} onChange={v => setForm({ ...form, title: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="contact-title-input" />
+            )} />
           </div>
           <div>
             <Label className="text-xs text-slate-500">Subtitle</Label>
-            <Input value={form.subtitle} onChange={e => setForm({ ...form, subtitle: e.target.value })} className="mt-1" data-testid="contact-subtitle-input" />
+            <LocalizedField value={form.subtitle} onChange={v => setForm({ ...form, subtitle: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="contact-subtitle-input" />
+            )} />
           </div>
           <div>
             <Label className="text-xs text-slate-500">Description</Label>
-            <textarea value={form.description} onChange={e => setForm({ ...form, description: e.target.value })} rows={3}
-              className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="contact-description-input" />
+            <LocalizedField value={form.description} onChange={v => setForm({ ...form, description: v })} render={({ value, onChange }) => (
+              <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={3}
+                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="contact-description-input" />
+            )} />
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Name placeholder</Label>
+            <LocalizedField value={form.name_placeholder} onChange={v => setForm({ ...form, name_placeholder: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Your name" className="mt-1" data-testid="contact-name-ph" />
+            )} />
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Email placeholder</Label>
+            <LocalizedField value={form.email_placeholder} onChange={v => setForm({ ...form, email_placeholder: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Your email" className="mt-1" data-testid="contact-email-ph" />
+            )} />
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Message placeholder</Label>
+            <LocalizedField value={form.message_placeholder} onChange={v => setForm({ ...form, message_placeholder: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Your message" className="mt-1" data-testid="contact-msg-ph" />
+            )} />
+          </div>
+          <div>
+            <Label className="text-xs text-slate-500">Submit button text</Label>
+            <LocalizedField value={form.submit_text} onChange={v => setForm({ ...form, submit_text: v })} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Send message" className="mt-1" data-testid="contact-submit-text" />
+            )} />
           </div>
         </div>
 

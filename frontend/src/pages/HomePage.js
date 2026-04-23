@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { publicAPI, contactAPI, checkoutAPI, blogExternalAPI } from '../lib/api';
 import { useSettings, useTheme } from '../App';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
+import { useT } from '../lib/i18n';
 import { toast } from 'sonner';
 import {
   ArrowRight, Phone, Briefcase, TrendingUp, BarChart3, Monitor, Star,
@@ -508,10 +509,11 @@ function TestimonialsSection({ items, theme }) {
 
 /* ==================== CONTACT ==================== */
 function ContactSection({ theme, contactSettings }) {
+  const tt = useT();
   const cs = contactSettings || {};
-  const csTitle = cs.title || 'Contact';
-  const csSubtitle = cs.subtitle || "Let's Work Together";
-  const csDescription = cs.description || 'Have a project in mind? Let\'s discuss how we can help';
+  const csTitle = tt(cs.title) || 'Contact';
+  const csSubtitle = tt(cs.subtitle) || "Let's Work Together";
+  const csDescription = tt(cs.description) || 'Have a project in mind? Let\'s discuss how we can help';
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
   const handleSubmit = async (e) => {
