@@ -107,9 +107,9 @@ function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc
                 );
               })}
             </div>
-            <p className="text-white/50 text-sm mb-3">Get the latest insights delivered to your inbox.</p>
+            <p className="text-white/50 text-sm mb-3">{tt(settings.footer_newsletter_text) || 'Get the latest insights delivered to your inbox.'}</p>
             <div className="flex">
-              <input type="email" placeholder="Email address"
+              <input type="email" placeholder={tt(settings.footer_newsletter_placeholder) || 'Email address'}
                 className="flex-1 bg-white/5 border border-white/10 text-white text-sm px-3 py-2.5 rounded-l-md placeholder:text-white/30 focus:outline-none focus:border-white/30"
                 data-testid="footer-email-input" />
               <button className="px-4 py-2.5 rounded-r-md text-white text-sm font-medium flex items-center gap-1"

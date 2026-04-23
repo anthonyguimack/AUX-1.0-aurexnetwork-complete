@@ -117,7 +117,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
   const ctaText = tt(config.cta_text);
   const ctaUrl = tt(config.cta_url);
   return (
-    <SectionShell {...c} data-testid="aurex-section-audience">
+    <SectionShell {...c} id="aurex-audience" data-testid="aurex-section-audience">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className={`grid gap-8 ${cols === 1 ? 'grid-cols-1 max-w-md mx-auto' : cols === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         {visibleItems.map((i, idx) => (
@@ -147,7 +147,7 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
   const c = { bg: bg || '#1F2937', font, contrast: contrast || aurexContrastFor(bg || '#1F2937') };
   const visibleItems = items.filter(i => itemHasLocale(i.title, lang));
   return (
-    <SectionShell {...c} data-testid="aurex-section-process">
+    <SectionShell {...c} id="aurex-process" data-testid="aurex-section-process">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className="relative max-w-3xl mx-auto">
         {/* Center vertical line */}
@@ -188,7 +188,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
   const [annual, setAnnual] = useState(false);
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   return (
-    <SectionShell {...c} data-testid="aurex-section-pricing">
+    <SectionShell {...c} id="aurex-pricing" data-testid="aurex-section-pricing">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       {config.show_toggle && (
         <div className="flex justify-center mb-10">
@@ -250,7 +250,7 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
     return map[key] || Globe;
   };
   return (
-    <SectionShell {...c} data-testid="aurex-section-team">
+    <SectionShell {...c} id="aurex-team" data-testid="aurex-section-team">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {visible.map((m, idx) => {
@@ -308,7 +308,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const visibleItems = items.filter(e => itemHasLocale(e.title, lang));
   return (
-    <SectionShell {...c} data-testid="aurex-section-events">
+    <SectionShell {...c} id="aurex-events" data-testid="aurex-section-events">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       {visibleItems.length === 0 ? (
         <p className="text-center text-sm" style={{ color: c.contrast === 'light' ? 'rgba(255,255,255,.6)' : '#6b7280' }}>{tt(config.empty_message) || 'No upcoming events.'}</p>
@@ -376,9 +376,16 @@ export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#111827', font, contrast: contrast || aurexContrastFor(bg || '#111827') };
   return (
-    <SectionShell {...c} className="!py-12 md:!py-16" data-testid="aurex-section-partners">
-      {config.title && <h2 className="text-center text-xl md:text-2xl font-semibold mb-8">{tt(config.title)}</h2>}
+    <SectionShell {...c} id="aurex-partners" data-testid="aurex-section-partners">
+      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed} contrast={c.contrast} />
+      {tt(config.cta_text) && tt(config.cta_url) && (
+        <div className="text-center mt-10">
+          <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>
+            {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      )}
     </SectionShell>
   );
 }
@@ -386,13 +393,21 @@ export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
 // ─── 7. Our Clients (light bg, gallery style) ────────────────────────────
 
 export function AurexClients({ config = {}, items = [], bg, font, contrast }) {
+  const tt = useT();
   const { lang } = useLang();
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
   return (
-    <SectionShell {...c} data-testid="aurex-section-clients">
+    <SectionShell {...c} id="aurex-clients" data-testid="aurex-section-clients">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
-      <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={30} contrast={c.contrast} className="py-8" />
+      <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed || 30} contrast={c.contrast} className="py-8" />
+      {tt(config.cta_text) && tt(config.cta_url) && (
+        <div className="text-center mt-10">
+          <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>
+            {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
+          </a>
+        </div>
+      )}
     </SectionShell>
   );
 }
@@ -421,7 +436,7 @@ export function AurexVideo({ config = {}, bg, font, contrast }) {
   const isDirect = url && !embed && /\.(mp4|webm|ogg)$/i.test(url);
   if (!url) return null;
   return (
-    <SectionShell {...c} data-testid="aurex-section-video">
+    <SectionShell {...c} id="aurex-video" data-testid="aurex-section-video">
       {(config.title || config.subtitle) && (
         <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       )}
@@ -632,7 +647,14 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3"><Clock className={`w-3 h-3 ${m.eyebrowClass}`} /><span className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>{new Date(p.created_at).toLocaleDateString()}</span></div>
                 <h3 className="font-semibold text-lg mb-2 line-clamp-2">{tt(p.title)}</h3>
-                <p className={`text-sm ${m.mutedClass} line-clamp-2`}>{tt(p.excerpt) || (tt(p.content) || '').replace(/<[^>]*>/g, '').slice(0, 120)}</p>
+                {/* Render the admin's rich-text summary. Fall back to a
+                    stripped-HTML excerpt from the article body only when
+                    the admin hasn't filled the summary. */}
+                {tt(p.summary)
+                  ? <div className={`text-sm ${m.mutedClass} line-clamp-2 rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(p.summary) }} />
+                  : (tt(p.excerpt) || tt(p.content))
+                    ? <p className={`text-sm ${m.mutedClass} line-clamp-2`}>{(tt(p.excerpt) || tt(p.content) || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').slice(0, 120)}</p>
+                    : null}
               </div>
             </Reveal>
           ))}
@@ -826,9 +848,10 @@ export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
   }, []);
-  // Filter testimonials by locale. Match on the primary `content` field —
-  // plain strings show in every locale, dict values only show where filled.
-  const filtered = (items || []).filter(t => itemHasLocale(t.content, lang));
+  // Filter testimonials by locale AND visibility. Items marked `visible:
+  // false` in the CMS are hidden on the public site — this matches how
+  // admins expect to disable a quote without deleting it.
+  const filtered = (items || []).filter(t => t.visible !== false && itemHasLocale(t.content, lang));
   // Reset page when filter changes to avoid out-of-range index
   useEffect(() => { setPage(0); }, [lang, filtered.length]);
   if (!filtered.length) return null;
@@ -912,7 +935,7 @@ export function AurexContactMono({ contactSettings, bg, font }) {
           {tt(cs.title) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(cs.title)}</p>}
           {tt(cs.subtitle) && <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5" data-testid="contact-title">{tt(cs.subtitle)}</h2>}
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.4)' : '#111827' }} />
-          {tt(cs.description) && <p className={`${m.mutedClass} leading-relaxed`}>{tt(cs.description)}</p>}
+          {tt(cs.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(cs.description) }} />}
         </Reveal>
         <Reveal delay={120} as="form" onSubmit={submit} className="space-y-4">
           <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder={tt(cs.name_placeholder) || 'Your name'} className={inputClass} style={{ color: 'inherit' }} />

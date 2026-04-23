@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, DollarSign } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, DollarSign, GripVertical, Eye, EyeOff } from 'lucide-react';
 
 import ImageUpload from '../../components/ImageUpload';
 import { Switch } from '../../components/ui/switch';
@@ -12,22 +12,59 @@ import RichTextEditor from '../../components/RichTextEditor';
 import LocalizedField from '../../components/admin/LocalizedField';
 import { adminText } from '../../lib/i18n';
 
-const emptyService = { title: '', description: '', short_description: '', full_content: '', icon: 'briefcase', image: '', price: 0, currency: 'usd', type: 'service', external_url: '', open_in_new_tab: false };
+// dnd-kit: same primitives already used elsewhere (SectionOrderManager, PageBuilder)
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+
+const emptyService = { title: '', description: '', short_description: '', full_content: '', icon: 'briefcase', image: '', price: 0, currency: 'usd', type: 'service', external_url: '', open_in_new_tab: false, visible: true, order: 0 };
+
+// Single row extracted so dnd-kit hooks can attach listeners to the drag handle.
+function ServiceRow({ item, onEdit, onDelete, onToggle }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: item.id });
+  const style = { transform: CSS.Transform.toString(transform), transition, opacity: isDragging ? 0.6 : 1 };
+  const visible = item.visible !== false;
+  return (
+    <tr ref={setNodeRef} style={style} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`service-row-${item.id}`}>
+      <td className="p-3 w-10">
+        <button {...attributes} {...listeners} className="cursor-grab active:cursor-grabbing text-slate-300 hover:text-slate-500" data-testid={`service-drag-${item.id}`}>
+          <GripVertical className="w-4 h-4" />
+        </button>
+      </td>
+      <td className={`p-3 font-medium ${visible ? 'text-[#1a2332]' : 'text-slate-400 line-through'}`}>{adminText(item.title)}</td>
+      <td className="p-3"><span className="text-xs uppercase bg-slate-100 px-2 py-0.5 rounded-sm">{item.type}</span></td>
+      <td className="p-3 flex items-center gap-1"><DollarSign className="w-3 h-3 text-[#0D9488]" />{Number(item.price || 0).toFixed(2)}</td>
+      <td className="p-3 text-right whitespace-nowrap">
+        <button
+          onClick={() => onToggle(item)}
+          title={visible ? 'Visible — click to hide' : 'Hidden — click to show'}
+          className={`p-1.5 ${visible ? 'text-[#0D9488] hover:text-[#0D9488]/70' : 'text-slate-300 hover:text-slate-500'}`}
+          data-testid={`toggle-service-${item.id}`}
+        >
+          {visible ? <Eye className="w-4 h-4" /> : <EyeOff className="w-4 h-4" />}
+        </button>
+        <button onClick={() => onEdit(item)} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-service-${item.id}`}><Edit2 className="w-4 h-4" /></button>
+        <button onClick={() => onDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-service-${item.id}`}><Trash2 className="w-4 h-4" /></button>
+      </td>
+    </tr>
+  );
+}
 
 export default function ServicesManager() {
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const load = () => adminAPI.getServices().then(r => setItems(r.data)).catch(console.error);
+  const load = () => adminAPI.getServices().then(r => setItems((r.data || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))).catch(console.error);
   useEffect(() => { load(); }, []);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editing.id) { await adminAPI.updateService(editing.id, editing); }
-      else { await adminAPI.createService(editing); }
+      else { await adminAPI.createService({ ...editing, order: items.length }); }
       toast.success('Saved!'); setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setLoading(false); }
@@ -39,10 +76,33 @@ export default function ServicesManager() {
     catch (e) { toast.error(e.response?.data?.detail || 'Cannot delete'); }
   };
 
+  const handleToggleVisible = async (item) => {
+    try {
+      await adminAPI.updateService(item.id, { ...item, visible: item.visible === false });
+      load();
+    } catch { toast.error('Failed to update visibility'); }
+  };
+
+  const handleDragEnd = async ({ active, over }) => {
+    if (!over || active.id === over.id) return;
+    const oldIndex = items.findIndex(i => i.id === active.id);
+    const newIndex = items.findIndex(i => i.id === over.id);
+    const reordered = arrayMove(items, oldIndex, newIndex);
+    // Reflect optimistically then persist each item's new order to the backend
+    setItems(reordered);
+    try {
+      await Promise.all(reordered.map((s, idx) => s.order !== idx ? adminAPI.updateService(s.id, { ...s, order: idx }) : Promise.resolve()));
+      toast.success('Order saved');
+    } catch { toast.error('Failed to save order'); load(); }
+  };
+
   return (
     <div data-testid="services-manager">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Services & Products</h1>
+        <div>
+          <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Services & Products</h1>
+          <p className="text-xs text-slate-400 mt-1">Drag rows to reorder. Click the eye icon to hide a service without deleting it.</p>
+        </div>
         <button onClick={() => { setEditing({...emptyService}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-service-btn">
           <Plus className="w-4 h-4" /> Add New
         </button>
@@ -50,28 +110,26 @@ export default function ServicesManager() {
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100 bg-slate-50">
+            <th className="w-10"></th>
             <th className="text-left p-3 font-medium text-slate-600">Title</th>
             <th className="text-left p-3 font-medium text-slate-600">Type</th>
             <th className="text-left p-3 font-medium text-slate-600">Price</th>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map(item => (
-              <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`service-row-${item.id}`}>
-                <td className="p-3 font-medium text-[#1a2332]">{adminText(item.title)}</td>
-                <td className="p-3"><span className="text-xs uppercase bg-slate-100 px-2 py-0.5 rounded-sm">{item.type}</span></td>
-                <td className="p-3 flex items-center gap-1"><DollarSign className="w-3 h-3 text-[#0D9488]" />{item.price?.toFixed(2)}</td>
-                <td className="p-3 text-right">
-                  <button onClick={() => { setEditing({...item}); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-service-${item.id}`}><Edit2 className="w-4 h-4" /></button>
-                  <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-service-${item.id}`}><Trash2 className="w-4 h-4" /></button>
-                </td>
-              </tr>
-            ))}
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                {items.map(item => (
+                  <ServiceRow key={item.id} item={item} onEdit={(i) => { setEditing({...i}); setOpen(true); }} onDelete={handleDelete} onToggle={handleToggleVisible} />
+                ))}
+              </SortableContext>
+            </DndContext>
+            {items.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-sm">No services yet.</td></tr>}
           </tbody>
         </table>
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="sm:max-w-[500px]" data-testid="service-dialog">
+        <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" data-testid="service-dialog">
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Service</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
@@ -108,6 +166,10 @@ export default function ServicesManager() {
                   </select>
                 </div>
                 <div><Label>Icon</Label><Input value={editing.icon} onChange={e => setEditing({...editing, icon: e.target.value})} className="mt-1" placeholder="briefcase" /></div>
+              </div>
+              <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <Switch checked={editing.visible !== false} onCheckedChange={v => setEditing({...editing, visible: v})} data-testid="service-visible-switch" />
+                <Label className="text-xs">Visible on website</Label>
               </div>
               <button onClick={handleSave} disabled={loading} className="w-full bg-[#0D9488] text-white py-2 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" data-testid="service-save-btn">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save

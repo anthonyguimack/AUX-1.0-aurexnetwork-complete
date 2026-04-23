@@ -62,7 +62,14 @@ async def get_public_about():
 
 @router.get("/public/services")
 async def get_public_services():
-    return await db.services.find({}, {"_id": 0}).to_list(100)
+    # Filter out services the admin flagged as hidden (visible=false),
+    # and sort by the admin-specified `order` so drag-and-drop reordering in
+    # the CMS shows up 1:1 on the public site. Legacy docs without either
+    # field are treated as visible / order 0 respectively.
+    return await db.services.find(
+        {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]},
+        {"_id": 0},
+    ).sort("order", 1).to_list(100)
 
 @router.get("/public/blog")
 async def get_public_blog(page: int = 1, limit: int = 9, category: str = ""):
@@ -119,7 +126,12 @@ async def get_public_portfolio():
 
 @router.get("/public/testimonials")
 async def get_public_testimonials():
-    return await db.testimonials.find({}, {"_id": 0}).to_list(100)
+    # Hide testimonials the admin toggled off. Also sort by order so the
+    # CMS "Move up / Move down" buttons carry through to the site.
+    return await db.testimonials.find(
+        {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]},
+        {"_id": 0},
+    ).sort("order", 1).to_list(100)
 
 @router.get("/public/sections")
 async def get_public_sections():

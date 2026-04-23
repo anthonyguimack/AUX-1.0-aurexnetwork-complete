@@ -209,8 +209,13 @@ export const AUREX_SECTIONS = {
     icon: Building2,
     description: 'Partner logo strip (dark bg, grayscale→color on hover).',
     configFields: [
-      { key: 'title',           label: 'Section title', type: 'text',     placeholder: 'Our Partners' },
-      { key: 'autoscroll',      label: 'Auto-scrolling carousel', type: 'bool' },
+      { key: 'eyebrow',         label: 'Eyebrow',                  type: 'text',     placeholder: 'Trusted partners' },
+      { key: 'title',           label: 'Section title',            type: 'text',     placeholder: 'Our Partners' },
+      { key: 'subtitle',        label: 'Subtitle',                 type: 'textarea' },
+      { key: 'cta_text',        label: 'Button text',              type: 'text' },
+      { key: 'cta_url',         label: 'Button URL',               type: 'url' },
+      { key: 'cta_new_tab',     label: 'Open in new window',       type: 'bool' },
+      { key: 'autoscroll',      label: 'Auto-scrolling carousel',  type: 'bool' },
       { key: 'scroll_speed',    label: 'Scroll speed (s per cycle)', type: 'number', placeholder: '30' },
     ],
     itemFields: [
@@ -229,9 +234,14 @@ export const AUREX_SECTIONS = {
     icon: Award,
     description: 'Client logo gallery (light bg, grayscale→color on hover).',
     configFields: [
-      { key: 'title',       label: 'Section title', type: 'text', placeholder: 'Our Clients' },
-      { key: 'subtitle',    label: 'Subtitle',      type: 'textarea' },
-      { key: 'autoscroll',  label: 'Auto-scrolling carousel', type: 'bool' },
+      { key: 'eyebrow',         label: 'Eyebrow',                  type: 'text',     placeholder: 'Trusted by' },
+      { key: 'title',           label: 'Section title',            type: 'text',     placeholder: 'Our Clients' },
+      { key: 'subtitle',        label: 'Subtitle',                 type: 'textarea' },
+      { key: 'cta_text',        label: 'Button text',              type: 'text' },
+      { key: 'cta_url',         label: 'Button URL',               type: 'url' },
+      { key: 'cta_new_tab',     label: 'Open in new window',       type: 'bool' },
+      { key: 'autoscroll',      label: 'Auto-scrolling carousel',  type: 'bool' },
+      { key: 'scroll_speed',    label: 'Scroll speed (s per cycle)', type: 'number', placeholder: '30' },
     ],
     itemFields: [
       { key: 'name',      label: 'Client name (internal)', type: 'text', required: true },

@@ -7,6 +7,7 @@ import { Save, Loader2 } from 'lucide-react';
 
 import ImageUpload from '../../components/ImageUpload';
 import LocalizedField from '../../components/admin/LocalizedField';
+import RichTextEditor from '../../components/RichTextEditor';
 
 export default function AboutManager() {
   const [data, setData] = useState({ label: '', title: '', description: '', phone: '', signature_name: '', signature_title: '', image: '', button_text: '', button_url: '', button_open_in_new_tab: false });
@@ -39,8 +40,9 @@ export default function AboutManager() {
           )} />
         </div>
         <div><Label>Description</Label>
+          <p className="text-xs text-slate-400 mb-1">Rich text — rendered formatted on the website.</p>
           <LocalizedField value={data.description} onChange={v => setData({...data, description: v})} render={({ value, onChange }) => (
-            <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+            <RichTextEditor value={value || ''} onChange={onChange} />
           )} />
         </div>
         <div className="grid grid-cols-2 gap-4">

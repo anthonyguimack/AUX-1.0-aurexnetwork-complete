@@ -4,15 +4,16 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Quote } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Quote, Eye, EyeOff } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import LocalizedField from '../../components/admin/LocalizedField';
+import { Switch } from '../../components/ui/switch';
 import { adminText } from '../../lib/i18n';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
 
-const emptyItem = { name: '', title: '', content: '', image: '', order: 0 };
+const emptyItem = { name: '', title: '', content: '', image: '', order: 0, visible: true };
 
 export default function TestimonialsManager() {
   const [items, setItems] = useState([]);
@@ -78,9 +79,26 @@ export default function TestimonialsManager() {
                 <p className="text-xs text-slate-500">{adminText(item.title)}</p>
                 <p className="text-xs text-slate-400 truncate mt-0.5">{adminText(item.content)?.substring(0, 80)}...</p>
               </div>
-              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                <button onClick={() => { setEditing({ ...item }); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-testimonial-${item.id}`}><Edit2 className="w-4 h-4" /></button>
-                <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-testimonial-${item.id}`}><Trash2 className="w-4 h-4" /></button>
+              <div className="flex items-center gap-2">
+                {/* Always-visible visibility toggle — admin can hide a quote
+                    without opening the editor. */}
+                <button
+                  onClick={async () => {
+                    try {
+                      await adminAPI.updateTestimonial(item.id, { ...item, visible: item.visible === false });
+                      load();
+                    } catch { toast.error('Failed'); }
+                  }}
+                  title={item.visible === false ? 'Hidden — click to show' : 'Visible — click to hide'}
+                  className={`p-1.5 ${item.visible === false ? 'text-slate-300 hover:text-slate-500' : 'text-[#0D9488] hover:text-[#0D9488]/70'}`}
+                  data-testid={`toggle-testimonial-${item.id}`}
+                >
+                  {item.visible === false ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+                <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                  <button onClick={() => { setEditing({ ...item }); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-testimonial-${item.id}`}><Edit2 className="w-4 h-4" /></button>
+                  <button onClick={() => handleDelete(item.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-testimonial-${item.id}`}><Trash2 className="w-4 h-4" /></button>
+                </div>
               </div>
             </div>
           ))}
@@ -117,9 +135,19 @@ export default function TestimonialsManager() {
                   <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Their words..." data-testid="testimonial-content-input" />
                 )} />
               </div>
-              <div>
-                <Label className="text-xs text-slate-500">Display Order</Label>
-                <Input type="number" value={editing.order || 0} onChange={e => setEditing({ ...editing, order: parseInt(e.target.value) || 0 })} className="mt-1 w-24" />
+              <div className="flex items-center justify-between gap-4">
+                <div>
+                  <Label className="text-xs text-slate-500">Display Order</Label>
+                  <Input type="number" value={editing.order || 0} onChange={e => setEditing({ ...editing, order: parseInt(e.target.value) || 0 })} className="mt-1 w-24" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Label className="text-xs text-slate-500">Visible on site</Label>
+                  <Switch
+                    checked={editing.visible !== false}
+                    onCheckedChange={(v) => setEditing({ ...editing, visible: v })}
+                    data-testid="testimonial-visible-switch"
+                  />
+                </div>
               </div>
               <button onClick={handleSave} disabled={loading} className="w-full bg-[#0D9488] text-white py-2.5 rounded-sm text-sm font-medium flex items-center justify-center gap-2 disabled:opacity-50" data-testid="testimonial-save-btn">
                 {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : null} Save

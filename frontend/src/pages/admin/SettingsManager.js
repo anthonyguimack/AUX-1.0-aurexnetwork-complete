@@ -217,6 +217,16 @@ export default function SettingsManager() {
                 <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="settings-footer-copyright" />
               )} />
             </div>
+            <div><Label>Footer Newsletter Heading</Label><p className="text-xs text-slate-400 mb-1">Label above the email field in the footer (e.g. "Get the latest insights delivered to your inbox.").</p>
+              <LocalizedField value={settings.footer_newsletter_text} onChange={v => setSettings({...settings, footer_newsletter_text: v})} render={({ value, onChange }) => (
+                <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Get the latest insights delivered to your inbox." className="mt-1" data-testid="settings-footer-newsletter" />
+              )} />
+            </div>
+            <div><Label>Footer Newsletter Placeholder</Label>
+              <LocalizedField value={settings.footer_newsletter_placeholder} onChange={v => setSettings({...settings, footer_newsletter_placeholder: v})} render={({ value, onChange }) => (
+                <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="Email address" className="mt-1" data-testid="settings-footer-newsletter-ph" />
+              )} />
+            </div>
 
             <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}><Map className="w-4 h-4" /> Maps Configuration</h3>

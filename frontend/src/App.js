@@ -96,6 +96,7 @@ import BlockedDatesManager from './pages/admin/BlockedDatesManager';
 import { injectThemeColors } from './lib/themeColors';
 import { LanguageProvider } from './lib/i18n';
 import { t as i18nT } from './lib/i18n';
+import BackToTop from './components/BackToTop';
 
 // Global settings context for colors and theme
 export const SettingsContext = createContext({});
@@ -512,6 +513,7 @@ function AppRouter() {
         <Route path="*" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
       </Routes>
       <Footer />
+      <BackToTop />
     </>
     } />
       </Routes>

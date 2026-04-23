@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Save, Loader2, MessageSquare } from 'lucide-react';
 import LocalizedField from '../../components/admin/LocalizedField';
+import RichTextEditor from '../../components/RichTextEditor';
 
 export default function ContactSettingsManager() {
   const [form, setForm] = useState({ title: 'Contact', subtitle: "Let's Work Together", description: 'Have a project in mind? Let\'s discuss how we can help' });
@@ -49,9 +50,9 @@ export default function ContactSettingsManager() {
           </div>
           <div>
             <Label className="text-xs text-slate-500">Description</Label>
+            <p className="text-xs text-slate-400 mb-1">Rich text — rendered formatted on the website.</p>
             <LocalizedField value={form.description} onChange={v => setForm({ ...form, description: v })} render={({ value, onChange }) => (
-              <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={3}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="contact-description-input" />
+              <RichTextEditor value={value || ''} onChange={onChange} placeholder="Have a project in mind? Let's discuss…" />
             )} />
           </div>
           <div>

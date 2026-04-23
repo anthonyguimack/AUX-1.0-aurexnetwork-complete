@@ -38,7 +38,14 @@ import { AUREX_FONTS } from '../lib/themeColors';
 
 /* ==================== ABOUT ==================== */
 function AboutSection({ data, theme }) {
+  const tt = useT();
   if (!data?.title) return null;
+  // Apply translation + rich HTML render consistently across all three themes.
+  const label = tt(data.label);
+  const title = tt(data.title);
+  const descriptionHtml = tt(data.description);
+  const signatureName = tt(data.signature_name);
+  const signatureTitle = tt(data.signature_title);
   if (theme === 'modern') return (
     <section className="py-24 bg-white" id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto px-6 md:px-10">
@@ -46,9 +53,9 @@ function AboutSection({ data, theme }) {
           {data.image && <div className="lg:col-span-2"><img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="w-full rounded-2xl shadow-2xl" /></div>}
           <div className={data.image ? 'lg:col-span-3' : 'lg:col-span-5'}>
             <div className="w-12 h-0.5 mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
-            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.label}</p>
-            <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
-            <p className="text-lg leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{data.description}</p>
+            {label && <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-2" style={{ color: 'var(--color-accent, #0D9488)' }}>{label}</p>}
+            <h2 className="text-4xl md:text-5xl font-bold leading-tight mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{title}</h2>
+            {descriptionHtml && <div className="text-lg leading-relaxed rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: descriptionHtml }} />}
             {data.phone && <div className="mt-8 flex items-center gap-3"><div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Phone className="w-5 h-5 text-white" /></div><div><p className="text-xs text-slate-400">Call us anytime</p><p className="font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{data.phone}</p></div></div>}
           </div>
         </div>
@@ -61,11 +68,11 @@ function AboutSection({ data, theme }) {
         <div className="border-2 p-10 md:p-16" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
             <div>
-              <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.label}</p>
-              <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-6" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
+              {label && <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{label}</p>}
+              <h2 className="text-3xl md:text-4xl font-bold leading-tight mb-6" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{title}</h2>
               <div className="w-16 h-0.5 mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
-              <p className="leading-relaxed" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif" }}>{data.description}</p>
-              {data.signature_name && <p className="mt-6 text-lg italic" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>- {data.signature_name}, {data.signature_title}</p>}
+              {descriptionHtml && <div className="leading-relaxed rich-text-content" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif" }} dangerouslySetInnerHTML={{ __html: descriptionHtml }} />}
+              {signatureName && <p className="mt-6 text-lg italic" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>- {signatureName}{signatureTitle ? `, ${signatureTitle}` : ''}</p>}
             </div>
             {data.image && <img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="w-full border-2" style={{ borderColor: 'var(--color-primary, #1a2332)' }} />}
           </div>
@@ -79,12 +86,12 @@ function AboutSection({ data, theme }) {
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
           <div>
-            <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{data.label}</p>
-            <h2 className="text-3xl md:text-4xl font-bold leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{data.title}</h2>
-            <p className="mt-6 leading-relaxed" style={{ color: 'var(--color-body-text, #475569)' }}>{data.description}</p>
+            {label && <p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{label}</p>}
+            <h2 className="text-3xl md:text-4xl font-bold leading-tight" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="about-title">{title}</h2>
+            {descriptionHtml && <div className="mt-6 leading-relaxed rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: descriptionHtml }} />}
             <div className="flex items-center gap-6 mt-8">
               {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Phone className="w-4 h-4 text-white" /></div><div><p className="text-xs text-slate-400">Call us anytime</p><p className="text-sm font-semibold" style={{ color: 'var(--color-heading, #1a2332)' }}>{data.phone}</p></div></div>}
-              {data.signature_name && <div className="border-l border-slate-200 pl-6"><p className="text-lg italic" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{data.signature_name}</p><p className="text-xs text-slate-400">{data.signature_title}</p></div>}
+              {signatureName && <div className="border-l border-slate-200 pl-6"><p className="text-lg italic" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }}>{signatureName}</p>{signatureTitle && <p className="text-xs text-slate-400">{signatureTitle}</p>}</div>}
             </div>
           </div>
           {data.image && <img src={data.image?.startsWith('/api') ? `${API}${data.image}` : data.image} alt="" className="rounded-lg shadow-lg" />}
@@ -528,7 +535,7 @@ function ContactSection({ theme, contactSettings }) {
       <div className="max-w-3xl mx-auto px-6 md:px-10 text-center">
         <div className="w-12 h-0.5 mx-auto mb-6" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
         <h2 className="text-4xl font-bold mb-4" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="contact-title">{csSubtitle}</h2>
-        <p className="mb-10" style={{ color: 'var(--color-body-text, #475569)' }}>{csDescription}</p>
+        <div className="mb-10 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: csDescription }} />
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /></div>
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={5} className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" />
@@ -556,7 +563,7 @@ function ContactSection({ theme, contactSettings }) {
     <section className="py-20 relative overflow-hidden" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} id="contact" data-testid="contact-section">
       <div className="max-w-7xl mx-auto px-6 md:px-12">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{csTitle}</p><h2 className="text-3xl md:text-4xl font-bold text-white leading-tight" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="contact-title">{csSubtitle}</h2><p className="text-white/60 mt-4 leading-relaxed">{csDescription}</p></div>
+          <div><p className="text-xs uppercase tracking-[0.3em] font-semibold mb-3" style={{ color: 'var(--color-accent, #0D9488)' }}>{csTitle}</p><h2 className="text-3xl md:text-4xl font-bold text-white leading-tight" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="contact-title">{csSubtitle}</h2><div className="text-white/60 mt-4 leading-relaxed rich-text-content" dangerouslySetInnerHTML={{ __html: csDescription }} /></div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
             <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
