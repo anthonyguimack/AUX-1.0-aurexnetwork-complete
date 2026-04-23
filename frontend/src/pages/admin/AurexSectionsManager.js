@@ -9,6 +9,7 @@ import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import RichTextEditor from '../../components/RichTextEditor';
 import LocalizedField from '../../components/admin/LocalizedField';
+import { adminText } from '../../lib/i18n';
 import { AUREX_ITEM_ICONS } from '../../lib/aurexIconList';
 import * as lucide from 'lucide-react';
 import { Loader2, Save, Plus, Edit2, Trash2, Upload, Eye, EyeOff, Sparkles, X, Copy, Search } from 'lucide-react';
@@ -211,8 +212,19 @@ function SectionEditor({ sectionKey }) {
       const { id, order, section, _id, created_at, updated_at, ...rest } = item;
       const clone = { ...rest, visible: item.visible !== false };
       // Append "(Copy)" to the first text-like field so the user can tell them apart.
-      const nameField = ['name', 'title'].find(k => typeof clone[k] === 'string' && clone[k]);
-      if (nameField) clone[nameField] = `${clone[nameField]} (Copy)`;
+      // Handle both legacy plain strings and localized {en, es, …} dicts.
+      const nameField = ['name', 'title'].find(k => clone[k] != null && (typeof clone[k] === 'string' ? clone[k] : (typeof clone[k] === 'object' && Object.values(clone[k]).some(v => v))));
+      if (nameField) {
+        if (typeof clone[nameField] === 'string') {
+          clone[nameField] = `${clone[nameField]} (Copy)`;
+        } else if (typeof clone[nameField] === 'object' && clone[nameField]) {
+          const next = { ...clone[nameField] };
+          for (const k of Object.keys(next)) {
+            if (next[k]) next[k] = `${next[k]} (Copy)`;
+          }
+          clone[nameField] = next;
+        }
+      }
       await adminAPI.createAurexItem(sectionKey, clone);
       toast.success('Duplicated');
       await loadAll();
@@ -267,8 +279,8 @@ function SectionEditor({ sectionKey }) {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium truncate" style={{ color: 'var(--ad-heading, #1a2332)' }}>{schema.itemPreview(item)}</p>
-                    {item.description && <p className="text-xs text-slate-400 truncate">{item.description}</p>}
-                    {item.badge && <span className="inline-block text-[10px] mt-0.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{item.badge}</span>}
+                    {item.description && <p className="text-xs text-slate-400 truncate">{adminText(item.description).replace(/<[^>]*>/g, '')}</p>}
+                    {item.badge && <span className="inline-block text-[10px] mt-0.5 px-1.5 py-0.5 rounded bg-amber-100 text-amber-700">{adminText(item.badge)}</span>}
                   </div>
                   <button onClick={() => toggleVisible(item)} className="p-1.5 hover:bg-slate-100 rounded" data-testid={`toggle-${item.id}`}>
                     {item.visible !== false ? <Eye className="w-4 h-4 text-emerald-500" /> : <EyeOff className="w-4 h-4 text-slate-300" />}

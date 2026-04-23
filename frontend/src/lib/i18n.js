@@ -17,17 +17,44 @@ export function t(value, lang = 'en', fallbacks = []) {
   if (value == null) return '';
   if (typeof value === 'string') return value;
   if (typeof value === 'object' && !Array.isArray(value)) {
+    // Strict: return the value in the requested locale, or empty string.
+    // No cross-locale fallback — admins must explicitly fill each language.
+    // `fallbacks` param is kept for API compatibility but intentionally ignored
+    // so the website never silently shows the wrong language.
     if (value[lang] != null && value[lang] !== '') return String(value[lang]);
-    for (const fb of fallbacks) {
-      if (value[fb] != null && value[fb] !== '') return String(value[fb]);
-    }
-    // Return first non-empty value from the object.
-    for (const k of Object.keys(value)) {
-      if (value[k] != null && value[k] !== '') return String(value[k]);
-    }
     return '';
   }
   return String(value);
+}
+
+/** Admin-only helper: returns the first non-empty locale (or legacy string)
+ *  so item lists in the CMS still show a readable preview regardless of the
+ *  admin's current edit-locale. Never used on the public site. */
+export function adminText(v) {
+  if (v == null) return '';
+  if (typeof v === 'string') return v;
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    for (const k of ['en', 'es', 'fr', 'de', 'it', 'pt']) {
+      if (v[k] != null && v[k] !== '') return String(v[k]);
+    }
+    for (const k of Object.keys(v)) {
+      if (k.startsWith('_')) continue; // skip internal keys
+      if (v[k] != null && v[k] !== '') return String(v[k]);
+    }
+  }
+  return String(v);
+}
+
+/** True when the value has at least one non-empty translation OR is a
+ *  non-empty legacy string. Used to decide whether to render a section
+ *  header / CTA at all (strict mode — no hardcoded defaults). */
+export function hasAnyTranslation(v) {
+  if (v == null) return false;
+  if (typeof v === 'string') return v !== '';
+  if (typeof v === 'object' && !Array.isArray(v)) {
+    return Object.entries(v).some(([k, val]) => !k.startsWith('_') && val != null && val !== '');
+  }
+  return false;
 }
 
 /** Upgrade a string → object when admin starts translating.
@@ -36,11 +63,9 @@ export function setLocaleValue(current, lang, newValue) {
   if (typeof current === 'object' && current !== null && !Array.isArray(current)) {
     return { ...current, [lang]: newValue };
   }
-  // current is string or empty — initialize an object keeping old string
-  // under the admin's original default language (we don't know it here, so
-  // stash under the new lang plus the raw string as legacy fallback).
-  const base = typeof current === 'string' && current ? { _legacy: current } : {};
-  return { ...base, [lang]: newValue };
+  // Fresh — initialize a clean locale object. Legacy plain strings are
+  // dropped on first edit so they don't leak into other locales.
+  return { [lang]: newValue };
 }
 
 /** Extract the value shown in a specific locale tab of the admin UI. */
@@ -86,10 +111,11 @@ export function LanguageProvider({ settings, children }) {
 
 export function useLang() { return useContext(LangContext); }
 
-/** Hook helper: `const tt = useT(); tt(value)` — shorthand that pulls lang + default from context. */
+/** Hook helper: `const tt = useT(); tt(value)` — shorthand that pulls lang from context.
+ *  Strict mode — never falls back to another locale. */
 export function useT() {
-  const { lang, defaultLang } = useLang();
-  return (v) => t(v, lang, lang !== defaultLang ? [defaultLang] : []);
+  const { lang } = useLang();
+  return (v) => t(v, lang);
 }
 
 // Static human labels for the switcher

@@ -1,6 +1,7 @@
 // Aurex section schemas — drive the polymorphic admin UI.
 // Each entry defines: config fields (page-level) + item fields (CRUD rows).
 import { Users, Workflow, DollarSign, UserCircle, Calendar, Building2, Award, Film, Briefcase, MessageCircle, Newspaper, BookOpen, MapPin } from 'lucide-react';
+import { adminText } from './i18n';
 
 // Field types: 'text' | 'textarea' | 'url' | 'number' | 'bool' | 'image' | 'icon' | 'rich' | 'social_links'
 // (social_links is dynamic — it reads settings.social_links and renders
@@ -16,13 +17,14 @@ export const AUREX_SECTIONS = {
       { key: 'subtitle',     label: 'Subtitle',             type: 'textarea', placeholder: 'Who this is for…' },
       { key: 'cta_text',     label: 'CTA button text',      type: 'text',     placeholder: 'Get started' },
       { key: 'cta_url',      label: 'CTA button URL',       type: 'url',      placeholder: '/enrollment' },
+      { key: 'cta_new_tab',  label: 'Open CTA in new window', type: 'bool' },
     ],
     itemFields: [
       { key: 'icon',        label: 'Icon', type: 'icon',     placeholder: 'briefcase' },
       { key: 'title',       label: 'Title',              type: 'text',     required: true },
       { key: 'description', label: 'Description',        type: 'rich' },
     ],
-    itemPreview: (i) => i.title,
+    itemPreview: (i) => adminText(i.title),
   },
 
   aurex_process: {
@@ -38,7 +40,7 @@ export const AUREX_SECTIONS = {
       { key: 'title',       label: 'Step title',  type: 'text',   required: true },
       { key: 'description', label: 'Description', type: 'rich' },
     ],
-    itemPreview: (i) => `${i.step_number || '·'}. ${i.title}`,
+    itemPreview: (i) => `${i.step_number || '·'}. ${adminText(i.title)}`,
   },
 
   aurex_pricing: {
@@ -60,9 +62,10 @@ export const AUREX_SECTIONS = {
       { key: 'is_featured',  label: 'Featured plan',     type: 'bool' },
       { key: 'cta_text',     label: 'CTA text',          type: 'text',    placeholder: 'Get started' },
       { key: 'cta_url',      label: 'CTA URL',           type: 'url' },
+      { key: 'cta_new_tab',  label: 'Open CTA in new window', type: 'bool' },
       { key: 'features',     label: 'Features (one per line, prefix ✗ for excluded)', type: 'textarea', placeholder: 'Unlimited access\nPriority support\n✗ Custom domain' },
     ],
-    itemPreview: (i) => `${i.name} — ${i.currency || '$'}${i.price || '–'}`,
+    itemPreview: (i) => `${adminText(i.name)} — ${i.currency || '$'}${i.price || '–'}`,
   },
 
   aurex_team: {
@@ -75,6 +78,7 @@ export const AUREX_SECTIONS = {
       { key: 'show_view_all',      label: 'Show "View all" button', type: 'bool' },
       { key: 'view_all_text',      label: '"View all" button text', type: 'text',    placeholder: 'View full team' },
       { key: 'view_all_url',       label: '"View all" URL',         type: 'url' },
+      { key: 'view_all_new_tab',   label: 'Open "View all" in new window', type: 'bool' },
       { key: 'max_visible',        label: 'Max members on site',    type: 'number',  placeholder: '6' },
     ],
     itemFields: [
@@ -84,7 +88,10 @@ export const AUREX_SECTIONS = {
       { key: 'bio',          label: 'Short bio (≤120 chars)', type: 'textarea' },
       { key: 'social_links', label: 'Social profile URLs (per enabled network)', type: 'social_links' },
     ],
-    itemPreview: (i) => `${i.name}${i.role ? ' · ' + i.role : ''}`,
+    itemPreview: (i) => {
+      const n = adminText(i.name); const r = adminText(i.role);
+      return `${n}${r ? ' · ' + r : ''}`;
+    },
   },
 
   aurex_video: {
@@ -191,6 +198,7 @@ export const AUREX_SECTIONS = {
       { key: 'only_upcoming',     label: 'Upcoming only',        type: 'bool' },
       { key: 'view_all_text',     label: '"View all" button',    type: 'text',     placeholder: 'View all events' },
       { key: 'view_all_url',      label: '"View all" URL',       type: 'url' },
+      { key: 'view_all_new_tab',  label: 'Open "View all" in new window', type: 'bool' },
       { key: 'empty_message',     label: 'Empty-state message',  type: 'text',     placeholder: 'No upcoming events. Check back soon.' },
     ],
     itemFields: null,
@@ -213,7 +221,7 @@ export const AUREX_SECTIONS = {
         { value: '_blank', label: 'New tab' }, { value: '_self', label: 'Same tab' }, { value: 'internal', label: 'Internal page' },
       ] },
     ],
-    itemPreview: (i) => i.name,
+    itemPreview: (i) => adminText(i.name),
   },
 
   aurex_clients: {
@@ -233,6 +241,6 @@ export const AUREX_SECTIONS = {
         { value: '_blank', label: 'New tab' }, { value: '_self', label: 'Same tab' }, { value: 'internal', label: 'Internal page' },
       ] },
     ],
-    itemPreview: (i) => i.name,
+    itemPreview: (i) => adminText(i.name),
   },
 };
