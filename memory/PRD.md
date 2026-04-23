@@ -600,6 +600,43 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
+### Iteration 78 — Services/Testimonials hide+reorder, Partners/Clients standardization, rich-text CMS upgrades (Apr 23, 2026)
+
+**Verified iteration_65: all 16 features pass.**
+
+**CMS upgrades:**
+- **ServicesManager** rewritten with DndContext + SortableContext — drag-and-drop reordering persists via `PUT /api/admin/services/{id}` with `order` field. Eye-icon toggle flips `visible` without opening the editor. Editor dialog has a "Visible on website" switch.
+- **TestimonialsManager** — added quick-toggle eye icon in each row + "Visible on site" switch in the editor. Hidden testimonials skip the public carousel.
+- **Partners & Clients (aurexSchemas.js)** — standardized to identical config fields: `eyebrow`, `title`, `subtitle`, `cta_text`, `cta_url`, `cta_new_tab`, `autoscroll`, `scroll_speed`. Frontend renders both with matching `SectionHeader` (both at 48px), optional CTA button, and unified auto-scroll + speed.
+- **ContactSettingsManager** — `description` is now a `RichTextEditor` wrapped in `LocalizedField`.
+- **SettingsManager General tab** — added `footer_newsletter_text` and `footer_newsletter_placeholder` with `LocalizedField` tabs.
+- **AboutManager** — `description` is now a `RichTextEditor`.
+
+**Frontend:**
+- **AurexContactMono + HomePage ContactSection** (modern+classic+default) render description via `dangerouslySetInnerHTML` + `rich-text-content` class. No more `<p>` tag leaking HTML as text.
+- **AboutSection** (HomePage, all 3 themes) — description renders as HTML with proper rich-text styling. Wraps label/title/signature with `tt()` too.
+- **AurexNewsMono** — renders `tt(p.summary)` as HTML when present; falls back to stripped-plain-text (with `&nbsp;` cleaned) when empty.
+- **AurexTestimonialsMono** — filters by `t.visible !== false && itemHasLocale(t.content, lang)`.
+- **AurexPartners + AurexClients** — unified `SectionHeader` + optional CTA + consistent logo row behavior.
+- **Anchor IDs** added to all Aurex sections: `aurex-audience`, `aurex-process`, `aurex-pricing`, `aurex-team`, `aurex-events`, `aurex-partners`, `aurex-clients`, `aurex-video`.
+- **Footer** reads `tt(settings.footer_newsletter_text)` + `tt(settings.footer_newsletter_placeholder)`.
+- **Back-to-top button** — new `/components/BackToTop.js`. Appears at scrollY > 300px, smooth-scrolls to top. Uses `--color-primary` from theme.
+
+**Backend:**
+- `/public/services` and `/public/testimonials` filter by `visible !== false` and sort by `order`.
+
+### Deferred items (awaiting user clarification)
+1. **"Notify Me! form"** — user description too short; need to know where it's expected to appear.
+2. **Page Builder section-level "Login Required"** — larger refactor; deferred to next iteration.
+
+## Pending/Backlog
+- (P2) SEO pre-render: nightly job emitting hydrated `/index.html` with meta tags + above-the-fold content (important for bilingual SEO).
+- (P2) S3/Cloud Image Storage migration
+- (P2) Production SMTP Configuration
+- (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
+- (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog (currently only MentorshipProfile has it)
+- (P1 follow-up) Page Builder section-level Login Required flag
+
 ### Iteration 77 — Blog summary rich-text + Contact + Settings i18n (Apr 23, 2026)
 
 **Verified iteration_64: 15/15 backend + frontend pass. Testing agent fixed a critical bug in HomePage.js ContactSection.**
