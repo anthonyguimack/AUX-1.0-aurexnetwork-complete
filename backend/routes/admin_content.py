@@ -6,6 +6,27 @@ import uuid
 
 router = APIRouter()
 
+# Helper to extract a string from a localized value (dict or string)
+def get_slug_text(value):
+    """Extract a string suitable for slugification from a localized value.
+    If value is a dict (localized), returns the first non-empty locale value.
+    If value is a string, returns it as-is.
+    """
+    if value is None:
+        return str(uuid.uuid4())
+    if isinstance(value, str):
+        return value
+    if isinstance(value, dict):
+        # Try common locales first
+        for lang in ['en', 'es', 'fr', 'de', 'it', 'pt']:
+            if value.get(lang):
+                return str(value[lang])
+        # Fall back to any non-empty value
+        for v in value.values():
+            if v and isinstance(v, str):
+                return v
+    return str(uuid.uuid4())
+
 # CRUD Helpers
 async def crud_list(col: str):
     return await db[col].find({}, {"_id": 0}).to_list(1000)
@@ -120,7 +141,7 @@ async def admin_list_blog(user: dict = Depends(require_admin)):
 @router.post("/admin/blog")
 async def admin_create_blog(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
-    body["slug"] = slugify(body.get("title", str(uuid.uuid4())))
+    body["slug"] = slugify(get_slug_text(body.get("title")))
     body.setdefault("published", True)
     return await crud_create("blog_posts", body)
 
@@ -128,7 +149,7 @@ async def admin_create_blog(request: Request, user: dict = Depends(require_admin
 async def admin_update_blog(item_id: str, request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
     if "title" in body:
-        body["slug"] = slugify(body["title"])
+        body["slug"] = slugify(get_slug_text(body["title"]))
     return await crud_update("blog_posts", item_id, body)
 
 @router.delete("/admin/blog/{item_id}")
@@ -177,7 +198,7 @@ async def admin_list_maps(user: dict = Depends(require_admin)):
 @router.post("/admin/maps")
 async def admin_create_map(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
-    body["slug"] = slugify(body.get("title", str(uuid.uuid4())))
+    body["slug"] = slugify(get_slug_text(body.get("title")))
     body.setdefault("published", True)
     return await crud_create("maps", body)
 
@@ -185,7 +206,7 @@ async def admin_create_map(request: Request, user: dict = Depends(require_admin)
 async def admin_update_map(item_id: str, request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
     if "title" in body:
-        body["slug"] = slugify(body["title"])
+        body["slug"] = slugify(get_slug_text(body["title"]))
     return await crud_update("maps", item_id, body)
 
 @router.delete("/admin/maps/{item_id}")

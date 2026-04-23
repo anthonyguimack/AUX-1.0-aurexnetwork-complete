@@ -9,6 +9,8 @@ import { Plus, Edit2, Trash2, Loader2, DollarSign } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import { Switch } from '../../components/ui/switch';
 import RichTextEditor from '../../components/RichTextEditor';
+import LocalizedField from '../../components/admin/LocalizedField';
+import { adminText } from '../../lib/i18n';
 
 const emptyService = { title: '', description: '', short_description: '', full_content: '', icon: 'briefcase', image: '', price: 0, currency: 'usd', type: 'service', external_url: '', open_in_new_tab: false };
 
@@ -56,7 +58,7 @@ export default function ServicesManager() {
           <tbody>
             {items.map(item => (
               <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`service-row-${item.id}`}>
-                <td className="p-3 font-medium text-[#1a2332]">{item.title}</td>
+                <td className="p-3 font-medium text-[#1a2332]">{adminText(item.title)}</td>
                 <td className="p-3"><span className="text-xs uppercase bg-slate-100 px-2 py-0.5 rounded-sm">{item.type}</span></td>
                 <td className="p-3 flex items-center gap-1"><DollarSign className="w-3 h-3 text-[#0D9488]" />{item.price?.toFixed(2)}</td>
                 <td className="p-3 text-right">
@@ -73,9 +75,21 @@ export default function ServicesManager() {
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Service</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
-              <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" data-testid="service-title-input" /></div>
-              <div><Label>Short Description <span className="text-xs text-slate-400 font-normal">(Card view)</span></Label><RichTextEditor value={editing.short_description || editing.description || ''} onChange={v => setEditing({...editing, short_description: v})} /></div>
-              <div><Label>Full Content <span className="text-xs text-slate-400 font-normal">(Detail page)</span></Label><RichTextEditor value={editing.full_content || ''} onChange={v => setEditing({...editing, full_content: v})} placeholder="Full service description..." /></div>
+              <div><Label>Title</Label>
+                <LocalizedField value={editing.title} onChange={v => setEditing({...editing, title: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="service-title-input" />
+                )} />
+              </div>
+              <div><Label>Short Description <span className="text-xs text-slate-400 font-normal">(Card view)</span></Label>
+                <LocalizedField value={editing.short_description} onChange={v => setEditing({...editing, short_description: v})} render={({ value, onChange }) => (
+                  <RichTextEditor value={value || ''} onChange={onChange} />
+                )} />
+              </div>
+              <div><Label>Full Content <span className="text-xs text-slate-400 font-normal">(Detail page)</span></Label>
+                <LocalizedField value={editing.full_content} onChange={v => setEditing({...editing, full_content: v})} render={({ value, onChange }) => (
+                  <RichTextEditor value={value || ''} onChange={onChange} placeholder="Full service description..." />
+                )} />
+              </div>
               <div className="bg-slate-50 border border-slate-200 rounded-sm p-3">
                 <Label>External URL <span className="text-xs text-slate-400 font-normal">(If no Full Content, this URL is used for the "Read More" link)</span></Label>
                 <Input value={editing.external_url || ''} onChange={e => setEditing({...editing, external_url: e.target.value})} className="mt-1" placeholder="https://... or /page-url" data-testid="service-external-url" />

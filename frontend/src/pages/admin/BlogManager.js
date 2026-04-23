@@ -8,6 +8,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2, Settings2, Tag } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
+import LocalizedField from '../../components/admin/LocalizedField';
+import { adminText } from '../../lib/i18n';
 
 const emptyPost = { title: '', summary: '', content: '', category: '', author: '', image: '', published: true };
 const emptyCategory = { name: '' };
@@ -98,7 +100,7 @@ export default function BlogManager() {
             {items.map(item => (
               <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`blog-row-${item.id}`}>
                 <td className="p-3"><Checkbox checked={selected.includes(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></td>
-                <td className="p-3 font-medium text-[#1a2332]">{item.title}</td>
+                <td className="p-3 font-medium text-[#1a2332]">{adminText(item.title)}</td>
                 <td className="p-3 text-slate-500">{item.category}</td>
                 <td className="p-3 text-slate-500">{item.author}</td>
                 <td className="p-3">{item.published ? <span className="text-xs text-[#0D9488] bg-[#0D9488]/10 px-2 py-0.5 rounded-sm">Published</span> : <span className="text-xs text-slate-400 bg-slate-100 px-2 py-0.5 rounded-sm">Draft</span>}</td>
@@ -119,9 +121,23 @@ export default function BlogManager() {
           <DialogHeader><DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>{editing?.id ? 'Edit' : 'New'} Post</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
-              <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" data-testid="blog-title-input" /></div>
-              <div><Label>Summary</Label><textarea value={editing.summary || ''} onChange={e => setEditing({...editing, summary: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-summary-input" /></div>
-              <div><Label>Content</Label><div className="mt-1"><RichTextEditor value={editing.content} onChange={val => setEditing({...editing, content: val})} /></div></div>
+              <div><Label>Title</Label>
+                <LocalizedField value={editing.title} onChange={v => setEditing({...editing, title: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="blog-title-input" />
+                )} />
+              </div>
+              <div><Label>Summary</Label>
+                <LocalizedField value={editing.summary} onChange={v => setEditing({...editing, summary: v})} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-summary-input" />
+                )} />
+              </div>
+              <div><Label>Content</Label>
+                <div className="mt-1">
+                  <LocalizedField value={editing.content} onChange={v => setEditing({...editing, content: v})} render={({ value, onChange }) => (
+                    <RichTextEditor value={value || ''} onChange={onChange} />
+                  )} />
+                </div>
+              </div>
               <div className="grid grid-cols-2 gap-4">
                 <div><Label>Category</Label>
                   <select value={editing.category} onChange={e => setEditing({...editing, category: e.target.value})} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" data-testid="blog-category-select">

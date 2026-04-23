@@ -57,6 +57,19 @@ export function hasAnyTranslation(v) {
   return false;
 }
 
+/** True when the value applies to the given locale — used to filter list
+ *  items by language. Legacy plain strings are visible in every locale
+ *  (backwards compatibility). Localized dicts are only visible in the
+ *  locales they have non-empty content for. */
+export function itemHasLocale(value, lang) {
+  if (value == null) return false;
+  if (typeof value === 'string') return value !== '';
+  if (typeof value === 'object' && !Array.isArray(value)) {
+    return value[lang] != null && value[lang] !== '';
+  }
+  return false;
+}
+
 /** Upgrade a string → object when admin starts translating.
  *  Used inside LocalizedField to emit writes without destroying legacy data. */
 export function setLocaleValue(current, lang, newValue) {

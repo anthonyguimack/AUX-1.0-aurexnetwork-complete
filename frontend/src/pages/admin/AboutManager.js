@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Save, Loader2 } from 'lucide-react';
 
 import ImageUpload from '../../components/ImageUpload';
+import LocalizedField from '../../components/admin/LocalizedField';
 
 export default function AboutManager() {
   const [data, setData] = useState({ label: '', title: '', description: '', phone: '', signature_name: '', signature_title: '', image: '', button_text: '', button_url: '', button_open_in_new_tab: false });
@@ -27,22 +28,46 @@ export default function AboutManager() {
         </button>
       </div>
       <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
-        <div><Label>Label</Label><Input value={data.label} onChange={e => setData({...data, label: e.target.value})} className="mt-1" /></div>
-        <div><Label>Title</Label><Input value={data.title} onChange={e => setData({...data, title: e.target.value})} className="mt-1" /></div>
-        <div><Label>Description</Label><textarea value={data.description} onChange={e => setData({...data, description: e.target.value})} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+        <div><Label>Label</Label>
+          <LocalizedField value={data.label} onChange={v => setData({...data, label: v})} render={({ value, onChange }) => (
+            <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+          )} />
+        </div>
+        <div><Label>Title</Label>
+          <LocalizedField value={data.title} onChange={v => setData({...data, title: v})} render={({ value, onChange }) => (
+            <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+          )} />
+        </div>
+        <div><Label>Description</Label>
+          <LocalizedField value={data.description} onChange={v => setData({...data, description: v})} render={({ value, onChange }) => (
+            <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+          )} />
+        </div>
         <div className="grid grid-cols-2 gap-4">
           <div><Label>Phone</Label><Input value={data.phone} onChange={e => setData({...data, phone: e.target.value})} className="mt-1" /></div>
         </div>
         <div><Label>Image</Label><ImageUpload value={data.image} onChange={v => setData({...data, image: v})} className="mt-1" /></div>
         <div className="grid grid-cols-2 gap-4">
-          <div><Label>Signature Name</Label><Input value={data.signature_name} onChange={e => setData({...data, signature_name: e.target.value})} className="mt-1" /></div>
-          <div><Label>Signature Title</Label><Input value={data.signature_title} onChange={e => setData({...data, signature_title: e.target.value})} className="mt-1" /></div>
+          <div><Label>Signature Name</Label>
+            <LocalizedField value={data.signature_name} onChange={v => setData({...data, signature_name: v})} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+            )} />
+          </div>
+          <div><Label>Signature Title</Label>
+            <LocalizedField value={data.signature_title} onChange={v => setData({...data, signature_title: v})} render={({ value, onChange }) => (
+              <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+            )} />
+          </div>
         </div>
         {/* Call-to-action Button — supports internal (#about) / external URLs and new-tab opening. */}
         <div className="pt-4 border-t border-slate-100">
           <p className="text-xs uppercase tracking-wider text-slate-500 font-semibold mb-3">Call-to-action Button (optional)</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div><Label>Button Text</Label><Input value={data.button_text || ''} onChange={e => setData({...data, button_text: e.target.value})} placeholder="e.g. Read About Us" className="mt-1" data-testid="about-btn-text" /></div>
+            <div><Label>Button Text</Label>
+              <LocalizedField value={data.button_text} onChange={v => setData({...data, button_text: v})} render={({ value, onChange }) => (
+                <Input value={value || ''} onChange={e => onChange(e.target.value)} placeholder="e.g. Read About Us" className="mt-1" data-testid="about-btn-text" />
+              )} />
+            </div>
             <div><Label>Button URL (or anchor #id)</Label><Input value={data.button_url || ''} onChange={e => setData({...data, button_url: e.target.value})} placeholder="/about  or  #contact  or  https://…" className="mt-1" data-testid="about-btn-url" /></div>
           </div>
           <label className="mt-3 flex items-center gap-2 text-sm text-slate-600 cursor-pointer">

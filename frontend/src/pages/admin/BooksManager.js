@@ -7,6 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
 
 import ImageUpload from '../../components/ImageUpload';
+import LocalizedField from '../../components/admin/LocalizedField';
+import { adminText } from '../../lib/i18n';
 
 const emptyBook = { title: '', author: '', description: '', image: '', amazon_link: '', other_links: [], featured: false };
 
@@ -53,8 +55,8 @@ export default function BooksManager() {
             {items.map(item => (
               <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50">
                 <td className="p-3"><img src={item.image} alt="" className="w-10 h-14 object-cover rounded-sm" /></td>
-                <td className="p-3 font-medium text-[#1a2332]">{item.title}</td>
-                <td className="p-3 text-slate-500">{item.author}</td>
+                <td className="p-3 font-medium text-[#1a2332]">{adminText(item.title)}</td>
+                <td className="p-3 text-slate-500">{adminText(item.author)}</td>
                 <td className="p-3">{item.featured ? <span className="text-xs text-[#0D9488]">Yes</span> : <span className="text-xs text-slate-400">No</span>}</td>
                 <td className="p-3 text-right">
                   <button onClick={() => { setEditing({...item}); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
@@ -70,12 +72,36 @@ export default function BooksManager() {
           <DialogHeader><DialogTitle>{editing?.id ? 'Edit' : 'New'} Book</DialogTitle></DialogHeader>
           {editing && (
             <div className="space-y-4">
-              <div><Label>Title</Label><Input value={editing.title} onChange={e => setEditing({...editing, title: e.target.value})} className="mt-1" /></div>
-              <div><Label>Author</Label><Input value={editing.author} onChange={e => setEditing({...editing, author: e.target.value})} className="mt-1" /></div>
-              <div><Label>Description</Label><textarea value={editing.description} onChange={e => setEditing({...editing, description: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-              <div><Label>Synopsis</Label><textarea value={editing.synopsis || ''} onChange={e => setEditing({...editing, synopsis: e.target.value})} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="What is the book about?" /></div>
-              <div><Label>Who Is It For?</Label><textarea value={editing.who_is_it_for || ''} onChange={e => setEditing({...editing, who_is_it_for: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
-              <div><Label>About the Author</Label><textarea value={editing.about_author || ''} onChange={e => setEditing({...editing, about_author: e.target.value})} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" /></div>
+              <div><Label>Title</Label>
+                <LocalizedField value={editing.title} onChange={v => setEditing({...editing, title: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+                )} />
+              </div>
+              <div><Label>Author</Label>
+                <LocalizedField value={editing.author} onChange={v => setEditing({...editing, author: v})} render={({ value, onChange }) => (
+                  <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" />
+                )} />
+              </div>
+              <div><Label>Description</Label>
+                <LocalizedField value={editing.description} onChange={v => setEditing({...editing, description: v})} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+                )} />
+              </div>
+              <div><Label>Synopsis</Label>
+                <LocalizedField value={editing.synopsis} onChange={v => setEditing({...editing, synopsis: v})} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={3} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="What is the book about?" />
+                )} />
+              </div>
+              <div><Label>Who Is It For?</Label>
+                <LocalizedField value={editing.who_is_it_for} onChange={v => setEditing({...editing, who_is_it_for: v})} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+                )} />
+              </div>
+              <div><Label>About the Author</Label>
+                <LocalizedField value={editing.about_author} onChange={v => setEditing({...editing, about_author: v})} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />
+                )} />
+              </div>
               <div><Label>Cover Image</Label><ImageUpload value={editing.image} onChange={v => setEditing({...editing, image: v})} className="mt-1" /></div>
               <div><Label>Amazon Link</Label><Input value={editing.amazon_link} onChange={e => setEditing({...editing, amazon_link: e.target.value})} className="mt-1" /></div>
               <div className="flex items-center gap-2">

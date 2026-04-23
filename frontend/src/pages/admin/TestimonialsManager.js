@@ -6,6 +6,8 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, ArrowUp, ArrowDown, Quote } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
+import LocalizedField from '../../components/admin/LocalizedField';
+import { adminText } from '../../lib/i18n';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -64,7 +66,7 @@ export default function TestimonialsManager() {
                 <button onClick={() => moveOrder(item, 1)} disabled={idx === items.length - 1} className="text-slate-300 hover:text-slate-600 disabled:opacity-30"><ArrowDown className="w-3.5 h-3.5" /></button>
               </div>
               {item.image && (
-                <img src={resolveSrc(item.image)} alt={item.name} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
+                <img src={resolveSrc(item.image)} alt={adminText(item.name)} className="w-12 h-12 rounded-full object-cover border-2 border-white shadow-sm" />
               )}
               {!item.image && (
                 <div className="w-12 h-12 rounded-full bg-[#1a2332]/10 flex items-center justify-center">
@@ -72,9 +74,9 @@ export default function TestimonialsManager() {
                 </div>
               )}
               <div className="flex-1 min-w-0">
-                <p className="font-medium text-sm text-[#1a2332]">{item.name}</p>
-                <p className="text-xs text-slate-500">{item.title}</p>
-                <p className="text-xs text-slate-400 truncate mt-0.5">{item.content?.substring(0, 80)}...</p>
+                <p className="font-medium text-sm text-[#1a2332]">{adminText(item.name)}</p>
+                <p className="text-xs text-slate-500">{adminText(item.title)}</p>
+                <p className="text-xs text-slate-400 truncate mt-0.5">{adminText(item.content)?.substring(0, 80)}...</p>
               </div>
               <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                 <button onClick={() => { setEditing({ ...item }); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]" data-testid={`edit-testimonial-${item.id}`}><Edit2 className="w-4 h-4" /></button>
@@ -98,16 +100,22 @@ export default function TestimonialsManager() {
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Label className="text-xs text-slate-500">Author Name</Label>
-                  <Input value={editing.name} onChange={e => setEditing({ ...editing, name: e.target.value })} className="mt-1" data-testid="testimonial-name-input" />
+                  <LocalizedField value={editing.name} onChange={v => setEditing({ ...editing, name: v })} render={({ value, onChange }) => (
+                    <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="testimonial-name-input" />
+                  )} />
                 </div>
                 <div>
                   <Label className="text-xs text-slate-500">Title / Role</Label>
-                  <Input value={editing.title || ''} onChange={e => setEditing({ ...editing, title: e.target.value })} className="mt-1" data-testid="testimonial-title-input" />
+                  <LocalizedField value={editing.title} onChange={v => setEditing({ ...editing, title: v })} render={({ value, onChange }) => (
+                    <Input value={value || ''} onChange={e => onChange(e.target.value)} className="mt-1" data-testid="testimonial-title-input" />
+                  )} />
                 </div>
               </div>
               <div>
                 <Label className="text-xs text-slate-500">Quote / Testimonial</Label>
-                <textarea value={editing.content} onChange={e => setEditing({ ...editing, content: e.target.value })} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Their words..." data-testid="testimonial-content-input" />
+                <LocalizedField value={editing.content} onChange={v => setEditing({ ...editing, content: v })} render={({ value, onChange }) => (
+                  <textarea value={value || ''} onChange={e => onChange(e.target.value)} rows={4} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" placeholder="Their words..." data-testid="testimonial-content-input" />
+                )} />
               </div>
               <div>
                 <Label className="text-xs text-slate-500">Display Order</Label>

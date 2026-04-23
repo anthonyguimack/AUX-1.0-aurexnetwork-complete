@@ -19,6 +19,7 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { AUREX_FONTS, AUREX_PALETTE, aurexContrastFor } from '../lib/themeColors';
 import { useT } from '../lib/i18n';
+import { useLang, itemHasLocale } from '../lib/i18n';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { contactAPI, blogExternalAPI, checkoutAPI } from '../lib/api';
 import { useSettings } from '../App';
@@ -107,15 +108,19 @@ function LucideIcon({ name, className = 'w-8 h-8' }) {
 
 export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
-  const cols = Math.min(items.length, 3);
+  // Locale filter: each item only renders in the locales its primary field
+  // (title) has content for. Legacy plain strings show in all locales.
+  const visibleItems = items.filter(i => itemHasLocale(i.title, lang));
+  const cols = Math.min(visibleItems.length, 3);
   const ctaText = tt(config.cta_text);
   const ctaUrl = tt(config.cta_url);
   return (
     <SectionShell {...c} data-testid="aurex-section-audience">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className={`grid gap-8 ${cols === 1 ? 'grid-cols-1 max-w-md mx-auto' : cols === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-        {items.map((i, idx) => (
+        {visibleItems.map((i, idx) => (
           <Reveal as="article" delay={idx * 100} key={i.id} className="border rounded-xl p-8" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB' }} data-testid={`audience-card-${i.id}`}>
             <LucideIcon name={i.icon} className="w-9 h-9 mb-5" />
             <h3 className="text-xl font-semibold mb-2">{tt(i.title)}</h3>
@@ -138,14 +143,16 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
 
 export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
   const c = { bg: bg || '#1F2937', font, contrast: contrast || aurexContrastFor(bg || '#1F2937') };
+  const visibleItems = items.filter(i => itemHasLocale(i.title, lang));
   return (
     <SectionShell {...c} data-testid="aurex-section-process">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
       <div className="relative max-w-3xl mx-auto">
         {/* Center vertical line */}
         <div className="absolute left-8 md:left-1/2 top-2 bottom-2 w-px md:-translate-x-px" style={{ backgroundColor: c.contrast === 'light' ? 'rgba(255,255,255,.2)' : 'rgba(17,24,39,.15)' }} />
-        {items.map((step, idx) => {
+        {visibleItems.map((step, idx) => {
           const isLeft = idx % 2 === 0;
           return (
             <Reveal delay={idx * 120} key={step.id} className={`relative flex items-start gap-6 mb-12 ${isLeft ? 'md:flex-row' : 'md:flex-row-reverse'}`} data-testid={`process-step-${step.id}`}>
@@ -176,8 +183,10 @@ function parseFeatures(raw) {
 
 export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
   const [annual, setAnnual] = useState(false);
+  const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   return (
     <SectionShell {...c} data-testid="aurex-section-pricing">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
@@ -190,8 +199,8 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
           </div>
         </div>
       )}
-      <div className={`grid gap-6 ${items.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : items.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
-        {items.map((plan, idx) => {
+      <div className={`grid gap-6 ${visibleItems.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : visibleItems.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
+        {visibleItems.map((plan, idx) => {
           const price = annual ? plan.price_annual || plan.price : plan.price;
           const features = parseFeatures(plan.features);
           const featured = !!plan.is_featured;
@@ -228,11 +237,13 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
 
 export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
   const settings = useSettings();
   const networks = (settings.social_links || []).filter(n => n.platform);
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
-  const limit = config.max_visible ? Number(config.max_visible) : items.length;
-  const visible = items.slice(0, limit);
+  const filteredItems = items.filter(i => itemHasLocale(i.name, lang));
+  const limit = config.max_visible ? Number(config.max_visible) : filteredItems.length;
+  const visible = filteredItems.slice(0, limit);
   const iconFor = (network) => {
     const key = String(network.icon || network.platform || '').toLowerCase().replace(/[^a-z]/g, '');
     const map = { linkedin: Linkedin, twitter: Twitter, x: Twitter, facebook: lucide.Facebook, instagram: lucide.Instagram, youtube: lucide.Youtube, github: lucide.Github, globe: Globe };
@@ -293,15 +304,17 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
 
 export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
+  const visibleItems = items.filter(e => itemHasLocale(e.title, lang));
   return (
     <SectionShell {...c} data-testid="aurex-section-events">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
-      {items.length === 0 ? (
+      {visibleItems.length === 0 ? (
         <p className="text-center text-sm" style={{ color: c.contrast === 'light' ? 'rgba(255,255,255,.6)' : '#6b7280' }}>{tt(config.empty_message) || 'No upcoming events.'}</p>
       ) : (
         <ul className="divide-y max-w-4xl mx-auto" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.1)' : '#E5E7EB' }}>
-          {items.map((e, idx) => {
+          {visibleItems.map((e, idx) => {
             const d = new Date(`${e.date}T${e.start_time || '00:00'}`);
             const day = String(d.getDate()).padStart(2, '0');
             const month = d.toLocaleDateString(undefined, { month: 'short' });
@@ -323,7 +336,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
           })}
         </ul>
       )}
-      {config.view_all_url && items.length > 0 && tt(config.view_all_text) && (
+      {config.view_all_url && visibleItems.length > 0 && tt(config.view_all_text) && (
         <div className="text-center mt-10">
           <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>{tt(config.view_all_text)} <ArrowRight className="w-4 h-4" /></a>
         </div>
@@ -359,11 +372,13 @@ function LogoRow({ items, autoscroll, scrollSpeed, contrast, className = '' }) {
 
 export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
   const tt = useT();
+  const { lang } = useLang();
+  const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#111827', font, contrast: contrast || aurexContrastFor(bg || '#111827') };
   return (
     <SectionShell {...c} className="!py-12 md:!py-16" data-testid="aurex-section-partners">
       {config.title && <h2 className="text-center text-xl md:text-2xl font-semibold mb-8">{tt(config.title)}</h2>}
-      <LogoRow items={items} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed} contrast={c.contrast} />
+      <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed} contrast={c.contrast} />
     </SectionShell>
   );
 }
@@ -371,11 +386,13 @@ export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
 // ─── 7. Our Clients (light bg, gallery style) ────────────────────────────
 
 export function AurexClients({ config = {}, items = [], bg, font, contrast }) {
+  const { lang } = useLang();
+  const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
   return (
     <SectionShell {...c} data-testid="aurex-section-clients">
       <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
-      <LogoRow items={items} autoscroll={config.autoscroll} scrollSpeed={30} contrast={c.contrast} className="py-8" />
+      <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={30} contrast={c.contrast} className="py-8" />
     </SectionShell>
   );
 }
@@ -504,22 +521,25 @@ const monoText = { color: '#111827', fontFamily: "'Inter', sans-serif" };
 // About
 export function AurexAboutMono({ data, bg, font }) {
   const tt = useT();
-  if (!data?.title) return null;
+  const { lang } = useLang();
+  // Hide the whole About section if the admin has no title translation
+  // for the current locale. Legacy plain-string titles still render.
+  if (!itemHasLocale(data?.title, lang)) return null;
   const img = resolveImg(data.image);
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
     <section className={monoShell} style={m.style} id="about" data-testid="about-section">
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
         <Reveal>
-          {data.label && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(data.label)}</p>}
+          {tt(data.label) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(data.label)}</p>}
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6" data-testid="about-title">{tt(data.title)}</h2>
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.8)' : '#111827' }} />
-          <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(data.description) || '' }} />
+          {tt(data.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(data.description) }} />}
           <div className="flex items-center gap-6 mt-8 flex-wrap">
             {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}><Phone className="w-4 h-4" /></div><div><p className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>Call us</p><p className="text-sm font-semibold">{data.phone}</p></div></div>}
-            {data.signature_name && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{tt(data.signature_name)}</p><p className={`text-xs ${m.mutedClass}`}>{tt(data.signature_title)}</p></div>}
+            {tt(data.signature_name) && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{tt(data.signature_name)}</p>{tt(data.signature_title) && <p className={`text-xs ${m.mutedClass}`}>{tt(data.signature_title)}</p>}</div>}
           </div>
-          {data.button_text && <div className="mt-8"><MonoButton href={data.button_url} text={data.button_text} newTab={data.button_open_in_new_tab} m={m} dataTestId="about-cta-btn" /></div>}
+          {tt(data.button_text) && <div className="mt-8"><MonoButton href={data.button_url} text={data.button_text} newTab={data.button_open_in_new_tab} m={m} dataTestId="about-cta-btn" /></div>}
         </Reveal>
         {img && <Reveal delay={120}><img src={img} alt="" className="w-full rounded-xl object-cover aspect-[4/3]" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }} /></Reveal>}
       </div>
@@ -530,7 +550,9 @@ export function AurexAboutMono({ data, bg, font }) {
 // Services
 export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
   const tt = useT();
-  if (!services?.length) return null;
+  const { lang } = useLang();
+  const filtered = (services || []).filter(s => itemHasLocale(s.title, lang));
+  if (!filtered.length) return null;
   const m = monoStyle(bg, font, '#F9FAFB');
   const clean = (html) => (html || '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').replace(/<[^>]*>/g, '');
   // Each service card is only linked when the admin has explicitly set an
@@ -546,7 +568,7 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
           {tt(cmsConfig.subtitle) && <p className={`mt-4 max-w-2xl mx-auto ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
         </Reveal>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10 md:gap-12">
-          {services.slice(0, 6).map((s, idx) => {
+          {filtered.slice(0, 6).map((s, idx) => {
             const linked = hasLink(s);
             const target = linked && s.open_in_new_tab ? '_blank' : '_self';
             const commonProps = {
@@ -588,7 +610,9 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
 // News
 export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
   const tt = useT();
-  if (!posts?.length) return null;
+  const { lang } = useLang();
+  const filtered = (posts || []).filter(p => itemHasLocale(p.title, lang));
+  if (!filtered.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
     <section className={monoShell} style={m.style} id="news" data-testid="news-section">
@@ -602,7 +626,7 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
           {tt(cmsConfig.cta_text) && <MonoButton href={cmsConfig.cta_url} text={cmsConfig.cta_text} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="news-view-all" />}
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {posts.slice(0, 3).map((p, idx) => (
+          {filtered.slice(0, 3).map((p, idx) => (
             <Reveal as={Link} delay={idx * 80} to={`/news/${p.slug || p.id}`} key={p.id} className="group rounded-xl overflow-hidden transition-colors block" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
               {p.image && <div className="aspect-[16/10] overflow-hidden" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.05)' : '#F9FAFB' }}><img src={resolveImg(p.image)} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: 'grayscale(10%)' }} /></div>}
               <div className="p-6">
@@ -621,13 +645,17 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
 // External Blog
 export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
   const tt = useT();
+  const { lang } = useLang();
   const settings = useSettings();
   const m = monoStyle(bg, font, '#F9FAFB');
   const [posts, setPosts] = useState([]);
   useEffect(() => {
     if (settings.blog_api_url) blogExternalAPI.getLatest().then(r => setPosts(r.data?.posts || [])).catch(() => {});
   }, [settings.blog_api_url]);
-  if (!posts.length) return null;
+  // External blog posts come from a 3rd-party source — they're plain-string
+  // titles. `itemHasLocale` treats plain strings as visible in all locales.
+  const filtered = posts.filter(p => itemHasLocale(p.title, lang));
+  if (!filtered.length) return null;
   return (
     <section className={monoShell} style={m.style} id="blog" data-testid="blog-section">
       <div className="max-w-7xl mx-auto">
@@ -640,7 +668,7 @@ export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
           {tt(cmsConfig.cta_text) && <MonoButton href={cmsConfig.cta_url} text={cmsConfig.cta_text} newTab={cmsConfig.cta_new_tab} m={m} dataTestId="blog-view-all" />}
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          {posts.slice(0, 3).map((p, i) => (
+          {filtered.slice(0, 3).map((p, i) => (
             <Reveal as="a" href={p.url || p.link} target="_blank" rel="noreferrer" delay={i * 80} key={i} className="group rounded-xl overflow-hidden transition-colors block" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
               {p.image && <div className="aspect-[16/10] overflow-hidden"><img src={p.image} alt="" className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" style={{ filter: 'grayscale(10%)' }} /></div>}
               <div className="p-6">
@@ -657,7 +685,10 @@ export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
 
 // Reading List
 export function AurexReadingMono({ books, bg, font }) {
-  if (!books?.length) return null;
+  const tt = useT();
+  const { lang } = useLang();
+  const filtered = (books || []).filter(b => itemHasLocale(b.title, lang));
+  if (!filtered.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
     <section className={monoShell} style={m.style} id="reading-list" data-testid="reading-section">
@@ -670,16 +701,16 @@ export function AurexReadingMono({ books, bg, font }) {
           <Link to="/reading-list" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">View all <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
-          {books.slice(0, 5).map((b, idx) => {
+          {filtered.slice(0, 5).map((b, idx) => {
             const cover = b.image || b.cover_image;
             const src = resolveImg(cover);
             return (
               <Reveal as={Link} to="/reading-list" delay={idx * 60} key={b.id} className="group rounded-xl overflow-hidden transition-colors block" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#FFFFFF', borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
-                {src ? <div className="aspect-[2/3] overflow-hidden" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }}><img src={src} alt={b.title} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
+                {src ? <div className="aspect-[2/3] overflow-hidden" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.04)' : '#F9FAFB' }}><img src={src} alt={tt(b.title)} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" /></div>
                      : <div className="aspect-[2/3] flex items-center justify-center bg-gray-900"><BookOpen className="w-8 h-8 text-white/60" /></div>}
                 <div className="p-3">
-                  <p className="text-sm font-semibold truncate">{b.title}</p>
-                  <p className={`text-xs ${m.mutedClass} truncate`}>{b.author}</p>
+                  <p className="text-sm font-semibold truncate">{tt(b.title)}</p>
+                  <p className={`text-xs ${m.mutedClass} truncate`}>{tt(b.author)}</p>
                 </div>
               </Reveal>
             );
@@ -721,7 +752,9 @@ export function AurexMapMono({ maps, locations, title, mapsLang, bg, font, cmsCo
 
 // Portfolio
 export function AurexPortfolioMono({ items, bg, font }) {
-  if (!items?.length) return null;
+  const { lang } = useLang();
+  const filtered = (items || []).filter(i => itemHasLocale(i.title, lang));
+  if (!filtered.length) return null;
   const m = monoStyle(bg, font, '#FFFFFF');
   return (
     <section className={monoShell} style={m.style} id="portfolio" data-testid="portfolio-section">
@@ -734,7 +767,7 @@ export function AurexPortfolioMono({ items, bg, font }) {
           <Link to="/featured-projects" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid="portfolio-view-all">View all <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {items.slice(0, 4).map((p, idx) => (
+          {filtered.slice(0, 4).map((p, idx) => (
             <Reveal delay={idx * 100} key={p.id} className="group relative rounded-xl overflow-hidden" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
               {p.image && <img src={resolveImg(p.image)} alt="" className="w-full h-80 object-cover transition-all duration-500 group-hover:scale-105" style={{ filter: 'grayscale(30%)' }} />}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent flex items-end p-7 opacity-90 group-hover:opacity-100 transition-opacity">
@@ -754,7 +787,9 @@ export function AurexPortfolioMono({ items, bg, font }) {
 
 // Gallery
 export function AurexGalleryMono({ items, bg, font }) {
-  if (!items?.length) return null;
+  const { lang } = useLang();
+  const filtered = (items || []).filter(i => itemHasLocale(i.title, lang));
+  if (!filtered.length) return null;
   const m = monoStyle(bg, font, '#F9FAFB');
   return (
     <section className={monoShell} style={m.style} id="gallery" data-testid="gallery-section">
@@ -767,7 +802,7 @@ export function AurexGalleryMono({ items, bg, font }) {
           <Link to="/gallery" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">View all <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-          {items.slice(0, 6).map((img, idx) => (
+          {filtered.slice(0, 6).map((img, idx) => (
             <Reveal delay={idx * 60} key={img.id} className="group overflow-hidden rounded-xl" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}>
               <img src={resolveImg(img.image)} alt={img.title} className="w-full aspect-square object-cover group-hover:scale-105 transition-all duration-500" style={{ filter: 'grayscale(40%)' }} onMouseEnter={e => (e.currentTarget.style.filter = 'grayscale(0%)')} onMouseLeave={e => (e.currentTarget.style.filter = 'grayscale(40%)')} />
             </Reveal>
@@ -781,6 +816,7 @@ export function AurexGalleryMono({ items, bg, font }) {
 // Testimonials — carousel: arrows + dots, 3 visible on desktop, 1 on mobile.
 export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
   const tt = useT();
+  const { lang } = useLang();
   const m = monoStyle(bg, font, '#FFFFFF');
   const [page, setPage] = useState(0);
   const [perView, setPerView] = useState(3);
@@ -790,10 +826,15 @@ export function AurexTestimonialsMono({ items, bg, font, cmsConfig = {} }) {
     window.addEventListener('resize', calc);
     return () => window.removeEventListener('resize', calc);
   }, []);
-  if (!items?.length) return null;
-  const pageCount = Math.max(1, Math.ceil(items.length / perView));
+  // Filter testimonials by locale. Match on the primary `content` field —
+  // plain strings show in every locale, dict values only show where filled.
+  const filtered = (items || []).filter(t => itemHasLocale(t.content, lang));
+  // Reset page when filter changes to avoid out-of-range index
+  useEffect(() => { setPage(0); }, [lang, filtered.length]);
+  if (!filtered.length) return null;
+  const pageCount = Math.max(1, Math.ceil(filtered.length / perView));
   const go = (n) => setPage((n + pageCount) % pageCount);
-  const visible = items.slice(page * perView, page * perView + perView);
+  const visible = filtered.slice(page * perView, page * perView + perView);
   return (
     <section className={monoShell} style={m.style} id="testimonials" data-testid="testimonials-section">
       <div className="max-w-7xl mx-auto">
