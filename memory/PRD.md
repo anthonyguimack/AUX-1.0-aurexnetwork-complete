@@ -600,32 +600,46 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
-### Iteration 74 — Multi-Language (EN+ES) Complete (Apr 23, 2026)
+### Iteration 75 — Strict i18n + Aurex CMS bug fixes (Apr 23, 2026)
 
-**Complete bilingual frontend + CMS wiring.** The scaffolding (i18n.js, LanguageSwitcher, LocalizedField, Settings Languages tab) was built previously; this session finished wiring it into every component.
+**User feedback resolved — 8 fixes in one push.** All verified via iteration_62 testing agent: 31/31 backend tests + frontend verification.
 
-**Frontend consumption (`tt()` helper):**
-- `AurexSections.js` — added `const tt = useT()` + wrapped every user-facing string in all 7 Aurex sections (Audience, Process, Pricing, Team, Events, Partners, Clients) and 10 mono variants (About, Services, News, Blog, Reading, Map, Portfolio, Gallery, Testimonials, Contact). `MonoButton`, `SectionHeader` and `AurexHeroMono` also localize `text`/`href`/`title`/`subtitle`/`description`/`button_*` via `tt()`.
-- `HeroSection.js` — added `useT()` + wrapped every slide field (title, subtitle, description, button_text/url) in both legacy and modern+aurex layouts, plus `HeroButtonsRow`.
+**Strict i18n mode (`lib/i18n.js`):**
+- `t(value, lang)` no longer falls back to `defaultLang` or other locales or `_legacy` keys. If the current locale is empty, returns `''`. Plain legacy strings still work (returned as-is).
+- `setLocaleValue()` no longer stashes `_legacy` fallbacks — fresh strings are discarded on first edit so old data can't leak into other locales.
+- Added `adminText(v)` helper — returns first non-empty locale for admin-only list previews (so CMS rows stay readable regardless of which locale is active).
+- Added `hasAnyTranslation(v)` helper for conditional rendering.
 
-**CMS — LocalizedField integration:**
-- `AurexSectionsManager.js` `FieldInput` now wraps `text`, `textarea`, and `rich` field types with `<LocalizedField>`. URLs, numbers, booleans, selects, images, icons, and social_links remain scalar.
-- Each localized field shows EN/ES tabs with a green dot indicating which locale is filled in.
-- Fixed import path bug in `LocalizedField.js` (was `../lib/i18n`, corrected to `../../lib/i18n`).
+**FR React crash fix (`AurexSectionsManager.js`):**
+- Item rows were rendering `{item.description}` and `{item.badge}` directly — crashed with "Objects are not valid as a React child" when the field was a dict like `{fr: "…"}`. Now wrapped with `adminText()`.
+- `schema.itemPreview(item)` functions in `aurexSchemas.js` refactored to call `adminText()` on every dict-capable field (`i.title`, `i.name`, `i.role`).
+- Duplicate handler handles both plain-string and localized `{en, es, …}` dicts when appending " (Copy)".
 
-**Locale initialization race fix:**
-- `LanguageProvider` previously read `localStorage.aurex_locale` and `?lang=` on mount, but `settings` was still empty at that point — the `enabled.includes(candidate)` check rejected stored locales. Now re-runs in a `useEffect` after settings arrive (one-time `initialized` flag).
+**"Open in new window" standardization (`aurexSchemas.js`):**
+- Added `cta_new_tab` to `aurex_audience` config + `aurex_pricing` items.
+- Added `view_all_new_tab` to `aurex_team` + `aurex_events` configs.
+- Partners/Clients already had `link_target` select. All Aurex sections now uniformly support the new-tab flag.
 
-**Backend** — no schema changes needed. `aurex_section_configs` / `aurex_section_items` are stored as raw dicts, so `{title: {en: "…", es: "…"}}` round-trips transparently through existing PUT/GET endpoints.
+**Unified rectangular buttons (`AurexSections.js`):**
+- Audience CTA, Team view-all, Events View + View-all, Pricing CTA (in-plan), Contact Submit all switched from `rounded-full` → `rounded-sm` with 1.5px border matching About's `MonoButton`. Verified border-radius = 0px in DOM.
 
-**Verified end-to-end:**
-- iteration_61 testing agent → 19/19 backend tests pass.
-- Playwright visual: seeded Audience config as `{en: "Aurex is for you", es: "Aurex es para ti"}` → homepage renders EN title by default; click `[data-testid="language-switcher"]` → select ES → title updates to "Aurex es para ti" and CTA to "Comienza tu camino" without reload.
-- URL `?lang=es` forces ES regardless of localStorage.
-- Switcher auto-hides when only one language is enabled.
+**Removed hardcoded default fallbacks (`AurexSections.js`):**
+- Every mono variant header (Services / News / Blog / Map / Testimonials / Contact) now uses conditional render: `{tt(cmsConfig.title) && <h2>{tt(cmsConfig.title)}</h2>}`. No more "Our Services" / "Testimonials" / "Blog" / "From our desk" / "Presence" / "Let's work together" leaking through when the admin has an empty translation in the current locale.
+- CTAs hide entirely when `tt(cmsConfig.cta_text)` is empty.
+- Video section no longer shows `_legacy` pollution — strict tt() + PUT wipe cleared stale DB data.
+
+**Testimonials photo + role (`AurexTestimonialsMono`):**
+- Backend field name was `image` (not `avatar`) — frontend now reads `t.image || t.avatar` as fallback.
+- Role field was `t.title` (not `t.role`) in the TestimonialsManager — frontend now prefers `tt(t.title) || tt(t.role)` and renders under the name in uppercase tracking.
+
+**Services card conditional linking (`AurexServicesMono`):**
+- Previously fell back to internal `/service/{id}` when `external_url` was unset — now renders as a plain non-clickable `<Reveal>` when no external URL is set. When external URL is present, renders as `<a>` honoring `open_in_new_tab`. Hover underline only applies on linked cards.
+
+**Hero CTA filter fix (`AurexHeroMono`):**
+- CTAs array filter changed from `c.text` (truthy check includes objects) to `tt(c.text)` (content check) so buttons without a translation for the active locale are hidden entirely.
 
 ## Pending/Backlog
-- (P2) SEO pre-render: nightly job to emit hydrated `/index.html` with meta tags + critical above-the-fold content (important for bilingual SEO).
+- (P2) SEO pre-render: nightly job emitting hydrated `/index.html` with meta tags + above-the-fold content (important for bilingual SEO).
 - (P2) S3/Cloud Image Storage migration
 - (P2) Production SMTP Configuration
 - (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
