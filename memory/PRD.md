@@ -600,7 +600,39 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
-### Iteration 75 — Strict i18n + Aurex CMS bug fixes (Apr 23, 2026)
+### Iteration 76 — Locale-scoped items + 5 managers with LocalizedField (Apr 23, 2026)
+
+**Per-item locale scoping.** Items (cards, testimonials, posts, etc.) now auto-hide when their primary field has no content in the current locale. Verified via iteration_63: 28/28 backend + frontend manual tests pass.
+
+**New helper (`lib/i18n.js`):**
+- `itemHasLocale(value, lang)` → `true` if value is a non-empty plain string (legacy, visible everywhere) OR value is a dict with `value[lang]` non-empty.
+
+**Frontend filtering (`AurexSections.js`) — 14 sections:**
+- **Aurex sections**: `AurexAudience` (filter `i.title`), `AurexProcess` (`i.title`), `AurexPricing` (`i.name`), `AurexTeam` (`i.name`, `max_visible` still respected), `AurexEvents` (`e.title`, view-all hidden when empty), `AurexPartners` (`i.name`), `AurexClients` (`i.name`).
+- **Mono variants**: `AurexServicesMono` (`s.title`), `AurexNewsMono` (`p.title`), `AurexBlogMono` (`p.title`, external posts), `AurexReadingMono` (`b.title` + wrap `b.title`/`b.author` with `tt()`), `AurexTestimonialsMono` (`t.content`, page index resets on lang change), `AurexPortfolioMono` (`i.title`), `AurexGalleryMono` (`i.title`).
+- `AurexAboutMono` now hides the whole section when `data.title` has no translation for the current locale (strict mode). Conditional render for every field.
+
+**CMS managers — LocalizedField wiring for 5 managers:**
+- `TestimonialsManager.js` — `name`, `title` (role), `content` get EN/ES tabs. List view uses `adminText()` for name/title/content to prevent React crashes when fields are dicts.
+- `AboutManager.js` — `label`, `title`, `description`, `signature_name`, `signature_title`, `button_text` all wrapped with `LocalizedField`.
+- `ServicesManager.js` — `title`, `short_description`, `full_content` localized. Table uses `adminText(item.title)`.
+- `BlogManager.js` — `title`, `summary`, `content` localized. Table title via `adminText()`.
+- `BooksManager.js` (Reading List) — `title`, `author`, `description`, `synopsis`, `who_is_it_for`, `about_author` localized. Table cells use `adminText()`.
+
+**Backend**: no changes — existing endpoints store raw dicts and round-trip transparently.
+
+**Verified behavior:**
+- Admin creates item with only ES content → hidden in EN mode, visible in ES mode.
+- Admin creates item with both EN and ES → shows correct locale per switcher.
+- Legacy plain-string items (pre-i18n content) remain visible in every locale.
+- Section-level content (titles, subtitles, CTAs) strict per previous iteration — no cross-locale fallback.
+
+## Pending/Backlog
+- (P2) SEO pre-render: nightly job emitting hydrated `/index.html` with meta tags + above-the-fold content (important for bilingual SEO).
+- (P2) S3/Cloud Image Storage migration
+- (P2) Production SMTP Configuration
+- (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
+- (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog (currently only MentorshipProfile has it)
 
 **User feedback resolved — 8 fixes in one push.** All verified via iteration_62 testing agent: 31/31 backend tests + frontend verification.
 
