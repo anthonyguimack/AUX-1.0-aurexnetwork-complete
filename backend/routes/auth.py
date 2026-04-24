@@ -1,5 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Response, Depends
-from models.database import db, verify_password, create_jwt_token, hash_password, generate_reset_token, get_current_user, send_email_smtp, logger
+from models.database import db, verify_password, create_jwt_token, hash_password, generate_reset_token, get_current_user, get_user_permissions, send_email_smtp, logger
 from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
@@ -28,6 +28,9 @@ async def login(request: Request, response: Response):
 async def auth_me(request: Request):
     user = await get_current_user(request)
     result = {k: v for k, v in user.items() if k != "password_hash"}
+    # Roles & Permissions: effective CMS access for the current session
+    result["cms_roles"] = user.get("cms_roles") or (["role_admin"] if user.get("role") == "admin" else ["role_member"])
+    result["effective_permissions"] = sorted(await get_user_permissions(user))
     # If member has a member_type_id, attach the type's permissions and allowed_pages
     mt_id = user.get("member_type_id")
     if mt_id:

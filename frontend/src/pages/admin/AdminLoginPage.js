@@ -17,10 +17,11 @@ export default function AdminLoginPage() {
     setLoading(true);
     try {
       const result = await login(email, password);
-      if (result?.role === 'admin') {
+      const hasCmsAccess = result?.role === 'admin' || ((result?.effective_permissions || []).length > 0);
+      if (hasCmsAccess) {
         navigate('/admin');
       } else {
-        setError('Access denied. Admin credentials required.');
+        setError('Access denied. No CMS permissions assigned to this account.');
       }
     } catch (err) {
       setError(err.response?.data?.detail || 'Invalid credentials');

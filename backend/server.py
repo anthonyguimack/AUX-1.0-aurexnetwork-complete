@@ -37,6 +37,7 @@ from routes.payouts import router as payouts_router
 from routes.coupons import router as coupons_router
 from routes.aurex_sections import router as aurex_sections_router
 from routes.hero_ab import router as hero_ab_router
+from routes.roles import router as roles_router, seed_system_roles
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -55,6 +56,7 @@ api_router.include_router(payouts_router)
 api_router.include_router(coupons_router)
 api_router.include_router(aurex_sections_router)
 api_router.include_router(hero_ab_router)
+api_router.include_router(roles_router)
 
 # Import seed data function
 from seed import seed_data
@@ -64,6 +66,7 @@ async def startup():
     await seed_data()
     from routes.enrollment import seed_enrollment_fields
     await seed_enrollment_fields()
+    await seed_system_roles()
     from scheduler import start_scheduler
     start_scheduler()
 

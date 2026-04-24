@@ -31,10 +31,12 @@ export function AuthProvider({ children }) {
 
   const login = async (email, password) => {
     const res = await authAPI.login(email, password);
-    const { token, user: userData } = res.data;
+    const { token } = res.data;
     localStorage.setItem('auth_token', token);
-    setUser(userData);
-    return userData;
+    // Re-fetch from /auth/me so user object carries effective_permissions + cms_roles
+    const me = await authAPI.me();
+    setUser(me.data);
+    return me.data;
   };
 
   const logout = async () => {

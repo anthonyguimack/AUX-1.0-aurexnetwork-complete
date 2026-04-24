@@ -87,10 +87,68 @@ async def get_current_user(request: Request) -> dict:
     raise HTTPException(status_code=401, detail="Not authenticated")
 
 async def require_admin(request: Request) -> dict:
+    """Permission-aware admin gate.
+
+    Accepts the caller if EITHER:
+      1. `role == "admin"` (legacy + seeded bootstrap admin), OR
+      2. The caller holds a CMS role whose `permissions[]` includes the section
+         that owns this URL (per `cms_sections.get_section_for_path`).
+
+    This keeps every existing `Depends(require_admin)` decorator unchanged while
+    enabling delegated operator access per the Roles & Permissions system.
+    Sections marked `admin_only` in the registry (currently only the Roles
+    editor itself) reject anyone whose `role` is not `admin` — even if they
+    somehow hold the key in their permissions list.
+    """
+    from models.cms_sections import get_section_for_path
+    user = await get_current_user(request)
+    if user.get("role") == "admin":
+        return user
+    section_key, admin_only = get_section_for_path(request.url.path)
+    if admin_only:
+        raise HTTPException(status_code=403, detail="Admin access required")
+    if section_key is None:
+        # Unmapped admin route — default to admin-only (fail-closed).
+        raise HTTPException(status_code=403, detail="Admin access required")
+    perms = await get_user_permissions(user)
+    if section_key in perms:
+        return user
+    raise HTTPException(status_code=403, detail=f"Access denied to section: {section_key}")
+
+
+async def require_super_admin(request: Request) -> dict:
+    """Strict admin gate — rejects operators regardless of their permissions.
+    Use for self-protective endpoints (role CRUD, etc.)."""
     user = await get_current_user(request)
     if user.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return user
+
+
+async def get_user_permissions(user: dict) -> set:
+    """Union of CMS section keys this user has access to.
+
+    • `role == "admin"` → every key (short-circuits full scan).
+    • Otherwise looks up each role in `user.cms_roles` and merges their
+      `permissions[]`; a role flagged `full_access: True` grants every
+      assignable section.
+    Returns a `set[str]`.
+    """
+    from models.cms_sections import ALL_SECTION_KEYS, ASSIGNABLE_SECTION_KEYS
+    if user.get("role") == "admin":
+        return set(ALL_SECTION_KEYS)
+    role_ids = user.get("cms_roles") or []
+    if not role_ids:
+        return set()
+    roles = await db.cms_roles.find({"id": {"$in": role_ids}}, {"_id": 0}).to_list(100)
+    perms = set()
+    for r in roles:
+        if r.get("full_access"):
+            return set(ASSIGNABLE_SECTION_KEYS)
+        perms.update(r.get("permissions") or [])
+    # Never leak admin-only keys through a permission grant.
+    perms.discard("roles_permissions")
+    return perms
 
 async def send_email_smtp(settings: dict, to_email: str, to_name: str, subject: str, html_body: str, from_email: str = "", from_name: str = "", cc_list: list = None):
     smtp_host = settings.get("smtp_host", "")

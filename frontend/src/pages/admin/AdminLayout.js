@@ -5,57 +5,64 @@ import { useSettings } from '../../App';
 import {
   LayoutDashboard, Image, Info, Package, FileText, BookOpen, Map, Images, Briefcase, 
   MessageSquare, Mail, CreditCard, Settings, LogOut, ChevronLeft, Menu, X, FileStack, Users,
-  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign, Ticket, Sparkles
+  BarChart3, Globe, Layers, UserCheck, Shield, ClipboardCheck, Database, Rocket, MapPin, ScrollText, CalendarDays, DollarSign, Ticket, Sparkles, Lock
 } from 'lucide-react';
 
+/* Each interactive entry carries the section key it maps to in the CMS Section
+   Registry (`backend/models/cms_sections.py`). The sidebar is filtered at
+   render time against `user.effective_permissions` so operators never see links
+   to sections they cannot open. `admin_only: true` items are additionally hidden
+   from anyone whose `role` is not `admin` (Roles &amp; Permissions editor). */
 const sidebarItems = [
-  { label: 'Dashboard', icon: LayoutDashboard, href: '/admin' },
-  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics' },
-  { label: 'Hero', icon: Image, href: '/admin/hero' },
-  { label: 'Hero A/B', icon: BarChart3, href: '/admin/hero-ab' },
-  { label: 'About Us', icon: Info, href: '/admin/about' },
-  { label: 'Services', icon: Package, href: '/admin/services' },
-  { label: 'Blog', icon: FileText, href: '/admin/blog' },
-  { label: 'Reading List', icon: BookOpen, href: '/admin/books' },
-  { label: 'Maps', icon: Map, href: '/admin/maps' },
-  { label: 'Gallery', icon: Images, href: '/admin/gallery' },
-  { label: 'Gallery Albums', icon: Images, href: '/admin/gallery-albums' },
-  { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio' },
-  { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials' },
-  { label: 'Pages', icon: FileStack, href: '/admin/pages' },
-  { type: 'divider', label: 'Landing Page' },
-  { label: 'Hero', icon: Rocket, href: '/admin/landing-hero', group: 'landing' },
-  { label: 'Content', icon: Layers, href: '/admin/landing-content', group: 'landing' },
-  { label: 'Subscribers', icon: UserCheck, href: '/admin/landing-subscribers', group: 'landing' },
-  { label: 'Contacts', icon: Mail, href: '/admin/landing-contacts', group: 'landing' },
-  { type: 'divider', label: 'Membership Enrollment' },
-  { label: 'Content', icon: ClipboardCheck, href: '/admin/enrollment-fields', group: 'enrollment' },
-  { type: 'divider', label: 'Calendar' },
-  { label: 'Global Events', icon: CalendarDays, href: '/admin/calendar/global', group: 'calendar' },
-  { label: 'Mentorship Schedule', icon: CalendarDays, href: '/admin/calendar/mentorship', group: 'calendar' },
-  { label: 'Mentor Slot Templates', icon: CalendarDays, href: '/admin/calendar/mentor-slot-templates', group: 'calendar' },
-  { label: 'Blocked Dates', icon: CalendarDays, href: '/admin/calendar/blocked-dates', group: 'calendar' },
-  { label: 'Session Bundles', icon: CalendarDays, href: '/admin/calendar/bundles', group: 'calendar' },
-  { label: 'Discount Coupons', icon: Ticket, href: '/admin/calendar/coupons', group: 'calendar' },
-  { label: 'Payouts', icon: DollarSign, href: '/admin/payouts', group: 'calendar' },
-  { type: 'divider', label: 'My Account' },
-  { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount' },
-  { type: 'divider', label: 'Membership' },
-  { label: 'Members', icon: UserCheck, href: '/admin/members' },
-  { label: 'Member Levels', icon: Shield, href: '/admin/member-levels' },
-  { label: 'Member Types', icon: Users, href: '/admin/member-types' },
-  { label: 'Membership Settings', icon: ClipboardCheck, href: '/admin/membership-settings' },
-  { type: 'divider', label: 'System' },
-  { label: 'Contacts', icon: Mail, href: '/admin/contacts' },
-  { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings' },
-  { label: 'Purchases', icon: CreditCard, href: '/admin/purchases' },
-  { label: 'Sections', icon: Layers, href: '/admin/section-order' },
-  { label: 'Aurex Sections', icon: Sparkles, href: '/admin/aurex-sections' },
-  { label: 'SEO', icon: Globe, href: '/admin/seo' },
-  { label: 'Countries, States, Cities', icon: MapPin, href: '/admin/geo' },
-  { label: 'Documentation', icon: ScrollText, href: '/admin/documentation' },
-  { label: 'Backup', icon: Database, href: '/admin/backup' },
-  { label: 'Settings', icon: Settings, href: '/admin/settings' },
+  { label: 'Dashboard', icon: LayoutDashboard, href: '/admin', section: 'dashboard' },
+  { label: 'Analytics', icon: BarChart3, href: '/admin/analytics', section: 'analytics' },
+  { label: 'Hero', icon: Image, href: '/admin/hero', section: 'hero' },
+  { label: 'Hero A/B', icon: BarChart3, href: '/admin/hero-ab', section: 'hero_ab' },
+  { label: 'About Us', icon: Info, href: '/admin/about', section: 'about' },
+  { label: 'Services', icon: Package, href: '/admin/services', section: 'services' },
+  { label: 'Blog', icon: FileText, href: '/admin/blog', section: 'blog' },
+  { label: 'Reading List', icon: BookOpen, href: '/admin/books', section: 'books' },
+  { label: 'Maps', icon: Map, href: '/admin/maps', section: 'maps' },
+  { label: 'Gallery', icon: Images, href: '/admin/gallery', section: 'gallery' },
+  { label: 'Gallery Albums', icon: Images, href: '/admin/gallery-albums', section: 'gallery_albums' },
+  { label: 'Portfolio', icon: Briefcase, href: '/admin/portfolio', section: 'portfolio' },
+  { label: 'Testimonials', icon: MessageSquare, href: '/admin/testimonials', section: 'testimonials' },
+  { label: 'Pages', icon: FileStack, href: '/admin/pages', section: 'pages' },
+  { type: 'divider', label: 'Landing Page', group: 'landing' },
+  { label: 'Hero', icon: Rocket, href: '/admin/landing-hero', group: 'landing', section: 'landing_hero' },
+  { label: 'Content', icon: Layers, href: '/admin/landing-content', group: 'landing', section: 'landing_content' },
+  { label: 'Subscribers', icon: UserCheck, href: '/admin/landing-subscribers', group: 'landing', section: 'landing_subscribers' },
+  { label: 'Contacts', icon: Mail, href: '/admin/landing-contacts', group: 'landing', section: 'landing_contacts' },
+  { type: 'divider', label: 'Membership Enrollment', group: 'enrollment' },
+  { label: 'Content', icon: ClipboardCheck, href: '/admin/enrollment-fields', group: 'enrollment', section: 'enrollment_fields' },
+  { type: 'divider', label: 'Calendar', group: 'calendar' },
+  { label: 'Global Events', icon: CalendarDays, href: '/admin/calendar/global', group: 'calendar', section: 'calendar_global' },
+  { label: 'Mentorship Schedule', icon: CalendarDays, href: '/admin/calendar/mentorship', group: 'calendar', section: 'calendar_mentorship' },
+  { label: 'Mentor Slot Templates', icon: CalendarDays, href: '/admin/calendar/mentor-slot-templates', group: 'calendar', section: 'calendar_mentor_slot_templates' },
+  { label: 'Blocked Dates', icon: CalendarDays, href: '/admin/calendar/blocked-dates', group: 'calendar', section: 'calendar_blocked_dates' },
+  { label: 'Session Bundles', icon: CalendarDays, href: '/admin/calendar/bundles', group: 'calendar', section: 'calendar_bundles' },
+  { label: 'Discount Coupons', icon: Ticket, href: '/admin/calendar/coupons', group: 'calendar', section: 'calendar_coupons' },
+  { label: 'Payouts', icon: DollarSign, href: '/admin/payouts', group: 'calendar', section: 'payouts' },
+  { type: 'divider', label: 'My Account', group: 'myaccount' },
+  { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount', section: 'quick_links' },
+  { type: 'divider', label: 'Membership', group: 'membership' },
+  { label: 'Members', icon: UserCheck, href: '/admin/members', section: 'members' },
+  { label: 'Member Levels', icon: Shield, href: '/admin/member-levels', section: 'member_levels' },
+  { label: 'Member Types', icon: Users, href: '/admin/member-types', section: 'member_types' },
+  { label: 'Membership Settings', icon: ClipboardCheck, href: '/admin/membership-settings', section: 'membership_settings' },
+  { type: 'divider', label: 'System', group: 'system' },
+  { label: 'Contacts', icon: Mail, href: '/admin/contacts', section: 'contacts' },
+  { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings', section: 'contact_settings' },
+  { label: 'Purchases', icon: CreditCard, href: '/admin/purchases', section: 'purchases' },
+  { label: 'Sections', icon: Layers, href: '/admin/section-order', section: 'section_order' },
+  { label: 'Aurex Sections', icon: Sparkles, href: '/admin/aurex-sections', section: 'aurex_sections' },
+  { label: 'SEO', icon: Globe, href: '/admin/seo', section: 'seo' },
+  { label: 'Countries, States, Cities', icon: MapPin, href: '/admin/geo', section: 'geo' },
+  { label: 'Documentation', icon: ScrollText, href: '/admin/documentation', section: 'documentation' },
+  { label: 'Backup', icon: Database, href: '/admin/backup', section: 'backup' },
+  { label: 'Settings', icon: Settings, href: '/admin/settings', section: 'settings' },
+  { type: 'divider', label: 'Security', group: 'security', admin_only: true },
+  { label: 'Roles & Permissions', icon: Lock, href: '/admin/roles', section: 'roles_permissions', admin_only: true },
 ];
 
 export default function AdminLayout() {
@@ -72,6 +79,29 @@ export default function AdminLayout() {
   const handleLogout = async () => { await logout(); navigate('/'); };
 
   const v = (name, fallback) => `var(--ad-${name}, ${fallback})`;
+
+  // Permission-filter the sidebar: admins get everything; operators only see
+  // entries whose `section` key is in their effective_permissions.  Dividers
+  // are kept only when at least one child survived the filter so operators
+  // never see an empty "Landing Page" / "Calendar" group header.
+  const isAdmin = user?.role === 'admin';
+  const perms = new Set(user?.effective_permissions || []);
+  const visibleItems = (() => {
+    const result = [];
+    let pendingDivider = null;
+    for (const item of sidebarItems) {
+      if (item.type === 'divider') {
+        if (item.admin_only && !isAdmin) { pendingDivider = null; continue; }
+        pendingDivider = item;
+        continue;
+      }
+      if (item.admin_only && !isAdmin) continue;
+      if (!isAdmin && item.section && !perms.has(item.section)) continue;
+      if (pendingDivider) { result.push(pendingDivider); pendingDivider = null; }
+      result.push(item);
+    }
+    return result;
+  })();
 
   return (
     <div className="min-h-screen flex" style={{ backgroundColor: v('page-bg', '#f8fafc') }} data-testid="admin-layout">
@@ -108,7 +138,7 @@ export default function AdminLayout() {
           </button>
         </div>
         <nav className="flex-1 py-3 overflow-y-auto">
-          {sidebarItems.map((item, idx) => {
+          {visibleItems.map((item, idx) => {
             if (item.type === 'divider') {
               if (collapsed) return <div key={idx} className="my-2 mx-3 border-t border-white/10" />;
               return <div key={idx} className="mt-4 mb-1 px-4 text-[10px] font-bold uppercase tracking-[0.15em]" style={{ color: 'rgba(255,255,255,0.3)' }}>{item.label}</div>;
@@ -157,7 +187,9 @@ export default function AdminLayout() {
             Welcome, <span className="font-medium" style={{ color: v('heading', '#1a2332') }}>{user?.name || user?.email}</span>
           </div>
           <div className="flex items-center gap-2">
-            <span className="text-xs px-2 py-1 rounded-sm font-medium" style={{ color: v('accent', '#0D9488'), backgroundColor: `${v('accent', '#0D9488')}15` }}>Admin</span>
+            <span className="text-xs px-2 py-1 rounded-sm font-medium" style={{ color: v('accent', '#0D9488'), backgroundColor: `${v('accent', '#0D9488')}15` }} data-testid="admin-header-role-badge">
+              {isAdmin ? 'Admin' : (user?.role === 'member' ? 'Operator' : (user?.role || 'User'))}
+            </span>
           </div>
         </header>
         <main className="p-4 md:p-6">

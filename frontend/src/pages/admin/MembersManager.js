@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Lock, X, Save } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 
 const emptyMember = {
@@ -31,6 +31,9 @@ export default function MembersManager() {
   const [cities, setCities] = useState([]);
   const [ebankData, setEbankData] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
+  // CMS Roles inline-edit dialog state
+  const [cmsRoles, setCmsRoles] = useState([]);
+  const [rolesDialog, setRolesDialog] = useState(null); // { memberId, name, selected: [ids] }
 
   const load = () => {
     adminAPI.getMembers().then(r => setItems(r.data)).catch(console.error);
@@ -38,6 +41,7 @@ export default function MembersManager() {
     adminAPI.getMemberTypes().then(r => setMemberTypes(r.data || [])).catch(console.error);
     adminAPI.getMentors().then(r => setMentors(r.data || [])).catch(console.error);
     geoAPI.getCountries().then(r => setCountries(r.data)).catch(console.error);
+    adminAPI.getCmsRoles().then(r => setCmsRoles(r.data || [])).catch(() => {});
   };
   useEffect(() => { load(); }, []);
 
@@ -94,6 +98,7 @@ export default function MembersManager() {
             <th className="text-left p-3 font-medium text-slate-600">Name</th>
             <th className="text-left p-3 font-medium text-slate-600">Email</th>
             <th className="text-left p-3 font-medium text-slate-600">Member Type</th>
+            <th className="text-left p-3 font-medium text-slate-600">CMS Roles</th>
             <th className="text-left p-3 font-medium text-slate-600">Level</th>
             <th className="text-left p-3 font-medium text-slate-600">Register</th>
             <th className="text-left p-3 font-medium text-slate-600">Sponsor</th>
@@ -108,6 +113,26 @@ export default function MembersManager() {
                   <td className="p-3 font-medium text-[#1a2332]">{item.first_name} {item.last_name}</td>
                   <td className="p-3 text-slate-500">{item.email}</td>
                   <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${item.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>{item.role === 'admin' ? 'Admin' : 'Member'}</span></td>
+                  <td className="p-3">
+                    <button
+                      onClick={() => setRolesDialog({ memberId: item.member_id, name: `${item.first_name} ${item.last_name}`.trim() || item.email, selected: [...(item.cms_roles || (item.role === 'admin' ? ['role_admin'] : ['role_member']))] })}
+                      className="inline-flex flex-wrap items-center gap-1 px-2 py-1 rounded hover:bg-slate-50 text-xs group"
+                      data-testid={`member-cms-roles-${item.member_id}`}
+                      title="Edit CMS Roles"
+                    >
+                      {(() => {
+                        const assigned = item.cms_roles || (item.role === 'admin' ? ['role_admin'] : ['role_member']);
+                        const resolved = assigned.map(id => cmsRoles.find(r => r.id === id)).filter(Boolean);
+                        if (!resolved.length) return <span className="text-slate-400 italic">none</span>;
+                        return resolved.map(r => (
+                          <span key={r.id} className={`px-1.5 py-0.5 rounded text-[10px] font-medium ${r.full_access ? 'bg-[#0D9488]/10 text-[#0D9488]' : r.is_system ? 'bg-slate-100 text-slate-600' : 'bg-indigo-50 text-indigo-700'}`}>
+                            {r.name}
+                          </span>
+                        ));
+                      })()}
+                      <Edit2 className="w-3 h-3 text-slate-300 group-hover:text-[#0D9488]" />
+                    </button>
+                  </td>
                   <td className="p-3 text-slate-500 text-xs">{lvl?.name || '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{item.sponsor_membership_number ? `AUX-${item.sponsor_membership_number}` : '-'}</td>
@@ -342,6 +367,60 @@ export default function MembersManager() {
               </button>
             </div>
           )}
+        </DialogContent>
+      </Dialog>
+
+      {/* CMS Roles inline assignment */}
+      <Dialog open={!!rolesDialog} onOpenChange={(o) => { if (!o) setRolesDialog(null); }}>
+        <DialogContent className="sm:max-w-[480px]" data-testid="member-cms-roles-dialog">
+          <DialogHeader><DialogTitle className="flex items-center gap-2"><Lock className="w-4 h-4 text-[#0D9488]" /> CMS Roles — {rolesDialog?.name}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <p className="text-xs text-slate-500">Assign one or more CMS roles to this member. They keep their My Account access regardless.</p>
+            <div className="border border-slate-200 rounded-sm divide-y divide-slate-100 max-h-[55vh] overflow-y-auto">
+              {cmsRoles.map(r => {
+                const checked = rolesDialog?.selected?.includes(r.id);
+                return (
+                  <label key={r.id} className="flex items-start gap-3 p-3 hover:bg-slate-50 cursor-pointer">
+                    <input type="checkbox" checked={!!checked}
+                      onChange={(e) => {
+                        setRolesDialog(d => ({
+                          ...d,
+                          selected: e.target.checked
+                            ? Array.from(new Set([...(d.selected || []), r.id]))
+                            : (d.selected || []).filter(x => x !== r.id),
+                        }));
+                      }}
+                      className="mt-1 w-4 h-4 accent-[#0D9488]"
+                      data-testid={`member-roles-toggle-${r.id}`} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2">
+                        <div className="font-medium text-sm text-[#1a2332]">{r.name}</div>
+                        {r.is_system && <span className="text-[10px] uppercase tracking-wider bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">System</span>}
+                        {r.full_access && <span className="text-[10px] uppercase tracking-wider bg-[#0D9488]/10 text-[#0D9488] px-1.5 py-0.5 rounded">Full</span>}
+                      </div>
+                      {r.description && <div className="text-xs text-slate-500 mt-0.5">{r.description}</div>}
+                      <div className="text-[10px] text-slate-400 mt-1">{r.full_access ? 'All sections' : `${(r.permissions || []).length} sections`}</div>
+                    </div>
+                  </label>
+                );
+              })}
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button onClick={() => setRolesDialog(null)} className="flex items-center gap-1 px-3 py-1.5 border border-slate-200 rounded-sm text-sm hover:bg-slate-50" data-testid="member-roles-cancel"><X className="w-3.5 h-3.5" /> Cancel</button>
+              <button
+                onClick={async () => {
+                  try {
+                    await adminAPI.assignMemberCmsRoles(rolesDialog.memberId, rolesDialog.selected || []);
+                    toast.success('Roles updated');
+                    setRolesDialog(null);
+                    load();
+                  } catch (e) { toast.error(e.response?.data?.detail || 'Save failed'); }
+                }}
+                className="flex items-center gap-1 px-3 py-1.5 bg-[#0D9488] text-white rounded-sm text-sm font-medium hover:bg-[#0b7a70]"
+                data-testid="member-roles-save"
+              ><Save className="w-3.5 h-3.5" /> Save</button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
     </div>

@@ -92,6 +92,8 @@ import GlobalEventsManager from './pages/admin/GlobalEventsManager';
 import MentorshipScheduleManager from './pages/admin/MentorshipScheduleManager';
 import MentorSlotTemplatesManager from './pages/admin/MentorSlotTemplatesManager';
 import BlockedDatesManager from './pages/admin/BlockedDatesManager';
+import RolesManager from './pages/admin/RolesManager';
+import { CmsSectionGuard } from './pages/admin/Forbidden';
 
 import { injectThemeColors } from './lib/themeColors';
 import { LanguageProvider } from './lib/i18n';
@@ -188,7 +190,83 @@ function AuthCallback() {
 function ProtectedRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
-  if (!user || user.role !== 'admin') return <Navigate to="/admin/login" replace />;
+  // Admins pass immediately. Operators need at least one CMS permission.
+  if (!user) return <Navigate to="/admin/login" replace />;
+  const hasAnyCmsAccess = user.role === 'admin' || ((user.effective_permissions || []).length > 0);
+  if (!hasAnyCmsAccess) return <Navigate to="/admin/login" replace />;
+  return children;
+}
+
+/* Single source of truth for every /admin sub-route.
+ *   `section` maps the route to a CMS Section Registry key; CmsSectionGuard
+ *   renders a 403 panel (inside AdminLayout) for operators without the perm.
+ *   `adminOnly` locks a route to accounts with `role: "admin"` regardless of
+ *   their granted CMS permissions (currently only Roles & Permissions and the
+ *   legacy Users manager). */
+const ADMIN_ROUTES = [
+  { index: true, section: 'dashboard', el: <AdminDashboard /> },
+  { path: 'hero',                            section: 'hero',                             el: <HeroManager /> },
+  { path: 'hero/add',                        section: 'hero',                             el: <HeroSlideForm /> },
+  { path: 'hero/edit/:id',                   section: 'hero',                             el: <HeroSlideForm /> },
+  { path: 'hero-ab',                         section: 'hero_ab',                          el: <HeroAbAnalytics /> },
+  { path: 'about',                           section: 'about',                            el: <AboutManager /> },
+  { path: 'services',                        section: 'services',                         el: <ServicesManager /> },
+  { path: 'blog',                            section: 'blog',                             el: <BlogManager /> },
+  { path: 'books',                           section: 'books',                            el: <BooksManager /> },
+  { path: 'maps',                            section: 'maps',                             el: <MapsManager /> },
+  { path: 'gallery',                         section: 'gallery',                          el: <GalleryManager /> },
+  { path: 'gallery-albums',                  section: 'gallery_albums',                   el: <GalleryAlbumsManager /> },
+  { path: 'portfolio',                       section: 'portfolio',                        el: <PortfolioManager /> },
+  { path: 'testimonials',                    section: 'testimonials',                     el: <TestimonialsManager /> },
+  { path: 'contacts',                        section: 'contacts',                         el: <ContactsManager /> },
+  { path: 'contact-settings',                section: 'contact_settings',                 el: <ContactSettingsManager /> },
+  { path: 'purchases',                       section: 'purchases',                        el: <PurchasesManager /> },
+  { path: 'settings',                        section: 'settings',                         el: <SettingsManager /> },
+  { path: 'pages',                           section: 'pages',                            el: <PagesManager /> },
+  { path: 'users',                           adminOnly: true,                             el: <UsersManager /> },
+  { path: 'members',                         section: 'members',                          el: <MembersManager /> },
+  { path: 'member-levels',                   section: 'member_levels',                    el: <MemberLevelsManager /> },
+  { path: 'member-types',                    section: 'member_types',                     el: <MemberTypesManager /> },
+  { path: 'membership-settings',             section: 'membership_settings',              el: <MembershipSettingsManager /> },
+  { path: 'analytics',                       section: 'analytics',                        el: <AnalyticsDashboard /> },
+  { path: 'seo',                             section: 'seo',                              el: <SeoManager /> },
+  { path: 'backup',                          section: 'backup',                           el: <BackupManager /> },
+  { path: 'section-order',                   section: 'section_order',                    el: <SectionOrderManager /> },
+  { path: 'aurex-sections',                  section: 'aurex_sections',                   el: <AurexSectionsManager /> },
+  { path: 'landing-content',                 section: 'landing_content',                  el: <LandingContentManager /> },
+  { path: 'landing-hero',                    section: 'landing_hero',                     el: <LandingHeroManager /> },
+  { path: 'landing-hero/add',                section: 'landing_hero',                     el: <LandingHeroSlideForm /> },
+  { path: 'landing-hero/edit/:id',           section: 'landing_hero',                     el: <LandingHeroSlideForm /> },
+  { path: 'landing-subscribers',             section: 'landing_subscribers',              el: <LandingSubscribersManager /> },
+  { path: 'landing-contacts',                section: 'landing_contacts',                 el: <LandingContactsManager /> },
+  { path: 'enrollment-fields',               section: 'enrollment_fields',                el: <EnrollmentFieldsManager /> },
+  { path: 'documentation',                   section: 'documentation',                    el: <DocumentationManager /> },
+  { path: 'quick-links',                     section: 'quick_links',                      el: <QuickLinksManager /> },
+  { path: 'calendar/global',                 section: 'calendar_global',                  el: <GlobalEventsManager /> },
+  { path: 'calendar/mentorship',             section: 'calendar_mentorship',              el: <MentorshipScheduleManager /> },
+  { path: 'calendar/mentor-slot-templates',  section: 'calendar_mentor_slot_templates',   el: <MentorSlotTemplatesManager /> },
+  { path: 'calendar/blocked-dates',          section: 'calendar_blocked_dates',           el: <BlockedDatesManager /> },
+  { path: 'calendar/bundles',                section: 'calendar_bundles',                 el: <AdminBundlesManager /> },
+  { path: 'calendar/coupons',                section: 'calendar_coupons',                 el: <AdminCouponsManager /> },
+  { path: 'payouts',                         section: 'payouts',                          el: <AdminPayoutsManager /> },
+  { path: 'geo',                             section: 'geo',                              el: <GeoManager /> },
+  { path: 'roles',                           adminOnly: true,                             el: <RolesManager /> },
+];
+
+function renderAdminRoutes() {
+  return ADMIN_ROUTES.map(r => {
+    const el = r.adminOnly
+      ? <AdminOnlyRoute>{r.el}</AdminOnlyRoute>
+      : (r.section ? <CmsSectionGuard section={r.section}>{r.el}</CmsSectionGuard> : r.el);
+    return r.index
+      ? <Route key="index" index element={el} />
+      : <Route key={r.path} path={r.path} element={el} />;
+  });
+}
+
+function AdminOnlyRoute({ children }) {
+  const { user } = useAuth();
+  if (user?.role !== 'admin') return <CmsSectionGuard section="__admin_only__">{children}</CmsSectionGuard>;
   return children;
 }
 
@@ -380,52 +458,7 @@ function AppRouter() {
     return (
       <Routes>
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="hero" element={<HeroManager />} />
-          <Route path="hero/add" element={<HeroSlideForm />} />
-          <Route path="hero/edit/:id" element={<HeroSlideForm />} />
-          <Route path="hero-ab" element={<HeroAbAnalytics />} />
-          <Route path="about" element={<AboutManager />} />
-          <Route path="services" element={<ServicesManager />} />
-          <Route path="blog" element={<BlogManager />} />
-          <Route path="books" element={<BooksManager />} />
-          <Route path="maps" element={<MapsManager />} />
-          <Route path="gallery" element={<GalleryManager />} />
-          <Route path="gallery-albums" element={<GalleryAlbumsManager />} />
-          <Route path="portfolio" element={<PortfolioManager />} />
-          <Route path="testimonials" element={<TestimonialsManager />} />
-          <Route path="contacts" element={<ContactsManager />} />
-          <Route path="contact-settings" element={<ContactSettingsManager />} />
-          <Route path="purchases" element={<PurchasesManager />} />
-          <Route path="settings" element={<SettingsManager />} />
-          <Route path="pages" element={<PagesManager />} />
-          <Route path="users" element={<UsersManager />} />
-          <Route path="members" element={<MembersManager />} />
-          <Route path="member-levels" element={<MemberLevelsManager />} />
-          <Route path="member-types" element={<MemberTypesManager />} />
-          <Route path="membership-settings" element={<MembershipSettingsManager />} />
-          <Route path="analytics" element={<AnalyticsDashboard />} />
-          <Route path="seo" element={<SeoManager />} />
-          <Route path="backup" element={<BackupManager />} />
-          <Route path="section-order" element={<SectionOrderManager />} />
-          <Route path="aurex-sections" element={<AurexSectionsManager />} />
-          <Route path="landing-content" element={<LandingContentManager />} />
-          <Route path="landing-hero" element={<LandingHeroManager />} />
-          <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
-          <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
-          <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
-          <Route path="landing-contacts" element={<LandingContactsManager />} />
-          <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
-          <Route path="documentation" element={<DocumentationManager />} />
-          <Route path="quick-links" element={<QuickLinksManager />} />
-          <Route path="calendar/global" element={<GlobalEventsManager />} />
-          <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
-          <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
-          <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
-          <Route path="calendar/bundles" element={<AdminBundlesManager />} />
-          <Route path="calendar/coupons" element={<AdminCouponsManager />} />
-          <Route path="payouts" element={<AdminPayoutsManager />} />
-          <Route path="geo" element={<GeoManager />} />
+          {renderAdminRoutes()}
         </Route>
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
@@ -461,52 +494,7 @@ function AppRouter() {
         <Route path="/page/:pageId" element={<PageProtectedRoute><DynamicPage /></PageProtectedRoute>} />
         <Route path="/admin/login" element={<AdminLoginPage />} />
         <Route path="/admin" element={<ProtectedRoute><AdminLayout /></ProtectedRoute>}>
-          <Route index element={<AdminDashboard />} />
-          <Route path="hero" element={<HeroManager />} />
-          <Route path="hero/add" element={<HeroSlideForm />} />
-          <Route path="hero/edit/:id" element={<HeroSlideForm />} />
-          <Route path="hero-ab" element={<HeroAbAnalytics />} />
-          <Route path="about" element={<AboutManager />} />
-          <Route path="services" element={<ServicesManager />} />
-          <Route path="blog" element={<BlogManager />} />
-          <Route path="books" element={<BooksManager />} />
-          <Route path="maps" element={<MapsManager />} />
-          <Route path="gallery" element={<GalleryManager />} />
-          <Route path="gallery-albums" element={<GalleryAlbumsManager />} />
-          <Route path="portfolio" element={<PortfolioManager />} />
-          <Route path="testimonials" element={<TestimonialsManager />} />
-          <Route path="contacts" element={<ContactsManager />} />
-          <Route path="contact-settings" element={<ContactSettingsManager />} />
-          <Route path="purchases" element={<PurchasesManager />} />
-          <Route path="settings" element={<SettingsManager />} />
-          <Route path="pages" element={<PagesManager />} />
-          <Route path="users" element={<UsersManager />} />
-          <Route path="members" element={<MembersManager />} />
-          <Route path="member-levels" element={<MemberLevelsManager />} />
-          <Route path="member-types" element={<MemberTypesManager />} />
-          <Route path="membership-settings" element={<MembershipSettingsManager />} />
-          <Route path="analytics" element={<AnalyticsDashboard />} />
-          <Route path="seo" element={<SeoManager />} />
-          <Route path="backup" element={<BackupManager />} />
-          <Route path="section-order" element={<SectionOrderManager />} />
-          <Route path="aurex-sections" element={<AurexSectionsManager />} />
-          <Route path="landing-content" element={<LandingContentManager />} />
-          <Route path="landing-hero" element={<LandingHeroManager />} />
-          <Route path="landing-hero/add" element={<LandingHeroSlideForm />} />
-          <Route path="landing-hero/edit/:id" element={<LandingHeroSlideForm />} />
-          <Route path="landing-subscribers" element={<LandingSubscribersManager />} />
-          <Route path="landing-contacts" element={<LandingContactsManager />} />
-          <Route path="enrollment-fields" element={<EnrollmentFieldsManager />} />
-          <Route path="documentation" element={<DocumentationManager />} />
-          <Route path="quick-links" element={<QuickLinksManager />} />
-          <Route path="calendar/global" element={<GlobalEventsManager />} />
-          <Route path="calendar/mentorship" element={<MentorshipScheduleManager />} />
-          <Route path="calendar/mentor-slot-templates" element={<MentorSlotTemplatesManager />} />
-          <Route path="calendar/blocked-dates" element={<BlockedDatesManager />} />
-          <Route path="calendar/bundles" element={<AdminBundlesManager />} />
-          <Route path="calendar/coupons" element={<AdminCouponsManager />} />
-          <Route path="payouts" element={<AdminPayoutsManager />} />
-          <Route path="geo" element={<GeoManager />} />
+          {renderAdminRoutes()}
         </Route>
         <Route path="/membership-enrollment" element={<MembershipEnrollment />} />
         {/* Catch-all: custom page URLs like /kls */}

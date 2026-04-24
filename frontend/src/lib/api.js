@@ -69,6 +69,13 @@ export const checkoutAPI = {
 
 export const adminAPI = {
   dashboard: () => api.get('/admin/dashboard'),
+  // Roles & Permissions
+  getCmsSections: () => api.get('/admin/cms-sections'),
+  getCmsRoles: () => api.get('/admin/cms-roles'),
+  createCmsRole: (data) => api.post('/admin/cms-roles', data),
+  updateCmsRole: (id, data) => api.put(`/admin/cms-roles/${id}`, data),
+  deleteCmsRole: (id) => api.delete(`/admin/cms-roles/${id}`),
+  assignMemberCmsRoles: (memberId, roleIds) => api.put(`/admin/members/${memberId}/cms-roles`, { cms_roles: roleIds }),
   getHero: () => api.get('/admin/hero'),
   updateHero: (data) => api.put('/admin/hero', data),
   // Hero Slides CRUD
