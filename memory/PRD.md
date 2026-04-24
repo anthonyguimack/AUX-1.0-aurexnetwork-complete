@@ -600,6 +600,46 @@ Frontend:
 Admin: admin@consultant.com / Admin123!
 Mentor (Carlos): carlos@example.com / Mentor123!
 
+### Iteration 79 — Testimonials DnD + Section-level Login Required + Global word-break (Apr 24, 2026)
+
+**Verified iteration_66: all 9 features pass.**
+
+**1) TestimonialsManager drag-and-drop** (`/pages/admin/TestimonialsManager.js`):
+- Rewritten with `DndContext` + `SortableContext` matching the Services/PageBuilder pattern.
+- `TestimonialRow` component extracted with `useSortable` for clean re-renders.
+- Removed up/down arrow buttons. `GripVertical` handle on left; drag-end persists new `order` field to each row via `PUT /api/admin/testimonials/{id}`.
+- Kept the eye-icon visibility toggle.
+
+**2) Section-level Login Required (padlock)** (`/pages/admin/SectionOrderManager.js`, `/pages/HomePage.js`):
+- Added `Lock`/`LockOpen` padlock icon next to each section in the Aurex Sections admin UI.
+- Toggle writes `settings.sections[key].login_required` (independent from `enabled`).
+- HomePage skips rendering sections when `login_required === true && !userLoggedIn`.
+- User detection uses a robust fallback: `user.id || user.member_id || user.username || user.email` because the auth store returns different keys depending on how the session was established (admin-password flow vs member flow vs /auth/me).
+- **Semantics**:
+  - Eye OFF → hidden from everyone (hard hide, regardless of auth).
+  - Padlock ON + Eye ON → shown only to logged-in members.
+  - Padlock OFF + Eye ON → public (no login required).
+
+**3) Global word-break CSS** (`/index.css`):
+- Added a global rule targeting `p, h1-h6, li, blockquote, span` inside `main`, `section`, `footer`:
+  ```css
+  word-break: normal;
+  overflow-wrap: break-word;
+  hyphens: none;
+  ```
+- Fixes mid-word splits and unwanted auto-hyphens on narrow viewports.
+- Kept `.rich-text-content` block-level rule for compatibility.
+
+### Deferred
+- **"Notify Me!" form** — still awaiting user clarification on placement / fields.
+
+## Pending/Backlog
+- (P2) SEO pre-render for bilingual indexing
+- (P2) S3/Cloud Image Storage migration
+- (P2) Production SMTP Configuration
+- (P2) Stripe Connect full marketplace
+- (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog
+
 ### Iteration 78 — Services/Testimonials hide+reorder, Partners/Clients standardization, rich-text CMS upgrades (Apr 23, 2026)
 
 **Verified iteration_65: all 16 features pass.**
