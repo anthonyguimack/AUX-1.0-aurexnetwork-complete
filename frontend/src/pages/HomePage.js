@@ -44,7 +44,7 @@ function AboutSection({ data, theme }) {
   // Apply translation + rich HTML render consistently across all three themes.
   const label = tt(data.label);
   const title = tt(data.title);
-  const descriptionHtml = tt(data.description);
+  const descriptionHtml = cleanHtml(tt(data.description));
   const signatureName = tt(data.signature_name);
   const signatureTitle = tt(data.signature_title);
   if (theme === 'modern') return (
@@ -521,7 +521,7 @@ function ContactSection({ theme, contactSettings }) {
   const cs = contactSettings || {};
   const csTitle = tt(cs.title) || 'Contact';
   const csSubtitle = tt(cs.subtitle) || "Let's Work Together";
-  const csDescription = tt(cs.description) || 'Have a project in mind? Let\'s discuss how we can help';
+  const csDescription = cleanHtml(tt(cs.description) || 'Have a project in mind? Let\'s discuss how we can help');
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [sending, setSending] = useState(false);
   const handleSubmit = async (e) => {

@@ -783,3 +783,15 @@ Mentor (Carlos): carlos@example.com / Mentor123!
 - (P2) Production SMTP Configuration
 - (P2) Stripe Connect full marketplace (automatic payouts replacing manual logging)
 - (P2) Add coupon input to `MentorCalendarView` Confirm Booking dialog (currently only MentorshipProfile has it)
+
+
+## Typography — Mid-word Break Fix (Feb 24, 2026)
+**Root cause:** RichTextEditor (Quill) saved rich text with `&nbsp;` between every word (e.g. `Aurex&nbsp;is&nbsp;a&nbsp;private...`). The browser treats `&nbsp;` as part of a single word, forcing mid-character or hyphen-point splits when the paragraph had to wrap.
+
+**Fix:**
+- `/app/frontend/src/components/AurexSections.js` — imported `normalizeRichText` and wrapped every `dangerouslySetInnerHTML` payload (About description, Process steps, Audience items, Portfolio summaries, Contact description, Hero title+description).
+- `/app/frontend/src/pages/HomePage.js` — applied the existing `cleanHtml()` helper at the source of `descriptionHtml` and `csDescription` so all three theme variants (modern/classic/default) inherit the sanitised HTML.
+- `/app/frontend/src/components/HeroSection.js` — wrapped `tt(slide.title/subtitle/description)` in `normalizeRichText(...)`.
+- Global CSS guard rails in `/app/frontend/src/index.css` preserved: `word-break: normal; overflow-wrap: break-word; hyphens: none;` across `.rich-text-content` and `:where([class*="aurex"])` scopes.
+
+**Verification:** Runtime scan reports 0 of 11 rich-text nodes on the homepage contain `&nbsp;` / U+00A0. Screenshot confirms natural word-boundary wrapping.

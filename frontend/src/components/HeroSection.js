@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { ArrowRight } from 'lucide-react';
 import { useTheme } from '../App';
 import { useT } from '../lib/i18n';
+import { normalizeRichText } from '../lib/richText';
 
 function resolveVideoEmbed(url) {
   if (!url) return null;
@@ -129,17 +130,17 @@ export default function HeroSection({ data, slides }) {
             <div className="relative w-full hidden lg:block" style={{ minHeight: '400px' }}>
               {slide.title && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.title_x || 100) / 7}%`, top: `${(slide.title_y || 50) / 3}%`, ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
-                  <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.title) }} />
+                  <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.title)) }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div className="absolute max-w-[55%]" style={{ left: `${(slide.subtitle_x || 100) / 7}%`, top: `${(slide.subtitle_y || 80) / 3}%`, ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle-lg">
-                  <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.subtitle) }} />
+                  <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.subtitle)) }} />
                 </div>
               )}
               {slide.description && (
                 <div className="absolute max-w-[45%]" style={{ left: `${(slide.description_x || 100) / 7}%`, top: `${(slide.description_y || 120) / 3}%`, ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description-lg">
-                  <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: tt(slide.description) }} />
+                  <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.description)) }} />
                 </div>
               )}
               {(slide.button_text || slide.button_2_text || slide.button_3_text) && (
@@ -173,17 +174,17 @@ export default function HeroSection({ data, slides }) {
               )}
               {slide.title && (
                 <div style={effectStyle(slide.title_effect, slide.title_start)} data-testid="hero-title">
-                  <div className="text-3xl sm:text-4xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.title) }} />
+                  <div className="text-3xl sm:text-4xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.title)) }} />
                 </div>
               )}
               {slide.subtitle && (
                 <div style={effectStyle(slide.subtitle_effect, slide.subtitle_start)} data-testid="hero-subtitle">
-                  <div className="text-base sm:text-lg font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: tt(slide.subtitle) }} />
+                  <div className="text-base sm:text-lg font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.subtitle)) }} />
                 </div>
               )}
               {slide.description && (
                 <div style={effectStyle(slide.description_effect, slide.description_start)} data-testid="hero-description">
-                  <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: tt(slide.description) }} />
+                  <div className="text-sm sm:text-base leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.description)) }} />
                 </div>
               )}
               {(slide.button_text || slide.button_2_text || slide.button_3_text) && (

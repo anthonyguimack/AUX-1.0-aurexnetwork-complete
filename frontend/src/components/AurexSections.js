@@ -18,6 +18,7 @@ import { toast } from 'sonner';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import MarkerClusterGroup from 'react-leaflet-cluster';
 import { AUREX_FONTS, AUREX_PALETTE, aurexContrastFor } from '../lib/themeColors';
+import { normalizeRichText } from '../lib/richText';
 import { useT } from '../lib/i18n';
 import { useLang, itemHasLocale } from '../lib/i18n';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
@@ -124,7 +125,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
           <Reveal as="article" delay={idx * 100} key={i.id} className="border rounded-xl p-8" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB' }} data-testid={`audience-card-${i.id}`}>
             <LucideIcon name={i.icon} className="w-9 h-9 mb-5" />
             <h3 className="text-xl font-semibold mb-2">{tt(i.title)}</h3>
-            {i.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: tt(i.description) }} />}
+            {i.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(i.description)) }} />}
           </Reveal>
         ))}
       </div>
@@ -162,7 +163,7 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
               </div>
               <div className={`pl-20 md:pl-0 md:w-1/2 ${isLeft ? 'md:pr-16 md:text-right' : 'md:pl-16'}`}>
                 <h3 className="text-lg md:text-xl font-semibold mb-2">{tt(step.title)}</h3>
-                {step.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: tt(step.description) }} />}
+                {step.description && <div className={`text-sm leading-relaxed rich-text-content ${c.contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(step.description)) }} />}
               </div>
             </Reveal>
           );
@@ -549,7 +550,7 @@ export function AurexAboutMono({ data, bg, font }) {
           {tt(data.label) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(data.label)}</p>}
           <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-6" data-testid="about-title">{tt(data.title)}</h2>
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.8)' : '#111827' }} />
-          {tt(data.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(data.description) }} />}
+          {tt(data.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(data.description)) }} />}
           <div className="flex items-center gap-6 mt-8 flex-wrap">
             {data.phone && <div className="flex items-center gap-3"><div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ borderWidth: 1, borderStyle: 'solid', borderColor: m.borderColor }}><Phone className="w-4 h-4" /></div><div><p className={`text-[11px] uppercase tracking-wider ${m.eyebrowClass}`}>Call us</p><p className="text-sm font-semibold">{data.phone}</p></div></div>}
             {tt(data.signature_name) && <div className="pl-6" style={{ borderLeft: `1px solid ${m.borderColor}` }}><p className="font-semibold">{tt(data.signature_name)}</p>{tt(data.signature_title) && <p className={`text-xs ${m.mutedClass}`}>{tt(data.signature_title)}</p>}</div>}
@@ -651,7 +652,7 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
                     stripped-HTML excerpt from the article body only when
                     the admin hasn't filled the summary. */}
                 {tt(p.summary)
-                  ? <div className={`text-sm ${m.mutedClass} line-clamp-2 rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(p.summary) }} />
+                  ? <div className={`text-sm ${m.mutedClass} line-clamp-2 rich-text-content`} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(p.summary)) }} />
                   : (tt(p.excerpt) || tt(p.content))
                     ? <p className={`text-sm ${m.mutedClass} line-clamp-2`}>{(tt(p.excerpt) || tt(p.content) || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ').slice(0, 120)}</p>
                     : null}
@@ -935,7 +936,7 @@ export function AurexContactMono({ contactSettings, bg, font }) {
           {tt(cs.title) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-4`}>{tt(cs.title)}</p>}
           {tt(cs.subtitle) && <h2 className="text-3xl md:text-5xl font-bold tracking-tight mb-5" data-testid="contact-title">{tt(cs.subtitle)}</h2>}
           <div className="w-12 h-px mb-6" style={{ backgroundColor: m.isDark ? 'rgba(255,255,255,0.4)' : '#111827' }} />
-          {tt(cs.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: tt(cs.description) }} />}
+          {tt(cs.description) && <div className={`${m.mutedClass} leading-relaxed rich-text-content`} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(cs.description)) }} />}
         </Reveal>
         <Reveal delay={120} as="form" onSubmit={submit} className="space-y-4">
           <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder={tt(cs.name_placeholder) || 'Your name'} className={inputClass} style={{ color: 'inherit' }} />
@@ -1101,14 +1102,14 @@ export function AurexHeroMono({ slides, data }) {
           {s.title && (
             <Reveal delay={100}>
               <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-[0.95] tracking-tight text-gray-900 mb-8" data-testid="hero-title">
-                {(() => { const title = tt(s.title); return typeof title === 'string' && title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: title }} /> : title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-gray-700' : ''}>{line}</span></React.Fragment>); })()}
+                {(() => { const title = tt(s.title); return typeof title === 'string' && title.includes('<') ? <span dangerouslySetInnerHTML={{ __html: normalizeRichText(title) }} /> : title?.split('\n').map((line, i) => <React.Fragment key={i}>{i > 0 && <br />}<span className={i > 0 ? 'italic font-light text-gray-700' : ''}>{line}</span></React.Fragment>); })()}
               </h1>
             </Reveal>
           )}
           {s.countdown_to && <Reveal delay={200}><CountdownMono target={s.countdown_to} light /></Reveal>}
           {s.description && (
             <Reveal delay={250}>
-              <div className="text-base md:text-lg text-gray-700 max-w-xl leading-relaxed rich-text-content mb-10" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: tt(s.description) }} />
+              <div className="text-base md:text-lg text-gray-700 max-w-xl leading-relaxed rich-text-content mb-10" data-testid="hero-description" dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(s.description)) }} />
             </Reveal>
           )}
           {ctas.length > 0 && (
