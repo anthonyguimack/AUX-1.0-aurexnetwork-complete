@@ -82,7 +82,7 @@ export default function DynamicPage() {
 
     // Default: render content HTML
     return (
-      <div className={`max-w-4xl mx-auto px-6 md:px-12 py-16 ${!heroSlides.length ? 'pt-24 md:pt-28' : ''}`} style={{ overflowX: 'hidden', wordBreak: 'break-word' }}>
+      <div className={`max-w-4xl mx-auto px-6 md:px-12 py-16 ${!heroSlides.length ? 'pt-24 md:pt-28' : ''}`} style={{ overflowX: 'hidden', wordBreak: 'normal', overflowWrap: 'break-word', hyphens: 'none' }}>
         <h1 className="text-3xl font-bold mb-6" style={{ fontFamily: 'Playfair Display, serif', color: 'var(--color-heading, #1a2332)' }} data-testid="page-title">{page.title}</h1>
         {page.summary && <p className="text-slate-500 mb-6">{page.summary}</p>}
         {page.content && <div className="rich-text-content" style={{ overflowX: 'hidden', maxWidth: '100%' }} dangerouslySetInnerHTML={{ __html: page.content }} />}

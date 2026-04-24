@@ -63,14 +63,34 @@
   z-index: 1;
 }
 
-/* Rich text content styling */
-/* Global word-wrap policy for ALL page content text nodes. This ensures the
-   site never mid-character-splits a word or inserts a hyphen on narrow
-   viewports — including static JSX copy and rich-text-rendered HTML. The
-   base `.rich-text-content` rule still applies layout-specific styling. */
-main p, main h1, main h2, main h3, main h4, main h5, main h6, main li, main blockquote, main span,
-section p, section h1, section h2, section h3, section h4, section h5, section h6, section li, section blockquote, section span,
-footer p, footer h1, footer h2, footer h3, footer h4, footer li, footer span {
+/* ─────────────────────────────────────────────────────────────────────────
+   AUREX THEME — BASE TYPOGRAPHY RULES (PERMANENT)
+   ─────────────────────────────────────────────────────────────────────────
+   These rules are THE canonical word-wrapping policy for the entire public
+   website. They apply at the :root / html / body level so every element —
+   existing today AND future components — inherits them by default. Do NOT
+   remove or weaken these rules; any new component MUST inherit them.
+
+   Why: prior iterations saw hyphenated words like "membership-based" breaking
+   at the dash and non-hyphenated words like "opportunities" splitting
+   mid-character near container edges. CSS auto-hyphenation + the deprecated
+   `word-break: break-word` value were the culprits.
+
+   Policy enforced:
+     - `word-break: normal`       → never split inside a word.
+     - `overflow-wrap: break-word`→ only wrap at whitespace; break long
+                                     unbreakable tokens (URLs, hashes) at
+                                     the container edge only if needed.
+     - `hyphens: none`            → turn off browser auto-hyphenation.
+
+   Specificity: the per-element block uses `:where()` (specificity 0,0,0) so
+   that admin-facing pages can still opt-in to Tailwind's `break-all` utility
+   for long URLs/QR codes without fighting cascade.
+   ─────────────────────────────────────────────────────────────────────── */
+
+html,
+body,
+#root {
   word-break: normal;
   overflow-wrap: break-word;
   -webkit-hyphens: none;
@@ -78,6 +98,17 @@ footer p, footer h1, footer h2, footer h3, footer h4, footer li, footer span {
   hyphens: none;
 }
 
+:where(p, h1, h2, h3, h4, h5, h6, li, blockquote, span, strong, em,
+       figcaption, summary, td, th, article, aside, section, main, footer,
+       header, dt, dd, small, a, label, div) {
+  word-break: normal;
+  overflow-wrap: break-word;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+/* Rich text content styling */
 .rich-text-content {
   /* Never break words mid-character. Only break at whitespace boundaries;
      fall back to `anywhere` ONLY if a token (URL/code) would overflow.
@@ -433,7 +464,7 @@ html {
 .rich-text-content {
   overflow-x: hidden;
   overflow-wrap: break-word;
-  word-break: keep-all;
+  word-break: normal;
   hyphens: none;
   -webkit-hyphens: none;
   -ms-hyphens: none;
