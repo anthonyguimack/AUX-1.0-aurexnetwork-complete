@@ -816,3 +816,25 @@ Mentor (Carlos): carlos@example.com / Mentor123!
 - Rendered `/` with `active_theme=aurex` + `landing_page_enabled=true` — landing page renders cleanly with compound words intact and 0 `&nbsp;` nodes detected.
 - ESLint clean on all modified files.
 
+
+## CMS Roles & Permissions System (Feb 24, 2026)
+Granular role-based access control for the entire CMS.
+
+**Backend**
+- `/app/backend/models/cms_sections.py` — canonical registry of 42 CMS sections with group/URL-prefix mappings, plus `SYSTEM_ROLES` seed (Administrator = full_access, Member = no CMS).
+- `/app/backend/models/database.py` — `require_admin` rewritten to be permission-aware (resolves section from request URL via `get_section_for_path`, admin short-circuits to allow-all). Added strict `require_super_admin` (guards role-management itself) and `get_user_permissions(user)` helper.
+- `/app/backend/routes/roles.py` — full CRUD: `GET/POST/PUT/DELETE /api/admin/cms-roles`, `GET /api/admin/cms-sections`, `PUT /api/admin/members/{id}/cms-roles`. System roles cannot be deleted (HTTP 400). Admin-only sections (e.g. `roles_permissions`) are filtered out of the assignable matrix and cannot be granted via permission list.
+- `/app/backend/routes/auth.py` — `/auth/me` now returns `cms_roles: [role_id,...]` and sorted `effective_permissions: [section_key,...]` so the frontend can filter the sidebar without a second round-trip.
+- `/app/backend/server.py` — `seed_system_roles()` runs on startup; idempotent and back-fills `cms_roles` on every legacy member record.
+
+**Frontend**
+- `/app/frontend/src/pages/admin/RolesManager.js` — full editor at `/admin/roles`: role list, create/update/delete, checkbox matrix grouped by CMS Section Registry groups, group-level "Select All" with indeterminate state, global Select-All/Clear-All, Full-access toggle, Save/Cancel.
+- `/app/frontend/src/pages/admin/Forbidden.js` — `<CmsSectionGuard section="...">` wrapper renders a 403 panel INSIDE `AdminLayout` so the sidebar stays visible (operators can navigate to permitted sections).
+- `/app/frontend/src/pages/admin/AdminLayout.js` — each sidebar item now carries a `section` key; items (and their group dividers) are filtered by `user.effective_permissions`. Header role badge reads "Admin" or "Operator" based on `role`.
+- `/app/frontend/src/pages/admin/MembersManager.js` — new "CMS Roles" column with role chips + inline edit dialog (checkbox list of all roles, saves via `PUT /api/admin/members/{id}/cms-roles`).
+- `/app/frontend/src/App.js` — `ADMIN_ROUTES` config drives both the landing-enabled and landing-disabled route blocks through a single `renderAdminRoutes()` helper; every entry is wrapped in `<CmsSectionGuard>` or `<AdminOnlyRoute>`. `ProtectedRoute` now admits any user with at least one CMS permission (was `role === 'admin'` only).
+- `/app/frontend/src/pages/admin/AdminLoginPage.js` — allows operators through when they have any `effective_permissions`.
+- `/app/frontend/src/lib/auth.js` — login re-fetches `/auth/me` after the token is stored so `user` always carries `effective_permissions` and `cms_roles`.
+
+**Verified by testing_agent_v3_fork (iteration_67.json)** — 100% pass on 13 backend API tests + 17 frontend scenarios. Zero critical or minor issues. Confirmed: admin sees all 42 sections, operator (carlos) sees only 3 sections (Dashboard/Analytics/Blog), 403 pages render with sidebar intact, system roles cannot be deleted, admin-only routes reject operators regardless of their permissions.
+
