@@ -179,6 +179,15 @@ export default function SettingsManager() {
             </div>
 
             <hr className="border-slate-200" />
+            <div>
+              <Label>CMS Welcome <span className="text-xs text-slate-400 font-normal">(Shown to operators without Dashboard permission)</span></Label>
+              <p className="text-xs text-slate-400 mb-2">Rich text greeting rendered on the CMS welcome page when an operator's role doesn't grant access to the Dashboard. HTML formatting is preserved when displayed.</p>
+              <LocalizedField value={settings.cms_welcome} onChange={v => setSettings({...settings, cms_welcome: v})} render={({ value, onChange }) => (
+                <RichTextEditor value={value || ''} onChange={onChange} placeholder="Welcome to the CMS! Use the sidebar to navigate to your assigned sections..." data-testid="settings-cms-welcome" />
+              )} />
+            </div>
+
+            <hr className="border-slate-200" />
             <h3 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>Logo &amp; Favicon</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>

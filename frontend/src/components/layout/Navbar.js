@@ -52,7 +52,17 @@ function useNavData() {
   const isExternal = (url) => url?.startsWith('http://') || url?.startsWith('https://');
   const isAdmin = location.pathname.startsWith('/admin');
 
-  return { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen };
+  // Header visibility flags (Roles & Permissions):
+  //   • `hasCmsAccess` controls the "Admin" button — admins always see it,
+  //     operators with at least one section permission see it too.  Plain
+  //     members never do.
+  //   • `hasMyAccount` controls the "My Account" link — admins always see
+  //     it, members must hold the `role_member` CMS role.  If an admin
+  //     revokes role_member from a user, this link hides instantly.
+  const hasCmsAccess = !!user && (user.role === 'admin' || (user.effective_permissions || []).length > 0);
+  const hasMyAccount = !!user && (user.role === 'admin' || (user.cms_roles || []).includes('role_member'));
+
+  return { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount };
 }
 
 function NavLinks({ headerPages, isExternal, handlePageClick, location, user }) {
@@ -77,7 +87,7 @@ function NavLinks({ headerPages, isExternal, handlePageClick, location, user }) 
 
 function DefaultNavbar() {
   const tt = useT();
-  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -119,8 +129,8 @@ function DefaultNavbar() {
             <button onClick={() => setSearchOpen(!searchOpen)} className="p-2 hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="search-toggle"><Search className="w-4 h-4" /></button>
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-sm hover:opacity-80" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="nav-my-account">My Account</Link>
-                {user.role === 'admin' && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-sm" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }}>Admin</Link>}
+                {hasMyAccount && <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-sm hover:opacity-80" style={{ color: 'var(--color-heading-color, #1a2332)' }} data-testid="nav-my-account">My Account</Link>}
+                {hasCmsAccess && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-sm" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }} data-testid="nav-admin-btn">Admin</Link>}
                 <button onClick={logout} className="text-sm flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-heading-color, #1a2332)' }}><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
@@ -138,7 +148,7 @@ function DefaultNavbar() {
               const href = page.url || `/page/${page.id}`;
               return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>;
             })}
-            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
+            {hasMyAccount && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
       </header>
@@ -149,7 +159,7 @@ function DefaultNavbar() {
 
 function ModernNavbar() {
   const tt = useT();
-  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hasHero, setHasHero] = useState(true);
@@ -217,8 +227,8 @@ function ModernNavbar() {
           <div className="flex items-center gap-3">
             {user ? (
               <div className="flex items-center gap-2">
-                <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-full hover:opacity-80" style={{ color: textColor }} data-testid="nav-my-account">My Account</Link>
-                {user.role === 'admin' && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }}>Admin</Link>}
+                {hasMyAccount && <Link to="/my-account/membership-profile" className="text-xs font-medium px-3 py-1.5 rounded-full hover:opacity-80" style={{ color: textColor }} data-testid="nav-my-account">My Account</Link>}
+                {hasCmsAccess && <Link to="/admin" className="text-xs font-medium px-3 py-1.5 rounded-full" style={{ backgroundColor: 'var(--color-accent, #0D9488)', color: '#fff' }} data-testid="nav-admin-btn">Admin</Link>}
                 <button onClick={logout} className="p-2 hover:opacity-70" style={{ color: textColor }}><LogOut className="w-4 h-4" /></button>
               </div>
             ) : (
@@ -236,7 +246,7 @@ function ModernNavbar() {
               const href = page.url || `/page/${page.id}`;
               return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>;
             })}
-            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
+            {hasMyAccount && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
       </header>
@@ -247,7 +257,7 @@ function ModernNavbar() {
 
 function ClassicNavbar() {
   const tt = useT();
-  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, hasCmsAccess, hasMyAccount } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const API = process.env.REACT_APP_BACKEND_URL;
   const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -274,8 +284,8 @@ function ClassicNavbar() {
           <div>
             {user ? (
               <div className="flex items-center gap-3">
-                <Link to="/my-account/membership-profile" className="font-medium hover:opacity-70" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="nav-my-account">My Account</Link>
-                {user.role === 'admin' && <Link to="/admin" className="font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>Admin Panel</Link>}
+                {hasMyAccount && <Link to="/my-account/membership-profile" className="font-medium hover:opacity-70" style={{ color: 'var(--color-primary, #1a2332)' }} data-testid="nav-my-account">My Account</Link>}
+                {hasCmsAccess && <Link to="/admin" className="font-medium" style={{ color: 'var(--color-accent, #0D9488)' }} data-testid="nav-admin-btn">Admin Panel</Link>}
                 <button onClick={logout} className="flex items-center gap-1 hover:opacity-70" style={{ color: 'var(--color-primary, #1a2332)' }}><LogOut className="w-3 h-3" /> Logout</button>
               </div>
             ) : (
@@ -321,7 +331,7 @@ function ClassicNavbar() {
               const href = page.url || `/page/${page.id}`;
               return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-heading-color, #1a2332)', fontFamily: "'Playfair Display', serif" }}>{page.title}</Link>;
             })}
-            {user && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-accent, #0D9488)', fontFamily: "'Playfair Display', serif" }}>My Account</Link>}
+            {hasMyAccount && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium py-1" style={{ color: 'var(--color-accent, #0D9488)', fontFamily: "'Playfair Display', serif" }}>My Account</Link>}
           </div>
         )}
       </header>

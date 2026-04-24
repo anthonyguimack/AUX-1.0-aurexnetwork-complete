@@ -1,6 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends, UploadFile, File
 from fastapi.responses import StreamingResponse
-from models.database import db, require_admin, send_email_smtp, UPLOAD_DIR, logger
+from models.database import db, require_admin, require_any_cms_access, send_email_smtp, UPLOAD_DIR, logger
 from datetime import datetime, timezone, timedelta
 import uuid
 import io
@@ -11,9 +11,11 @@ import os
 
 router = APIRouter()
 
-# Image Upload
+# Image Upload — shared across every CMS section, so gated by "any CMS
+# permission" instead of the URL-based section check (uploads don't belong
+# to one specific section).
 @router.post("/upload")
-async def upload_file(file: UploadFile = File(...), user: dict = Depends(require_admin)):
+async def upload_file(file: UploadFile = File(...), user: dict = Depends(require_any_cms_access)):
     allowed = {"image/jpeg", "image/png", "image/gif", "image/webp", "image/svg+xml"}
     if file.content_type not in allowed:
         raise HTTPException(status_code=400, detail="Only image files (JPEG, PNG, GIF, WebP, SVG) allowed")
@@ -34,7 +36,7 @@ async def upload_file(file: UploadFile = File(...), user: dict = Depends(require
 
 
 @router.post("/upload-file")
-async def upload_document_file(file: UploadFile = File(...), user: dict = Depends(require_admin)):
+async def upload_document_file(file: UploadFile = File(...), user: dict = Depends(require_any_cms_access)):
     allowed = {
         "application/pdf", "application/msword",
         "application/vnd.openxmlformats-officedocument.wordprocessingml.document",

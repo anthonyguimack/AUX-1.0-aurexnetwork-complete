@@ -27,7 +27,11 @@ async def format_membership_id(number):
     return f"{prefix}-{number}"
 
 async def get_current_member(request: Request) -> dict:
-    """Authenticate member from JWT token. Accepts any role (member or admin)."""
+    """Authenticate member from JWT token. Accepts any role (member or admin).
+
+    My Account gate: rejects members whose `cms_roles` no longer contains
+    `role_member` so an admin can revoke access by removing the role and the
+    very next request fails with 403 (the SPA redirects out)."""
     auth_header = request.headers.get("Authorization", "")
     if not auth_header.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Not authenticated")
@@ -39,6 +43,10 @@ async def get_current_member(request: Request) -> dict:
         member = await db.members.find_one({"member_id": payload["user_id"]}, {"_id": 0})
         if not member:
             raise HTTPException(status_code=401, detail="Member not found")
+        if member.get("role") != "admin":
+            mroles = member.get("cms_roles") or []
+            if "role_member" not in mroles:
+                raise HTTPException(status_code=403, detail="My Account access has been revoked")
         return member
     except pyjwt.ExpiredSignatureError:
         raise HTTPException(status_code=401, detail="Token expired")
@@ -55,6 +63,12 @@ async def member_login(request: Request, response: Response):
     member = await db.members.find_one({"$or": [{"username": username}, {"email": username}]}, {"_id": 0})
     if not member or not verify_password(password, member.get("password_hash", "")):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    # My Account gate — admins always pass; everyone else must hold role_member.
+    # An admin removing role_member from a member instantly revokes My Account.
+    if member.get("role") != "admin":
+        mroles = member.get("cms_roles") or []
+        if "role_member" not in mroles:
+            raise HTTPException(status_code=403, detail="My Account access has been revoked")
     now_iso = datetime.now(timezone.utc).isoformat()
     # Track login for analytics
     await db.members.update_one({"member_id": member["member_id"]}, {"$set": {"last_login": now_iso}})
@@ -232,6 +246,7 @@ async def register_member(request: Request):
         "sponsor_membership_number": s_num,
         "mentor_id": None, "mentor_membership_number": None,
         "role": "member",
+        "cms_roles": ["role_member"],
         "is_mentor": False,
         "portfolio_development": False,
         "level_id": default_level_id,
@@ -579,6 +594,7 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "portfolio_development": body.get("portfolio_development", False),
         "level_id": body.get("level_id", None),
         "role": "member",
+        "cms_roles": ["role_member"],
         # New membership fields
         "membership_ranking": body.get("membership_ranking", ""),
         "membership_status": body.get("membership_status", "Free"),

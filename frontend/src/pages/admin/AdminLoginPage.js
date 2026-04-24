@@ -16,7 +16,7 @@ export default function AdminLoginPage() {
     setError('');
     setLoading(true);
     try {
-      const result = await login(email, password);
+      const result = await login(email, password, 'cms');
       const hasCmsAccess = result?.role === 'admin' || ((result?.effective_permissions || []).length > 0);
       if (hasCmsAccess) {
         navigate('/admin');

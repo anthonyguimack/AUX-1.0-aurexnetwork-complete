@@ -125,6 +125,34 @@ async def require_super_admin(request: Request) -> dict:
     return user
 
 
+async def require_any_cms_access(request: Request) -> dict:
+    """Shared-infrastructure gate — accepts anyone with ≥1 CMS permission.
+    Used for endpoints that every CMS section needs (uploads, lookups, etc.)
+    where per-section enforcement doesn't make sense because the same
+    endpoint is called from many operator-permitted screens."""
+    user = await get_current_user(request)
+    if user.get("role") == "admin":
+        return user
+    perms = await get_user_permissions(user)
+    if not perms:
+        raise HTTPException(status_code=403, detail="CMS access required")
+    return user
+
+
+async def require_my_account_access(request: Request) -> dict:
+    """My Account gate — the caller must hold the `role_member` CMS role.
+    Admins are also allowed through so a superuser can always inspect the
+    member area.  If an admin revokes `role_member` from a member, that
+    member loses My Account access (login and every subsequent request)."""
+    user = await get_current_user(request)
+    if user.get("role") == "admin":
+        return user
+    roles = user.get("cms_roles") or []
+    if "role_member" not in roles:
+        raise HTTPException(status_code=403, detail="My Account access has been revoked")
+    return user
+
+
 async def get_user_permissions(user: dict) -> set:
     """Union of CMS section keys this user has access to.
 

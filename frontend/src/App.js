@@ -93,6 +93,7 @@ import MentorshipScheduleManager from './pages/admin/MentorshipScheduleManager';
 import MentorSlotTemplatesManager from './pages/admin/MentorSlotTemplatesManager';
 import BlockedDatesManager from './pages/admin/BlockedDatesManager';
 import RolesManager from './pages/admin/RolesManager';
+import CmsWelcome from './pages/admin/CmsWelcome';
 import { CmsSectionGuard } from './pages/admin/Forbidden';
 
 import { injectThemeColors } from './lib/themeColors';
@@ -203,8 +204,21 @@ function ProtectedRoute({ children }) {
  *   `adminOnly` locks a route to accounts with `role: "admin"` regardless of
  *   their granted CMS permissions (currently only Roles & Permissions and the
  *   legacy Users manager). */
+/* Admin index route picker.
+ *   Admin and operators with the `dashboard` permission see the full dashboard;
+ *   operators without it land on the CMS Welcome page (greeting + admin-managed
+ *   rich-text from Settings → General → CMS Welcome). This guarantees every
+ *   logged-in CMS user lands on a meaningful screen, not on a 403. */
+function AdminIndexRouter() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+  const perms = user?.effective_permissions || [];
+  const canSeeDashboard = isAdmin || perms.includes('dashboard');
+  return canSeeDashboard ? <AdminDashboard /> : <CmsWelcome />;
+}
+
 const ADMIN_ROUTES = [
-  { index: true, section: 'dashboard', el: <AdminDashboard /> },
+  { index: true, el: <AdminIndexRouter /> },
   { path: 'hero',                            section: 'hero',                             el: <HeroManager /> },
   { path: 'hero/add',                        section: 'hero',                             el: <HeroSlideForm /> },
   { path: 'hero/edit/:id',                   section: 'hero',                             el: <HeroSlideForm /> },
@@ -344,6 +358,11 @@ function MemberRoute({ children }) {
   const { user, loading } = useAuth();
   if (loading) return <div className="min-h-screen flex items-center justify-center bg-[#0d0f14]"><div className="animate-spin w-8 h-8 border-2 border-[#c9a84c] border-t-transparent rounded-full" /></div>;
   if (!user) return <Navigate to="/my-account/login" replace />;
+  // My Account access gate — admins always pass; everyone else must hold
+  // role_member.  If an admin revokes role_member from this user, the very
+  // next render bounces them back to the login screen.
+  const allowedAccess = user.role === 'admin' || (user.cms_roles || []).includes('role_member');
+  if (!allowedAccess) return <Navigate to="/my-account/login" replace />;
   return children;
 }
 

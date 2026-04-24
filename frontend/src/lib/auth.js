@@ -29,8 +29,8 @@ export function AuthProvider({ children }) {
     checkAuth();
   }, [checkAuth]);
 
-  const login = async (email, password) => {
-    const res = await authAPI.login(email, password);
+  const login = async (email, password, loginType) => {
+    const res = await authAPI.login(email, password, loginType);
     const { token } = res.data;
     localStorage.setItem('auth_token', token);
     // Re-fetch from /auth/me so user object carries effective_permissions + cms_roles

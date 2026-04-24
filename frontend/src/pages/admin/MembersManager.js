@@ -97,7 +97,7 @@ export default function MembersManager() {
             <th className="text-left p-3 font-medium text-slate-600">AUX</th>
             <th className="text-left p-3 font-medium text-slate-600">Name</th>
             <th className="text-left p-3 font-medium text-slate-600">Email</th>
-            <th className="text-left p-3 font-medium text-slate-600">Member Type</th>
+            <th className="text-left p-3 font-medium text-slate-600">Mentor</th>
             <th className="text-left p-3 font-medium text-slate-600">CMS Roles</th>
             <th className="text-left p-3 font-medium text-slate-600">Level</th>
             <th className="text-left p-3 font-medium text-slate-600">Register</th>
@@ -112,7 +112,9 @@ export default function MembersManager() {
                   <td className="p-3 font-mono text-[#0D9488]">{item.membership_id}</td>
                   <td className="p-3 font-medium text-[#1a2332]">{item.first_name} {item.last_name}</td>
                   <td className="p-3 text-slate-500">{item.email}</td>
-                  <td className="p-3"><span className={`px-2 py-0.5 rounded text-xs font-medium ${item.role === 'admin' ? 'bg-amber-100 text-amber-700' : 'bg-teal-50 text-teal-700'}`}>{item.role === 'admin' ? 'Admin' : 'Member'}</span></td>
+                  <td className="p-3" data-testid={`member-mentor-${item.member_id}`}>
+                    {item.is_mentor ? <span className="px-2 py-0.5 rounded text-xs font-bold bg-emerald-100 text-emerald-700">YES</span> : <span className="text-slate-400 font-mono">-</span>}
+                  </td>
                   <td className="p-3">
                     <button
                       onClick={() => setRolesDialog({ memberId: item.member_id, name: `${item.first_name} ${item.last_name}`.trim() || item.email, selected: [...(item.cms_roles || (item.role === 'admin' ? ['role_admin'] : ['role_member']))] })}
@@ -165,13 +167,8 @@ export default function MembersManager() {
                     <div><Label className="text-xs">First Name</Label><Input value={editing.first_name} onChange={e => setEditing({...editing, first_name: e.target.value})} className="mt-1" /></div>
                     <div><Label className="text-xs">Last Name</Label><Input value={editing.last_name} onChange={e => setEditing({...editing, last_name: e.target.value})} className="mt-1" /></div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3">
+                  <div className="grid grid-cols-1 gap-3">
                     <div><Label className="text-xs">Email *</Label><Input type="email" value={editing.email} onChange={e => setEditing({...editing, email: e.target.value})} className="mt-1" data-testid="member-email-input" /></div>
-                    <div><Label className="text-xs">Member Type</Label>
-                      <select value={editing.role || 'member'} onChange={e => setEditing({...editing, role: e.target.value})} className={selectCls} data-testid="member-type-select">
-                        <option value="member">Member</option><option value="admin">Admin</option>
-                      </select>
-                    </div>
                   </div>
                   {!editing.member_id && <div><Label className="text-xs">Password *</Label><Input type="password" value={editing.password || ''} onChange={e => setEditing({...editing, password: e.target.value})} className="mt-1" /></div>}
                   <div className="grid grid-cols-2 gap-3">

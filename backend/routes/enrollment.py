@@ -185,6 +185,8 @@ async def submit_enrollment(request: Request):
         "biography": "",
         "social_links": {},
         "status": "active",
+        "role": "member",
+        "cms_roles": ["role_member"],
         "created_at": datetime.now(timezone.utc).isoformat(),
         "updated_at": datetime.now(timezone.utc).isoformat(),
         "registration_source": "enrollment",

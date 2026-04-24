@@ -20,6 +20,19 @@ async def login(request: Request, response: Response):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     if login_type == "admin" and member.get("role") != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
+    # CMS login (operator or admin) — must have at least one CMS permission.
+    if login_type == "cms":
+        if member.get("role") != "admin":
+            mroles = member.get("cms_roles") or []
+            cms_role_ids = [r for r in mroles if r != "role_member"]
+            if not cms_role_ids:
+                raise HTTPException(status_code=403, detail="No CMS access assigned to this account")
+    # My Account / public login gate — non-admins must hold role_member.
+    # Both `/admin/login` (login_type="cms") and bootstrap admin path skip this.
+    elif login_type != "admin" and member.get("role") != "admin":
+        mroles = member.get("cms_roles") or []
+        if "role_member" not in mroles:
+            raise HTTPException(status_code=403, detail="My Account access has been revoked")
     token = create_jwt_token(member["member_id"], member["email"], member.get("role", "member"))
     response.set_cookie("session_token", token, path="/", httponly=True, secure=True, samesite="none", max_age=7*24*3600)
     return {"token": token, "user": {k: v for k, v in member.items() if k != "password_hash"}}
