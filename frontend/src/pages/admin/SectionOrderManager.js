@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Save, Loader2, Eye, EyeOff, Palette, Type, Sparkles } from 'lucide-react';
+import { GripVertical, Save, Loader2, Eye, EyeOff, Palette, Type, Sparkles, Lock, LockOpen } from 'lucide-react';
 import { Switch } from '../../components/ui/switch';
 import { AUREX_PALETTE, AUREX_FONTS, aurexContrastFor, THEMES } from '../../lib/themeColors';
 
@@ -25,7 +25,7 @@ const sectionLabels = {
   aurex_video: 'Video',
 };
 
-function SortableItem({ id, label, enabled, config, onToggle, onConfigChange, showAurexControls }) {
+function SortableItem({ id, label, enabled, loginRequired, config, onToggle, onToggleLogin, onConfigChange, showAurexControls }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id });
   const style = { transform: CSS.Transform.toString(transform), transition };
   const bgHex = config?.bg_color || (showAurexControls ? '#FFFFFF' : null);
@@ -47,6 +47,19 @@ function SortableItem({ id, label, enabled, config, onToggle, onConfigChange, sh
           <p className="text-sm font-medium text-[#1a2332] truncate">{label}</p>
           <p className="text-xs text-slate-400 font-mono">{id}</p>
         </div>
+        {/* Login Required (padlock). Independent from the Eye toggle:
+            - Eye OFF          → hidden from everyone (hard hide).
+            - Padlock ON       → shown only to logged-in members.
+            - Padlock OFF      → shown to public (no login needed). */}
+        <button
+          type="button"
+          onClick={() => onToggleLogin(id)}
+          title={loginRequired ? 'Login required — click to make public' : 'Public — click to restrict to logged-in members'}
+          className={`p-1.5 rounded transition-colors ${loginRequired ? 'text-amber-600 hover:text-amber-700 bg-amber-50' : 'text-slate-300 hover:text-slate-500'}`}
+          data-testid={`section-login-${id}`}
+        >
+          {loginRequired ? <Lock className="w-4 h-4" /> : <LockOpen className="w-4 h-4" />}
+        </button>
         <div className="flex items-center gap-2">
           {enabled ? <Eye className="w-4 h-4 text-[#0D9488]" /> : <EyeOff className="w-4 h-4 text-slate-300" />}
           <Switch checked={enabled} onCheckedChange={() => onToggle(id)} data-testid={`section-toggle-${id}`} />
@@ -175,6 +188,9 @@ export default function SectionOrderManager() {
   const handleToggle = (key) => {
     setSections(prev => ({ ...prev, [key]: { ...prev[key], enabled: !(prev[key]?.enabled !== false) } }));
   };
+  const handleToggleLogin = (key) => {
+    setSections(prev => ({ ...prev, [key]: { ...prev[key], login_required: !(prev[key]?.login_required === true) } }));
+  };
   const handleConfigChange = (id, cfg) => {
     setConfigs(prev => ({ ...prev, [id]: cfg }));
   };
@@ -227,8 +243,10 @@ export default function SectionOrderManager() {
               id={key}
               label={sectionLabels[key] || key}
               enabled={sections[key]?.enabled !== false}
+              loginRequired={sections[key]?.login_required === true}
               config={configs[key]}
               onToggle={handleToggle}
+              onToggleLogin={handleToggleLogin}
               onConfigChange={handleConfigChange}
               showAurexControls={showAurexControls}
             />

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI, contactAPI, checkoutAPI, blogExternalAPI } from '../lib/api';
 import { useSettings, useTheme } from '../App';
+import { useAuth } from '../lib/auth';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { useT } from '../lib/i18n';
 import { toast } from 'sonner';
@@ -580,6 +581,7 @@ function ContactSection({ theme, contactSettings }) {
 export default function HomePage() {
   const settings = useSettings();
   const theme = useTheme();
+  const { user } = useAuth();
   const [about, setAbout] = useState(null);
   const [services, setServices] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -687,7 +689,17 @@ export default function HomePage() {
     <main data-testid="home-page">
       {sectionOrder.map(key => {
         const sec = sections[key];
-        return sec?.enabled !== false ? sectionMap[key] || null : null;
+        // Eye OFF → hidden from everyone.
+        if (sec?.enabled === false) return null;
+        // Padlock ON → only logged-in members see it. Anonymous visitors
+        // get nothing (we don't render a "login prompt" stub here because
+        // the admin explicitly chose to hide the section rather than gate
+        // it interactively). The auth user object uses different id keys
+        // depending on how it was populated (`id` from /auth/me, `member_id`
+        // from member login, `username`/`email` fallback) — any of those
+        // indicate a logged-in session.
+        if (sec?.login_required === true && !(user && (user.id || user.member_id || user.username || user.email))) return null;
+        return sectionMap[key] || null;
       })}
     </main>
   );

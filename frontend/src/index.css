@@ -64,6 +64,20 @@
 }
 
 /* Rich text content styling */
+/* Global word-wrap policy for ALL page content text nodes. This ensures the
+   site never mid-character-splits a word or inserts a hyphen on narrow
+   viewports — including static JSX copy and rich-text-rendered HTML. The
+   base `.rich-text-content` rule still applies layout-specific styling. */
+main p, main h1, main h2, main h3, main h4, main h5, main h6, main li, main blockquote, main span,
+section p, section h1, section h2, section h3, section h4, section h5, section h6, section li, section blockquote, section span,
+footer p, footer h1, footer h2, footer h3, footer h4, footer li, footer span {
+  word-break: normal;
+  overflow-wrap: break-word;
+  -webkit-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
 .rich-text-content {
   /* Never break words mid-character. Only break at whitespace boundaries;
      fall back to `anywhere` ONLY if a token (URL/code) would overflow.
