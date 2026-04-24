@@ -27,7 +27,14 @@ L.Icon.Default.mergeOptions({
 
 const iconMap = { 'briefcase': Briefcase, 'trending-up': TrendingUp, 'bar-chart-3': BarChart3, 'monitor': Monitor };
 const API = process.env.REACT_APP_BACKEND_URL;
-const cleanHtml = (html) => html ? html.replace(/&nbsp;/g, ' ').replace(/\u00A0/g, ' ') : '';
+const cleanHtml = (html) => {
+  if (html == null) return '';
+  const str = typeof html === 'string' ? html : String(html);
+  return str
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&nbsp\b/gi, ' ')
+    .replace(/\u00A0/g, ' ');
+};
 
 import HeroSection from '../components/HeroSection';
 import {
@@ -104,6 +111,7 @@ function AboutSection({ data, theme }) {
 
 /* ==================== SERVICES ==================== */
 function ServicesSection({ services, theme }) {
+  const tt = useT();
   if (!services?.length) return null;
   const handleCheckout = async (s) => {
     if (!s.stripe_price_id) { toast.info('No pricing configured'); return; }
@@ -131,8 +139,8 @@ function ServicesSection({ services, theme }) {
             return (
               <div key={s.id} className="bg-white rounded-2xl p-8 hover:shadow-xl transition-all duration-300 group border border-slate-100">
                 <div className="w-14 h-14 rounded-xl flex items-center justify-center mb-6 transition-colors group-hover:scale-110" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-6 h-6 text-white" /></div>
-                <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
-                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(s.short_description || s.description || '') }} />
+                <h3 className="text-xl font-bold mb-3" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(s.title)}</h3>
+                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(tt(s.short_description) || tt(s.description)) }} />
                 <div className="mb-4"><ServiceLink s={s} /></div>
                 {s.price > 0 && <div className="flex items-center justify-between pt-4 border-t border-slate-100"><span className="text-2xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 rounded-full text-sm font-medium text-white transition-colors" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}>Get Started</button></div>}
               </div>
@@ -156,9 +164,9 @@ function ServicesSection({ services, theme }) {
             return (
               <div key={s.id} className="border-2 p-8 hover:shadow-md transition-all" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: '#faf9f6' }}>
                 <Icon className="w-8 h-8 mb-4" style={{ color: 'var(--color-accent, #0D9488)' }} />
-                <h3 className="text-lg font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
+                <h3 className="text-lg font-bold mb-2" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{tt(s.title)}</h3>
                 <div className="w-10 h-0.5 mb-3" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} />
-                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(s.short_description || s.description || '') }} />
+                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(tt(s.short_description) || tt(s.description)) }} />
                 <div className="mb-4"><ServiceLink s={s} /></div>
                 {s.price > 0 && <div className="flex items-center justify-between"><span className="text-lg font-bold" style={{ color: 'var(--color-heading, #1a2332)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="px-4 py-2 text-sm font-medium text-white" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>Purchase</button></div>}
               </div>
@@ -180,8 +188,8 @@ function ServicesSection({ services, theme }) {
             return (
               <div key={s.id} className="bg-white rounded-lg p-8 shadow-sm hover:shadow-md transition-all border border-slate-100 group">
                 <div className="w-12 h-12 rounded-lg flex items-center justify-center mb-5" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Icon className="w-5 h-5 text-white" /></div>
-                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{s.title}</h3>
-                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(s.short_description || s.description || '') }} />
+                <h3 className="text-lg font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(s.title)}</h3>
+                <div className="text-sm leading-relaxed mb-3 rich-text-content" style={{ color: 'var(--color-body-text, #475569)' }} dangerouslySetInnerHTML={{ __html: cleanHtml(tt(s.short_description) || tt(s.description)) }} />
                 <div className="mb-4"><ServiceLink s={s} /></div>
                 {s.price > 0 && <div className="flex items-center justify-between border-t border-slate-100 pt-4"><span className="text-xl font-bold" style={{ color: 'var(--color-accent, #0D9488)' }}>${s.price}</span><button onClick={() => handleCheckout(s)} className="text-sm font-medium px-4 py-2 rounded-sm text-white" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)' }}>Purchase</button></div>}
               </div>
@@ -195,6 +203,7 @@ function ServicesSection({ services, theme }) {
 
 /* ==================== NEWS ==================== */
 function NewsSection({ posts, theme }) {
+  const tt = useT();
   if (!posts?.length) return null;
   const bgClass = theme === 'classic' ? 'bg-[#faf9f6]' : 'bg-white';
   const cardStyle = theme === 'modern' ? 'rounded-2xl overflow-hidden shadow-sm hover:shadow-xl' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md border border-slate-100';
@@ -216,8 +225,8 @@ function NewsSection({ posts, theme }) {
               {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-6">
                 <div className="flex items-center gap-2 mb-3"><Clock className="w-3 h-3 text-slate-400" /><span className="text-xs text-slate-400">{new Date(p.created_at).toLocaleDateString()}</span></div>
-                <h3 className="font-bold mb-2 group-hover:opacity-70 transition-colors" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: theme === 'classic' ? "'Playfair Display', serif" : undefined }}>{p.title}</h3>
-                <p className="text-sm line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.excerpt || p.content?.replace(/<[^>]*>/g, '').slice(0, 120)}</p>
+                <h3 className="font-bold mb-2 group-hover:opacity-70 transition-colors" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: theme === 'classic' ? "'Playfair Display', serif" : undefined }}>{tt(p.title)}</h3>
+                <p className="text-sm line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{(cleanHtml(tt(p.excerpt)) || cleanHtml(tt(p.content)).replace(/<[^>]*>/g, '')).slice(0, 120)}</p>
               </div>
             </Link>
           ))}
@@ -265,6 +274,7 @@ function ExternalBlogSection({ theme }) {
 
 /* ==================== READING LIST ==================== */
 function ReadingListSection({ books, theme }) {
+  const tt = useT();
   if (!books?.length) return null;
   const bgClass = theme === 'classic' ? 'bg-[#faf9f6]' : 'bg-white';
   return (
@@ -293,7 +303,7 @@ function ReadingListSection({ books, theme }) {
                   <BookOpen className="w-8 h-8 text-white/50" />
                 </div>
               )}
-              <div className="p-3"><p className="text-sm font-medium truncate" style={{ color: 'var(--color-heading, #1a2332)' }}>{b.title}</p><p className="text-xs text-slate-400 truncate">{b.author}</p></div>
+              <div className="p-3"><p className="text-sm font-medium truncate" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(b.title)}</p><p className="text-xs text-slate-400 truncate">{tt(b.author)}</p></div>
             </Link>
           );})}
         </div>
@@ -304,10 +314,11 @@ function ReadingListSection({ books, theme }) {
 
 /* ==================== MAP ==================== */
 function MapSection({ maps, locations, theme, title, mapsLang }) {
+  const tt = useT();
   const allLocations = [...(maps || []).filter(m => m.lat && m.lng), ...(locations || []).filter(l => l.lat && l.lng)];
   if (!allLocations.length) return null;
   const center = [allLocations[0].lat, allLocations[0].lng];
-  const sectionTitle = title || 'Our Locations';
+  const sectionTitle = tt(title) || 'Our Locations';
   const lang = mapsLang || 'local';
   return (
     <section className={`py-20 ${theme === 'classic' ? 'bg-white' : 'bg-slate-50'}`} id="locations" data-testid="map-section">
@@ -321,7 +332,7 @@ function MapSection({ maps, locations, theme, title, mapsLang }) {
           <MapContainer center={center} zoom={5} style={{ height: '100%', width: '100%' }}>
             <TileLayer url={getTileUrl(lang)} attribution={getTileAttribution(lang)} />
             <MarkerClusterGroup>
-              {allLocations.map((loc, i) => (<Marker key={i} position={[loc.lat, loc.lng]}><Popup><strong>{loc.title || loc.name}</strong>{loc.description && <p>{loc.description}</p>}{loc.link && <a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-blue-500 underline">Visit</a>}</Popup></Marker>))}
+              {allLocations.map((loc, i) => (<Marker key={i} position={[loc.lat, loc.lng]}><Popup><strong>{tt(loc.title) || tt(loc.name)}</strong>{loc.description && <p>{tt(loc.description)}</p>}{loc.link && <a href={loc.link} target={loc.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="text-blue-500 underline">Visit</a>}</Popup></Marker>))}
             </MarkerClusterGroup>
           </MapContainer>
         </div>
@@ -332,6 +343,7 @@ function MapSection({ maps, locations, theme, title, mapsLang }) {
 
 /* ==================== PORTFOLIO ==================== */
 function PortfolioSection({ items, theme }) {
+  const tt = useT();
   if (!items?.length) return null;
   if (theme === 'modern') return (
     <section className="py-24 bg-white" id="portfolio" data-testid="portfolio-section">
@@ -345,7 +357,7 @@ function PortfolioSection({ items, theme }) {
             <div key={p.id} className="group relative rounded-2xl overflow-hidden shadow-lg">
               {p.image && <img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-72 object-cover group-hover:scale-105 transition-transform duration-500" />}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 to-transparent flex items-end p-8">
-                <div className="flex-1"><h3 className="text-xl font-bold text-white mb-1">{p.title}</h3><p className="text-white/70 text-sm">{p.category}</p></div>
+                <div className="flex-1"><h3 className="text-xl font-bold text-white mb-1">{tt(p.title)}</h3><p className="text-white/70 text-sm">{tt(p.category)}</p></div>
                 {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center text-white hover:bg-white/30 flex-shrink-0"><ArrowUpRight className="w-4 h-4" /></a>}
               </div>
             </div>
@@ -366,9 +378,9 @@ function PortfolioSection({ items, theme }) {
             <div key={p.id} className="border-2 group overflow-hidden" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
               {p.image && <div className="h-52 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-6 bg-[#faf9f6]">
-                <h3 className="font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3>
-                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p>
-                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p>
+                <h3 className="font-bold mb-1" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{tt(p.title)}</h3>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{tt(p.category)}</p>
+                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{tt(p.description)}</p>
                 {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium mt-2 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View Project <ArrowUpRight className="w-3 h-3" /></a>}
               </div>
             </div>
@@ -390,9 +402,9 @@ function PortfolioSection({ items, theme }) {
             <div key={p.id} className="bg-white rounded-lg overflow-hidden shadow-sm hover:shadow-md transition-all border border-slate-100 group">
               {p.image && <div className="h-48 overflow-hidden"><img src={p.image?.startsWith('/api') ? `${API}${p.image}` : p.image} alt="" className="w-full h-full object-cover group-hover:scale-105 transition-transform" /></div>}
               <div className="p-5">
-                <h3 className="font-bold mb-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{p.title}</h3>
-                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{p.category}</p>
-                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{p.description}</p>
+                <h3 className="font-bold mb-1" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(p.title)}</h3>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{tt(p.category)}</p>
+                <p className="text-sm mt-2 line-clamp-2" style={{ color: 'var(--color-body-text, #475569)' }}>{tt(p.description)}</p>
                 {p.link && <a href={p.link} target={p.open_in_new_tab ? '_blank' : '_self'} rel="noreferrer" className="inline-flex items-center gap-1 text-xs font-medium mt-2 hover:opacity-70" style={{ color: 'var(--color-accent, #0D9488)' }}>View Project <ArrowUpRight className="w-3 h-3" /></a>}
               </div>
             </div>
@@ -433,6 +445,7 @@ function GallerySection({ items, theme }) {
 
 /* ==================== TESTIMONIALS ==================== */
 function TestimonialsSection({ items, theme }) {
+  const tt = useT();
   const [carouselIdx, setCarouselIdx] = useState(0);
   const perPage = 3;
   const totalPages = Math.ceil((items?.length || 0) / perPage);
@@ -456,10 +469,10 @@ function TestimonialsSection({ items, theme }) {
             {visible.map(t => (
               <div key={t.id} className="bg-slate-50 rounded-2xl p-8 relative">
                 <Quote className="w-8 h-8 mb-4 opacity-20" style={{ color: 'var(--color-accent, #0D9488)' }} />
-                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{t.content}"</p>
+                <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{tt(t.content)}"</p>
                 <div className="flex items-center gap-3">
-                  {t.avatar && <img src={t.avatar?.startsWith('/api') ? `${API}${t.avatar}` : t.avatar} alt="" className="w-12 h-12 rounded-full object-cover" />}
-                  <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{t.name}</p><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{t.role || t.company}</p></div>
+                  {(t.avatar || t.image) && <img src={(t.avatar || t.image)?.startsWith('/api') ? `${API}${t.avatar || t.image}` : (t.avatar || t.image)} alt="" className="w-12 h-12 rounded-full object-cover" />}
+                  <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(t.name)}</p><p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{tt(t.role) || tt(t.title) || tt(t.company)}</p></div>
                 </div>
                 <div className="flex gap-0.5 mt-4">{[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#e2e8f0', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
               </div>
@@ -479,10 +492,10 @@ function TestimonialsSection({ items, theme }) {
           {items.slice(0, 4).map(t => (
             <div key={t.id} className="border-2 p-6 relative" style={{ borderColor: 'var(--color-primary, #1a2332)', backgroundColor: '#faf9f6' }}>
               <div className="absolute -top-4 left-6 w-8 h-8 flex items-center justify-center" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }}><Quote className="w-4 h-4 text-white" /></div>
-              <p className="text-sm leading-relaxed mt-4 mb-6" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif", fontStyle: 'italic' }}>"{t.content}"</p>
+              <p className="text-sm leading-relaxed mt-4 mb-6" style={{ color: 'var(--color-body-text, #475569)', fontFamily: "'Playfair Display', serif", fontStyle: 'italic' }}>"{tt(t.content)}"</p>
               <div className="border-t pt-4" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
-                <p className="font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{t.name}</p>
-                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{t.role || t.company}</p>
+                <p className="font-bold text-sm" style={{ fontFamily: "'Playfair Display', serif", color: 'var(--color-heading, #1a2332)' }}>{tt(t.name)}</p>
+                <p className="text-xs" style={{ color: 'var(--color-accent, #0D9488)' }}>{tt(t.role) || tt(t.title) || tt(t.company)}</p>
                 <div className="flex gap-0.5 mt-2">{[1,2,3,4,5].map(s => <Star key={s} className="w-3 h-3" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#d1d5db', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
               </div>
             </div>
@@ -501,10 +514,10 @@ function TestimonialsSection({ items, theme }) {
           {items.slice(0, 3).map(t => (
             <div key={t.id} className="bg-white rounded-lg p-8 shadow-sm border border-slate-100">
               <Quote className="w-6 h-6 mb-4 opacity-30" style={{ color: 'var(--color-accent, #0D9488)' }} />
-              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{t.content}"</p>
+              <p className="text-sm leading-relaxed mb-6" style={{ color: 'var(--color-body-text, #475569)' }}>"{tt(t.content)}"</p>
               <div className="flex items-center gap-3">
-                {t.avatar && <img src={t.avatar?.startsWith('/api') ? `${API}${t.avatar}` : t.avatar} alt="" className="w-10 h-10 rounded-full object-cover" />}
-                <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{t.name}</p><p className="text-xs text-slate-400">{t.role || t.company}</p></div>
+                {(t.avatar || t.image) && <img src={(t.avatar || t.image)?.startsWith('/api') ? `${API}${t.avatar || t.image}` : (t.avatar || t.image)} alt="" className="w-10 h-10 rounded-full object-cover" />}
+                <div><p className="font-bold text-sm" style={{ color: 'var(--color-heading, #1a2332)' }}>{tt(t.name)}</p><p className="text-xs text-slate-400">{tt(t.role) || tt(t.title) || tt(t.company)}</p></div>
               </div>
               <div className="flex gap-0.5 mt-4">{[1,2,3,4,5].map(s => <Star key={s} className="w-3.5 h-3.5" style={{ color: s <= (t.rating || 5) ? '#f59e0b' : '#e2e8f0', fill: s <= (t.rating || 5) ? '#f59e0b' : 'none' }} />)}</div>
             </div>

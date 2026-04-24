@@ -795,3 +795,24 @@ Mentor (Carlos): carlos@example.com / Mentor123!
 - Global CSS guard rails in `/app/frontend/src/index.css` preserved: `word-break: normal; overflow-wrap: break-word; hyphens: none;` across `.rich-text-content` and `:where([class*="aurex"])` scopes.
 
 **Verification:** Runtime scan reports 0 of 11 rich-text nodes on the homepage contain `&nbsp;` / U+00A0. Screenshot confirms natural word-boundary wrapping.
+
+## Landing Page Typography + Legacy Theme Crash Fix (Feb 24, 2026)
+**Bug 1 — `html.replace is not a function`:** When the landing page was disabled and the active theme switched to `default` / `modern` / `classic`, `HomePage.js` crashed because `cleanHtml()` assumed its input was always a string, but Services cards pass raw field values that can be LocalizedField objects (`{ en: '…' }`) once the CMS saves a translation. The object propagated into `cleanHtml` → `.replace` → TypeError.
+
+**Bug 2 — Mid-word break + hyphen break on Landing Page:** Same `&nbsp;` root cause as the Aurex fix, plus Landing Page had a `nbHyphens()` helper that only guarded hyphenated words without addressing the non-breaking-space problem.
+
+**Fix:**
+- `/app/frontend/src/pages/HomePage.js`:
+  - Made `cleanHtml()` defensive — accepts any input, coerces to String, now also strips the partial entity `&nbsp` (no semicolon) that can survive slice-truncation of external feeds.
+  - Added `const tt = useT();` inside every legacy-theme section and wrapped every text render (`title`, `category`, `description`, `name`, `role`, `content`, etc.) so LocalizedField values resolve to the active locale instead of crashing or rendering `[object Object]`.
+  - Sections updated: `ServicesSection`, `NewsSection`, `ReadingListSection`, `PortfolioSection`, `TestimonialsSection` (all three theme variants each), `MapSection` popup.
+- `/app/frontend/src/pages/LandingPage.js`:
+  - Imported `normalizeRichText` and folded it into `nbHyphens()` so landing page now (a) strips `&nbsp;` / U+00A0 before (b) upgrading hyphens to U+2011. `nbHyphens` is now defensive (accepts strings, LocalizedField objects, null).
+- `/app/frontend/src/index.css`:
+  - Rewrote the policy comment block to make the base typography rules explicitly permanent across ALL themes (Aurex + default/modern/classic) AND the Landing Page, documenting the CSS layer + companion JS layer (`normalizeRichText`, `nbHyphens`) as the canonical word-wrapping contract for all current and future components.
+
+**Verification:**
+- Rendered `/` with `active_theme=modern,classic,default` and `landing_page_enabled=false` — all three render without crash (`PAGE-ERRORS: []`, `HAS-CRASH: false`).
+- Rendered `/` with `active_theme=aurex` + `landing_page_enabled=true` — landing page renders cleanly with compound words intact and 0 `&nbsp;` nodes detected.
+- ESLint clean on all modified files.
+

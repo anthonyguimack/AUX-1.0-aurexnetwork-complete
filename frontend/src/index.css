@@ -64,24 +64,34 @@
 }
 
 /* ─────────────────────────────────────────────────────────────────────────
-   AUREX THEME — BASE TYPOGRAPHY RULES (PERMANENT)
+   GLOBAL TYPOGRAPHY POLICY — PERMANENT BASE RULES (ALL THEMES + LANDING)
    ─────────────────────────────────────────────────────────────────────────
    These rules are THE canonical word-wrapping policy for the entire public
-   website. They apply at the :root / html / body level so every element —
-   existing today AND future components — inherits them by default. Do NOT
-   remove or weaken these rules; any new component MUST inherit them.
+   website — Aurex One-page theme, Modern / Classic / Default legacy themes,
+   AND the standalone Landing Page. They apply at the :root / html / body
+   level so every element — existing today AND future components — inherits
+   them by default. Do NOT remove or weaken these rules; any new component
+   or future project/feature in this system MUST inherit them.
 
    Why: prior iterations saw hyphenated words like "membership-based" breaking
-   at the dash and non-hyphenated words like "opportunities" splitting
-   mid-character near container edges. CSS auto-hyphenation + the deprecated
-   `word-break: break-word` value were the culprits.
+   at the dash, and non-hyphenated words like "opportunities" / "alignment" /
+   "literacy" splitting mid-character near container edges. Root causes:
+     1. CSS auto-hyphenation (`hyphens: auto`) from Tailwind prose / UA defaults.
+     2. The deprecated `word-break: break-word` value.
+     3. Rich-text content saved with `&nbsp;` between every word (Quill editor),
+        which the browser treats as a single unbreakable token.
 
-   Policy enforced:
+   Policy enforced (CSS layer):
      - `word-break: normal`       → never split inside a word.
      - `overflow-wrap: break-word`→ only wrap at whitespace; break long
                                      unbreakable tokens (URLs, hashes) at
                                      the container edge only if needed.
      - `hyphens: none`            → turn off browser auto-hyphenation.
+
+   Companion JS layer (`/app/frontend/src/lib/richText.js → normalizeRichText`)
+   strips `&nbsp;` / U+00A0 from every rich-text payload before rendering.
+   Landing page has an additional `nbHyphens()` helper that also promotes
+   regular hyphens to non-breaking hyphens (U+2011) for extra safety.
 
    Specificity: the per-element block uses `:where()` (specificity 0,0,0) so
    that admin-facing pages can still opt-in to Tailwind's `break-all` utility

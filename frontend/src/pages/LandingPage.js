@@ -2,15 +2,24 @@ import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { landingAPI } from '../lib/api';
 import { useSettings } from '../App';
 import { X } from 'lucide-react';
+import { normalizeRichText } from '../lib/richText';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
 const cv = (name, fallback) => `var(--lp-${name}, ${fallback})`;
 
-/* Replace regular hyphens between word chars with non-breaking hyphen U+2011 */
+/* Normalize rich-text HTML for the public landing page:
+ *   1. Strip &nbsp; / U+00A0 (Quill inserts these between every word, which
+ *      makes the browser treat a paragraph as a single unbreakable token and
+ *      forces mid-character splits near the container edge).
+ *   2. Replace regular hyphens between word chars with a non-breaking hyphen
+ *      U+2011 so compound words ("membership-based", "expert-led") never
+ *      wrap at the dash.
+ * Must accept any input (string, LocalizedField object, null) without throwing. */
 function nbHyphens(html) {
-  if (!html) return html;
-  return html.replace(/>([^<]+)</g, (match, text) => {
+  if (html == null) return '';
+  const str = normalizeRichText(typeof html === 'string' ? html : String(html));
+  return str.replace(/>([^<]+)</g, (match, text) => {
     return '>' + text.replace(/(\w)-(\w)/g, '$1\u2011$2') + '<';
   }).replace(/^([^<]+)/, (text) => text.replace(/(\w)-(\w)/g, '$1\u2011$2'));
 }
