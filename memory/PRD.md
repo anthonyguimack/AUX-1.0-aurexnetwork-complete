@@ -838,3 +838,33 @@ Granular role-based access control for the entire CMS.
 
 **Verified by testing_agent_v3_fork (iteration_67.json)** — 100% pass on 13 backend API tests + 17 frontend scenarios. Zero critical or minor issues. Confirmed: admin sees all 42 sections, operator (carlos) sees only 3 sections (Dashboard/Analytics/Blog), 403 pages render with sidebar intact, system roles cannot be deleted, admin-only routes reject operators regardless of their permissions.
 
+
+## Roles & Permissions — Follow-up (Feb 24, 2026)
+Five fixes layered on top of the baseline R&P system.
+
+**1. Operator uploads (Gallery Albums + every other section)**
+- Root cause: `/api/upload` and `/api/upload-file` used the URL-based `require_admin` which had no section mapping for upload paths → fell through to "Admin access required".
+- Fix: new `require_any_cms_access` dependency in `database.py` admits any user with at least one section permission. Both upload endpoints in `admin_tools.py` switched over.
+
+**2. Member-role revocation = instant My Account lockout**
+- Backend gates: `/api/auth/login` (default + `login_type='cms'`), `/api/member/login`, and `get_current_member` reject 403 "My Account access has been revoked" when `cms_roles` doesn't include `role_member`. Admins bypass.
+- New `login_type='cms'` lets operators (with non-Member roles) keep using `/admin/login` even after role_member is removed.
+- Frontend `MemberRoute` redirects to `/my-account/login` if user lacks the role; navbar `hasMyAccount` flag hides the link instantly.
+
+**3. CMS Welcome page (operators without Dashboard permission)**
+- New `/app/frontend/src/pages/admin/CmsWelcome.js` renders `settings.cms_welcome` rich text (sanitised through `normalizeRichText`) so operators land on a meaningful greeting instead of a 403.
+- Settings → General now has a `LocalizedField`-wrapped `RichTextEditor` for `cms_welcome` (data-testid='settings-cms-welcome').
+- `/admin` index route is now `<AdminIndexRouter />` which serves Dashboard or CmsWelcome based on the `dashboard` permission.
+
+**4. Website navbar gating (all 3 theme variants)**
+- `useNavData` hook returns `hasCmsAccess` (admin OR ≥1 effective_permission) and `hasMyAccount` (admin OR has `role_member`).
+- Aurex / Modern / Classic navbars all reuse these flags. Mobile menus too.
+- Result: bare members see only My Account; operators see Admin + (My Account if member); admins see both.
+
+**5. Members table + editor cleanup**
+- "Member Type" column renamed to "Mentor" with YES (emerald badge) / "-" values driven by `item.is_mentor`.
+- Admin/Member dropdown removed from the Members editor's Personal tab — every new member defaults to `role: 'member'` + `cms_roles: ['role_member']`. Promotion to admin is now done by assigning the Administrator CMS role via the new "CMS Roles" column inline editor.
+- Idempotent back-fill on startup defaults `is_mentor: false` on legacy member records.
+
+**Verified by testing_agent_v3_fork (iteration_68.json)** — 14/15 backend (93%, the one "minor" was the legacy `is_mentor` missing field which has now been back-filled), 100% frontend. Manual screenshot regression: operator without Dashboard sees CmsWelcome with only assigned sections in sidebar; navbar correctly toggles Admin / My Account based on roles; Members table renders the new column; revoking role_member redirects to login.
+

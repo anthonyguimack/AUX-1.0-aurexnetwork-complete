@@ -126,3 +126,9 @@ async def seed_system_roles():
         {"role": {"$ne": "admin"}, "cms_roles": {"$exists": False}},
         {"$set": {"cms_roles": ["role_member"]}},
     )
+    # Default is_mentor=False for legacy member records that lack the field
+    # (the new "Mentor" column in MembersManager renders YES/-).
+    await db.members.update_many(
+        {"is_mentor": {"$exists": False}},
+        {"$set": {"is_mentor": False}},
+    )
