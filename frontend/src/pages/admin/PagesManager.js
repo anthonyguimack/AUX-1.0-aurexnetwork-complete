@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, ArrowUp, ArrowDown, Lock, ExternalLink, Home, Newspaper, Image, BookOpen, Loader2 } from 'lucide-react';
 import { getLayoutLabel } from '../../components/admin/LayoutPreview';
 import PageEditorDialog from '../../components/admin/PageEditorDialog';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyPage = { title: '', url: '', show_in_header: false, show_in_footer: false, open_in_new_tab: false, login_required: false, order: 0, summary: '', content: '', page_type: '', layout: '', layout_image: '', zones: {} };
 
@@ -57,6 +58,12 @@ export default function PagesManager() {
 
   const openEditor = (page) => { setEditing({ ...page }); setOpen(true); };
 
+  const dt = useDataTable(items, {
+    searchFields: ['title', 'url'],
+    defaultSort: { key: 'order', dir: 'asc' },
+    storageKey: 'pages',
+  });
+
   return (
     <div data-testid="pages-manager">
       <div className="flex items-center justify-between mb-6">
@@ -66,18 +73,20 @@ export default function PagesManager() {
         </button>
       </div>
 
+      <DataTableToolbar dt={dt} testId="pages" placeholder="Search by title or URL…" />
+
       <div className="bg-white rounded-sm border border-slate-200">
         <table className="w-full text-sm" data-testid="pages-table">
           <thead><tr className="border-b bg-slate-50/80">
-            <th className="text-left p-3 font-medium text-slate-500 w-16">Order</th>
-            <th className="text-left p-3 font-medium text-slate-500">Page</th>
-            <th className="text-left p-3 font-medium text-slate-500 hidden md:table-cell">URL</th>
+            <SortableTh dt={dt} field="order" className="w-16">Order</SortableTh>
+            <SortableTh dt={dt} field="title">Page</SortableTh>
+            <SortableTh dt={dt} field="url" className="hidden md:table-cell">URL</SortableTh>
             <th className="text-center p-3 font-medium text-slate-500 w-20">Visibility</th>
             <th className="text-center p-3 font-medium text-slate-500 w-20">Access</th>
             <th className="text-right p-3 font-medium text-slate-500 w-24">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map((item, idx) => {
+            {dt.visibleItems.map((item, idx) => {
               const isSystem = !!item.system;
               const SysIcon = SYSTEM_ICONS[item.system_key];
               return (
@@ -130,7 +139,9 @@ export default function PagesManager() {
             })}
           </tbody>
         </table>
-        {items.length === 0 && <div className="p-12 text-center text-slate-400 text-sm">No pages yet. Click "Add Page" to create one.</div>}
+        {dt.totalAll === 0 && <div className="p-12 text-center text-slate-400 text-sm">No pages yet. Click "Add Page" to create one.</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-12 text-center text-slate-400 text-sm">No pages match your search</div>}
+        <DataTablePagination dt={dt} testId="pages" />
       </div>
 
       <PageEditorDialog editing={editing} setEditing={setEditing} open={open} setOpen={setOpen} onSave={handleSave} loading={loading} />

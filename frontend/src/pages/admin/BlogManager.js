@@ -10,6 +10,7 @@ import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 import LocalizedField from '../../components/admin/LocalizedField';
 import { adminText } from '../../lib/i18n';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyPost = { title: '', summary: '', content: '', category: '', author: '', image: '', published: true };
 const emptyCategory = { name: '' };
@@ -55,6 +56,12 @@ export default function BlogManager() {
   const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
   const toggleAll = () => setSelected(prev => prev.length === items.length ? [] : items.map(i => i.id));
 
+  const dt = useDataTable(items, {
+    searchAccessor: p => `${adminText(p.title)} ${p.category || ''} ${p.author || ''}`,
+    defaultSort: { key: 'created_at', dir: 'desc' },
+    storageKey: 'blog',
+  });
+
   // Category CRUD
   const handleSaveCategory = async () => {
     setCatLoading(true);
@@ -86,18 +93,19 @@ export default function BlogManager() {
           <button onClick={() => { setEditing({...emptyPost}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-blog-btn"><Plus className="w-4 h-4" /> New Post</button>
         </div>
       </div>
+      <DataTableToolbar dt={dt} testId="blog" placeholder="Search by title, category, author…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100 bg-slate-50">
             <th className="p-3 w-8"><Checkbox checked={selected.length === items.length && items.length > 0} onCheckedChange={toggleAll} data-testid="select-all-checkbox" /></th>
-            <th className="text-left p-3 font-medium text-slate-600">Title</th>
-            <th className="text-left p-3 font-medium text-slate-600">Category</th>
-            <th className="text-left p-3 font-medium text-slate-600">Author</th>
-            <th className="text-left p-3 font-medium text-slate-600">Status</th>
+            <SortableTh dt={dt} field="title">Title</SortableTh>
+            <SortableTh dt={dt} field="category">Category</SortableTh>
+            <SortableTh dt={dt} field="author">Author</SortableTh>
+            <SortableTh dt={dt} field="published">Status</SortableTh>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map(item => (
+            {dt.visibleItems.map(item => (
               <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`blog-row-${item.id}`}>
                 <td className="p-3"><Checkbox checked={selected.includes(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></td>
                 <td className="p-3 font-medium text-[#1a2332]">{adminText(item.title)}</td>
@@ -112,7 +120,9 @@ export default function BlogManager() {
             ))}
           </tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No blog posts yet</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No blog posts yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No posts match your search</div>}
+        <DataTablePagination dt={dt} testId="blog" />
       </div>
 
       {/* Post Edit Dialog */}

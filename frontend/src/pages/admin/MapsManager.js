@@ -11,6 +11,7 @@ import ImageUpload from '../../components/ImageUpload';
 import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -65,6 +66,17 @@ export default function MapsManager() {
     } catch { toast.error('Error'); } finally { setLoading(false); }
   };
 
+  const dtLocs = useDataTable(locations, {
+    searchAccessor: l => `${l.name || ''} ${l.description || ''} ${l.map_type || ''} ${l.link || ''}`,
+    defaultSort: { key: 'name', dir: 'asc' },
+    storageKey: 'map-locations',
+  });
+  const dtMaps = useDataTable(maps, {
+    searchFields: ['title', 'description'],
+    defaultSort: { key: 'title', dir: 'asc' },
+    storageKey: 'maps',
+  });
+
   return (
     <div data-testid="maps-manager">
       <h1 className="text-2xl font-bold text-[#1a2332] mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Maps Manager</h1>
@@ -74,10 +86,18 @@ export default function MapsManager() {
           <div className="flex justify-end mb-4">
             <button onClick={() => { setEditLoc({ name: '', lat: 0, lng: 0, description: '', map_type: 'global_business', link: '', open_in_new_tab: false }); setOpenLoc(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-location-btn"><Plus className="w-4 h-4" /> New Location</button>
           </div>
+          <DataTableToolbar dt={dtLocs} testId="map-locations" placeholder="Search by name, description, type…" />
           <div className="bg-white rounded-sm border border-slate-100">
             <table className="w-full text-sm">
-              <thead><tr className="border-b bg-slate-50"><th className="text-left p-3">Name</th><th className="text-left p-3">Lat</th><th className="text-left p-3">Lng</th><th className="text-left p-3">Map Type</th><th className="text-left p-3">Link</th><th className="text-right p-3">Actions</th></tr></thead>
-              <tbody>{locations.map(l => {
+              <thead><tr className="border-b bg-slate-50">
+                <SortableTh dt={dtLocs} field="name">Name</SortableTh>
+                <SortableTh dt={dtLocs} field="lat">Lat</SortableTh>
+                <SortableTh dt={dtLocs} field="lng">Lng</SortableTh>
+                <SortableTh dt={dtLocs} field="map_type">Map Type</SortableTh>
+                <th className="text-left p-3 font-medium text-slate-600">Link</th>
+                <th className="text-right p-3 font-medium text-slate-600">Actions</th>
+              </tr></thead>
+              <tbody>{dtLocs.visibleItems.map(l => {
                 const typeLabel = MAP_TYPES.find(t => t.value === l.map_type)?.label || l.map_type || l.category || '—';
                 return (
                   <tr key={l.id} className="border-b border-slate-50" data-testid={`location-row-${l.id}`}>
@@ -94,17 +114,24 @@ export default function MapsManager() {
                 );
               })}</tbody>
             </table>
-            {locations.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No locations yet</div>}
+            {dtLocs.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No locations yet</div>}
+            {dtLocs.totalAll > 0 && dtLocs.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No locations match your search</div>}
+            <DataTablePagination dt={dtLocs} testId="map-locations" />
           </div>
         </TabsContent>
         <TabsContent value="maps">
           <div className="flex justify-end mb-4">
             <button onClick={() => { setEditMap({ title: '', description: '', cover_image: '', tags: [], published: true }); setOpenMap(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-map-btn"><Plus className="w-4 h-4" /> New Map</button>
           </div>
+          <DataTableToolbar dt={dtMaps} testId="maps" placeholder="Search by title…" />
           <div className="bg-white rounded-sm border border-slate-100">
             <table className="w-full text-sm">
-              <thead><tr className="border-b bg-slate-50"><th className="text-left p-3">Title</th><th className="text-left p-3">Status</th><th className="text-right p-3">Actions</th></tr></thead>
-              <tbody>{maps.map(m => (
+              <thead><tr className="border-b bg-slate-50">
+                <SortableTh dt={dtMaps} field="title">Title</SortableTh>
+                <SortableTh dt={dtMaps} field="published">Status</SortableTh>
+                <th className="text-right p-3 font-medium text-slate-600">Actions</th>
+              </tr></thead>
+              <tbody>{dtMaps.visibleItems.map(m => (
                 <tr key={m.id} className="border-b border-slate-50">
                   <td className="p-3 font-medium">{m.title}</td>
                   <td className="p-3">{m.published ? <span className="text-xs text-[#0D9488]">Published</span> : <span className="text-xs text-slate-400">Draft</span>}</td>
@@ -115,6 +142,9 @@ export default function MapsManager() {
                 </tr>
               ))}</tbody>
             </table>
+            {dtMaps.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No maps yet</div>}
+            {dtMaps.totalAll > 0 && dtMaps.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No maps match your search</div>}
+            <DataTablePagination dt={dtMaps} testId="maps" />
           </div>
         </TabsContent>
       </Tabs>

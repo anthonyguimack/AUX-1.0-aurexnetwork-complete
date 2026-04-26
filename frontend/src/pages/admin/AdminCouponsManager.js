@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../../components/ui/tabs';
 import { Loader2, Plus, Trash2, Edit2, Save, Ticket, Percent, DollarSign, Users, Calendar, ToggleLeft, BarChart3, TrendingUp, Crown, Package } from 'lucide-react';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyCoupon = {
   code: '',
@@ -83,6 +84,12 @@ export default function AdminCouponsManager() {
     catch (e) { toast.error(e.response?.data?.detail || 'Delete failed'); }
   };
 
+  const dt = useDataTable(coupons, {
+    searchFields: ['code', 'discount_type', 'applies_to'],
+    defaultSort: { key: 'code', dir: 'asc' },
+    storageKey: 'coupons',
+  });
+
   return (
     <div data-testid="admin-coupons-manager">
       <div className="flex items-center justify-between mb-6">
@@ -104,6 +111,7 @@ export default function AdminCouponsManager() {
         </TabsList>
 
         <TabsContent value="coupons">
+          <DataTableToolbar dt={dt} testId="coupons" placeholder="Search by code, discount type, applies to…" />
           <div className="rounded-lg border bg-white overflow-x-auto" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }}>
         {loading ? (
           <div className="p-12 text-center"><Loader2 className="w-6 h-6 animate-spin mx-auto text-slate-400" /></div>
@@ -113,20 +121,21 @@ export default function AdminCouponsManager() {
             <p className="text-sm text-slate-500">No coupons yet. Create your first one above.</p>
           </div>
         ) : (
+          <>
           <table className="w-full text-sm">
             <thead className="bg-slate-50">
               <tr>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Code</th>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Discount</th>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Applies to</th>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Usage</th>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Expires</th>
-                <th className="text-left p-3 font-medium text-xs text-slate-600">Status</th>
+                <SortableTh dt={dt} field="code">Code</SortableTh>
+                <SortableTh dt={dt} field="discount_value">Discount</SortableTh>
+                <SortableTh dt={dt} field="applies_to">Applies to</SortableTh>
+                <SortableTh dt={dt} field="usage_count">Usage</SortableTh>
+                <SortableTh dt={dt} field="expires_at">Expires</SortableTh>
+                <SortableTh dt={dt} field="active">Status</SortableTh>
                 <th className="text-right p-3 font-medium text-xs text-slate-600">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {coupons.map(c => (
+              {dt.visibleItems.map(c => (
                 <tr key={c.id} className="border-t" style={{ borderColor: 'var(--ad-border, #e2e8f0)' }} data-testid={`coupon-row-${c.id}`}>
                   <td className="p-3 font-mono text-xs font-semibold">{c.code}</td>
                   <td className="p-3 text-xs">
@@ -157,6 +166,9 @@ export default function AdminCouponsManager() {
               ))}
             </tbody>
           </table>
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No coupons match your search</div>}
+          <DataTablePagination dt={dt} testId="coupons" />
+          </>
         )}
       </div>
         </TabsContent>

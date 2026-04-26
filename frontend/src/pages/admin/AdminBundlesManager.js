@@ -3,6 +3,7 @@ import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Loader2, Plus, Edit2, Trash2, Package } from 'lucide-react';
 import BundleEditorDialog from '../../components/BundleEditorDialog';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const empty = () => ({ name: '', description: '', session_count: 5, price_cents: 0, single_session_value_cents: 0, currency: 'usd', active: true });
 const fmtMoney = (c) => `$${((c || 0) / 100).toFixed(2)}`;
@@ -36,6 +37,12 @@ export default function AdminBundlesManager() {
     try { await adminAPI.deleteAdminBundle(id); toast.success('Deleted'); load(); } catch { toast.error('Error'); }
   };
 
+  const dt = useDataTable(items, {
+    searchFields: ['name', 'description'],
+    defaultSort: { key: 'name', dir: 'asc' },
+    storageKey: 'bundles',
+  });
+
   return (
     <div data-testid="admin-bundles-manager">
       <div className="flex items-center justify-between mb-6">
@@ -49,19 +56,21 @@ export default function AdminBundlesManager() {
       </div>
 
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+        <>
+        <DataTableToolbar dt={dt} testId="bundles" placeholder="Search by name or description…" />
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
-              <th className="text-left p-3 font-medium text-slate-600">Name</th>
-              <th className="text-left p-3 font-medium text-slate-600">Sessions</th>
-              <th className="text-left p-3 font-medium text-slate-600">Price</th>
+              <SortableTh dt={dt} field="name">Name</SortableTh>
+              <SortableTh dt={dt} field="session_count">Sessions</SortableTh>
+              <SortableTh dt={dt} field="price_cents">Price</SortableTh>
               <th className="text-left p-3 font-medium text-slate-600">Save</th>
-              <th className="text-left p-3 font-medium text-slate-600">Status</th>
+              <SortableTh dt={dt} field="active">Status</SortableTh>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
             <tbody>
-              {items.map((b, i) => {
+              {dt.visibleItems.map((b, i) => {
                 const savings = Math.max(0, (b.session_count * (b.single_session_value_cents || 0)) - b.price_cents);
                 return (
                   <tr key={b.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`bundle-row-${b.id}`}>
@@ -82,13 +91,16 @@ export default function AdminBundlesManager() {
               })}
             </tbody>
           </table>
-          {items.length === 0 && (
+          {dt.totalAll === 0 && (
             <div className="p-12 text-center text-slate-400 text-sm">
               <Package className="w-10 h-10 mx-auto mb-2 opacity-50" />
               No bundles yet. Create one to offer pre-paid session packs at a discount.
             </div>
           )}
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No bundles match your search</div>}
+          <DataTablePagination dt={dt} testId="bundles" />
         </div>
+        </>
       )}
 
       <BundleEditorDialog open={open} onOpenChange={setOpen} editing={editing} setEditing={setEditing} onSave={handleSave} saving={saving} theme="admin" />

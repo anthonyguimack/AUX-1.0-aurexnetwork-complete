@@ -4,6 +4,7 @@ import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Plus, Edit2, Trash2, Loader2, Image, Video } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const fmtDt = (d) => {
   if (!d) return '-';
@@ -35,6 +36,12 @@ export default function HeroManager() {
     finally { setDeleting(false); }
   };
 
+  const dt = useDataTable(slides, {
+    searchAccessor: s => `${s.title || ''} ${s.subtitle || ''} ${s.slide_type || ''}`,
+    defaultSort: { key: 'date_start', dir: 'desc' },
+    storageKey: 'hero',
+  });
+
   return (
     <div data-testid="hero-manager">
       <div className="flex items-center justify-between mb-6">
@@ -54,20 +61,22 @@ export default function HeroManager() {
           <button onClick={() => navigate('/admin/hero/add')} className="mt-3 text-[#0D9488] text-sm hover:underline">Create your first slide</button>
         </div>
       ) : (
+        <>
+        <DataTableToolbar dt={dt} testId="hero" placeholder="Search by title, subtitle, type…" />
         <div className="bg-white border border-slate-100 rounded-sm overflow-hidden">
           <table className="w-full text-sm" data-testid="hero-slides-table">
             <thead>
               <tr className="border-b border-slate-100 text-slate-500 text-xs uppercase">
-                <th className="text-left p-3">Title</th>
-                <th className="text-left p-3">Subtitle</th>
-                <th className="text-center p-3">Type</th>
-                <th className="text-left p-3">Start Date</th>
-                <th className="text-left p-3">End Date</th>
+                <SortableTh dt={dt} field="title">Title</SortableTh>
+                <SortableTh dt={dt} field="subtitle">Subtitle</SortableTh>
+                <SortableTh dt={dt} field="slide_type" align="center">Type</SortableTh>
+                <SortableTh dt={dt} field="date_start">Start Date</SortableTh>
+                <SortableTh dt={dt} field="date_end">End Date</SortableTh>
                 <th className="text-right p-3">Actions</th>
               </tr>
             </thead>
             <tbody>
-              {slides.map(s => (
+              {dt.visibleItems.map(s => (
                 <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`hero-slide-row-${s.id}`}>
                   <td className="p-3 font-medium text-[#1a2332] max-w-[200px] truncate" dangerouslySetInnerHTML={{ __html: s.title || '-' }} />
                   <td className="p-3 text-slate-500 max-w-[180px] truncate" dangerouslySetInnerHTML={{ __html: s.subtitle || '-' }} />
@@ -90,7 +99,10 @@ export default function HeroManager() {
               ))}
             </tbody>
           </table>
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No slides match your search</div>}
+          <DataTablePagination dt={dt} testId="hero" />
         </div>
+        </>
       )}
 
       {/* Delete Confirmation Dialog */}

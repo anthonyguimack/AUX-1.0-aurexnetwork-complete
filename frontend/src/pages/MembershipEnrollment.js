@@ -101,7 +101,33 @@ export default function MembershipEnrollment() {
     }
   }, [formData.state]); // eslint-disable-line
 
-  const stepFields = useMemo(() => fields.filter(f => f.step === currentStep), [fields, currentStep]);
+  const stepFields = useMemo(() => fields.filter(f => f.step === currentStep && f.visible !== false), [fields, currentStep]);
+
+  // Active step list — drops any step whose visible-fields count is zero so the
+  // public flow skips empty steps entirely.  Step 4 (Submit/payment) is always
+  // active so we never end up with no submit button.
+  const activeSteps = useMemo(() => {
+    return [1, 2, 3, 4].filter(s => {
+      if (s === 4) return true;
+      return fields.some(f => f.step === s && f.visible !== false);
+    });
+  }, [fields]);
+
+  const stepIndex = activeSteps.indexOf(currentStep);
+  const isLastStep = stepIndex === activeSteps.length - 1;
+  const nextStep = () => activeSteps[stepIndex + 1];
+  const prevStep = () => activeSteps[stepIndex - 1];
+
+  // If `fields` finishes loading and the current step turned out to be empty
+  // (e.g. admin hid every field in step 2 while user was on step 2), advance
+  // to the next active step automatically.
+  useEffect(() => {
+    if (!fields.length) return;
+    if (!activeSteps.includes(currentStep) && activeSteps.length) {
+      const nxt = activeSteps.find(s => s >= currentStep) || activeSteps[activeSteps.length - 1];
+      setCurrentStep(nxt);
+    }
+  }, [fields, activeSteps, currentStep]);
 
   const setField = useCallback((key, val) => {
     setFormData(p => ({ ...p, [key]: val }));
@@ -110,7 +136,7 @@ export default function MembershipEnrollment() {
   }, []);
 
   const validateStep = useCallback((step) => {
-    const sf = fields.filter(f => f.step === step);
+    const sf = fields.filter(f => f.step === step && f.visible !== false);
     const errs = {};
     for (const f of sf) {
       if (!f.required) continue;
@@ -169,7 +195,8 @@ export default function MembershipEnrollment() {
       }
     }
     setCompletedSteps(p => new Set([...p, currentStep]));
-    if (currentStep < 4) setCurrentStep(currentStep + 1);
+    const nxt = nextStep();
+    if (nxt) setCurrentStep(nxt);
     setGlobalMsg({ type: '', text: '' });
   };
 
@@ -198,7 +225,8 @@ export default function MembershipEnrollment() {
   };
 
   const goToStep = (step) => {
-    if (step < currentStep || completedSteps.has(step) || completedSteps.has(step - 1)) {
+    if (!activeSteps.includes(step)) return;
+    if (step < currentStep || completedSteps.has(step) || completedSteps.has(prevStep())) {
       setCurrentStep(step);
     }
   };
@@ -375,25 +403,27 @@ export default function MembershipEnrollment() {
         <div className="flex items-center gap-2 mb-6">
           <Layers className="w-5 h-5" style={{ color: cv('step-title', '#1a2535') }} />
           <h1 className="text-sm font-bold uppercase tracking-wide" style={{ color: cv('step-title', '#1a2535') }} data-testid="enroll-step-title">
-            Membership Enrollment Step {currentStep} of 4
+            Membership Enrollment Step {stepIndex + 1} of {activeSteps.length}
           </h1>
         </div>
 
-        {/* Progress Indicator */}
+        {/* Progress Indicator — only shows ACTIVE steps so empty steps are
+            invisible to the user (admin-driven via field visibility flags) */}
         <div className="mb-8">
           <div className="flex items-center justify-between mb-3">
-            {STEP_LABELS.map((label, i) => {
-              const step = i + 1;
+            {activeSteps.map((step, i) => {
+              const label = STEP_LABELS[step - 1] || `Step ${step}`;
+              const displayNum = i + 1;
               const isActive = step === currentStep;
               const isCompleted = completedSteps.has(step);
-              const isClickable = step < currentStep || isCompleted || completedSteps.has(step - 1);
+              const isClickable = step < currentStep || isCompleted || (i > 0 && completedSteps.has(activeSteps[i - 1]));
               return (
                 <React.Fragment key={step}>
                   {i > 0 && <div className="flex-1 h-px mx-2" style={{ backgroundColor: isCompleted || isActive ? cv('step-completed', '#F5A623') : cv('step-pending', '#d4d4d4') }} />}
                   <button onClick={() => isClickable && goToStep(step)} className={`flex flex-col items-center gap-1 ${isClickable ? 'cursor-pointer' : 'cursor-default'}`} data-testid={`enroll-step-nav-${step}`}>
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold transition-all ${isActive || isCompleted ? 'text-white' : 'border-2'}`}
                       style={isActive || isCompleted ? { backgroundColor: cv('step-active', '#F5A623') } : { borderColor: cv('step-pending', '#d4d4d4'), color: cv('step-pending', '#d4d4d4') }}>
-                      {isCompleted ? <Check className="w-4 h-4" /> : step}
+                      {isCompleted ? <Check className="w-4 h-4" /> : displayNum}
                     </div>
                     <span className={`text-xs text-center max-w-[100px] leading-tight hidden sm:block ${isActive ? 'font-bold' : ''}`}
                       style={{ color: isActive ? cv('step-title', '#1a2535') : cv('step-pending', '#9ca3af') }}>
@@ -404,9 +434,9 @@ export default function MembershipEnrollment() {
               );
             })}
           </div>
-          {/* Progress Bar */}
+          {/* Progress Bar — based on the position within the active-step list */}
           <div className="h-1.5 rounded-full" style={{ backgroundColor: cv('progress-bg', '#e5e7eb') }}>
-            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(currentStep / 4) * 100}%`, backgroundColor: cv('progress-bar', '#F5A623') }} data-testid="enroll-progress-bar" />
+            <div className="h-full rounded-full transition-all duration-500" style={{ width: `${activeSteps.length ? ((stepIndex + 1) / activeSteps.length) * 100 : 0}%`, backgroundColor: cv('progress-bar', '#F5A623') }} data-testid="enroll-progress-bar" />
           </div>
         </div>
 
@@ -454,7 +484,7 @@ export default function MembershipEnrollment() {
 
         {/* Navigation Buttons */}
         <div className="flex items-center justify-end gap-3 mt-6" data-testid="enroll-buttons">
-          {currentStep < 4 && (
+          {!isLastStep && (
             <>
               <button onClick={handleSaveOrContinue} disabled={loading}
                 className="flex items-center gap-2 px-5 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 disabled:opacity-50"
@@ -470,7 +500,7 @@ export default function MembershipEnrollment() {
               </button>
             </>
           )}
-          {currentStep === 4 && (
+          {isLastStep && (
             <button onClick={handleSubmit} disabled={loading}
               className="flex items-center gap-2 px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 disabled:opacity-50"
               style={{ borderColor: cv('submit-btn-border', '#1a2535'), color: cv('submit-btn-text', '#1a2535') }}

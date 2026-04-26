@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Lock, X, Save } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyMember = {
   first_name: '', last_name: '', email: '', password: '', role: 'member',
@@ -81,6 +82,12 @@ export default function MembersManager() {
 
   const selectCls = "w-full px-3 py-2 border border-slate-200 rounded-sm text-sm mt-1";
 
+  const dt = useDataTable(items, {
+    searchAccessor: m => `${m.first_name || ''} ${m.last_name || ''} ${m.email || ''} ${m.membership_id || ''} ${m.username || ''}`,
+    defaultSort: { key: 'created_at', dir: 'desc' },
+    storageKey: 'members',
+  });
+
   return (
     <div data-testid="members-manager">
       <div className="flex items-center justify-between mb-6">
@@ -91,21 +98,23 @@ export default function MembersManager() {
         </button>
       </div>
 
+      <DataTableToolbar dt={dt} testId="members" placeholder="Search by name, email, AUX…" />
+
       <div className="bg-white rounded-sm border border-slate-100 overflow-x-auto">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50">
-            <th className="text-left p-3 font-medium text-slate-600">AUX</th>
-            <th className="text-left p-3 font-medium text-slate-600">Name</th>
-            <th className="text-left p-3 font-medium text-slate-600">Email</th>
-            <th className="text-left p-3 font-medium text-slate-600">Mentor</th>
+            <SortableTh dt={dt} field="membership_id">AUX</SortableTh>
+            <SortableTh dt={dt} field="first_name">Name</SortableTh>
+            <SortableTh dt={dt} field="email">Email</SortableTh>
+            <SortableTh dt={dt} field="is_mentor">Mentor</SortableTh>
             <th className="text-left p-3 font-medium text-slate-600">CMS Roles</th>
             <th className="text-left p-3 font-medium text-slate-600">Level</th>
-            <th className="text-left p-3 font-medium text-slate-600">Register</th>
+            <SortableTh dt={dt} field="created_at">Register</SortableTh>
             <th className="text-left p-3 font-medium text-slate-600">Sponsor</th>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map(item => {
+            {dt.visibleItems.map(item => {
               const lvl = levels.find(l => l.id === item.level_id);
               return (
                 <tr key={item.member_id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`member-row-${item.membership_number}`}>
@@ -147,7 +156,9 @@ export default function MembersManager() {
             })}
           </tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No members yet</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No members yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No members match your search</div>}
+        <DataTablePagination dt={dt} testId="members" />
       </div>
 
       <Dialog open={open} onOpenChange={setOpen}>

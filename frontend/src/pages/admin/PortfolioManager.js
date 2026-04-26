@@ -7,6 +7,7 @@ import { Switch } from '../../components/ui/switch';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyItem = { title: '', description: '', image: '', tags: [], link: '', open_in_new_tab: false };
 
@@ -28,16 +29,28 @@ export default function PortfolioManager() {
     } catch { toast.error('Error'); } finally { setLoading(false); }
   };
 
+  const dt = useDataTable(items, {
+    searchAccessor: p => `${p.title || ''} ${(p.tags || []).join(' ')} ${p.description || ''}`,
+    defaultSort: { key: 'title', dir: 'asc' },
+    storageKey: 'portfolio',
+  });
+
   return (
     <div data-testid="portfolio-manager">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Portfolio Manager</h1>
         <button onClick={() => { setEditing({...emptyItem}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Add Project</button>
       </div>
+      <DataTableToolbar dt={dt} testId="portfolio" placeholder="Search by title, tags…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
-          <thead><tr className="border-b bg-slate-50"><th className="text-left p-3">Image</th><th className="text-left p-3">Title</th><th className="text-left p-3">Tags</th><th className="text-right p-3">Actions</th></tr></thead>
-          <tbody>{items.map(item => (
+          <thead><tr className="border-b bg-slate-50">
+            <th className="text-left p-3 font-medium text-slate-600">Image</th>
+            <SortableTh dt={dt} field="title">Title</SortableTh>
+            <th className="text-left p-3 font-medium text-slate-600">Tags</th>
+            <th className="text-right p-3 font-medium text-slate-600">Actions</th>
+          </tr></thead>
+          <tbody>{dt.visibleItems.map(item => (
             <tr key={item.id} className="border-b border-slate-50">
               <td className="p-3"><img src={item.image?.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${item.image}` : item.image} alt="" className="w-16 h-10 object-cover rounded-sm" /></td>
               <td className="p-3 font-medium">{item.title}</td>
@@ -49,6 +62,9 @@ export default function PortfolioManager() {
             </tr>
           ))}</tbody>
         </table>
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No portfolio items yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No items match your search</div>}
+        <DataTablePagination dt={dt} testId="portfolio" />
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent><DialogHeader><DialogTitle>{editing?.id ? 'Edit' : 'New'} Project</DialogTitle></DialogHeader>

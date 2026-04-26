@@ -16,6 +16,7 @@ import { adminText } from '../../lib/i18n';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyService = { title: '', description: '', short_description: '', full_content: '', icon: 'briefcase', image: '', price: 0, currency: 'usd', type: 'service', external_url: '', open_in_new_tab: false, visible: true, order: 0 };
 
@@ -96,37 +97,50 @@ export default function ServicesManager() {
     } catch { toast.error('Failed to save order'); load(); }
   };
 
+  const dt = useDataTable(items, {
+    searchAccessor: s => `${adminText(s.title)} ${adminText(s.short_description)} ${s.type}`,
+    defaultSort: { key: 'order', dir: 'asc' },
+    storageKey: 'services',
+  });
+  // Drag-drop reordering is only enabled when the user hasn't applied a
+  // filter/sort that would make the resulting order ambiguous. We check
+  // both the search input and any explicit column sort.
+  const dragEnabled = !dt.search && (dt.sortKey === 'order' || dt.sortKey == null);
+
   return (
     <div data-testid="services-manager">
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Services & Products</h1>
-          <p className="text-xs text-slate-400 mt-1">Drag rows to reorder. Click the eye icon to hide a service without deleting it.</p>
+          <p className="text-xs text-slate-400 mt-1">Drag rows to reorder (clear search/sort first). Click the eye icon to hide a service without deleting it.</p>
         </div>
         <button onClick={() => { setEditing({...emptyService}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-service-btn">
           <Plus className="w-4 h-4" /> Add New
         </button>
       </div>
+      <DataTableToolbar dt={dt} testId="services" placeholder="Search by title, type…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b border-slate-100 bg-slate-50">
             <th className="w-10"></th>
-            <th className="text-left p-3 font-medium text-slate-600">Title</th>
-            <th className="text-left p-3 font-medium text-slate-600">Type</th>
-            <th className="text-left p-3 font-medium text-slate-600">Price</th>
+            <SortableTh dt={dt} field="title">Title</SortableTh>
+            <SortableTh dt={dt} field="type">Type</SortableTh>
+            <SortableTh dt={dt} field="price">Price</SortableTh>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
-              <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
-                {items.map(item => (
+            <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={dragEnabled ? handleDragEnd : () => {}}>
+              <SortableContext items={dt.visibleItems.map(i => i.id)} strategy={verticalListSortingStrategy}>
+                {dt.visibleItems.map(item => (
                   <ServiceRow key={item.id} item={item} onEdit={(i) => { setEditing({...i}); setOpen(true); }} onDelete={handleDelete} onToggle={handleToggleVisible} />
                 ))}
               </SortableContext>
             </DndContext>
-            {items.length === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-sm">No services yet.</td></tr>}
+            {dt.totalAll === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-sm">No services yet.</td></tr>}
+            {dt.totalAll > 0 && dt.totalFiltered === 0 && <tr><td colSpan={5} className="p-8 text-center text-slate-400 text-sm">No services match your search</td></tr>}
           </tbody>
         </table>
+        <DataTablePagination dt={dt} testId="services" />
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[500px] max-h-[85vh] overflow-y-auto" data-testid="service-dialog">

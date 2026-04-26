@@ -135,6 +135,24 @@ export default function EnrollmentFieldsManager() {
     } catch { toast.error('Failed to update visibility'); }
   };
 
+  // Bulk hide / show every field in a step in one call.  Optimistically updates
+  // the UI then fires the toggle API for each affected field in parallel.
+  // If we're already in the target state for every field we no-op so the user
+  // can spam the toggle without spamming the backend.
+  const toggleStepVisibility = async (step, makeVisible) => {
+    const stepFields = (grouped[step] || []);
+    const targets = stepFields.filter(f => !!f.visible !== makeVisible);
+    if (!targets.length) return;
+    setFields(prev => prev.map(f => f.step === step ? { ...f, visible: makeVisible } : f));
+    try {
+      await Promise.all(targets.map(f => enrollmentAPI.adminToggleVisibility(f.id, makeVisible)));
+      toast.success(`${targets.length} field${targets.length === 1 ? '' : 's'} ${makeVisible ? 'shown' : 'hidden'}`);
+    } catch {
+      toast.error('Failed to bulk update');
+      load();
+    }
+  };
+
   const deleteField = async (field) => {
     if (!window.confirm(`Delete "${field.label}" permanently?`)) return;
     try {
@@ -347,27 +365,50 @@ export default function EnrollmentFieldsManager() {
         <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div>
       ) : (
         <div className="space-y-6">
-          {[1, 2, 3, 4].map(step => (
+          {[1, 2, 3, 4].map(step => {
+            const stepFields = grouped[step] || [];
+            const visibleCount = stepFields.filter(f => f.visible).length;
+            const allVisible = stepFields.length > 0 && visibleCount === stepFields.length;
+            const allHidden = stepFields.length > 0 && visibleCount === 0;
+            return (
             <div key={step} className="bg-white rounded border" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
-              <div className="px-5 py-3 border-b flex items-center justify-between" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)', backgroundColor: 'var(--ad-table-header-bg, #f8fafc)' }}>
-                <h2 className="font-semibold text-sm" style={{ color: 'var(--ad-heading, #1a2332)' }}>{STEP_NAMES[step]}</h2>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs text-slate-400">Drag to reorder</span>
-                  <span className="text-xs px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--ad-badge-bg, #0D9488)', color: 'var(--ad-badge-text, #fff)' }}>{(grouped[step] || []).length} fields</span>
+              <div className="px-5 py-3 border-b flex items-center justify-between flex-wrap gap-2" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)', backgroundColor: 'var(--ad-table-header-bg, #f8fafc)' }}>
+                <h2 className="font-semibold text-sm flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}>
+                  {STEP_NAMES[step]}
+                  {allHidden && stepFields.length > 0 && (
+                    <span className="text-[10px] uppercase tracking-wider bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded" title="This step will be skipped on the public enrollment flow because all its fields are hidden.">Skipped on public flow</span>
+                  )}
+                </h2>
+                <div className="flex items-center gap-2 text-xs">
+                  <span className="text-slate-400">Drag to reorder</span>
+                  <span className="px-2 py-0.5 rounded-full" style={{ backgroundColor: 'var(--ad-badge-bg, #0D9488)', color: 'var(--ad-badge-text, #fff)' }}>
+                    {visibleCount}/{stepFields.length} visible
+                  </span>
+                  {stepFields.length > 0 && (
+                    <button
+                      onClick={() => toggleStepVisibility(step, !allVisible)}
+                      className="px-2 py-1 rounded border border-slate-200 hover:bg-slate-100 transition-colors text-slate-600 font-medium"
+                      data-testid={`step-${step}-bulk-toggle`}
+                      title={allVisible ? 'Hide all fields in this step' : 'Show all fields in this step'}
+                    >
+                      {allVisible ? 'Hide All' : 'Show All'}
+                    </button>
+                  )}
                 </div>
               </div>
               <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={(e) => handleDragEnd(e, step)}>
-                <SortableContext items={(grouped[step] || []).map(f => f.id)} strategy={verticalListSortingStrategy}>
-                  {(grouped[step] || []).map(f => (
+                <SortableContext items={stepFields.map(f => f.id)} strategy={verticalListSortingStrategy}>
+                  {stepFields.map(f => (
                     <SortableFieldRow key={f.id} field={f} onEdit={openEdit} onDelete={deleteField} onToggleVisibility={toggleVisibility} />
                   ))}
                 </SortableContext>
               </DndContext>
-              {(!grouped[step] || grouped[step].length === 0) && (
+              {stepFields.length === 0 && (
                 <p className="px-5 py-4 text-sm text-slate-400">No fields in this step.</p>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
         </>

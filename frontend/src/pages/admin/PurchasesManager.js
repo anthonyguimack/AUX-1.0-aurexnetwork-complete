@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { adminAPI } from '../../lib/api';
 import { DollarSign, CheckCircle, Clock, XCircle } from 'lucide-react';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 export default function PurchasesManager() {
   const [items, setItems] = useState([]);
@@ -12,15 +13,26 @@ export default function PurchasesManager() {
     return <XCircle className="w-4 h-4 text-red-500" />;
   };
 
+  const dt = useDataTable(items, {
+    searchFields: ['service_name', 'session_id', 'payment_status'],
+    defaultSort: { key: 'created_at', dir: 'desc' },
+    storageKey: 'purchases',
+  });
+
   return (
     <div data-testid="purchases-manager">
       <h1 className="text-2xl font-bold text-[#1a2332] mb-6" style={{ fontFamily: 'Playfair Display, serif' }}>Purchase History</h1>
+      <DataTableToolbar dt={dt} testId="purchases" placeholder="Search by service, session…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50">
-            <th className="text-left p-3">Service</th><th className="text-left p-3">Amount</th><th className="text-left p-3">Status</th><th className="text-left p-3">Date</th><th className="text-left p-3">Session ID</th>
+            <SortableTh dt={dt} field="service_name">Service</SortableTh>
+            <SortableTh dt={dt} field="amount">Amount</SortableTh>
+            <SortableTh dt={dt} field="payment_status">Status</SortableTh>
+            <SortableTh dt={dt} field="created_at">Date</SortableTh>
+            <th className="text-left p-3 font-medium text-slate-600">Session ID</th>
           </tr></thead>
-          <tbody>{items.map(item => (
+          <tbody>{dt.visibleItems.map(item => (
             <tr key={item.id} className="border-b border-slate-50">
               <td className="p-3 font-medium">{item.service_name}</td>
               <td className="p-3 flex items-center gap-1"><DollarSign className="w-3 h-3 text-[#0D9488]" />{item.amount?.toFixed(2)} {item.currency?.toUpperCase()}</td>
@@ -30,7 +42,9 @@ export default function PurchasesManager() {
             </tr>
           ))}</tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No purchases yet</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No purchases yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No purchases match your search</div>}
+        <DataTablePagination dt={dt} testId="purchases" />
       </div>
     </div>
   );

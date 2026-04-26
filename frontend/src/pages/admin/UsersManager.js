@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, User, Phone, Mail } from 'lucide-react';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const emptyUser = { first_name: '', last_name: '', email: '', password: '', phone: '' };
 
@@ -37,23 +38,30 @@ export default function UsersManager() {
     catch { toast.error('Error'); }
   };
 
+  const dt = useDataTable(items, {
+    searchAccessor: u => `${u.first_name || ''} ${u.last_name || ''} ${u.email || ''} ${u.phone || ''}`,
+    defaultSort: { key: 'created_at', dir: 'desc' },
+    storageKey: 'users',
+  });
+
   return (
     <div data-testid="users-manager">
       <div className="flex items-center justify-between mb-6">
         <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Users Manager</h1>
         <button onClick={() => { setEditing({...emptyUser}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-user-btn"><Plus className="w-4 h-4" /> Add User</button>
       </div>
+      <DataTableToolbar dt={dt} testId="users" placeholder="Search by name, email, phone…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50">
-            <th className="text-left p-3 font-medium text-slate-600">Name</th>
-            <th className="text-left p-3 font-medium text-slate-600">Email</th>
-            <th className="text-left p-3 font-medium text-slate-600">Phone</th>
-            <th className="text-left p-3 font-medium text-slate-600">Created</th>
+            <SortableTh dt={dt} field="first_name">Name</SortableTh>
+            <SortableTh dt={dt} field="email">Email</SortableTh>
+            <SortableTh dt={dt} field="phone">Phone</SortableTh>
+            <SortableTh dt={dt} field="created_at">Created</SortableTh>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map(item => (
+            {dt.visibleItems.map(item => (
               <tr key={item.user_id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`user-row-${item.user_id}`}>
                 <td className="p-3 font-medium text-[#1a2332] flex items-center gap-2">
                   <div className="w-8 h-8 rounded-full bg-[#0D9488]/10 flex items-center justify-center"><User className="w-4 h-4 text-[#0D9488]" /></div>
@@ -70,7 +78,9 @@ export default function UsersManager() {
             ))}
           </tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No users yet</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No users yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No users match your search</div>}
+        <DataTablePagination dt={dt} testId="users" />
       </div>
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="sm:max-w-[500px]" data-testid="user-dialog">

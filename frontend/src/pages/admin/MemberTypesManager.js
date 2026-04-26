@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Shield, Globe } from 'lucide-react';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const PERMISSION_FIELDS = [
   { key: 'corporate', label: 'Corporate' },
@@ -59,6 +60,12 @@ export default function MemberTypesManager() {
   const activePerms = (item) => PERMISSION_FIELDS.filter(f => item[f.key]).map(f => f.label);
   const tabCls = (t) => `flex-1 px-3 py-1.5 rounded text-sm font-medium capitalize ${formTab === t ? 'bg-white shadow text-[#1a2332]' : 'text-slate-500'}`;
 
+  const dt = useDataTable(items, {
+    searchFields: ['name', 'description'],
+    defaultSort: { key: 'order', dir: 'asc' },
+    storageKey: 'member-types',
+  });
+
   return (
     <div data-testid="member-types-manager">
       <div className="flex items-center justify-between mb-6">
@@ -69,17 +76,19 @@ export default function MemberTypesManager() {
         </button>
       </div>
 
+      <DataTableToolbar dt={dt} testId="member-types" placeholder="Search by name or description…" />
+
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm" data-testid="member-types-table">
           <thead><tr className="border-b bg-slate-50">
-            <th className="text-left p-3 font-medium text-slate-500 w-16">Order</th>
-            <th className="text-left p-3 font-medium text-slate-500">Name</th>
+            <SortableTh dt={dt} field="order" className="w-16">Order</SortableTh>
+            <SortableTh dt={dt} field="name">Name</SortableTh>
             <th className="text-left p-3 font-medium text-slate-500 hidden md:table-cell">Permissions</th>
             <th className="text-left p-3 font-medium text-slate-500 hidden lg:table-cell">Pages</th>
             <th className="text-right p-3 font-medium text-slate-500 w-24">Actions</th>
           </tr></thead>
           <tbody>
-            {items.map(item => (
+            {dt.visibleItems.map(item => (
               <tr key={item.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`member-type-row-${item.id}`}>
                 <td className="p-3 text-xs text-slate-400">{item.order}</td>
                 <td className="p-3">
@@ -105,7 +114,9 @@ export default function MemberTypesManager() {
             ))}
           </tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No member types yet. Add one to get started.</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No member types yet. Add one to get started.</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No member types match your search</div>}
+        <DataTablePagination dt={dt} testId="member-types" />
       </div>
 
       {/* Edit/Create Dialog */}

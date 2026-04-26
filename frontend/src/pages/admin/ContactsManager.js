@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { Mail, MailOpen, Trash2, Eye, Download, Loader2 } from 'lucide-react';
 import { Checkbox } from '../../components/ui/checkbox';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 export default function ContactsManager() {
   const [items, setItems] = useState([]);
@@ -48,7 +49,13 @@ export default function ContactsManager() {
   };
 
   const toggleSelect = (id) => setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
-  const toggleAll = () => setSelected(prev => prev.length === items.length ? [] : items.map(i => i.id));
+  const toggleAll = () => setSelected(s => s.length === items.length ? [] : items.map(i => i.id));
+
+  const dt = useDataTable(items, {
+    searchFields: ['name', 'email', 'subject', 'message'],
+    defaultSort: { key: 'created_at', dir: 'desc' },
+    storageKey: 'contacts',
+  });
 
   return (
     <div data-testid="contacts-manager">
@@ -68,13 +75,19 @@ export default function ContactsManager() {
           </button>
         </div>
       </div>
+      <DataTableToolbar dt={dt} testId="contacts" placeholder="Search by name, email, subject…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">
           <thead><tr className="border-b bg-slate-50">
             <th className="p-3 w-8"><Checkbox checked={selected.length === items.length && items.length > 0} onCheckedChange={toggleAll} /></th>
-            <th className="text-left p-3">Status</th><th className="text-left p-3">Name</th><th className="text-left p-3">Email</th><th className="text-left p-3">Subject</th><th className="text-left p-3">Date</th><th className="text-right p-3">Actions</th>
+            <SortableTh dt={dt} field="read">Status</SortableTh>
+            <SortableTh dt={dt} field="name">Name</SortableTh>
+            <SortableTh dt={dt} field="email">Email</SortableTh>
+            <SortableTh dt={dt} field="subject">Subject</SortableTh>
+            <SortableTh dt={dt} field="created_at">Date</SortableTh>
+            <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
-          <tbody>{items.map(item => (
+          <tbody>{dt.visibleItems.map(item => (
             <tr key={item.id} className={`border-b border-slate-50 ${!item.read ? 'bg-blue-50/30' : ''}`}>
               <td className="p-3"><Checkbox checked={selected.includes(item.id)} onCheckedChange={() => toggleSelect(item.id)} /></td>
               <td className="p-3">{item.read ? <MailOpen className="w-4 h-4 text-slate-400" /> : <Mail className="w-4 h-4 text-[#0D9488]" />}</td>
@@ -89,7 +102,9 @@ export default function ContactsManager() {
             </tr>
           ))}</tbody>
         </table>
-        {items.length === 0 && <div className="p-8 text-center text-slate-400 text-sm">No contact submissions yet</div>}
+        {dt.totalAll === 0 && <div className="p-8 text-center text-slate-400 text-sm">No contact submissions yet</div>}
+        {dt.totalAll > 0 && dt.totalFiltered === 0 && <div className="p-8 text-center text-slate-400 text-sm">No contacts match your search</div>}
+        <DataTablePagination dt={dt} testId="contacts" />
       </div>
       <Dialog open={!!viewing} onOpenChange={() => setViewing(null)}>
         <DialogContent><DialogHeader><DialogTitle>Contact Message</DialogTitle></DialogHeader>
