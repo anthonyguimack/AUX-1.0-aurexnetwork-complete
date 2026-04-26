@@ -868,3 +868,19 @@ Five fixes layered on top of the baseline R&P system.
 
 **Verified by testing_agent_v3_fork (iteration_68.json)** — 14/15 backend (93%, the one "minor" was the legacy `is_mentor` missing field which has now been back-filled), 100% frontend. Manual screenshot regression: operator without Dashboard sees CmsWelcome with only assigned sections in sidebar; navbar correctly toggles Admin / My Account based on roles; Members table renders the new column; revoking role_member redirects to login.
 
+
+## Global DataTable + Enrollment UX (Feb 26, 2026)
+Two large feature batches.
+
+### 1. Reusable DataTable hook for every CMS table
+- `/app/frontend/src/components/admin/useDataTable.js` — single drop-in hook + render helpers (`DataTableToolbar`, `DataTablePagination`, `SortableTh`).  Provides real-time search (custom `searchFields` or `searchAccessor`), multi-column sort with locale-aware string + numeric + ISO-date comparisons, page-size selector (10/25/50/100, persisted via `storageKey`), and prev/next + numbered pagination with ellipsis windowing.  Adopting it is ~10 lines per table; future tables inherit the behaviour automatically by importing the hook.
+- **16 managers converted in this turn**: Members, Contacts, Blog, Books, Pages, Portfolio, Purchases, Services, Users, MemberTypes, Hero, AdminCoupons (Coupons tab), AdminBundles, Maps (both Locations and Maps tabs), LandingContacts, LandingSubscribers.
+- **Stable testIds for QA**: `<id>-search-input`, `<id>-page-size`, `<id>-count`, `th-<field>`, `<id>-pagination`, `<id>-page-{first,prev,next,last,N}`.
+- Special case — `ServicesManager` keeps its drag-drop reordering: drag is only active when search is empty AND sort is by `order` (or unset), preventing ambiguous reorder when a user-applied sort/filter is in effect.
+
+### 2. Enrollment bulk visibility + auto-skip empty steps
+- **CMS** — `EnrollmentFieldsManager` step header now shows `X/Y visible` count plus a contextual `Show All` / `Hide All` button (data-testid `step-{N}-bulk-toggle`).  Optimistic UI + parallel `Promise.all` of the toggle endpoint; rollback + `load()` if any call fails.  When all fields in a step are hidden, an amber `SKIPPED ON PUBLIC FLOW` badge surfaces next to the step name so admins immediately see the consequence on the public flow.
+- **Public flow** — `MembershipEnrollment.js` derives `activeSteps` from `fields` (any step with at least one visible field, plus step 4 which always renders for the submit screen).  Stepper renumbers 1…N, progress bar advances `1/N` per step, nav buttons swap to "Submit" only when on the last *active* step, validation filters by `f.visible !== false` so hidden fields are never required, and a guard `useEffect` automatically advances the user past a step that became empty mid-session.
+
+**Verified by testing_agent_v3_fork (iteration_69.json)** — 100% frontend pass, zero issues, zero action items.  Manual screenshot confirmed: hiding steps 2 + 3 turns the public stepper into "Step 1 of 2" with `Invitation CODE → Confirm & Submit` only and a 50%-per-step progress bar.
+
