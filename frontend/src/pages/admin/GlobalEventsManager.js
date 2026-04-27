@@ -83,6 +83,12 @@ export default function GlobalEventsManager() {
 
   const API = process.env.REACT_APP_BACKEND_URL;
 
+  const dt = useDataTable(events, {
+    searchAccessor: e => `${e.title || ''} ${e.type || ''} ${e.location || ''} ${e.status || ''}`,
+    defaultSort: { key: 'date', dir: 'desc' },
+    storageKey: 'global-events',
+  });
+
   const handleFileUpload = async (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
@@ -195,27 +201,30 @@ export default function GlobalEventsManager() {
           </>
         );
       })() : (
+        <>
+        <DataTableToolbar dt={dt} testId="events" placeholder="Search by title, type, location…" />
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
-              <th className="text-left p-3 font-medium text-slate-600">Title</th>
-              <th className="text-left p-3 font-medium text-slate-600">Type</th>
-              <th className="text-left p-3 font-medium text-slate-600">Date</th>
-              <th className="text-left p-3 font-medium text-slate-600">Time</th>
-              <th className="text-left p-3 font-medium text-slate-600">Capacity</th>
-              <th className="text-left p-3 font-medium text-slate-600">Registered</th>
+              <SortableTh dt={dt} field="title">Title</SortableTh>
+              <SortableTh dt={dt} field="type">Type</SortableTh>
+              <SortableTh dt={dt} field="date">Date</SortableTh>
+              <SortableTh dt={dt} field="start_time">Time</SortableTh>
+              <SortableTh dt={dt} field="max_capacity">Capacity</SortableTh>
+              <SortableTh dt={dt} field="registered_count">Registered</SortableTh>
               <th className="text-left p-3 font-medium text-slate-600">Available</th>
               <th className="text-left p-3 font-medium text-slate-600">Files</th>
-              <th className="text-left p-3 font-medium text-slate-600">Status</th>
+              <SortableTh dt={dt} field="status">Status</SortableTh>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
             <tbody>
-              {events.map((ev, i) => {
+              {dt.visibleItems.map((ev, i) => {
                 const available = Math.max(0, (ev.max_capacity || 0) - (ev.registered_count || 0));
+                const rowNum = (dt.page - 1) * dt.pageSize + i + 1;
                 return (
                   <tr key={ev.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`event-row-${ev.id}`}>
-                    <td className="p-3 text-slate-400">{i + 1}</td>
+                    <td className="p-3 text-slate-400">{rowNum}</td>
                     <td className="p-3 font-medium text-[#1a2332]">{ev.title}</td>
                     <td className="p-3 text-slate-500 text-xs">{ev.type}</td>
                     <td className="p-3 text-slate-500 text-xs">{ev.date}</td>
@@ -236,8 +245,11 @@ export default function GlobalEventsManager() {
               })}
             </tbody>
           </table>
-          {events.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">No events yet. Click "Add Event" to create one.</p>}
+          {dt.totalAll === 0 && <p className="p-8 text-center text-slate-400 text-sm">No events yet. Click "Add Event" to create one.</p>}
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <p className="p-8 text-center text-slate-400 text-sm">No events match your search.</p>}
+          <DataTablePagination dt={dt} testId="events" />
         </div>
+        </>
       )}
 
       {/* Event Editor Dialog */}

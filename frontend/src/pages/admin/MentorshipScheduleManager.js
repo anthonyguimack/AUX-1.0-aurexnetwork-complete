@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2, Users, Calendar, ArrowLeft, ChevronLeft, ChevronRight, List, Grid3X3 } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import SlotRecurrencePicker from '../../components/SlotRecurrencePicker';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const SESSION_TYPES = ['One-on-One', 'Group'];
 const STATUSES = ['active', 'inactive', 'cancelled'];
@@ -111,6 +112,12 @@ export default function MentorshipScheduleManager() {
     setBookingsLoading(false);
   };
 
+  const dt = useDataTable(slots, {
+    searchAccessor: s => `${s.mentor_name || ''} ${s.mentor_membership_id || ''} ${s.title || ''} ${s.session_type || ''} ${s.status || ''}`,
+    defaultSort: { key: 'date', dir: 'desc' },
+    storageKey: 'mentorship-slots',
+  });
+
   // Bookings View
   if (viewBookings) {
     return (
@@ -207,25 +214,29 @@ export default function MentorshipScheduleManager() {
           </>
         );
       })() : (
+        <>
+        <DataTableToolbar dt={dt} testId="mslots" placeholder="Search by mentor, title, type…" />
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
-              <th className="text-left p-3 font-medium text-slate-600">Mentor</th>
-              <th className="text-left p-3 font-medium text-slate-600">Title</th>
-              <th className="text-left p-3 font-medium text-slate-600">Date</th>
-              <th className="text-left p-3 font-medium text-slate-600">Time</th>
-              <th className="text-left p-3 font-medium text-slate-600">Type</th>
-              <th className="text-left p-3 font-medium text-slate-600">Max</th>
-              <th className="text-left p-3 font-medium text-slate-600">Booked</th>
-              <th className="text-left p-3 font-medium text-slate-600">Waitlist</th>
-              <th className="text-left p-3 font-medium text-slate-600">Status</th>
+              <SortableTh dt={dt} field="mentor_name">Mentor</SortableTh>
+              <SortableTh dt={dt} field="title">Title</SortableTh>
+              <SortableTh dt={dt} field="date">Date</SortableTh>
+              <SortableTh dt={dt} field="start_time">Time</SortableTh>
+              <SortableTh dt={dt} field="session_type">Type</SortableTh>
+              <SortableTh dt={dt} field="max_students">Max</SortableTh>
+              <SortableTh dt={dt} field="booked_count">Booked</SortableTh>
+              <SortableTh dt={dt} field="waitlist_count">Waitlist</SortableTh>
+              <SortableTh dt={dt} field="status">Status</SortableTh>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
             <tbody>
-              {slots.map((s, i) => (
+              {dt.visibleItems.map((s, i) => {
+                const rowNum = (dt.page - 1) * dt.pageSize + i + 1;
+                return (
                 <tr key={s.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`mslot-row-${s.id}`}>
-                  <td className="p-3 text-slate-400">{i + 1}</td>
+                  <td className="p-3 text-slate-400">{rowNum}</td>
                   <td className="p-3">
                     <span className="text-[#1a2332] font-medium">{s.mentor_name || '-'}</span>
                     {s.mentor_membership_id && <span className="block text-xs text-[#0D9488]">{s.mentor_membership_id}</span>}
@@ -244,11 +255,14 @@ export default function MentorshipScheduleManager() {
                     <button onClick={() => handleDelete(s.id)} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
-          {slots.length === 0 && <p className="p-8 text-center text-slate-400 text-sm">No mentorship slots yet. Click "Add Slot" to create one.</p>}
+          {dt.totalAll === 0 && <p className="p-8 text-center text-slate-400 text-sm">No mentorship slots yet. Click "Add Slot" to create one.</p>}
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <p className="p-8 text-center text-slate-400 text-sm">No slots match your search.</p>}
+          <DataTablePagination dt={dt} testId="mslots" />
         </div>
+        </>
       )}
 
       {/* Slot Editor Dialog */}

@@ -6,6 +6,7 @@ import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Edit2, Trash2, Loader2, Save, FileText } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const inputCls = "w-full border rounded-sm px-3 py-2 text-sm focus:ring-1 focus:ring-[#0D9488] focus:border-[#0D9488]";
 const SESSION_TYPES = ['One-on-One', 'Group'];
@@ -48,6 +49,12 @@ export default function MentorSlotTemplatesManager() {
     catch { toast.error('Error'); }
   };
 
+  const dt = useDataTable(templates, {
+    searchAccessor: t => `${t.name || ''} ${t.title || ''} ${t.session_type || ''}`,
+    defaultSort: { key: 'name', dir: 'asc' },
+    storageKey: 'mentor-slot-templates',
+  });
+
   return (
     <div data-testid="mentor-slot-templates-manager">
       <div className="flex items-center justify-between mb-6">
@@ -71,21 +78,25 @@ export default function MentorSlotTemplatesManager() {
       </div>
 
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+        <>
+        <DataTableToolbar dt={dt} testId="tpl" placeholder="Search by name, title, type…" />
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
-              <th className="text-left p-3 font-medium text-slate-600">Name</th>
-              <th className="text-left p-3 font-medium text-slate-600">Title</th>
-              <th className="text-left p-3 font-medium text-slate-600">Type</th>
-              <th className="text-left p-3 font-medium text-slate-600">Max</th>
-              <th className="text-left p-3 font-medium text-slate-600">Duration</th>
+              <SortableTh dt={dt} field="name">Name</SortableTh>
+              <SortableTh dt={dt} field="title">Title</SortableTh>
+              <SortableTh dt={dt} field="session_type">Type</SortableTh>
+              <SortableTh dt={dt} field="max_students">Max</SortableTh>
+              <SortableTh dt={dt} field="default_duration_minutes">Duration</SortableTh>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
             <tbody>
-              {templates.map((t, i) => (
+              {dt.visibleItems.map((t, i) => {
+                const rowNum = (dt.page - 1) * dt.pageSize + i + 1;
+                return (
                 <tr key={t.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`tpl-row-${t.id}`}>
-                  <td className="p-3 text-slate-400">{i + 1}</td>
+                  <td className="p-3 text-slate-400">{rowNum}</td>
                   <td className="p-3"><span className="text-[#1a2332] font-medium">{t.name}</span></td>
                   <td className="p-3 text-slate-500">{t.title || '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{t.session_type}</td>
@@ -96,16 +107,19 @@ export default function MentorSlotTemplatesManager() {
                     <button onClick={() => handleDelete(t.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-tpl-${t.id}`}><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
-          {templates.length === 0 && (
+          {dt.totalAll === 0 && (
             <div className="p-12 text-center text-slate-400 text-sm">
               <FileText className="w-10 h-10 mx-auto mb-2 opacity-50" />
               No templates yet. Create one to save time on recurring mentorship slot types.
             </div>
           )}
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <p className="p-8 text-center text-slate-400 text-sm">No templates match your search.</p>}
+          <DataTablePagination dt={dt} testId="tpl" />
         </div>
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>

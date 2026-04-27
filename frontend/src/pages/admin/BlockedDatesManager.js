@@ -5,6 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
 import { Plus, Trash2, Loader2, Save, CalendarX } from 'lucide-react';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const fmtLong = (iso) => {
   if (!iso) return '';
@@ -44,6 +45,12 @@ export default function BlockedDatesManager() {
     catch { toast.error('Error'); }
   };
 
+  const dt = useDataTable(items, {
+    searchAccessor: it => `${it.date || ''} ${it.reason || ''} ${fmtLong(it.date)}`,
+    defaultSort: { key: 'date', dir: 'asc' },
+    storageKey: 'blocked-dates',
+  });
+
   return (
     <div data-testid="blocked-dates-manager">
       <div className="flex items-center justify-between mb-6">
@@ -67,34 +74,41 @@ export default function BlockedDatesManager() {
       </div>
 
       {loading ? <div className="flex justify-center py-12"><Loader2 className="w-6 h-6 animate-spin text-slate-400" /></div> : (
+        <>
+        <DataTableToolbar dt={dt} testId="blocked" placeholder="Search by date or reason…" />
         <div className="bg-white rounded border overflow-x-auto" style={{ borderColor: 'var(--ad-card-border, #e2e8f0)' }}>
           <table className="w-full text-sm">
             <thead><tr className="border-b bg-slate-50">
               <th className="text-left p-3 font-medium text-slate-600">No.</th>
-              <th className="text-left p-3 font-medium text-slate-600">Date</th>
-              <th className="text-left p-3 font-medium text-slate-600">Reason</th>
+              <SortableTh dt={dt} field="date">Date</SortableTh>
+              <SortableTh dt={dt} field="reason">Reason</SortableTh>
               <th className="text-right p-3 font-medium text-slate-600">Actions</th>
             </tr></thead>
             <tbody>
-              {items.map((it, i) => (
+              {dt.visibleItems.map((it, i) => {
+                const rowNum = (dt.page - 1) * dt.pageSize + i + 1;
+                return (
                 <tr key={it.id} className="border-b border-slate-50 hover:bg-slate-50/50" data-testid={`blocked-row-${it.id}`}>
-                  <td className="p-3 text-slate-400">{i + 1}</td>
+                  <td className="p-3 text-slate-400">{rowNum}</td>
                   <td className="p-3"><span className="text-[#1a2332] font-medium">{it.date}</span><span className="block text-[11px] text-slate-400">{fmtLong(it.date)}</span></td>
                   <td className="p-3 text-slate-500">{it.reason || <span className="text-slate-300">—</span>}</td>
                   <td className="p-3 text-right">
                     <button onClick={() => handleDelete(it.id)} className="p-1.5 text-slate-400 hover:text-red-500" data-testid={`delete-blocked-${it.id}`}><Trash2 className="w-4 h-4" /></button>
                   </td>
                 </tr>
-              ))}
+              );})}
             </tbody>
           </table>
-          {items.length === 0 && (
+          {dt.totalAll === 0 && (
             <div className="p-12 text-center text-slate-400 text-sm">
               <CalendarX className="w-10 h-10 mx-auto mb-2 opacity-50" />
               No blocked dates yet. Add holidays, vacation days, or any date mentors should skip.
             </div>
           )}
+          {dt.totalAll > 0 && dt.totalFiltered === 0 && <p className="p-8 text-center text-slate-400 text-sm">No dates match your search.</p>}
+          <DataTablePagination dt={dt} testId="blocked" />
         </div>
+        </>
       )}
 
       <Dialog open={open} onOpenChange={setOpen}>
