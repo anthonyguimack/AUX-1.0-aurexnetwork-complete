@@ -32,6 +32,7 @@ export const publicAPI = {
   getAlbumPhotos: (albumId) => api.get(`/public/gallery-albums/${albumId}/photos`),
   getServiceDetail: (id) => api.get(`/public/services/${id}`),
   getMyAccountLinks: () => api.get('/public/myaccount-links'),
+  getMyAccountNav: () => api.get('/public/myaccount-nav'),
   getBlockedDates: () => api.get('/public/blocked-dates'),
 };
 
@@ -234,6 +235,10 @@ export const adminAPI = {
   updateMyAccountLink: (id, data) => api.put(`/admin/myaccount-links/${id}`, data),
   deleteMyAccountLink: (id) => api.delete(`/admin/myaccount-links/${id}`),
   reorderMyAccountLinks: (ordered_ids) => api.put('/admin/myaccount-links-reorder', { ordered_ids }),
+  // My Account Navigation (ordering + visibility of built-in sidebar items)
+  getMyAccountNav: () => api.get('/admin/myaccount-nav'),
+  updateMyAccountNav: (id, data) => api.put(`/admin/myaccount-nav/${id}`, data),
+  reorderMyAccountNav: (ordered_ids) => api.put('/admin/myaccount-nav-reorder', { ordered_ids }),
   // Calendar
   getCalendarEvents: () => api.get('/admin/calendar/events'),
   createCalendarEvent: (data) => api.post('/admin/calendar/events', data),

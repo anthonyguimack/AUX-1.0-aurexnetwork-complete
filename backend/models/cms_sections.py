@@ -70,7 +70,8 @@ CMS_SECTIONS = [
     {"key": "payouts",                        "label": "Payouts",                 "group": "calendar", "frontend_path": "/admin/payouts",                         "url_prefix": ["/api/admin/payouts"]},
 
     # My Account
-    {"key": "quick_links", "label": "Quick Links", "group": "myaccount", "frontend_path": "/admin/quick-links", "url_prefix": ["/api/admin/quick-links"]},
+    {"key": "quick_links",      "label": "Quick Links",           "group": "myaccount", "frontend_path": "/admin/quick-links",       "url_prefix": ["/api/admin/quick-links"]},
+    {"key": "myaccount_nav",    "label": "My Account Navigation", "group": "myaccount", "frontend_path": "/admin/myaccount-nav",     "url_prefix": ["/api/admin/myaccount-nav"]},
 
     # Membership
     {"key": "members",             "label": "Members",             "group": "membership", "frontend_path": "/admin/members",             "url_prefix": ["/api/admin/members"]},

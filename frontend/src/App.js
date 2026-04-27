@@ -88,6 +88,7 @@ import EnrollmentFieldsManager from './pages/admin/EnrollmentFieldsManager';
 import GeoManager from './pages/admin/GeoManager';
 import DocumentationManager from './pages/admin/DocumentationManager';
 import QuickLinksManager from './pages/admin/QuickLinksManager';
+import MyAccountNavManager from './pages/admin/MyAccountNavManager';
 import GlobalEventsManager from './pages/admin/GlobalEventsManager';
 import MentorshipScheduleManager from './pages/admin/MentorshipScheduleManager';
 import MentorSlotTemplatesManager from './pages/admin/MentorSlotTemplatesManager';
@@ -256,6 +257,7 @@ const ADMIN_ROUTES = [
   { path: 'enrollment-fields',               section: 'enrollment_fields',                el: <EnrollmentFieldsManager /> },
   { path: 'documentation',                   section: 'documentation',                    el: <DocumentationManager /> },
   { path: 'quick-links',                     section: 'quick_links',                      el: <QuickLinksManager /> },
+  { path: 'myaccount-nav',                   section: 'myaccount_nav',                    el: <MyAccountNavManager /> },
   { path: 'calendar/global',                 section: 'calendar_global',                  el: <GlobalEventsManager /> },
   { path: 'calendar/mentorship',             section: 'calendar_mentorship',              el: <MentorshipScheduleManager /> },
   { path: 'calendar/mentor-slot-templates',  section: 'calendar_mentor_slot_templates',   el: <MentorSlotTemplatesManager /> },

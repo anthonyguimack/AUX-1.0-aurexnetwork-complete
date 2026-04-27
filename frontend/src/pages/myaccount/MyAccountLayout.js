@@ -31,6 +31,11 @@ const ROUTE_TO_PERM = {
   '/my-account/invite-code': 'invite-code',
   '/my-account/my-community': 'my-community',
   '/my-account/portfolios': 'portfolios',
+  '/my-account/global-calendar': 'global-calendar',
+  '/my-account/earnings': 'earnings',
+  '/my-account/bundles': 'bundles',
+  '/my-account/my-bookings': 'my-bookings',
+  '/my-account/calendar-sync': 'calendar-sync',
 };
 
 export default function MyAccountLayout() {
@@ -42,6 +47,7 @@ export default function MyAccountLayout() {
   const [levelPerms, setLevelPerms] = useState(null);
   const [quickLinks, setQuickLinks] = useState([]);
   const [qlPerms, setQlPerms] = useState(null);
+  const [navOrderState, setNavOrderState] = useState(null);
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
@@ -53,6 +59,7 @@ export default function MyAccountLayout() {
   useEffect(() => {
     publicAPI.getSettings().then(r => setSettings(r.data)).catch(() => {});
     publicAPI.getMyAccountLinks().then(r => setQuickLinks(r.data || [])).catch(() => {});
+    publicAPI.getMyAccountNav().then(r => setNavOrderState({ items: r.data || [] })).catch(() => setNavOrderState({ items: [] }));
     fetchUnread();
     const interval = setInterval(fetchUnread, 30000);
     return () => clearInterval(interval);
@@ -125,10 +132,22 @@ export default function MyAccountLayout() {
   const hasMentor = !!member?.mentor_id;
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
     if (item.mentorOnly && !isMentor) return false;
-    // Calendar items are always visible (not gated by level permissions)
-    if (['global-calendar', 'mentorship-calendar', 'my-bookings', 'calendar-sync', 'bundles', 'earnings'].includes(item.id)) return true;
+    // Global-visibility override from CMS "My Account Navigation" (if present)
+    const navOverride = navOrderState?.items?.find(n => n.id === item.id);
+    if (navOverride && navOverride.visible === false) return false;
+    // Mentorship Calendar is a mentor-only internal view (not level-gated)
+    if (item.id === 'mentorship-calendar') return true;
     return levelPerms.includes(item.id);
   }) : [];
+  // Apply CMS-managed ordering if available, else keep source order
+  const orderedNavItems = (() => {
+    const order = navOrderState?.items;
+    if (!order || order.length === 0) return navItems;
+    const byId = new Map(navItems.map(i => [i.id, i]));
+    const ordered = [];
+    for (const o of order) { const it = byId.get(o.id); if (it) { ordered.push(it); byId.delete(o.id); } }
+    return [...ordered, ...byId.values()]; // any unknown new items appended
+  })();
   const permissionsLoading = levelPerms === null;
 
   // CSS variable shortcuts
@@ -176,7 +195,7 @@ export default function MyAccountLayout() {
               <Loader2 className="w-5 h-5 animate-spin" style={{ color: v('accent', '#c9a84c') }} />
             </div>
           ) : (
-            navItems.map(item => {
+            orderedNavItems.map(item => {
               const active = location.pathname === item.href || location.pathname.startsWith(item.href + '/') || (item.id === 'global-calendar' && location.pathname.startsWith('/my-account/event/'));
               return (
                 <Link key={item.href} to={item.href} onClick={() => setSideOpen(false)}

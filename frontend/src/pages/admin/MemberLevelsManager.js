@@ -10,9 +10,15 @@ const SIDEBAR_SECTIONS = [
   { id: 'membership-profile', label: 'Membership Profile' },
   { id: 'mentorship-profile', label: 'Mentorship Profile' },
   { id: 'my-sponsor', label: 'My Sponsor' },
+  { id: 'ebank', label: 'My Ebank' },
   { id: 'invite-code', label: 'Invite Code' },
   { id: 'my-community', label: 'My Community' },
   { id: 'portfolios', label: 'Portfolios' },
+  { id: 'global-calendar', label: 'AUX Calendar' },
+  { id: 'earnings', label: 'Earnings' },
+  { id: 'bundles', label: 'Session Bundles' },
+  { id: 'my-bookings', label: 'My Reservations' },
+  { id: 'calendar-sync', label: 'Calendar Sync' },
 ];
 
 export default function MemberLevelsManager() {

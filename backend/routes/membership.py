@@ -1058,3 +1058,80 @@ async def admin_reorder_myaccount_links(request: Request, user: dict = Depends(r
     for idx, lid in enumerate(ordered_ids):
         await db.myaccount_links.update_one({"id": lid}, {"$set": {"order": idx + 1}})
     return {"success": True}
+
+
+# ---- My Account Navigation (ordering + visibility of built-in sidebar items) ----
+
+# Built-in nav catalog — the IDs MUST match the ids used in MyAccountLayout.js/ALL_NAV_ITEMS
+MYACCOUNT_NAV_CATALOG = [
+    {"id": "membership-profile",  "label": "Membership Profile"},
+    {"id": "mentorship-profile",  "label": "Mentorship Profile"},
+    {"id": "my-sponsor",          "label": "My Sponsor"},
+    {"id": "ebank",               "label": "My Ebank"},
+    {"id": "invite-code",         "label": "Invite Code"},
+    {"id": "my-community",        "label": "My Community"},
+    {"id": "portfolios",          "label": "Portfolios"},
+    {"id": "global-calendar",     "label": "AUX Calendar"},
+    {"id": "mentorship-calendar", "label": "My Calendar"},
+    {"id": "earnings",            "label": "Earnings"},
+    {"id": "bundles",             "label": "Session Bundles"},
+    {"id": "my-bookings",         "label": "My Reservations"},
+    {"id": "calendar-sync",       "label": "Calendar Sync"},
+]
+
+
+async def seed_myaccount_nav():
+    """Seed ordered nav rows once, and backfill any new built-in items added later."""
+    existing = await db.myaccount_nav.find({}, {"_id": 0}).to_list(100)
+    existing_ids = {e.get("id") for e in existing}
+    next_order = (max([e.get("order", 0) for e in existing]) + 1) if existing else 1
+    for item in MYACCOUNT_NAV_CATALOG:
+        if item["id"] in existing_ids:
+            continue
+        await db.myaccount_nav.insert_one({
+            "id": item["id"],
+            "label": item["label"],
+            "order": next_order,
+            "visible": True,
+            "created_at": datetime.now(timezone.utc).isoformat(),
+        })
+        next_order += 1
+
+
+@router.get("/public/myaccount-nav")
+async def get_myaccount_nav():
+    """Public: ordered list of My Account nav items (includes hidden rows so frontend can honour visibility)."""
+    await seed_myaccount_nav()
+    items = await db.myaccount_nav.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return items
+
+
+@router.get("/admin/myaccount-nav")
+async def admin_list_myaccount_nav(user: dict = Depends(require_admin)):
+    await seed_myaccount_nav()
+    items = await db.myaccount_nav.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+    return items
+
+
+@router.put("/admin/myaccount-nav/{item_id}")
+async def admin_update_myaccount_nav(item_id: str, request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    update = {}
+    if "visible" in body:
+        update["visible"] = bool(body["visible"])
+    if "label" in body and isinstance(body["label"], str) and body["label"].strip():
+        update["label"] = body["label"].strip()
+    if not update:
+        raise HTTPException(status_code=400, detail="No editable fields supplied")
+    update["updated_at"] = datetime.now(timezone.utc).isoformat()
+    await db.myaccount_nav.update_one({"id": item_id}, {"$set": update})
+    return await db.myaccount_nav.find_one({"id": item_id}, {"_id": 0})
+
+
+@router.put("/admin/myaccount-nav-reorder")
+async def admin_reorder_myaccount_nav(request: Request, user: dict = Depends(require_admin)):
+    body = await request.json()
+    ordered_ids = body.get("ordered_ids", [])
+    for idx, nid in enumerate(ordered_ids):
+        await db.myaccount_nav.update_one({"id": nid}, {"$set": {"order": idx + 1}})
+    return {"success": True}

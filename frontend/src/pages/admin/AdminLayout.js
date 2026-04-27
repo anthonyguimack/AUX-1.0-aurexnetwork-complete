@@ -45,11 +45,14 @@ const sidebarItems = [
   { label: 'Payouts', icon: DollarSign, href: '/admin/payouts', group: 'calendar', section: 'payouts' },
   { type: 'divider', label: 'My Account', group: 'myaccount' },
   { label: 'Quick Links', icon: Globe, href: '/admin/quick-links', group: 'myaccount', section: 'quick_links' },
+  { label: 'My Account Navigation', icon: Menu, href: '/admin/myaccount-nav', group: 'myaccount', section: 'myaccount_nav' },
   { type: 'divider', label: 'Membership', group: 'membership' },
   { label: 'Members', icon: UserCheck, href: '/admin/members', section: 'members' },
   { label: 'Member Levels', icon: Shield, href: '/admin/member-levels', section: 'member_levels' },
   { label: 'Member Types', icon: Users, href: '/admin/member-types', section: 'member_types' },
   { label: 'Membership Settings', icon: ClipboardCheck, href: '/admin/membership-settings', section: 'membership_settings' },
+  { type: 'divider', label: 'Security', group: 'security', admin_only: true },
+  { label: 'Roles & Permissions', icon: Lock, href: '/admin/roles', section: 'roles_permissions', admin_only: true },
   { type: 'divider', label: 'System', group: 'system' },
   { label: 'Contacts', icon: Mail, href: '/admin/contacts', section: 'contacts' },
   { label: 'Contact Section', icon: MessageSquare, href: '/admin/contact-settings', section: 'contact_settings' },
@@ -61,8 +64,6 @@ const sidebarItems = [
   { label: 'Documentation', icon: ScrollText, href: '/admin/documentation', section: 'documentation' },
   { label: 'Backup', icon: Database, href: '/admin/backup', section: 'backup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings', section: 'settings' },
-  { type: 'divider', label: 'Security', group: 'security', admin_only: true },
-  { label: 'Roles & Permissions', icon: Lock, href: '/admin/roles', section: 'roles_permissions', admin_only: true },
 ];
 
 export default function AdminLayout() {
