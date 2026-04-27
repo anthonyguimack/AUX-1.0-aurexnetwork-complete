@@ -15,6 +15,7 @@ const SIDEBAR_SECTIONS = [
   { id: 'my-community', label: 'My Community' },
   { id: 'portfolios', label: 'Portfolios' },
   { id: 'global-calendar', label: 'AUX Calendar' },
+  { id: 'mentorship-calendar', label: 'My Calendar' },
   { id: 'earnings', label: 'Earnings' },
   { id: 'bundles', label: 'Session Bundles' },
   { id: 'my-bookings', label: 'My Reservations' },
@@ -27,12 +28,21 @@ export default function MemberLevelsManager() {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [quickLinks, setQuickLinks] = useState([]);
+  const [navLabels, setNavLabels] = useState({}); // {id -> CMS-renamed label}
 
   const load = () => {
     adminAPI.getLevels().then(r => setLevels(r.data)).catch(console.error);
     adminAPI.getMyAccountLinks().then(r => setQuickLinks(r.data || [])).catch(() => {});
+    adminAPI.getMyAccountNav().then(r => {
+      const map = {};
+      (r.data || []).forEach(n => { map[n.id] = n.label; });
+      setNavLabels(map);
+    }).catch(() => {});
   };
   useEffect(() => { load(); }, []);
+
+  // Merge CMS-renamed labels onto the hardcoded section list.
+  const sections = SIDEBAR_SECTIONS.map(s => ({ ...s, label: navLabels[s.id] || s.label }));
 
   const handleSave = async () => {
     if (!editing?.name?.trim()) { toast.error('Name is required'); return; }
@@ -90,7 +100,7 @@ export default function MemberLevelsManager() {
               </div>
               <div className="flex flex-wrap gap-1.5">
                 {(level.permissions || []).map(p => {
-                  const section = SIDEBAR_SECTIONS.find(s => s.id === p);
+                  const section = sections.find(s => s.id === p);
                   return <span key={p} className="text-xs bg-teal-50 text-teal-700 px-2 py-0.5 rounded">{section?.label || p}</span>;
                 })}
                 {(!level.permissions || level.permissions.length === 0) && <span className="text-xs text-slate-400">No permissions</span>}
@@ -123,7 +133,7 @@ export default function MemberLevelsManager() {
               <div>
                 <Label className="text-xs mb-3 block">Permissions (My Account Sections)</Label>
                 <div className="space-y-2">
-                  {SIDEBAR_SECTIONS.map(section => (
+                  {sections.map(section => (
                     <label key={section.id} className="flex items-center gap-2 p-2 rounded hover:bg-slate-50 cursor-pointer" data-testid={`perm-${section.id}`}>
                       <input type="checkbox" checked={(editing.permissions || []).includes(section.id)} onChange={() => togglePerm(section.id)} className="accent-[#0D9488] w-4 h-4" />
                       <span className="text-sm text-slate-700">{section.label}</span>

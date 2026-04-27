@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { User, Search, X } from 'lucide-react';
@@ -36,6 +37,8 @@ export default function MyCommunity() {
   const [filter, setFilter] = useState('membership_number');
   const [selected, setSelected] = useState(null);
   const [settings, setSettings] = useState({});
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('my-community', 'My Community') : 'My Community';
 
   useEffect(() => {
     memberAPI.getCommunity().then(r => setData(r.data)).catch(console.error);
@@ -61,7 +64,7 @@ export default function MyCommunity() {
 
   return (
     <div data-testid="my-community-page">
-      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }}>My Community</h1>
+      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="my-community-title">{title}</h1>
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="space-y-4">
           <div className="bg-[#13161e] border border-white/5 rounded-lg p-5">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { Plus, Eye, Edit2, Briefcase } from 'lucide-react';
 
@@ -16,6 +16,8 @@ export default function PortfolioList() {
   const [data, setData] = useState({ own: [], shared: [] });
   const [tab, setTab] = useState('own');
   const navigate = useNavigate();
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('portfolios', 'Portfolio List') : 'Portfolio List';
 
   useEffect(() => { memberAPI.getPortfolios().then(r => setData(r.data)).catch(console.error); }, []);
 
@@ -30,8 +32,7 @@ export default function PortfolioList() {
     <div data-testid="portfolio-list-page">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>My Account</h1>
-          <p className="text-gray-500 text-sm">Portfolio List</p>
+          <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="portfolio-list-title">{title}</h1>
         </div>
         <button onClick={() => navigate('/my-account/portfolios/new')}
           className="px-4 py-2 bg-[#c9a84c] text-[#0d0f14] rounded text-sm font-semibold flex items-center gap-2 hover:bg-[#d4b85d]"

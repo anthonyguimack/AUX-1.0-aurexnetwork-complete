@@ -32,6 +32,7 @@ const ROUTE_TO_PERM = {
   '/my-account/my-community': 'my-community',
   '/my-account/portfolios': 'portfolios',
   '/my-account/global-calendar': 'global-calendar',
+  '/my-account/mentorship-calendar': 'mentorship-calendar',
   '/my-account/earnings': 'earnings',
   '/my-account/bundles': 'bundles',
   '/my-account/my-bookings': 'my-bookings',
@@ -104,6 +105,9 @@ export default function MyAccountLayout() {
     }
   }, [member]);
 
+  const isMentor = member?._member_type?.permissions?.is_mentor;
+  const hasMentor = !!member?.mentor_id;
+
   const isRouteAllowed = (() => {
     if (levelPerms === null) return null;
     const path = location.pathname;
@@ -114,7 +118,15 @@ export default function MyAccountLayout() {
         break;
       }
     }
-    if (requiredPerm && !levelPerms.includes(requiredPerm)) return false;
+    if (requiredPerm) {
+      // Respect CMS "My Account Navigation" visibility override (global hide)
+      const navOverride = navOrderState?.items?.find(n => n.id === requiredPerm);
+      if (navOverride && navOverride.visible === false) return false;
+      if (!levelPerms.includes(requiredPerm)) return false;
+      // Mentor-only sections (earnings, my calendar) additionally require mentor flag
+      const navDef = ALL_NAV_ITEMS.find(i => i.id === requiredPerm);
+      if (navDef?.mentorOnly && !isMentor) return false;
+    }
     return true;
   })();
 
@@ -128,15 +140,11 @@ export default function MyAccountLayout() {
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
   const tt = useT();
   const brandName = tt(settings.brand_name) || 'Legacy';
-  const isMentor = member?._member_type?.permissions?.is_mentor;
-  const hasMentor = !!member?.mentor_id;
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
     if (item.mentorOnly && !isMentor) return false;
     // Global-visibility override from CMS "My Account Navigation" (if present)
     const navOverride = navOrderState?.items?.find(n => n.id === item.id);
     if (navOverride && navOverride.visible === false) return false;
-    // Mentorship Calendar is a mentor-only internal view (not level-gated)
-    if (item.id === 'mentorship-calendar') return true;
     return levelPerms.includes(item.id);
   }) : [];
   // Apply CMS-managed ordering if available, else keep source order.
@@ -330,7 +338,13 @@ export default function MyAccountLayout() {
               <Loader2 className="w-6 h-6 animate-spin" style={{ color: v('accent', '#c9a84c') }} />
             </div>
           ) : (
-            <Outlet />
+            <Outlet context={{
+              navItems: navOrderState?.items || [],
+              sectionLabel: (id, fallback) => {
+                const cms = navOrderState?.items?.find(n => n.id === id)?.label;
+                return cms || fallback;
+              },
+            }} />
           )}
         </main>
       </div>
