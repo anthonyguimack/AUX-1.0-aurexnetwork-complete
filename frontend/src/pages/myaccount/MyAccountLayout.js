@@ -139,13 +139,20 @@ export default function MyAccountLayout() {
     if (item.id === 'mentorship-calendar') return true;
     return levelPerms.includes(item.id);
   }) : [];
-  // Apply CMS-managed ordering if available, else keep source order
+  // Apply CMS-managed ordering if available, else keep source order.
+  // Also override item.label with the CMS-renamed label when present.
   const orderedNavItems = (() => {
-    const order = navOrderState?.items;
-    if (!order || order.length === 0) return navItems;
+    const override = navOrderState?.items;
+    if (!override || override.length === 0) return navItems;
     const byId = new Map(navItems.map(i => [i.id, i]));
     const ordered = [];
-    for (const o of order) { const it = byId.get(o.id); if (it) { ordered.push(it); byId.delete(o.id); } }
+    for (const o of override) {
+      const it = byId.get(o.id);
+      if (it) {
+        ordered.push(o.label && o.label !== it.label ? { ...it, label: o.label, _cmsLabel: true } : it);
+        byId.delete(o.id);
+      }
+    }
     return [...ordered, ...byId.values()]; // any unknown new items appended
   })();
   const permissionsLoading = levelPerms === null;
@@ -211,7 +218,7 @@ export default function MyAccountLayout() {
                   onMouseLeave={e => { if (!active) e.currentTarget.style.color = v('sidebar-text', '#9ca3af'); }}
                   data-testid={`myaccount-nav-${item.label.toLowerCase().replace(/\s+/g, '-')}`}>
                   <item.icon className="w-4 h-4 flex-shrink-0" />
-                  <span>{item.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item.label}</span>
+                  <span>{item._cmsLabel ? item.label : (item.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item.label)}</span>
                 </Link>
               );
             })
@@ -306,7 +313,13 @@ export default function MyAccountLayout() {
               <ChevronRight className="w-3 h-3 mx-1" />
               <span style={{ color: v('text-secondary', '#9ca3af') }}>{
                 location.pathname.startsWith('/my-account/event/') ? `${settings.aux_prefix || 'AUX'} Calendar` :
-                (() => { const item = ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href)); return item?.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item?.label || 'Dashboard'; })()
+                (() => {
+                  const item = ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href));
+                  if (!item) return 'Dashboard';
+                  const cmsLabel = navOrderState?.items?.find(n => n.id === item.id)?.label;
+                  if (cmsLabel && cmsLabel !== item.label) return cmsLabel;
+                  return item.dynamicLabel ? `${settings.aux_prefix || 'AUX'} Calendar` : item.label;
+                })()
               }</span>
             </div>
           </div>

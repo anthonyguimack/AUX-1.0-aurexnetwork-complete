@@ -942,3 +942,12 @@ Security (Roles & Permissions) divider + link moved from the very bottom of the 
 - Real S3/Cloud image storage migration.
 - Production SMTP configuration.
 
+
+
+## Inline rename for My Account Navigation (Feb 27, 2026 — same day follow-up)
+Per user request, added click-to-rename on top of the existing drag-reorder + visibility toggle.
+
+- **CMS UI** (`MyAccountNavManager.js`) — clicking a row label flips it into an input (auto-focus, 64-char max). Enter commits, Escape cancels, blur commits. Optimistic update + toast on success; rolls back to the previous label on failure. A tiny pencil icon hints editability when the row is idle.
+- **Backend** already accepted `{label}` on `PUT /admin/myaccount-nav/{id}` — verified empty/whitespace labels are rejected (`400 No editable fields supplied`).
+- **Public apply** (`MyAccountLayout.js`) — when a CMS label override is present it takes precedence over both the hardcoded `ALL_NAV_ITEMS.label` and the dynamic AUX-prefix substitution (`global-calendar`). Breadcrumb also honours the rename.
+- Self-tested: API rename `global-calendar → Events Hub` → public endpoint returns `Events Hub`; UI click-to-rename + reload persists; reset back to defaults cleanly.

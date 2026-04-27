@@ -4,12 +4,27 @@ import { toast } from 'sonner';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
-import { GripVertical, Save, Loader2, Eye, EyeOff } from 'lucide-react';
+import { GripVertical, Save, Loader2, Eye, EyeOff, Pencil } from 'lucide-react';
 import { Switch } from '../../components/ui/switch';
 
-function SortableRow({ item, onToggle }) {
+function SortableRow({ item, onToggle, onRename }) {
   const { attributes, listeners, setNodeRef, transform, transition } = useSortable({ id: item.id });
   const style = { transform: CSS.Transform.toString(transform), transition };
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState(item.label);
+  const inputRef = React.useRef(null);
+
+  React.useEffect(() => { if (!editing) setDraft(item.label); }, [item.label, editing]);
+  React.useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const commit = () => {
+    const next = (draft || '').trim();
+    setEditing(false);
+    if (!next || next === item.label) { setDraft(item.label); return; }
+    onRename(item, next);
+  };
+  const cancel = () => { setDraft(item.label); setEditing(false); };
+
   return (
     <div
       ref={setNodeRef}
@@ -26,7 +41,30 @@ function SortableRow({ item, onToggle }) {
         <GripVertical className="w-5 h-5" />
       </button>
       <div className="flex-1 min-w-0">
-        <p className="text-sm font-medium text-[#1a2332] truncate">{item.label}</p>
+        {editing ? (
+          <input
+            ref={inputRef}
+            type="text"
+            value={draft}
+            onChange={e => setDraft(e.target.value)}
+            onBlur={commit}
+            onKeyDown={e => { if (e.key === 'Enter') commit(); if (e.key === 'Escape') cancel(); }}
+            className="w-full text-sm font-medium text-[#1a2332] border border-[#0D9488] rounded-sm px-2 py-1 focus:outline-none focus:ring-1 focus:ring-[#0D9488]"
+            data-testid={`manav-label-input-${item.id}`}
+            maxLength={64}
+          />
+        ) : (
+          <button
+            type="button"
+            onClick={() => setEditing(true)}
+            title="Click to rename"
+            className="text-left text-sm font-medium text-[#1a2332] truncate hover:text-[#0D9488] transition-colors flex items-center gap-1.5"
+            data-testid={`manav-label-${item.id}`}
+          >
+            <span className="truncate">{item.label}</span>
+            <Pencil className="w-3 h-3 text-slate-300 flex-shrink-0" />
+          </button>
+        )}
         <p className="text-xs text-slate-400 font-mono">{item.id}</p>
       </div>
       <div className="flex items-center gap-2">
@@ -80,6 +118,19 @@ export default function MyAccountNavManager() {
     }
   };
 
+  const renameItem = async (item, nextLabel) => {
+    const previous = item.label;
+    // optimistic
+    setItems(prev => prev.map(p => p.id === item.id ? { ...p, label: nextLabel } : p));
+    try {
+      await adminAPI.updateMyAccountNav(item.id, { label: nextLabel });
+      toast.success('Renamed');
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Failed to rename');
+      setItems(prev => prev.map(p => p.id === item.id ? { ...p, label: previous } : p));
+    }
+  };
+
   const handleSave = async () => {
     setSaving(true);
     try {
@@ -101,8 +152,9 @@ export default function MyAccountNavManager() {
             My Account Navigation
           </h1>
           <p className="text-sm text-slate-500 mt-1">
-            Drag to reorder. Toggle the switch to hide an item from every member&apos;s sidebar globally.
-            To restrict per level instead, use <strong>Member Levels &rarr; Permissions</strong>.
+            Drag to reorder. Click a label to rename it. Toggle the switch to hide an item
+            from every member&apos;s sidebar globally. To restrict per level instead, use
+            <strong> Member Levels &rarr; Permissions</strong>.
           </p>
         </div>
         <button
@@ -128,7 +180,7 @@ export default function MyAccountNavManager() {
         <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
           <SortableContext items={items.map(i => i.id)} strategy={verticalListSortingStrategy}>
             {items.map(item => (
-              <SortableRow key={item.id} item={item} onToggle={toggleVisible} />
+              <SortableRow key={item.id} item={item} onToggle={toggleVisible} onRename={renameItem} />
             ))}
           </SortableContext>
         </DndContext>
