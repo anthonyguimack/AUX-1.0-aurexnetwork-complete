@@ -951,3 +951,14 @@ Per user request, added click-to-rename on top of the existing drag-reorder + vi
 - **Backend** already accepted `{label}` on `PUT /admin/myaccount-nav/{id}` — verified empty/whitespace labels are rejected (`400 No editable fields supplied`).
 - **Public apply** (`MyAccountLayout.js`) — when a CMS label override is present it takes precedence over both the hardcoded `ALL_NAV_ITEMS.label` and the dynamic AUX-prefix substitution (`global-calendar`). Breadcrumb also honours the rename.
 - Self-tested: API rename `global-calendar → Events Hub` → public endpoint returns `Events Hub`; UI click-to-rename + reload persists; reset back to defaults cleanly.
+
+## My Account Nav — permission sync + URL gate + page titles (Feb 27, 2026 — same day follow-up)
+Four operator-reported issues fixed together.
+
+1. **Member Levels permissions reflect CMS renames** — `MemberLevelsManager.js` fetches `/admin/myaccount-nav` on mount and merges live labels onto the hardcoded catalog. Renaming "Portfolios" → "Investments" in CMS immediately updates both the permission checkbox text AND the chips on each existing level card.
+2. **"My Calendar" (`mentorship-calendar`) is now a first-class permission** — added to `SIDEBAR_SECTIONS`; also removed the hardcoded bypass in `MyAccountLayout.js` so it is now properly level-gated (still mentor-only via the existing `mentorOnly` flag + member-type permission).
+3. **Hidden sections are unreachable via URL** — `isRouteAllowed` in `MyAccountLayout.js` now also denies access when `navOrderState.items[id].visible === false`, so typing `/my-account/my-community` after hiding it in CMS redirects the member to their first allowed page. Also enforces the mentor-only flag at the route level (direct `/my-account/earnings` to a non-mentor → redirect).
+4. **Page titles honour CMS rename** — `MyAccountLayout.js` exposes `{ sectionLabel, navItems }` via `useOutletContext`. `PortfolioList.js` now renders a single `<h1>` (`data-testid='portfolio-list-title'`) using `sectionLabel('portfolios', 'Portfolio List')` instead of the confusing "My Account / Portfolio List" dual-title. `MyCommunity.js` gets the same treatment (`data-testid='my-community-title'`).
+
+**Verified by testing_agent_v3_fork (iteration_72.json)** — 6/6 frontend tests PASS (100%), zero issues. Confirmed: (a) live label propagates to Member Levels dialog; (b) `perm-mentorship-calendar` present; (c) member redirected away from hidden URL; (d) both page titles read from CMS; (e) no regressions on prior iterations.
+
