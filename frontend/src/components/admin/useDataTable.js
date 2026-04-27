@@ -91,16 +91,17 @@ export function useDataTable(items, options = {}) {
   }, [storageKey]);
 
   const toggleSort = useCallback((key) => {
-    setSortKey(prev => {
-      if (prev === key) {
-        setSortDir(d => d === 'asc' ? 'desc' : 'asc');
-        return key;
-      }
+    // Read current state explicitly. Calling another setter inside an
+    // updater (the previous implementation) is unreliable in React 18
+    // strict-mode and missed every other click.
+    if (sortKey === key) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc');
+    } else {
+      setSortKey(key);
       setSortDir('asc');
-      return key;
-    });
+    }
     setPage(1);
-  }, []);
+  }, [sortKey]);
 
   // Reset to page 1 whenever search changes
   useEffect(() => { setPage(1); }, [search]);

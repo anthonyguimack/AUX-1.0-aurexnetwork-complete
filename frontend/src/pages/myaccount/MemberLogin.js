@@ -3,10 +3,12 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { publicAPI } from '../../lib/api';
 import { LogIn, Mail, Lock, Loader2, UserPlus } from 'lucide-react';
+import { useT } from '../../lib/i18n';
 
 export default function MemberLogin() {
   const { member, login } = useMember();
   const navigate = useNavigate();
+  const tt = useT();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -35,7 +37,7 @@ export default function MemberLogin() {
     }
   };
 
-  const brandName = settings.brand_name || 'Legacy';
+  const brandName = tt(settings.brand_name) || 'Legacy';
   const bgImage = settings.membership_login_bg || '';
 
   return (

@@ -5,6 +5,7 @@ import { publicAPI, memberAPI } from '../../lib/api';
 import {
   User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss, BarChart3, Package
 } from 'lucide-react';
+import { useT } from '../../lib/i18n';
 
 const ALL_NAV_ITEMS = [
   { id: 'membership-profile', label: 'Membership Profile', icon: User, href: '/my-account/membership-profile' },
@@ -118,7 +119,8 @@ export default function MyAccountLayout() {
   }, [isRouteAllowed, levelPerms, navigate]);
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
-  const brandName = settings.brand_name || 'Legacy';
+  const tt = useT();
+  const brandName = tt(settings.brand_name) || 'Legacy';
   const isMentor = member?._member_type?.permissions?.is_mentor;
   const hasMentor = !!member?.mentor_id;
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {

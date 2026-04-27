@@ -5,10 +5,12 @@ import { memberAPI, publicAPI, geoAPI } from '../../lib/api';
 import { UserPlus, Loader2, CheckCircle, XCircle, ArrowLeft } from 'lucide-react';
 import { toast } from 'sonner';
 import ImageUpload from '../../components/ImageUpload';
+import { useT } from '../../lib/i18n';
 
 export default function MemberRegister() {
   const { setUserData } = useAuth();
   const navigate = useNavigate();
+  const tt = useT();
   const [params] = useSearchParams();
   const [settings, setSettings] = useState({});
   const [step, setStep] = useState('code');
@@ -98,7 +100,7 @@ export default function MemberRegister() {
     } finally { setLoading(false); }
   };
 
-  const brandName = settings.brand_name || 'Legacy';
+  const brandName = tt(settings.brand_name) || 'Legacy';
   const bgImage = settings.membership_login_bg || '';
   const inputCls = "w-full bg-[#13161e] border border-white/10 text-white rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-[#c9a84c]/50";
   const selectCls = inputCls + " appearance-auto";

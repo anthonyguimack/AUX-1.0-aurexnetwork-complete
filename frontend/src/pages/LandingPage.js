@@ -3,6 +3,7 @@ import { landingAPI } from '../lib/api';
 import { useSettings } from '../App';
 import { X } from 'lucide-react';
 import { normalizeRichText } from '../lib/richText';
+import { useT } from '../lib/i18n';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -136,6 +137,7 @@ function SocialIcon({ type, url }) {
    ═══════════════════════════════════════════════ */
 export default function LandingPage() {
   const settings = useSettings();
+  const tt = useT();
   const [content, setContent] = useState({});
   const [heroSlides, setHeroSlides] = useState([]);
   const [contactForm, setContactForm] = useState({ first_name: '', email: '', subject: '', message: '' });
@@ -215,7 +217,7 @@ export default function LandingPage() {
           {logoSrc ? (
             <img src={logoSrc} alt="Logo" className="h-8 sm:h-10 w-auto object-contain" data-testid="lp-logo" />
           ) : (
-            <div className="text-lg font-bold tracking-wide" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Coming Soon'}</div>
+            <div className="text-lg font-bold tracking-wide" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{tt(settings.brand_name) || 'Coming Soon'}</div>
           )}
           {/* Desktop nav */}
           <nav className="hidden md:flex items-center gap-8" data-testid="lp-nav">
@@ -415,7 +417,7 @@ export default function LandingPage() {
               {logoSrc ? (
                 <img src={logoSrc} alt="Logo" className="h-8 mb-4 w-auto object-contain" />
               ) : (
-                <div className="text-lg font-bold mb-4" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{settings.brand_name || 'Coming Soon'}</div>
+                <div className="text-lg font-bold mb-4" style={{ color: cv('heading', '#f5f5f5'), fontFamily: 'Playfair Display, serif' }}>{tt(settings.brand_name) || 'Coming Soon'}</div>
               )}
               <p className="text-sm leading-relaxed max-w-md" style={{ color: cv('footer-text', '#a0a0b0') }}>
                 {content.footer_description || 'A membership-based community focused on financial literacy, growing assets, and creating generational wealth.'}

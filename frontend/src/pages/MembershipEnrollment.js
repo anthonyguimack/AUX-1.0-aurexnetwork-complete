@@ -5,6 +5,7 @@ import { useAuth } from '../lib/auth';
 import RichTextEditor from '../components/RichTextEditor';
 import { Lock, ChevronRight, Check, HelpCircle, Eye, EyeOff, Layers } from 'lucide-react';
 import { toast } from 'sonner';
+import { useT } from '../lib/i18n';
 
 const cv = (key, fb) => `var(--me-${key}, ${fb})`;
 
@@ -56,6 +57,7 @@ const STEP_LABELS = ['Invitation CODE', 'Clarity Statement and Interview', 'Appl
 
 export default function MembershipEnrollment() {
   const navigate = useNavigate();
+  const tt = useT();
   const { setUserData } = useAuth();
   const [settings, setSettings] = useState({});
   const [fields, setFields] = useState([]);
@@ -248,7 +250,7 @@ export default function MembershipEnrollment() {
         return (
           <div>
             <div className="relative">
-              <input type={show ? 'text' : 'password'} value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle} pr-10`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />
+              <input type={show ? 'text' : 'password'} value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={tt(f.placeholder) || ''} className={`${baseCls} ${focusStyle} pr-10`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />
               <button type="button" onClick={() => setShowPasswords(p => ({ ...p, [f.field_key]: !show }))} className="absolute right-0 top-1/2 -translate-y-1/2 p-1" style={{ color: cv('input-icon', '#9ca3af') }}>
                 {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
               </button>
@@ -260,15 +262,15 @@ export default function MembershipEnrollment() {
       case 'email':
       case 'text':
       case 'number':
-        return <input type={f.field_type === 'number' ? 'number' : 'text'} value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
+        return <input type={f.field_type === 'number' ? 'number' : 'text'} value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={tt(f.placeholder) || ''} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'currency':
-        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} onBlur={() => { if (val) setField(f.field_key, formatCurrency(val)); }} placeholder={f.placeholder || '$0.00'} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
+        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} onBlur={() => { if (val) setField(f.field_key, formatCurrency(val)); }} placeholder={tt(f.placeholder) || '$0.00'} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'date':
         return <input type="date" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'textarea':
-        return <textarea value={val || ''} onChange={e => setField(f.field_key, e.target.value)} rows={4} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle} resize-none`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
+        return <textarea value={val || ''} onChange={e => setField(f.field_key, e.target.value)} rows={4} placeholder={tt(f.placeholder) || ''} className={`${baseCls} ${focusStyle} resize-none`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'richtext':
-        return <div data-testid={`enroll-${f.field_key}`}><RichTextEditor value={val || ''} onChange={v => setField(f.field_key, v)} placeholder={f.placeholder || ''} /></div>;
+        return <div data-testid={`enroll-${f.field_key}`}><RichTextEditor value={val || ''} onChange={v => setField(f.field_key, v)} placeholder={tt(f.placeholder) || ''} /></div>;
       case 'datetime':
         return <input type="datetime-local" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       case 'select':
@@ -375,11 +377,11 @@ export default function MembershipEnrollment() {
           </div>
         );
       case 'signature_text':
-        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle} italic`} style={{ ...borderStyle, fontFamily: 'cursive' }} data-testid={`enroll-${f.field_key}`} />;
+        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={tt(f.placeholder) || ''} className={`${baseCls} ${focusStyle} italic`} style={{ ...borderStyle, fontFamily: 'cursive' }} data-testid={`enroll-${f.field_key}`} />;
       case 'signature_date':
         return <input type="date" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
       default:
-        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={f.placeholder || ''} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
+        return <input type="text" value={val || ''} onChange={e => setField(f.field_key, e.target.value)} placeholder={tt(f.placeholder) || ''} className={`${baseCls} ${focusStyle}`} style={borderStyle} data-testid={`enroll-${f.field_key}`} />;
     }
   };
 
@@ -470,9 +472,9 @@ export default function MembershipEnrollment() {
               {stepFields.map(f => (
                 <div key={f.id || f.field_key} className="pt-6 first:pt-0" data-testid={`enroll-field-${f.field_key}`}>
                   <label className="flex items-center text-sm font-medium mb-1" style={{ color: cv('label-color', '#374151') }}>
-                    {f.label}
+                    {tt(f.label)}
                     {f.required && <span className="ml-0.5" style={{ color: cv('error-color', '#dc2626') }}>*</span>}
-                    <Tooltip text={f.tooltip} />
+                    <Tooltip text={tt(f.tooltip)} />
                   </label>
                   {renderField(f)}
                   {errors[f.field_key] && <p className="text-xs mt-1" style={{ color: cv('error-color', '#dc2626') }} data-testid={`enroll-err-${f.field_key}`}>{errors[f.field_key]}</p>}
@@ -513,7 +515,7 @@ export default function MembershipEnrollment() {
 
       {/* Footer */}
       <footer className="py-4 px-6" style={{ backgroundColor: cv('footer-bg', '#1a2535') }} data-testid="enroll-footer">
-        <p className="text-xs" style={{ color: cv('footer-text', '#9ca3af') }}>{new Date().getFullYear()} &copy; {settings.brand_name || 'Acapital.com'} - All Rights Reserved</p>
+        <p className="text-xs" style={{ color: cv('footer-text', '#9ca3af') }}>{new Date().getFullYear()} &copy; {tt(settings.brand_name) || 'Acapital.com'} - All Rights Reserved</p>
       </footer>
     </div>
   );

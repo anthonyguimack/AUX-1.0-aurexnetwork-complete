@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2, Loader2, Eye, Calendar, Users, Download, ArrowLeft, Paperclip, FileText, X, Copy, ChevronLeft, ChevronRight, List, Grid3X3 } from 'lucide-react';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
+import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
 const EVENT_TYPES = ['Activity', 'Meeting', 'Conference', 'Talk', 'Other'];
 const STATUSES = ['active', 'inactive', 'cancelled'];
