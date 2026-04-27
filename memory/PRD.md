@@ -908,3 +908,37 @@ Completes the global DataTable rollout to the remaining 4 calendar-related CMS m
 - SEO pre-render nightly job to emit hydrated `/index.html` with meta + above-the-fold content.
 - Real S3/Cloud image storage migration (currently local container).
 - Production SMTP configuration.
+
+## CMS UX Polish + My Account Navigation CMS (Feb 27, 2026)
+Four operator-requested improvements, all shipped together.
+
+### 1. Sidebar reorder — Security between Membership and System
+Security (Roles & Permissions) divider + link moved from the very bottom of the sidebar to sit between the Membership group and the System group. No permission semantics changed — still admin-only.
+
+### 2. Admin login button honours CMS colours
+`AdminLoginPage.js` Sign-In button was hardcoded gold `#c9a84c`. Now uses `var(--ad-button-bg, #0D9488)` + `var(--ad-button-text, #ffffff)` so it respects CMS → Settings → Colors → Admin → Button Background like every other admin surface.
+
+### 3. Member Levels — 5 new My Account Section permissions
+`SIDEBAR_SECTIONS` in `MemberLevelsManager.js` gained: **AUX Calendar** (`global-calendar`), **Earnings** (`earnings`), **Session Bundles** (`bundles`), **My Reservations** (`my-bookings`), **Calendar Sync** (`calendar-sync`). Previously the public `MyAccountLayout.js` hardcoded these 5 ids into a bypass list (always visible regardless of level). That bypass is gone — level permissions now gate them like every other nav entry. `mentorship-calendar` remains visible for mentors only (not level-gated).
+
+### 4. NEW — "My Account Navigation" CMS page (drag + toggle)
+`/admin/myaccount-nav` — mirrors the Page Builder pattern but for My Account sidebar items. 13 rows (the full nav catalog), drag to reorder, per-row eye-switch to hide globally, single "Save order" button.
+
+**Backend (`routes/membership.py`):**
+- Lazy-seeded `myaccount_nav` collection (13 items from `MYACCOUNT_NAV_CATALOG`; backfills any future built-ins on next GET).
+- `GET /public/myaccount-nav` — ordered list for `MyAccountLayout.js`.
+- `GET /admin/myaccount-nav` — admin list.
+- `PUT /admin/myaccount-nav/{id}` — toggle `visible` (and optionally rename `label`).
+- `PUT /admin/myaccount-nav-reorder` — persist drag order.
+
+**Registry:** new `myaccount_nav` key under `group: myaccount` in `cms_sections.py` so Roles & Permissions can grant/deny access per CMS operator.
+
+**Public apply:** `MyAccountLayout.js` fetches the nav on mount and (a) hides any row with `visible:false`, (b) renders items in the CMS-saved order, (c) still filters the result by the member's level permissions + mentor-only flags.
+
+**Verified by testing_agent_v3_fork (iteration_71.json)** — 10/10 pass (100% backend pytest + 100% frontend). pytest file at `/app/backend/tests/test_myaccount_nav.py`. Sidebar ordering verified programmatically (Membership Settings idx=36, Roles & Permissions idx=38, Contacts idx=40). Admin login button bg verified as `rgb(115,175,95)` (CSS var, not hardcoded gold).
+
+### Backlog (P2)
+- SEO pre-render nightly job to emit hydrated `/index.html` with meta + above-the-fold content.
+- Real S3/Cloud image storage migration.
+- Production SMTP configuration.
+
