@@ -884,3 +884,27 @@ Two large feature batches.
 
 **Verified by testing_agent_v3_fork (iteration_69.json)** — 100% frontend pass, zero issues, zero action items.  Manual screenshot confirmed: hiding steps 2 + 3 turns the public stepper into "Step 1 of 2" with `Invitation CODE → Confirm & Submit` only and a 50%-per-step progress bar.
 
+
+
+## Calendar DataTable Migration + Auth/Enrollment Crash Fix (Feb 27, 2026)
+Completes the global DataTable rollout to the remaining 4 calendar-related CMS managers and verifies the React `{en}` object-rendering crash on public Auth + Enrollment pages.
+
+### 1. DataTable applied to all 4 Calendar managers
+- **GlobalEventsManager** (`/admin/calendar/global`) — wired (previous fork only added the import). Search by title/type/location, sortable Title/Type/Date/Time/Capacity/Registered/Status, paginated. Calendar grid view untouched.
+- **MentorshipScheduleManager** (`/admin/calendar/mentorship`) — search by mentor/title/type, sortable Mentor/Title/Date/Time/Type/Max/Booked/Waitlist/Status, paginated.
+- **MentorSlotTemplatesManager** (`/admin/calendar/mentor-slot-templates`) — search by name/title/type, sortable Name/Title/Type/Max/Duration, paginated.
+- **BlockedDatesManager** (`/admin/calendar/blocked-dates`) — search by date/reason, sortable Date/Reason, paginated.
+- TestId prefixes: `events`, `mslots`, `tpl`, `blocked` (e.g. `events-search-input`, `mslots-pagination`, `th-mentor_name`).
+- Row numbering uses `(dt.page - 1) * dt.pageSize + i + 1` so it stays correct across pages.
+
+### 2. Verified `{en}` React-child crash fix
+- `MemberLogin.js` wraps `settings.brand_name` in `tt()`.
+- `MembershipEnrollment.js` wraps field placeholders + brand name in `tt()`.
+- `/my-account/login` and `/membership-enrollment` confirmed crash-free; brand renders as plain string.
+
+**Verified by testing_agent_v3_fork (iteration_70.json)** — 7/7 frontend scenarios pass, 100%, zero action items. Regression-spot-checked Members + Portfolio DataTables still healthy. Note: public enrollment route is `/membership-enrollment` (not `/enroll`).
+
+### Backlog (P2)
+- SEO pre-render nightly job to emit hydrated `/index.html` with meta + above-the-fold content.
+- Real S3/Cloud image storage migration (currently local container).
+- Production SMTP configuration.
