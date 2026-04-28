@@ -507,8 +507,10 @@ export default function MembersManager() {
               {infoLoading ? (
                 <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
               ) : !infoEnrollment?.has_application ? (
-                <p className="text-xs text-slate-400 italic bg-slate-50 rounded-sm border border-slate-100 p-4 text-center" data-testid="member-info-no-enrollment">
-                  This member did not go through the public enrollment flow (likely created from the CMS, sample seed, or migrated). No saved Q&amp;A.
+                <p className="text-xs text-slate-500 italic bg-slate-50 rounded-sm border border-slate-100 p-4 text-center" data-testid="member-info-no-enrollment">
+                  This member was created directly from the CMS, so there are no
+                  enrollment-form answers to display. The basic profile data
+                  shown above was entered manually.
                 </p>
               ) : (
                 <>
@@ -518,17 +520,33 @@ export default function MembersManager() {
                     </p>
                   )}
                   <div className="border border-slate-100 rounded-sm divide-y divide-slate-100" data-testid="member-info-enrollment">
-                    {(infoEnrollment.answers || []).map((a, i) => (
+                    {(infoEnrollment.answers || []).map((a, i) => {
+                      // Defensive: backend already flattens but in case any
+                      // legacy value sneaks through as an object/array, coerce
+                      // to a string so React never crashes on a raw dict.
+                      let displayValue = a.value;
+                      if (displayValue && typeof displayValue === 'object') {
+                        if (Array.isArray(displayValue)) {
+                          displayValue = displayValue.join(', ');
+                        } else {
+                          displayValue = Object.entries(displayValue)
+                            .filter(([, v]) => v)
+                            .map(([k]) => k)
+                            .join(', ');
+                        }
+                      }
+                      return (
                       <div key={`${a.field_key}-${i}`} className="p-3" data-testid={`enrollment-row-${a.field_key}`}>
                         <div className="flex items-baseline gap-2">
                           {a.step ? <span className="text-[10px] font-mono text-[#0D9488] bg-teal-50 px-1.5 py-0.5 rounded">Step {a.step}</span> : null}
                           <span className="text-xs font-medium text-slate-700">{a.label}</span>
                         </div>
                         <p className="text-sm text-[#1a2332] mt-1 break-words whitespace-pre-wrap">
-                          {a.value || <span className="text-slate-300 italic">— not answered —</span>}
+                          {displayValue || <span className="text-slate-300 italic">— not answered —</span>}
                         </p>
                       </div>
-                    ))}
+                      );
+                    })}
                     {(!infoEnrollment.answers || infoEnrollment.answers.length === 0) && (
                       <p className="p-4 text-xs text-slate-400 italic text-center">No answers recorded.</p>
                     )}

@@ -587,6 +587,18 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
     last_name = body.get("last_name", "").strip()
     username = email  # username and email are the same
     password = body.get("password", "changeme123")
+
+    # Default to the lowest-order member level (e.g. "Free") so admin-created
+    # accounts inherit the same baseline restrictions as members who register
+    # via /membership-enrollment or /my-account/register. Without this fallback
+    # an empty level_id makes MyAccountLayout unable to filter the sidebar and
+    # the new member ends up seeing every section.
+    level_id = body.get("level_id")
+    if not level_id:
+        lowest = await db.member_levels.find_one(
+            {}, {"_id": 0, "id": 1}, sort=[("order", 1)]
+        )
+        level_id = lowest["id"] if lowest else None
     new_member = {
         "member_id": member_id,
         "membership_number": membership_number,
@@ -609,7 +621,7 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "mentor_membership_number": body.get("mentor_membership_number", None),
         "is_mentor": body.get("is_mentor", False),
         "portfolio_development": body.get("portfolio_development", False),
-        "level_id": body.get("level_id", None),
+        "level_id": level_id,
         "role": "member",
         "cms_roles": ["role_member"],
         # New membership fields

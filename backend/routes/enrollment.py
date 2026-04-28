@@ -352,6 +352,31 @@ async def admin_member_enrollment(member_id: str, user: dict = Depends(require_a
         }
 
     form_data = app.get("form_data") or {}
+
+    def _flatten(val):
+        """Coerce any saved form value to a human-readable string.
+        Some enrollment fields (checkbox-grids, multi-checkbox, dynamic
+        topics) are stored as a {label: bool} dict by the public form;
+        rendering that dict directly in React crashes the modal."""
+        if val is None:
+            return ""
+        if isinstance(val, str):
+            return val
+        if isinstance(val, bool):
+            return "Yes" if val else "No"
+        if isinstance(val, (int, float)):
+            return str(val)
+        if isinstance(val, list):
+            return ", ".join(_flatten(v) for v in val if v not in (None, "", False))
+        if isinstance(val, dict):
+            # {label: True, label: False} → "label1, label2"  (only truthy keys)
+            truthy = [str(k) for k, v in val.items() if v]
+            if truthy:
+                return ", ".join(truthy)
+            # Fallback: render every key=value pair
+            return ", ".join(f"{k}: {_flatten(v)}" for k, v in val.items())
+        return str(val)
+
     answers = []
     for f in fields:
         key = f.get("field_key")
@@ -368,15 +393,12 @@ async def admin_member_enrollment(member_id: str, user: dict = Depends(require_a
                 })
             continue
         if key in form_data:
-            val = form_data.get(key)
-            if isinstance(val, list):
-                val = ", ".join(str(v) for v in val if v is not None)
             answers.append({
                 "step": f.get("step"),
                 "field_key": key,
                 "label": f.get("label", key),
                 "field_type": f.get("field_type"),
-                "value": val if val not in ("", None) else "",
+                "value": _flatten(form_data.get(key)),
             })
 
     # Append any extra form_data keys that don't match a known field (legacy).
@@ -384,14 +406,12 @@ async def admin_member_enrollment(member_id: str, user: dict = Depends(require_a
     for k, v in form_data.items():
         if k in known or k in ("password", "confirm_password"):
             continue
-        if isinstance(v, list):
-            v = ", ".join(str(x) for x in v if x is not None)
         answers.append({
             "step": None,
             "field_key": k,
             "label": k.replace("_", " ").title(),
             "field_type": "text",
-            "value": v if v not in ("", None) else "",
+            "value": _flatten(v),
         })
 
     return {
