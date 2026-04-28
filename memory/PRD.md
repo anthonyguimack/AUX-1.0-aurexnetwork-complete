@@ -1001,3 +1001,14 @@ Idempotent reseed: `cd /app/backend && python3 scripts/seed_test_scenario.py`.
 
 **Verified by testing_agent_v3_fork (iteration_74.json)** — 10/10 tests PASS, 100% backend (17/17) + frontend, zero issues. CMS labels mutated during testing have been restored to defaults.
 
+
+## Sort + Community fields + Bell colors (Feb 27, 2026 — same day follow-up)
+
+1. **Natural-numeric sort across all DataTables** — `useDataTable.compareValues` now uses `localeCompare(b, undefined, { numeric: true, sensitivity: 'base' })`. Effect: AUX column on the Members table now sorts AUX-1, AUX-2, AUX-3, AUX-10, AUX-101 instead of the old alphabetic AUX-1, AUX-101, AUX-2... This benefits every other table that has alphanumeric values too.
+2. **Sortable Sponsor column** — `MembersManager` Sponsor `<th>` → `<SortableTh field="sponsor_membership_number">`. Numeric sort, nulls go to the end.
+3. **Testing Manual 500 fix** — `/api/docs/testing-manual` previously crashed when a UI-created member had username `samplemember11@gmail.com` (the int-extraction call exploded). Now uses a regex to extract the trailing integer; non-numeric usernames sort to the end without crashing.
+4. **My Community modal — 7 new profile fields** — `/member/my-community` response now includes phone, gender, date_of_birth, country, state, city, zip_code on each tree node. Modal renders a 2-col grid with `data-testid='community-modal-<field>'` for each; empty values show a dash. Date-of-birth formatted MM/DD/YYYY.
+5. **Notification bell — configurable, prominent colors** — added 4 new MYACCOUNT_COLORS keys (`bell_icon`, `bell_hover_bg`, `bell_badge_bg`, `bell_badge_text`); bell now defaults to gold (was grey) with a red badge ringed by the header bg so it pops. All four are editable from CMS → Settings → Colors.
+
+**Verified by testing_agent_v3_fork (iteration_75.json)** — 6/6 PASS, 100% backend (15/15 pytest) + 100% frontend, zero issues. Regression tests for iterations 70-74 still green.
+
