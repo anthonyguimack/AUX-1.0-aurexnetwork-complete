@@ -239,6 +239,8 @@ export const adminAPI = {
   getMyAccountNav: () => api.get('/admin/myaccount-nav'),
   updateMyAccountNav: (id, data) => api.put(`/admin/myaccount-nav/${id}`, data),
   reorderMyAccountNav: (ordered_ids) => api.put('/admin/myaccount-nav-reorder', { ordered_ids }),
+  // Per-member enrollment Q&A (info modal)
+  getMemberEnrollment: (memberId) => api.get(`/admin/members/${memberId}/enrollment`),
   // Calendar
   getCalendarEvents: () => api.get('/admin/calendar/events'),
   createCalendarEvent: (data) => api.post('/admin/calendar/events', data),

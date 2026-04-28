@@ -331,6 +331,77 @@ async def admin_list_applications(user: dict = Depends(require_admin)):
     return apps
 
 
+@router.get("/admin/members/{member_id}/enrollment")
+async def admin_member_enrollment(member_id: str, user: dict = Depends(require_admin)):
+    """Returns the enrollment Q&A for a single member, joining stored form_data
+    against the current enrollment_fields catalog so the CMS can render
+    question-by-question. Empty list if the member never went through the
+    public enrollment flow (e.g. seeded sample members)."""
+    app = await db.enrollment_applications.find_one(
+        {"member_id": member_id}, {"_id": 0}
+    )
+    fields = await db.enrollment_fields.find(
+        {}, {"_id": 0}
+    ).sort([("step", 1), ("order", 1)]).to_list(500)
+
+    if not app:
+        return {
+            "has_application": False,
+            "submitted_at": None,
+            "answers": [],
+        }
+
+    form_data = app.get("form_data") or {}
+    answers = []
+    for f in fields:
+        key = f.get("field_key")
+        if not key or f.get("field_type") in ("richtext", "legal_checkbox"):
+            # richtext blocks are static content, not a question.
+            # legal_checkbox is captured as a boolean below if user answered it.
+            if f.get("field_type") == "legal_checkbox" and key in form_data:
+                answers.append({
+                    "step": f.get("step"),
+                    "field_key": key,
+                    "label": f.get("label", key),
+                    "field_type": f.get("field_type"),
+                    "value": "Accepted" if form_data.get(key) else "Not accepted",
+                })
+            continue
+        if key in form_data:
+            val = form_data.get(key)
+            if isinstance(val, list):
+                val = ", ".join(str(v) for v in val if v is not None)
+            answers.append({
+                "step": f.get("step"),
+                "field_key": key,
+                "label": f.get("label", key),
+                "field_type": f.get("field_type"),
+                "value": val if val not in ("", None) else "",
+            })
+
+    # Append any extra form_data keys that don't match a known field (legacy).
+    known = {f.get("field_key") for f in fields}
+    for k, v in form_data.items():
+        if k in known or k in ("password", "confirm_password"):
+            continue
+        if isinstance(v, list):
+            v = ", ".join(str(x) for x in v if x is not None)
+        answers.append({
+            "step": None,
+            "field_key": k,
+            "label": k.replace("_", " ").title(),
+            "field_type": "text",
+            "value": v if v not in ("", None) else "",
+        })
+
+    return {
+        "has_application": True,
+        "submitted_at": app.get("created_at"),
+        "email": app.get("email"),
+        "answers": answers,
+    }
+
+
 # ── Step 4 Content Management ──
 
 @router.get("/public/enrollment-content/step4")

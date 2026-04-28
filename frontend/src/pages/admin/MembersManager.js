@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../components/ui/dialog';
-import { Plus, Edit2, Trash2, Loader2, Lock, X, Save } from 'lucide-react';
+import { Plus, Edit2, Trash2, Loader2, Lock, X, Save, Info } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
 
@@ -32,6 +32,10 @@ export default function MembersManager() {
   const [cities, setCities] = useState([]);
   const [ebankData, setEbankData] = useState(null);
   const [qrLoading, setQrLoading] = useState(false);
+  // Member info / enrollment Q&A modal
+  const [infoMember, setInfoMember] = useState(null);
+  const [infoLoading, setInfoLoading] = useState(false);
+  const [infoEnrollment, setInfoEnrollment] = useState(null);
   // CMS Roles inline-edit dialog state
   const [cmsRoles, setCmsRoles] = useState([]);
   const [rolesDialog, setRolesDialog] = useState(null); // { memberId, name, selected: [ids] }
@@ -148,6 +152,20 @@ export default function MembersManager() {
                   <td className="p-3 text-slate-500 text-xs">{item.created_at ? new Date(item.created_at).toLocaleDateString() : '-'}</td>
                   <td className="p-3 text-slate-500 text-xs">{item.sponsor_membership_number ? `AUX-${item.sponsor_membership_number}` : '-'}</td>
                   <td className="p-3 text-right">
+                    <button
+                      onClick={() => {
+                        setInfoMember(item);
+                        setInfoEnrollment(null);
+                        setInfoLoading(true);
+                        adminAPI.getMemberEnrollment(item.member_id)
+                          .then(r => setInfoEnrollment(r.data))
+                          .catch(() => setInfoEnrollment({ has_application: false, answers: [] }))
+                          .finally(() => setInfoLoading(false));
+                      }}
+                      className="p-1.5 text-slate-400 hover:text-blue-600"
+                      title="View profile + enrollment answers"
+                      data-testid={`view-info-${item.member_id}`}
+                    ><Info className="w-4 h-4" /></button>
                     <button onClick={() => { setEditing({...item}); setTab('personal'); setOpen(true); }} className="p-1.5 text-slate-400 hover:text-[#0D9488]"><Edit2 className="w-4 h-4" /></button>
                     <button onClick={() => handleDelete(item.member_id)} className="p-1.5 text-slate-400 hover:text-red-500"><Trash2 className="w-4 h-4" /></button>
                   </td>
@@ -429,6 +447,104 @@ export default function MembersManager() {
               ><Save className="w-3.5 h-3.5" /> Save</button>
             </div>
           </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Member Info + Enrollment Q&A */}
+      <Dialog open={!!infoMember} onOpenChange={(o) => { if (!o) setInfoMember(null); }}>
+        <DialogContent className="sm:max-w-[760px] max-h-[85vh] overflow-y-auto" data-testid="member-info-dialog">
+          {infoMember && (
+            <>
+              <DialogHeader>
+                <DialogTitle style={{ fontFamily: 'Playfair Display, serif' }}>
+                  Member Information
+                </DialogTitle>
+              </DialogHeader>
+
+              {/* Identity */}
+              <div className="flex items-center gap-3 mb-4">
+                <div className="w-14 h-14 rounded-full bg-slate-100 flex items-center justify-center overflow-hidden flex-shrink-0">
+                  {infoMember.avatar
+                    ? <img src={infoMember.avatar} alt="" className="w-full h-full object-cover" />
+                    : <span className="text-slate-400 text-lg font-semibold">{(infoMember.first_name || infoMember.email || '?')[0].toUpperCase()}</span>}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-base font-semibold text-[#1a2332] truncate">
+                    {infoMember.first_name} {infoMember.last_name}
+                  </p>
+                  <p className="text-xs text-[#0D9488] font-mono">{infoMember.membership_id}</p>
+                  <p className="text-xs text-slate-500 truncate">{infoMember.email}</p>
+                </div>
+              </div>
+
+              {/* Profile facts */}
+              <div className="grid grid-cols-2 gap-3 text-xs mb-5 bg-slate-50 rounded-sm border border-slate-100 p-3" data-testid="member-info-profile">
+                {[
+                  ['Phone',         infoMember.phone],
+                  ['Gender',        infoMember.gender],
+                  ['Date of Birth', infoMember.date_of_birth],
+                  ['Country',       infoMember.country],
+                  ['State',         infoMember.state],
+                  ['City',          infoMember.city],
+                  ['ZIP Code',      infoMember.zip_code],
+                  ['Address',       infoMember.address],
+                  ['Member Type',   memberTypes.find(t => t.id === infoMember.member_type_id)?.name],
+                  ['Member Level',  levels.find(l => l.id === infoMember.level_id)?.name],
+                  ['Mentor',        infoMember.is_mentor ? 'Yes' : 'No'],
+                  ['Sponsor',       infoMember.sponsor_membership_number ? `AUX-${infoMember.sponsor_membership_number}` : null],
+                  ['Status',        infoMember.membership_status],
+                  ['Registered',    infoMember.created_at ? new Date(infoMember.created_at).toLocaleDateString() : null],
+                ].map(([k, val]) => (
+                  <div key={k}>
+                    <span className="text-slate-500">{k}:</span>
+                    <p className="text-slate-700">{val || <span className="text-slate-300">—</span>}</p>
+                  </div>
+                ))}
+              </div>
+
+              {/* Enrollment Q&A */}
+              <h3 className="text-sm font-semibold text-[#1a2332] mb-2">Membership Enrollment</h3>
+              {infoLoading ? (
+                <div className="flex justify-center py-6"><Loader2 className="w-5 h-5 animate-spin text-slate-400" /></div>
+              ) : !infoEnrollment?.has_application ? (
+                <p className="text-xs text-slate-400 italic bg-slate-50 rounded-sm border border-slate-100 p-4 text-center" data-testid="member-info-no-enrollment">
+                  This member did not go through the public enrollment flow (likely created from the CMS, sample seed, or migrated). No saved Q&amp;A.
+                </p>
+              ) : (
+                <>
+                  {infoEnrollment.submitted_at && (
+                    <p className="text-[11px] text-slate-400 mb-2">
+                      Submitted {new Date(infoEnrollment.submitted_at).toLocaleString()}
+                    </p>
+                  )}
+                  <div className="border border-slate-100 rounded-sm divide-y divide-slate-100" data-testid="member-info-enrollment">
+                    {(infoEnrollment.answers || []).map((a, i) => (
+                      <div key={`${a.field_key}-${i}`} className="p-3" data-testid={`enrollment-row-${a.field_key}`}>
+                        <div className="flex items-baseline gap-2">
+                          {a.step ? <span className="text-[10px] font-mono text-[#0D9488] bg-teal-50 px-1.5 py-0.5 rounded">Step {a.step}</span> : null}
+                          <span className="text-xs font-medium text-slate-700">{a.label}</span>
+                        </div>
+                        <p className="text-sm text-[#1a2332] mt-1 break-words whitespace-pre-wrap">
+                          {a.value || <span className="text-slate-300 italic">— not answered —</span>}
+                        </p>
+                      </div>
+                    ))}
+                    {(!infoEnrollment.answers || infoEnrollment.answers.length === 0) && (
+                      <p className="p-4 text-xs text-slate-400 italic text-center">No answers recorded.</p>
+                    )}
+                  </div>
+                </>
+              )}
+
+              <div className="flex justify-end mt-4">
+                <button
+                  onClick={() => setInfoMember(null)}
+                  className="px-3 py-1.5 text-sm rounded-sm border border-slate-200 hover:bg-slate-50"
+                  data-testid="member-info-close"
+                >Close</button>
+              </div>
+            </>
+          )}
         </DialogContent>
       </Dialog>
     </div>

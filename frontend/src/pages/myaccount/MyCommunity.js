@@ -138,8 +138,27 @@ export default function MyCommunity() {
           {selected && (
             <div className="space-y-3">
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--ma-avatar-bg, rgba(201,168,76,0.1))' }}>
-                  <span className="font-bold" style={{ color: 'var(--ma-accent, #c9a84c)' }}>{(selected.first_name || '?')[0].toUpperCase()}</span>
+                <div
+                  className="w-14 h-14 rounded-full flex items-center justify-center overflow-hidden flex-shrink-0"
+                  style={{
+                    backgroundColor: 'var(--ma-avatar-bg, rgba(201,168,76,0.1))',
+                    border: `2px solid var(--ma-avatar-border, rgba(201,168,76,0.3))`,
+                  }}
+                  data-testid="community-modal-avatar"
+                >
+                  {selected.avatar ? (
+                    <img
+                      src={selected.avatar}
+                      alt={`${selected.first_name || ''} ${selected.last_name || ''}`.trim() || selected.membership_id}
+                      className="w-full h-full object-cover"
+                      onError={(e) => { e.currentTarget.style.display = 'none'; }}
+                      data-testid="community-modal-photo"
+                    />
+                  ) : (
+                    <span className="font-bold text-lg" style={{ color: 'var(--ma-accent, #c9a84c)' }}>
+                      {(selected.first_name || '?')[0].toUpperCase()}
+                    </span>
+                  )}
                 </div>
                 <div>
                   <p className="font-medium text-white">{selected.first_name} {selected.last_name}</p>
