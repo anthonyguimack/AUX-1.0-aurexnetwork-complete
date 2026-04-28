@@ -1028,3 +1028,12 @@ Idempotent reseed: `cd /app/backend && python3 scripts/seed_test_scenario.py`.
 
 **Verified by testing_agent_v3_fork (iteration_76.json)** — 8/8 PASS, 100% backend (11/11 + 15/15 regression) + 100% frontend, zero issues.
 
+
+## Admin-create defaults + Enrollment modal hardening (Feb 27, 2026 — same day follow-up)
+
+1. **Admin-created members default to lowest level + Member role** — `POST /api/admin/members` now resolves `level_id` (when missing or empty) to the lowest-order member level (currently `level_free`). Combined with the always-set `cms_roles: ["role_member"]`, an admin-created account now inherits the same baseline restrictions as someone who registered via `/membership-enrollment` (only "Membership Profile" visible until upgraded). Explicit `level_id` in the request body is still honoured.
+2. **Friendlier "no enrollment" message** in the Member Info modal — old wording implied something was wrong; new wording explains the case clearly: *"This member was created directly from the CMS, so there are no enrollment-form answers to display. The basic profile data shown above was entered manually."*
+3. **React-safe enrollment Q&A serialisation** — backend `_flatten()` helper coerces every saved form value (dict, list, bool, int, etc.) to a string before sending to the modal. Multi-checkbox / dynamic-topics fields like `{Terminology: true, Tools: true, "Capital Markets": false, ...}` now render as comma-joined truthy keys (`"Terminology, Tools, Products, Debt & Credit"`), bools as `Yes`/`No`, ints stringified, lists comma-joined. Frontend `MembersManager.js` keeps a belt-and-braces defensive fallback so any future legacy payload still can't crash the modal.
+
+**Verified by testing_agent_v3_fork (iteration_77.json)** — 7/7 PASS, 100% backend (10/10 pytest) + 100% frontend, zero issues. Iteration 75-76 regressions still green.
+
