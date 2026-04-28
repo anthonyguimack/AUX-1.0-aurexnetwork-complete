@@ -975,3 +975,29 @@ Extended the `useOutletContext().sectionLabel(id, fallback)` pattern from 2 page
 
 **Verified by testing_agent_v3_fork (iteration_73.json)** — 14/14 frontend tests PASS (100%). Includes two end-to-end rename roundtrips: `portfolios → Investments` and `my-community → My Team`, both verified on the public member view as carlos@example.com and restored to defaults. Mentor-only pages verified via source grep. All iteration_72 regression tests still green.
 
+
+## Mentor column fix + DB reset + Testing Manual (Feb 27, 2026 — same day follow-up)
+
+### 1. Mentor column derivation
+`/api/admin/members` now derives `is_mentor` from the linked `member_types[member_type_id].is_mentor` flag at response-build time. The legacy boolean stored on the member doc was drifting (set once, never refreshed when the type changed). Now: column = YES iff the assigned member type itself has `is_mentor: true`.
+
+### 2. CMS-renamed labels propagate to detail pages
+- `BundleDetail.js` "Back to Session Bundles" → uses `sectionLabel('bundles', 'Session Bundles')`. data-testid: `back-to-bundles`.
+- `EventDetail.js` "Back to Calendar" → uses `sectionLabel('global-calendar', '${aux_prefix} Calendar')`. data-testid: `back-to-calendar`.
+- `MyAccountLayout.js` event-detail breadcrumb now also reads the CMS rename (was hardcoded to AUX prefix).
+
+### 3. Big DB reset + 10-member exhaustive test matrix
+Hard-deleted every member except admin, AUX-1, AUX-2, AUX-3 (per user choice 4a). Recreated:
+- **4 CMS roles**: CMS Manager (everything except Backup + Roles), Content Editor (Landing+Aurex+Portfolio+SEO), Support (Members+Contacts+Purchases), Mentor Coordinator (Calendar group only).
+- **4 member levels**: Free, Standard, Premium, Mentor.
+- **10 sample members** AUX-101..AUX-110, password `123456789` for all. Sponsor chain: 1→AUX-1, 2→AUX-2, 3→AUX-3, 4-10→samplemember1. Each combination of role × level × type covered (full matrix in `/app/memory/test_credentials.md`).
+
+Idempotent reseed: `cd /app/backend && python3 scripts/seed_test_scenario.py`.
+
+### 4. Documentation → Testing Manual (NEW block)
+- Added `/api/docs/testing-manual` route (no auth, like the other doc endpoints) that auto-renders the live test-account matrix, role/level reference, mentor logic explanation, sponsor tree and 10 suggested test scenarios. Always accurate — pulled from the database at request time.
+- DocumentationManager now shows a 5th card pointing to it (data-testid `doc-link-testing-manual`).
+- Operator Manual extended with new sections **9. Roles & Permissions** + **10. My Account Navigation** describing the 4 seeded operator roles and the rename/reorder workflow.
+
+**Verified by testing_agent_v3_fork (iteration_74.json)** — 10/10 tests PASS, 100% backend (17/17) + frontend, zero issues. CMS labels mutated during testing have been restored to defaults.
+
