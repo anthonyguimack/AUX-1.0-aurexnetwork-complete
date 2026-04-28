@@ -54,9 +54,10 @@ function compareValues(a, b) {
   if (typeof a === 'string' && typeof b === 'string') {
     const da = Date.parse(a), db = Date.parse(b);
     if (!isNaN(da) && !isNaN(db) && a.length > 8 && b.length > 8) return da - db;
-    return a.toLowerCase().localeCompare(b.toLowerCase());
+    // Natural / numeric-aware compare so "AUX-2" < "AUX-10" and "Item 2" < "Item 10"
+    return a.localeCompare(b, undefined, { numeric: true, sensitivity: 'base' });
   }
-  return String(a).localeCompare(String(b));
+  return String(a).localeCompare(String(b), undefined, { numeric: true, sensitivity: 'base' });
 }
 
 export function useDataTable(items, options = {}) {

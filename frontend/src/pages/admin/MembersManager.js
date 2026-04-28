@@ -110,7 +110,7 @@ export default function MembersManager() {
             <th className="text-left p-3 font-medium text-slate-600">CMS Roles</th>
             <th className="text-left p-3 font-medium text-slate-600">Level</th>
             <SortableTh dt={dt} field="created_at">Register</SortableTh>
-            <th className="text-left p-3 font-medium text-slate-600">Sponsor</th>
+            <SortableTh dt={dt} field="sponsor_membership_number">Sponsor</SortableTh>
             <th className="text-right p-3 font-medium text-slate-600">Actions</th>
           </tr></thead>
           <tbody>

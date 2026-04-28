@@ -715,8 +715,16 @@ async def testing_manual():
     ).sort("membership_number", 1).to_list(1000)
 
     # Sample members are those whose username starts with "samplemember"
+    # but only the seed-script ones (samplemember1..samplememberN). UI-created
+    # members may have email-as-username like "samplemember11@gmail.com" — those
+    # should sort to the end and not crash the integer key extraction.
+    import re as _re
     sample = [m for m in members if (m.get("username") or "").startswith("samplemember")]
-    sample.sort(key=lambda m: int((m.get("username") or "samplemember0").replace("samplemember", "") or "0"))
+    def _sample_sort_key(m):
+        u = m.get("username") or ""
+        match = _re.match(r"^samplemember(\d+)$", u)
+        return (0, int(match.group(1))) if match else (1, u)
+    sample.sort(key=_sample_sort_key)
 
     # Resolve sponsor display
     by_member_id = {m["member_id"]: m for m in members}

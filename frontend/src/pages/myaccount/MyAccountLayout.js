@@ -287,10 +287,27 @@ export default function MyAccountLayout() {
             })()}
             {/* Notification Bell */}
             <div className="relative ml-3" data-testid="notification-bell-wrapper">
-              <button onClick={openNotifications} className="relative p-2 rounded-full transition-colors hover:opacity-80" style={{ color: v('text-secondary', '#9ca3af') }} data-testid="notification-bell">
+              <button
+                onClick={openNotifications}
+                className="relative p-2 rounded-full transition-colors"
+                style={{ color: v('bell-icon', v('accent', '#c9a84c')) }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = v('bell-hover-bg', 'rgba(201,168,76,0.12)'); }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = 'transparent'; }}
+                data-testid="notification-bell"
+              >
                 <Bell className="w-5 h-5" />
                 {unreadCount > 0 && (
-                  <span className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 min-w-[18px] flex items-center justify-center rounded-full text-[10px] font-bold text-white" style={{ backgroundColor: v('accent', '#c9a84c') }} data-testid="unread-badge">{unreadCount}</span>
+                  <span
+                    className="absolute -top-0.5 -right-0.5 w-4.5 h-4.5 min-w-[18px] flex items-center justify-center rounded-full text-[10px] font-bold ring-2"
+                    style={{
+                      backgroundColor: v('bell-badge-bg', '#ef4444'),
+                      color: v('bell-badge-text', '#ffffff'),
+                      boxShadow: `0 0 0 2px ${v('header-bg', '#13161e')}`,
+                    }}
+                    data-testid="unread-badge"
+                  >
+                    {unreadCount}
+                  </span>
                 )}
               </button>
               {notifOpen && (

@@ -330,6 +330,13 @@ async def get_my_community(member: dict = Depends(get_current_member)):
                 "last_name": child["last_name"],
                 "avatar": child.get("avatar", ""),
                 "email": child.get("email", ""),
+                "phone": child.get("phone", ""),
+                "gender": child.get("gender", ""),
+                "date_of_birth": child.get("date_of_birth", ""),
+                "country": child.get("country", ""),
+                "state": child.get("state", ""),
+                "city": child.get("city", ""),
+                "zip_code": child.get("zip_code", ""),
                 "children": subtree
             })
         return result

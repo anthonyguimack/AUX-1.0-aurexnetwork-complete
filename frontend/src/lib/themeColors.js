@@ -73,6 +73,10 @@ export const MYACCOUNT_COLORS = [
   { key: 'progress_high', label: 'Progress Bar High', default: '#22c55e' },
   { key: 'avatar_border', label: 'Avatar Border', default: 'rgba(201,168,76,0.3)' },
   { key: 'avatar_bg', label: 'Avatar Background', default: 'rgba(201,168,76,0.1)' },
+  { key: 'bell_icon', label: 'Notification Bell Icon', default: '#c9a84c' },
+  { key: 'bell_hover_bg', label: 'Notification Bell Hover BG', default: 'rgba(201,168,76,0.12)' },
+  { key: 'bell_badge_bg', label: 'Notification Badge Background', default: '#ef4444' },
+  { key: 'bell_badge_text', label: 'Notification Badge Text', default: '#ffffff' },
 ];
 
 export const LANDING_PAGE_COLORS = [

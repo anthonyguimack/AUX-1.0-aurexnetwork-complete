@@ -147,6 +147,32 @@ export default function MyCommunity() {
                 </div>
               </div>
               {selected.email && <div><span className="text-xs text-gray-500">Email:</span><p className="text-sm text-white">{selected.email}</p></div>}
+              {(() => {
+                const fmtDate = (d) => {
+                  if (!d) return '-';
+                  const m = String(d).match(/^(\d{4})-(\d{2})-(\d{2})/);
+                  return m ? `${m[2]}/${m[3]}/${m[1]}` : d;
+                };
+                const fields = [
+                  { label: 'Phone',         value: selected.phone },
+                  { label: 'Gender',        value: selected.gender },
+                  { label: 'Date of Birth', value: fmtDate(selected.date_of_birth) },
+                  { label: 'Country',       value: selected.country },
+                  { label: 'State',         value: selected.state },
+                  { label: 'City',          value: selected.city },
+                  { label: 'ZIP Code',      value: selected.zip_code },
+                ];
+                return (
+                  <div className="grid grid-cols-2 gap-3 pt-2 border-t border-white/5" data-testid="community-member-extra-fields">
+                    {fields.map(f => (
+                      <div key={f.label} data-testid={`community-modal-${f.label.toLowerCase().replace(/\s+/g, '-')}`}>
+                        <span className="text-xs text-gray-500">{f.label}:</span>
+                        <p className="text-sm text-white">{f.value || <span className="text-gray-600">—</span>}</p>
+                      </div>
+                    ))}
+                  </div>
+                );
+              })()}
             </div>
           )}
         </DialogContent>
