@@ -1012,3 +1012,19 @@ Idempotent reseed: `cd /app/backend && python3 scripts/seed_test_scenario.py`.
 
 **Verified by testing_agent_v3_fork (iteration_75.json)** — 6/6 PASS, 100% backend (15/15 pytest) + 100% frontend, zero issues. Regression tests for iterations 70-74 still green.
 
+
+## Member info modal + Community photo (Feb 27, 2026 — same day follow-up)
+
+### 1. CMS Members table — Info icon + modal
+- New per-row Info button (`data-testid='view-info-<member_id>'`) sitting before Edit/Delete.
+- Opens dialog `member-info-dialog` with two sections:
+  - **Profile facts grid** (`member-info-profile`): 14 labels — Phone, Gender, Date of Birth, Country, State, City, ZIP Code, Address, Member Type, Member Level, Mentor, Sponsor, Status, Registered. Avatar image when present, first-letter fallback otherwise.
+  - **Enrollment Q&A** (`member-info-enrollment`): step-tagged question/answer rows pulled from `enrollment_applications.form_data` joined with the live `enrollment_fields` catalog. Richtext blocks stripped; legal_checkbox rendered as "Accepted" / "Not accepted"; legacy keys appended at end.
+- Empty-state message (`member-info-no-enrollment`) for members created via CMS / seeded / migrated (no public enrollment record).
+- New endpoint `GET /api/admin/members/{member_id}/enrollment` (admin-only).
+
+### 2. My Community modal — real photo
+`MyCommunity.js` avatar circle now renders `<img data-testid="community-modal-photo">` when `selected.avatar` is truthy (with `onError` fallback that hides the image), else falls back to the existing first-letter span. Circle gained an avatar-border ring matching the CMS-configurable `--ma-avatar-border` color.
+
+**Verified by testing_agent_v3_fork (iteration_76.json)** — 8/8 PASS, 100% backend (11/11 + 15/15 regression) + 100% frontend, zero issues.
+
