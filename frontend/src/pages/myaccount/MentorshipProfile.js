@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import axios from 'axios';
+import { useOutletContext } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { normalizeRichText } from '../../lib/richText';
@@ -131,6 +132,8 @@ export default function MentorshipProfile() {
   const [couponInfo, setCouponInfo] = useState(null); // {code, discount_cents, final_cents, ...}
   const [couponError, setCouponError] = useState('');
   const [couponChecking, setCouponChecking] = useState(false);
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('mentorship-profile', 'Mentorship Profile') : 'Mentorship Profile';
 
   useEffect(() => {
     Promise.all([
@@ -229,7 +232,7 @@ export default function MentorshipProfile() {
   if (!mentor) {
     return (
       <div data-testid="mentorship-profile-page">
-        <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }}>Mentorship Profile</h1>
+        <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="mentorship-profile-title">{title}</h1>
         <div className="bg-[#13161e] border border-white/5 rounded-lg p-12 text-center">
           <div className="w-20 h-20 rounded-full bg-[#c9a84c]/10 border-2 border-[#c9a84c]/20 flex items-center justify-center mx-auto mb-4">
             <User className="w-8 h-8 text-[#c9a84c]/40" />
@@ -257,7 +260,7 @@ export default function MentorshipProfile() {
 
   return (
     <div data-testid="mentorship-profile-page">
-      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }}>Mentorship Profile</h1>
+      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="mentorship-profile-title">{title}</h1>
 
       {/* Mentor Info */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">

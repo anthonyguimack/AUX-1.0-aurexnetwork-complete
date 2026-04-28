@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
@@ -19,6 +20,8 @@ export default function InviteCode() {
   const [copied, setCopied] = useState(null);
   const [qrGenerating, setQrGenerating] = useState(false);
   const [qrData, setQrData] = useState({ qr_code: member?.qr_code || '', qr_url: member?.qr_url || '' });
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('invite-code', 'Invite Code') : 'Invite Code';
 
   const loadCodes = () => memberAPI.listCodes().then(r => setCodes(r.data)).catch(console.error);
   useEffect(() => { loadCodes(); }, []);
@@ -80,7 +83,7 @@ export default function InviteCode() {
 
   return (
     <div data-testid="invite-code-page">
-      <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'DM Serif Display', serif" }}>Invite Code</h1>
+      <h1 className="text-2xl font-bold text-white mb-1" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="invite-code-title">{title}</h1>
       <p className="text-gray-500 text-sm mb-6">Your Membership ID: <span className="text-[#c9a84c] font-semibold">{member?.membership_id}</span></p>
 
       {/* Business QR Section - only visible if member has permission */}

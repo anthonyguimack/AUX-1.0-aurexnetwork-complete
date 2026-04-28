@@ -341,8 +341,13 @@ export default function MyAccountLayout() {
             <Outlet context={{
               navItems: navOrderState?.items || [],
               sectionLabel: (id, fallback) => {
-                const cms = navOrderState?.items?.find(n => n.id === id)?.label;
-                return cms || fallback;
+                const stored = navOrderState?.items?.find(n => n.id === id)?.label;
+                const def = ALL_NAV_ITEMS.find(i => i.id === id);
+                // Dynamic label (AUX prefix) applies only when admin hasn't renamed the item
+                if (def?.dynamicLabel && (!stored || stored === def.label)) {
+                  return `${settings.aux_prefix || 'AUX'} Calendar`;
+                }
+                return stored || fallback;
               },
             }} />
           )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { useMember } from '../../lib/memberAuth';
 import { toast } from 'sonner';
@@ -35,6 +36,8 @@ export default function MyEbank() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [activeTab, setActiveTab] = useState('form');
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('ebank', 'My Ebank') : 'My Ebank';
 
   useEffect(() => {
     if (!member) return;
@@ -62,7 +65,7 @@ export default function MyEbank() {
 
   return (
     <div className="space-y-6" data-testid="my-ebank-page">
-      <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }}>My Ebank</h1>
+      <h1 className="text-2xl font-bold text-white" style={{ fontFamily: 'Playfair Display, serif' }} data-testid="my-ebank-title">{title}</h1>
 
       <div className="flex gap-2 bg-[#1a1d24] rounded p-1">
         <button onClick={() => setActiveTab('form')} className={tabCls('form')} style={tabStyle('form')} data-testid="ebank-form-tab">

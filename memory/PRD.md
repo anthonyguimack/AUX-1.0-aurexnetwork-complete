@@ -962,3 +962,16 @@ Four operator-reported issues fixed together.
 
 **Verified by testing_agent_v3_fork (iteration_72.json)** — 6/6 frontend tests PASS (100%), zero issues. Confirmed: (a) live label propagates to Member Levels dialog; (b) `perm-mentorship-calendar` present; (c) member redirected away from hidden URL; (d) both page titles read from CMS; (e) no regressions on prior iterations.
 
+
+## Full CMS-driven titles across My Account (Feb 27, 2026 — same day follow-up)
+Extended the `useOutletContext().sectionLabel(id, fallback)` pattern from 2 pages to **all 11 remaining My Account pages**. Now every sidebar AND every page h1 is editable from `/admin/myaccount-nav`.
+
+**Pages updated** (all gained a `*-title` data-testid + dynamic label):
+- `MembershipProfile.js`, `MentorshipProfile.js` (both empty + populated paths), `MySponsor.js`, `MyEbank.js`, `InviteCode.js`
+- `GlobalCalendar.js` (smart fallback: `${aux_prefix} Calendar` only when admin hasn't manually renamed; otherwise the CMS label wins)
+- `MentorshipCalendar.js`, `MentorEarnings.js`, `BundlesBrowse.js`, `MyBookings.js`, `CalendarSync.js`
+
+**Smarter `sectionLabel` helper** (`MyAccountLayout.js`): now respects the `dynamicLabel: true` flag — `${aux_prefix} Calendar` substitution applies only when the stored label still equals the seeded default; any custom rename takes precedence.
+
+**Verified by testing_agent_v3_fork (iteration_73.json)** — 14/14 frontend tests PASS (100%). Includes two end-to-end rename roundtrips: `portfolios → Investments` and `my-community → My Team`, both verified on the public member view as carlos@example.com and restored to defaults. Mentor-only pages verified via source grep. All iteration_72 regression tests still green.
+

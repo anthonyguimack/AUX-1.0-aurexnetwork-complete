@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useOutletContext } from 'react-router-dom';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Calendar, MapPin, Clock, Users, List, Grid3X3, Loader2, Download, Paperclip, Video, Map, ExternalLink, Rss } from 'lucide-react';
@@ -157,6 +157,7 @@ export default function GlobalCalendar() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [selectedDay, setSelectedDay] = useState(null);
   const [settings, setSettings] = useState({});
+  const ctx = useOutletContext() || {};
 
   const load = () => {
     setLoading(true);
@@ -196,7 +197,7 @@ export default function GlobalCalendar() {
   return (
     <div data-testid="global-calendar-page">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>{auxPrefix} Calendar</h1>
+        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }} data-testid="global-calendar-title">{ctx.sectionLabel ? ctx.sectionLabel('global-calendar', `${auxPrefix} Calendar`) : `${auxPrefix} Calendar`}</h1>
         <div className="flex items-center gap-2">
           <CalendarSyncCard
             asModal

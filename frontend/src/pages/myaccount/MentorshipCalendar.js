@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
@@ -40,6 +41,8 @@ export default function MentorshipCalendar() {
   const [uploading, setUploading] = useState(false);
   const [templates, setTemplates] = useState([]);
   const [paidEnabled, setPaidEnabled] = useState(false);
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('mentorship-calendar', 'My Calendar') : 'My Calendar';
   const [appliedTemplateId, setAppliedTemplateId] = useState('');
 
   const load = () => {
@@ -149,7 +152,7 @@ export default function MentorshipCalendar() {
   return (
     <div data-testid="mentorship-calendar-page">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>My Calendar</h1>
+        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }} data-testid="mentorship-calendar-title">{title}</h1>
         <button onClick={() => { setAppliedTemplateId(''); setEditing({ title: '', date: '', start_time: '', end_time: '', session_type: 'One-on-One', max_students: 1, description: '', status: 'active', virtual_link: '', attachments: [] }); setOpen(true); }} className="flex items-center gap-2 px-4 py-2 rounded text-sm font-medium"
           style={{ backgroundColor: v('button-bg', '#c9a84c'), color: v('button-text', '#0d0f14') }} data-testid="add-slot-btn">
           <Plus className="w-4 h-4" /> Add Slot

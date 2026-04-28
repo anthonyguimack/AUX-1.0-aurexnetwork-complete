@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { toast } from 'sonner';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { Loader2, DollarSign, TrendingUp, Clock, CheckCircle2, CalendarCheck, BarChart3, Package, Plus, Edit2, Trash2, Send } from 'lucide-react';
@@ -37,6 +38,8 @@ export default function MentorEarnings() {
   const [bundleOpen, setBundleOpen] = useState(false);
   const [savingBundle, setSavingBundle] = useState(false);
   const [payouts, setPayouts] = useState({ fee_percent: 15, ledger: null, records: [] });
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('earnings', 'Earnings') : 'Earnings';
 
   const loadBundles = () => memberAPI.getMyMentorBundles().then(r => setMyBundles(r.data || [])).catch(() => setMyBundles([]));
   const loadPayouts = () => memberAPI.getMyPayouts().then(r => setPayouts(r.data || { fee_percent: 15, ledger: null, records: [] })).catch(() => {});
@@ -84,7 +87,7 @@ export default function MentorEarnings() {
     <div data-testid="mentor-earnings-page">
       <div className="flex items-center gap-3 mb-2">
         <BarChart3 className="w-6 h-6" style={{ color: v('accent', '#c9a84c') }} />
-        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>Earnings</h1>
+        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }} data-testid="earnings-title">{title}</h1>
       </div>
       <p className="text-sm mb-6" style={{ color: v('text-secondary', '#9ca3af') }}>
         Your paid mentorship sessions at a glance.

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { memberAPI, publicAPI } from '../../lib/api';
 import { User, Facebook, Twitter, Instagram, Linkedin, Globe } from 'lucide-react';
 
@@ -7,6 +8,8 @@ const socialIcons = { facebook: Facebook, twitter: Twitter, instagram: Instagram
 export default function MySponsor() {
   const [sponsor, setSponsor] = useState(null);
   const [settings, setSettings] = useState({});
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('my-sponsor', 'My Sponsor') : 'My Sponsor';
 
   useEffect(() => {
     memberAPI.getSponsor().then(r => setSponsor(r.data)).catch(() => {});
@@ -31,7 +34,7 @@ export default function MySponsor() {
 
   return (
     <div data-testid="my-sponsor-page">
-      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }}>My Sponsor</h1>
+      <h1 className="text-2xl font-bold text-white mb-6" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="my-sponsor-title">{title}</h1>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left — Avatar + Social */}

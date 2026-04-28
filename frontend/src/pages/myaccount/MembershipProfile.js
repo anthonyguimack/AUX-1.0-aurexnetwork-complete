@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
 import { memberAPI, publicAPI, geoAPI } from '../../lib/api';
 import { toast } from 'sonner';
@@ -68,6 +69,8 @@ export default function MembershipProfile() {
   // Membership settings (mandatory fields)
   const [mandatoryFields, setMandatoryFields] = useState([]);
   const [ebankData, setEbankData] = useState({});
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('membership-profile', 'Membership Profile') : 'Membership Profile';
 
   const fetchActivities = () => {
     memberAPI.getProfileActivities().then(r => setProfileActivities(r.data || [])).catch(() => {});
@@ -224,7 +227,7 @@ export default function MembershipProfile() {
   return (
     <div data-testid="membership-profile-page">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }}>Membership Profile</h1>
+        <h1 className="text-2xl font-bold text-white" style={{ fontFamily: "'DM Serif Display', serif" }} data-testid="membership-profile-title">{title}</h1>
         <button onClick={() => setBioOpen(true)}
           className="px-4 py-2 border rounded text-sm font-medium flex items-center gap-2 transition-colors"
           style={{ backgroundColor: 'var(--ma-accent, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)', opacity: 0.9, borderColor: 'var(--ma-accent, #c9a84c)' }}

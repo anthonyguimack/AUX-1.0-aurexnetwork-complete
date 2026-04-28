@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Link } from 'react-router-dom';
+import { Link, useOutletContext } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
@@ -57,6 +57,8 @@ export default function BundlesBrowse() {
   const [credits, setCredits] = useState([]);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(null);
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('bundles', 'Session Bundles') : 'Session Bundles';
 
   const load = () => {
     setLoading(true);
@@ -83,7 +85,7 @@ export default function BundlesBrowse() {
     <div data-testid="bundles-browse-page">
       <div className="flex items-center gap-3 mb-2">
         <Package className="w-6 h-6" style={{ color: v('accent', '#c9a84c') }} />
-        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>Session Bundles</h1>
+        <h1 className="text-2xl font-bold" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }} data-testid="bundles-title">{title}</h1>
       </div>
       <p className="text-sm mb-6" style={{ color: v('text-secondary', '#9ca3af') }}>Buy sessions in bulk at a discount. Credits never expire and redeem against any eligible paid slot.</p>
 

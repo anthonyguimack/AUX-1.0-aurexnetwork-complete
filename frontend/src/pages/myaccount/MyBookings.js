@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Loader2, Calendar, Video, ExternalLink, Rss, CreditCard, Gift } from 'lucide-react';
@@ -18,6 +19,8 @@ const statusStyle = {
 export default function MyBookings() {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
+  const ctx = useOutletContext() || {};
+  const title = ctx.sectionLabel ? ctx.sectionLabel('my-bookings', 'My Reservations') : 'My Reservations';
 
   const load = () => {
     setLoading(true);
@@ -35,7 +38,7 @@ export default function MyBookings() {
 
   return (
     <div data-testid="my-bookings-page">
-      <h1 className="text-2xl font-bold mb-6" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }}>My Reservations</h1>
+      <h1 className="text-2xl font-bold mb-6" style={{ color: v('text-primary', '#fff'), fontFamily: "'DM Serif Display', serif" }} data-testid="my-bookings-title">{title}</h1>
 
       {/* Calendar Sync — inline collapsible card */}
       <details className="mb-6 rounded-lg border overflow-hidden" style={{ backgroundColor: v('card-bg', '#13161e'), borderColor: v('card-border', 'rgba(255,255,255,0.05)') }}>
