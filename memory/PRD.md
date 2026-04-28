@@ -1037,3 +1037,10 @@ Idempotent reseed: `cd /app/backend && python3 scripts/seed_test_scenario.py`.
 
 **Verified by testing_agent_v3_fork (iteration_77.json)** — 7/7 PASS, 100% backend (10/10 pytest) + 100% frontend, zero issues. Iteration 75-76 regressions still green.
 
+
+## Rating-grid serialisation (Feb 27, 2026 — same day follow-up)
+The previous `_flatten()` rule kept only truthy keys, which dropped numeric values for the **"Rate your knowledge (1-5)"** field. Updated the dict branch to detect shape:
+- All values bool → join only truthy keys (e.g. `"Terminology, Products"`).
+- Otherwise (ratings, scores, mixed) → render `"key: value"` pairs (e.g. `"Terminology: 4, Tools: 3, Capital Markets: 5, ..."`), skipping empty/null entries.
+- Self-tested via direct DB seeding all three dict shapes (rating, boolean, mixed). Endpoint output verified.
+

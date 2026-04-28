@@ -369,12 +369,22 @@ async def admin_member_enrollment(member_id: str, user: dict = Depends(require_a
         if isinstance(val, list):
             return ", ".join(_flatten(v) for v in val if v not in (None, "", False))
         if isinstance(val, dict):
-            # {label: True, label: False} → "label1, label2"  (only truthy keys)
-            truthy = [str(k) for k, v in val.items() if v]
-            if truthy:
-                return ", ".join(truthy)
-            # Fallback: render every key=value pair
-            return ", ".join(f"{k}: {_flatten(v)}" for k, v in val.items())
+            # Two distinct dict shapes appear in enrollment data:
+            #   • boolean checkbox grid: {"Terminology": True, "Tools": False, ...}
+            #     → join only truthy keys ("Terminology, Tools")
+            #   • rating / score grid:   {"Terminology": 4, "Tools": 3, ...}
+            #     → render as "Key: value" pairs ("Terminology: 4, Tools: 3, ...")
+            #   • mixed / other:        same "Key: value" rendering, skipping
+            #     empty / null entries.
+            if val and all(isinstance(v, bool) for v in val.values()):
+                truthy = [str(k) for k, v in val.items() if v]
+                return ", ".join(truthy) if truthy else ""
+            pairs = []
+            for k, v in val.items():
+                if v in (None, "", False):
+                    continue
+                pairs.append(f"{k}: {_flatten(v)}")
+            return ", ".join(pairs)
         return str(val)
 
     answers = []
