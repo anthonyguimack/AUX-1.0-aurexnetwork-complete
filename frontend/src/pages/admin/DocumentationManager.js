@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Map, BookOpen, Wrench, ExternalLink } from 'lucide-react';
+import { FileText, Map, BookOpen, Wrench, ExternalLink, ClipboardCheck } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -31,6 +31,13 @@ const docs = [
     icon: FileText,
     url: `${API}/api/docs/user-guide`,
     color: '#059669',
+  },
+  {
+    title: 'Testing Manual',
+    description: 'Test accounts (login, password, role, type, level, mentor, sponsor) plus suggested test scenarios. Auto-generated from live database.',
+    icon: ClipboardCheck,
+    url: `${API}/api/docs/testing-manual`,
+    color: '#9333ea',
   },
 ];
 

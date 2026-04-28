@@ -551,7 +551,17 @@ async def delete_portfolio(portfolio_id: str, member: dict = Depends(get_current
 
 @router.get("/admin/members")
 async def admin_list_members(user: dict = Depends(require_admin)):
-    return await db.members.find({}, {"_id": 0, "password_hash": 0}).sort("membership_number", 1).to_list(10000)
+    members = await db.members.find({}, {"_id": 0, "password_hash": 0}).sort("membership_number", 1).to_list(10000)
+    # Single source of truth for "is_mentor": derive from the linked member_type.
+    # The is_mentor field stored on the member doc is legacy and can drift after
+    # a member's type changes — re-derive it here so the Members table always
+    # reflects the current type assignment.
+    types = await db.member_types.find({}, {"_id": 0, "id": 1, "is_mentor": 1}).to_list(1000)
+    type_mentor = {t.get("id"): bool(t.get("is_mentor")) for t in types}
+    for m in members:
+        mt_id = m.get("member_type_id")
+        m["is_mentor"] = type_mentor.get(mt_id, False) if mt_id else False
+    return members
 
 @router.post("/admin/members")
 async def admin_create_member(request: Request, user: dict = Depends(require_admin)):

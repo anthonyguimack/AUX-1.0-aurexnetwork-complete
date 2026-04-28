@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, useOutletContext } from 'react-router-dom';
 import { memberAPI } from '../../lib/api';
 import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
@@ -19,6 +19,8 @@ export default function BundleDetail() {
   const [bundle, setBundle] = useState(null);
   const [loading, setLoading] = useState(true);
   const [buying, setBuying] = useState(false);
+  const ctx = useOutletContext() || {};
+  const sectionTitle = ctx.sectionLabel ? ctx.sectionLabel('bundles', 'Session Bundles') : 'Session Bundles';
 
   useEffect(() => {
     memberAPI.getBundle(id)
@@ -49,8 +51,8 @@ export default function BundleDetail() {
 
   return (
     <div data-testid="bundle-detail-page" className="max-w-full overflow-x-hidden">
-      <Link to="/my-account/bundles" className="inline-flex items-center gap-1 text-xs mb-4 hover:opacity-80" style={{ color: v('text-secondary', '#9ca3af') }}>
-        <ArrowLeft className="w-3 h-3" /> Back to Session Bundles
+      <Link to="/my-account/bundles" className="inline-flex items-center gap-1 text-xs mb-4 hover:opacity-80" style={{ color: v('text-secondary', '#9ca3af') }} data-testid="back-to-bundles">
+        <ArrowLeft className="w-3 h-3" /> Back to {sectionTitle}
       </Link>
 
       {bundle.banner_url && (

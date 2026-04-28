@@ -320,7 +320,10 @@ export default function MyAccountLayout() {
               <span>My Account</span>
               <ChevronRight className="w-3 h-3 mx-1" />
               <span style={{ color: v('text-secondary', '#9ca3af') }}>{
-                location.pathname.startsWith('/my-account/event/') ? `${settings.aux_prefix || 'AUX'} Calendar` :
+                location.pathname.startsWith('/my-account/event/') ? (
+                  navOrderState?.items?.find(n => n.id === 'global-calendar')?.label
+                  || `${settings.aux_prefix || 'AUX'} Calendar`
+                ) :
                 (() => {
                   const item = ALL_NAV_ITEMS.find(i => location.pathname.startsWith(i.href));
                   if (!item) return 'Dashboard';

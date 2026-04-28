@@ -547,6 +547,20 @@ async def operator_manual():
 
 <h1>8. Backup &amp; Restore</h1>
 <p>Navigate to <strong>System &gt; Backup</strong>. Export the entire database as JSON, or import a previously exported backup. Always create a backup before major changes.</p>
+
+<h1>9. Roles &amp; Permissions</h1>
+<p>Navigate to <strong>Security &gt; Roles &amp; Permissions</strong>. Two roles are seeded as <em>system</em> and cannot be deleted: <strong>Administrator</strong> (full access) and <strong>Member</strong> (no CMS access). Create custom roles by selecting a subset of the CMS section catalog &mdash; the assigned CMS sections become visible to operators logging in at <code>/admin/login</code>.</p>
+<p>Built-in operator roles seeded in the testing scenario:</p>
+<ul>
+<li><strong>CMS Manager</strong> &mdash; full CMS access except Backup and Roles &amp; Permissions.</li>
+<li><strong>Content Editor</strong> &mdash; Landing Page, Aurex Sections, Portfolio and SEO.</li>
+<li><strong>Support</strong> &mdash; Members, Contacts, Contact Section, Purchases.</li>
+<li><strong>Mentor Coordinator</strong> &mdash; Calendar group only (events, schedule, slot templates, blocked dates, bundles, coupons, payouts).</li>
+</ul>
+<div class="info-box"><strong>Tip:</strong> the <strong>Testing Manual</strong> (Documentation &rarr; Testing Manual) lists every preconfigured test account with login, type, level, mentor flag and sponsor &mdash; auto-generated from the live database.</div>
+
+<h1>10. My Account Navigation</h1>
+<p>Navigate to <strong>My Account &gt; My Account Navigation</strong>. Drag rows to reorder the public member sidebar, click any row label to <em>rename</em> the section, and toggle the eye-switch to hide an item globally. The rename propagates everywhere &mdash; sidebar, page H1, breadcrumb, "Back to..." links on detail pages.</p>
 </div>
 </body></html>"""
     return HTMLResponse(content=html)
@@ -669,6 +683,229 @@ async def user_guide():
 <li>Check your Community section regularly to stay connected with your network</li>
 <li>Keep your Ebank data updated for accurate financial tracking</li>
 </ul>
+</div>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+
+@router.get("/docs/testing-manual", response_class=HTMLResponse)
+async def testing_manual():
+    """Live testing manual: lists every test member with login, role, type,
+    level, mentor flag, sponsor + the full role/level matrix. Renders directly
+    from the database so it stays accurate even after seed re-runs."""
+    settings = await _get_settings()
+    brand = settings.get("brand_name", "Acapital Group LLC")
+    if isinstance(brand, dict):
+        brand = brand.get("en") or "Acapital Group LLC"
+    today = datetime.now().strftime("%B %d, %Y")
+
+    # Live data
+    types_list = await db.member_types.find({}, {"_id": 0, "id": 1, "name": 1, "is_mentor": 1}).to_list(100)
+    type_by_id = {t["id"]: t for t in types_list}
+    type_mentor = {t["id"]: bool(t.get("is_mentor")) for t in types_list}
+
+    levels = await db.member_levels.find({}, {"_id": 0}).sort("order", 1).to_list(100)
+
+    roles = await db.cms_roles.find({}, {"_id": 0}).to_list(100)
+    role_by_id = {r["id"]: r for r in roles}
+
+    members = await db.members.find(
+        {}, {"_id": 0, "password_hash": 0}
+    ).sort("membership_number", 1).to_list(1000)
+
+    # Sample members are those whose username starts with "samplemember"
+    sample = [m for m in members if (m.get("username") or "").startswith("samplemember")]
+    sample.sort(key=lambda m: int((m.get("username") or "samplemember0").replace("samplemember", "") or "0"))
+
+    # Resolve sponsor display
+    by_member_id = {m["member_id"]: m for m in members}
+    def sponsor_display(m):
+        sid = m.get("sponsor_id")
+        if not sid:
+            return "—"
+        sp = by_member_id.get(sid)
+        if not sp:
+            return f"<code>{sid}</code>"
+        return f"{sp.get('membership_id', '')} ({sp.get('first_name', '')} {sp.get('last_name', '')})"
+
+    # ---- Build sample-member rows ----
+    rows = []
+    for m in sample:
+        type_doc = type_by_id.get(m.get("member_type_id")) or {}
+        is_mentor = type_mentor.get(m.get("member_type_id"), False)
+        non_member_roles = [r for r in (m.get("cms_roles") or []) if r != "role_member"]
+        role_names = [role_by_id.get(r, {}).get("name", r) for r in non_member_roles] or ["—"]
+        level = next((lvl for lvl in levels if lvl.get("id") == m.get("level_id")), None)
+        rows.append({
+            "membership_id": m.get("membership_id", ""),
+            "name": f"{m.get('first_name', '')} {m.get('last_name', '')}".strip(),
+            "email": m.get("email", ""),
+            "username": m.get("username", ""),
+            "level": level.get("name", "—") if level else "—",
+            "type": type_doc.get("name", "—"),
+            "is_mentor": is_mentor,
+            "cms_roles": ", ".join(role_names),
+            "sponsor": sponsor_display(m),
+        })
+
+    member_rows_html = "".join(
+        f"""<tr>
+        <td><strong>{r['membership_id']}</strong></td>
+        <td>{r['name']}</td>
+        <td><code>{r['email']}</code></td>
+        <td><code>123456789</code></td>
+        <td>{r['level']}</td>
+        <td>{r['type']}</td>
+        <td>{'<span style="color:#0D9488;font-weight:700">YES</span>' if r['is_mentor'] else '—'}</td>
+        <td>{r['cms_roles']}</td>
+        <td>{r['sponsor']}</td>
+        </tr>"""
+        for r in rows
+    )
+
+    # ---- Roles matrix ----
+    roles_matrix_html = "".join(
+        f"""<tr>
+        <td><strong>{r.get('name','')}</strong><br><code>{r.get('id','')}</code></td>
+        <td>{r.get('description','—')}</td>
+        <td>{'<strong>Full access</strong>' if r.get('full_access') else (str(len(r.get('permissions') or [])) + ' sections')}</td>
+        <td>{'System' if r.get('is_system') else 'Custom'}</td>
+        </tr>"""
+        for r in roles
+    )
+
+    # ---- Levels matrix ----
+    levels_matrix_html = "".join(
+        f"""<tr>
+        <td><strong>{lvl.get('name','')}</strong> (order {lvl.get('order','')})</td>
+        <td>{', '.join(lvl.get('permissions') or []) or '—'}</td>
+        <td><code>{lvl.get('id','')}</code></td>
+        </tr>"""
+        for lvl in levels
+    )
+
+    # ---- Reset instructions ----
+    reset_block = """
+<h2>How to reset / reseed the testing scenario</h2>
+<p>Run the seed script from the backend container. It is <em>idempotent</em> &mdash;
+safe to run multiple times.</p>
+<pre>cd /app/backend
+python scripts/seed_test_scenario.py</pre>
+<div class="warn-box"><strong>Heads up:</strong> the seed script HARD-DELETES every
+member except <code>admin@consultant.com</code>, <code>AUX-1</code>, <code>AUX-2</code>
+and <code>AUX-3</code>. Their bookings, portfolios and ebank data are wiped along
+with them. Use with care.</div>
+"""
+
+    html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Testing Manual - {brand}</title>
+<style>{BASE_CSS}{PRINT_CSS}
+.cred {{ font-family: 'Courier New', monospace; }}
+.role-badge {{ display:inline-block; padding:2px 8px; border-radius:3px; background:#e0f2f1; color:#0D9488; font-size:12px; font-weight:600; }}
+</style></head><body>
+<div class="toolbar no-print">
+  <span style="font-weight:600;">Testing Manual</span>
+  <div><button onclick="window.print()">Save as PDF</button> <a href="/admin/documentation">Back to Docs</a></div>
+</div>
+<div class="spacer no-print"></div>
+
+<div class="cover">
+  <h1>{brand}</h1>
+  <p class="subtitle">Testing Manual &mdash; Test Accounts &amp; Scenarios</p>
+  <p class="meta">Version 1.0 &middot; {today}</p>
+</div>
+
+<div class="content">
+<h1>1. Overview</h1>
+<p>This manual lists every preconfigured test account, its role, type, member
+level, mentor flag and sponsor. Use it to log in as different personas and
+verify behaviour across the CMS and My Account.</p>
+
+<div class="info-box"><strong>Default password for ALL sample members:</strong>
+<code>123456789</code>. Login URL: <code>/my-account/login</code>. CMS login:
+<code>/admin/login</code>.</div>
+
+<h1>2. Sample test members</h1>
+<p>Generated by <code>scripts/seed_test_scenario.py</code>. Each row covers a
+distinct combination of <em>level</em>, <em>type</em>, <em>mentor flag</em> and
+<em>CMS role</em>.</p>
+<table>
+<tr>
+  <th>Membership ID</th><th>Name</th><th>Email / Username</th>
+  <th>Password</th><th>Level</th><th>Type</th><th>Mentor</th>
+  <th>CMS Roles</th><th>Sponsor</th>
+</tr>
+{member_rows_html}
+</table>
+
+<h1>3. CMS roles</h1>
+<p>Two roles are <strong>system</strong> (Administrator + Member) and cannot be
+deleted. The remaining roles are scoped operator profiles created by the seed
+script.</p>
+<table>
+<tr><th>Role</th><th>Description</th><th>Sections</th><th>Type</th></tr>
+{roles_matrix_html}
+</table>
+
+<h1>4. Member levels</h1>
+<p>Levels gate which sidebar items a member can see in My Account. Visibility
+also respects the global toggle in <strong>CMS &gt; My Account &gt; My Account
+Navigation</strong>.</p>
+<table>
+<tr><th>Level</th><th>Granted permissions</th><th>ID</th></tr>
+{levels_matrix_html}
+</table>
+
+<h1>5. Mentor logic</h1>
+<p>The <strong>Mentor</strong> column in the Members table is now <em>derived</em>
+from the assigned <strong>Member Type</strong>. A member is shown as
+<strong>YES</strong> in the Mentor column if and only if their assigned type
+has the <code>is_mentor</code> flag enabled. The <code>is_mentor</code> field
+on the member document itself is treated as legacy and is not consulted.</p>
+
+<h1>6. Sponsor tree (sample members)</h1>
+<ul>
+<li><strong>AUX-101</strong> Sample Member 1 &rarr; sponsored by <strong>AUX-1</strong></li>
+<li><strong>AUX-102</strong> Sample Member 2 &rarr; sponsored by <strong>AUX-2</strong></li>
+<li><strong>AUX-103</strong> Sample Member 3 &rarr; sponsored by <strong>AUX-3</strong></li>
+<li><strong>AUX-104</strong> ... <strong>AUX-110</strong> &rarr; all sponsored by
+<strong>AUX-101</strong> (Sample Member 1)</li>
+</ul>
+
+<h1>7. Suggested test scenarios</h1>
+<ol>
+<li><strong>Free level visibility:</strong> log in as <code>samplemember2</code>;
+verify the My Account sidebar shows ONLY <em>Membership Profile</em>.</li>
+<li><strong>Premium level:</strong> log in as <code>samplemember3</code>;
+verify access to Sponsor, Community, Portfolios, AUX Calendar, Bundles,
+My Reservations, Calendar Sync.</li>
+<li><strong>Mentor flow:</strong> log in as <code>samplemember5</code> (Mentors
+type, Mentor level); verify <em>My Calendar</em> and <em>Earnings</em> appear in
+the sidebar.</li>
+<li><strong>Mentor column:</strong> open CMS &gt; Members; only members with
+<em>Mentors</em> type should show <strong>YES</strong> in the Mentor column.</li>
+<li><strong>CMS Manager scope:</strong> log in as <code>samplemember10</code>
+at <code>/admin/login</code>; verify access to every CMS section <em>except</em>
+Backup and Roles &amp; Permissions.</li>
+<li><strong>Content Editor:</strong> log in as <code>samplemember7</code>;
+verify CMS sidebar shows only Landing Page, Aurex Sections, Portfolio and SEO.</li>
+<li><strong>Support:</strong> log in as <code>samplemember8</code>; verify
+access to Members, Contacts, Contact Section and Purchases.</li>
+<li><strong>Mentor Coordinator:</strong> log in as <code>samplemember9</code>;
+verify access only to the Calendar group.</li>
+<li><strong>Hide-section URL block:</strong> in CMS &gt; My Account &gt; My Account
+Navigation, hide <em>My Community</em>; visit <code>/my-account/my-community</code>
+as any sample member &mdash; should redirect, not 200.</li>
+<li><strong>Rename propagation:</strong> rename <em>Portfolios</em> in My Account
+Navigation; verify the sidebar entry, the page H1, the Bundle/Event back-links
+and the breadcrumb all pick up the new label.</li>
+</ol>
+
+<h1>8. Reset / reseed</h1>
+{reset_block}
+
 </div>
 </body></html>"""
     return HTMLResponse(content=html)

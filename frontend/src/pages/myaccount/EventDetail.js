@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { memberAPI } from '../../lib/api';
+import { useParams, useNavigate, useOutletContext } from 'react-router-dom';
+import { memberAPI, publicAPI } from '../../lib/api';
 import { normalizeRichText } from '../../lib/richText';
 import { toast } from 'sonner';
 import { ArrowLeft, Clock, MapPin, Users, Video, Map, ExternalLink, Download, Paperclip, Loader2 } from 'lucide-react';
@@ -14,6 +14,13 @@ export default function EventDetail() {
   const navigate = useNavigate();
   const [event, setEvent] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [auxPrefix, setAuxPrefix] = useState('AUX');
+  const ctx = useOutletContext() || {};
+  const sectionTitle = ctx.sectionLabel ? ctx.sectionLabel('global-calendar', `${auxPrefix} Calendar`) : `${auxPrefix} Calendar`;
+
+  useEffect(() => {
+    publicAPI.getSettings().then(r => setAuxPrefix(r.data?.aux_prefix || 'AUX')).catch(() => {});
+  }, []);
 
   useEffect(() => {
     memberAPI.getCalendarEvent(eventId).then(r => { setEvent(r.data); setLoading(false); }).catch(() => { setLoading(false); navigate('/my-account/global-calendar'); });
@@ -45,8 +52,8 @@ export default function EventDetail() {
 
   return (
     <div data-testid="event-detail-page">
-      <button onClick={() => navigate('/my-account/global-calendar')} className="flex items-center gap-2 text-xs mb-4 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }}>
-        <ArrowLeft className="w-4 h-4" /> Back to Calendar
+      <button onClick={() => navigate('/my-account/global-calendar')} className="flex items-center gap-2 text-xs mb-4 hover:opacity-80" style={{ color: v('accent', '#c9a84c') }} data-testid="back-to-calendar">
+        <ArrowLeft className="w-4 h-4" /> Back to {sectionTitle}
       </button>
 
       {imgSrc && <img src={imgSrc} alt={event.title} className="w-full h-52 object-cover rounded-lg mb-4" />}
