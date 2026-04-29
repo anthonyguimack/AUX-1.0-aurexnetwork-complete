@@ -1074,3 +1074,12 @@ Adds preflight key validation to the Settings → Stripe tab.
 - New "Test connection" button below the key input (`data-testid='stripe-test-btn'`); result panel `stripe-test-result` shows ✅ business profile (account ID + email + country/currency) or ❌ Stripe's own error message.
 - Self-tested all 4 paths: bad format / invalid key / empty body fallback / non-admin 403. No new deps; uses `httpx` which was already pinned.
 
+
+## AWS Installation Guide (CMS doc + INSTALL.md) — Feb 27, 2026 same day follow-up
+- New `/app/INSTALL.md` (~600 lines, 19 KB) covering all 14 requested sections: requirements, stack versions, Ubuntu prep, dependencies, project config, DB import, frontend build, FastAPI systemd service, Nginx (with/without domain), AWS ports table, Let's Encrypt, Stripe setup, verification checklist, troubleshooting (8 common errors). Plain English, no jargon, copy-pasteable commands.
+- New CMS doc route `/api/docs/aws-install` — renders INSTALL.md as styled HTML inside the existing docs system using `markdown-it-py` (already in requirements). Includes "Save as PDF", "Download .md" and "Back to Docs" toolbar buttons.
+- New `/api/docs/aws-install/markdown` route serves the raw `.md` for download.
+- DocumentationManager — 6th card "AWS Installation Guide" with `Server` icon (amber).
+- Bundled the live DB dump at `/app/backend/scripts/seed_dump/test_database/` (12 MB) — `mongorestore --db consultant_cms --drop seed_dump/test_database/` rebuilds the production state on the new server.
+- Self-tested: HTTP 200 on both routes; INSTALL.md picked up live (any future edit auto-applies on next request, no restart).
+

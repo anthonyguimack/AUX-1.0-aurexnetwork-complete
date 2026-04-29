@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Map, BookOpen, Wrench, ExternalLink, ClipboardCheck } from 'lucide-react';
+import { FileText, Map, BookOpen, Wrench, ExternalLink, ClipboardCheck, Server } from 'lucide-react';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 
@@ -38,6 +38,13 @@ const docs = [
     icon: ClipboardCheck,
     url: `${API}/api/docs/testing-manual`,
     color: '#9333ea',
+  },
+  {
+    title: 'AWS Installation Guide',
+    description: 'Step-by-step guide to deploy this CMS on a fresh AWS Ubuntu server — server prep, dependencies, MongoDB import, Nginx, SSL, Stripe, troubleshooting.',
+    icon: Server,
+    url: `${API}/api/docs/aws-install`,
+    color: '#f59e0b',
   },
 ];
 

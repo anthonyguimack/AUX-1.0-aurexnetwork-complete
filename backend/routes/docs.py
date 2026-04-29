@@ -917,3 +917,84 @@ and the breadcrumb all pick up the new label.</li>
 </div>
 </body></html>"""
     return HTMLResponse(content=html)
+
+
+@router.get("/docs/aws-install", response_class=HTMLResponse)
+async def aws_install_guide():
+    """Renders /app/INSTALL.md as styled HTML so admins can read the deploy
+    guide directly inside the CMS at /admin/documentation. The markdown file
+    is the source of truth — any edits to INSTALL.md are picked up on the
+    next request without a restart."""
+    import os
+    from markdown_it import MarkdownIt
+
+    settings = await _get_settings()
+    brand = settings.get("brand_name", "Acapital Group LLC")
+    if isinstance(brand, dict):
+        brand = brand.get("en") or "Acapital Group LLC"
+    today = datetime.now().strftime("%B %d, %Y")
+
+    md_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "INSTALL.md")
+    md_path = os.path.normpath(md_path)
+    try:
+        with open(md_path, "r", encoding="utf-8") as f:
+            md_text = f.read()
+    except FileNotFoundError:
+        md_text = "_INSTALL.md not found at_ `" + md_path + "`."
+
+    md = MarkdownIt("commonmark", {"html": False, "linkify": True, "typographer": True}).enable("table").enable("strikethrough")
+    body_html = md.render(md_text)
+
+    extra_css = """
+    .content h1 { font-size: 24px; margin-top: 32px; padding-bottom: 6px; border-bottom: 2px solid #0D9488; }
+    .content h2 { font-size: 18px; margin-top: 28px; color: #0D9488; }
+    .content h3 { font-size: 15px; margin-top: 20px; }
+    .content table { border-collapse: collapse; margin: 14px 0; width: 100%; font-size: 13px; }
+    .content th, .content td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; vertical-align: top; }
+    .content th { background: #f8fafc; font-weight: 600; }
+    .content code { background: #f1f5f9; padding: 1px 6px; border-radius: 3px; font-size: 0.92em; }
+    .content pre { background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 6px; overflow-x: auto; font-size: 12px; line-height: 1.55; }
+    .content pre code { background: transparent; color: inherit; padding: 0; }
+    .content blockquote { border-left: 3px solid #0D9488; background: #f0fdfa; padding: 10px 14px; margin: 14px 0; border-radius: 0 4px 4px 0; }
+    .content ul, .content ol { padding-left: 22px; }
+    .content hr { border: none; border-top: 1px solid #e2e8f0; margin: 28px 0; }
+    .content a { color: #0D9488; }
+    """
+
+    html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>AWS Installation Guide - {brand}</title>
+<style>{BASE_CSS}{PRINT_CSS}{extra_css}</style></head><body>
+<div class="toolbar no-print">
+  <span style="font-weight:600;">AWS Installation Guide</span>
+  <div>
+    <button onclick="window.print()">Save as PDF</button>
+    <a href="/api/docs/aws-install/markdown" download="INSTALL.md">Download .md</a>
+    <a href="/admin/documentation">Back to Docs</a>
+  </div>
+</div>
+<div class="spacer no-print"></div>
+
+<div class="cover">
+  <h1>{brand}</h1>
+  <p class="subtitle">AWS Installation Guide</p>
+  <p class="meta">Step-by-step deploy &middot; {today}</p>
+</div>
+
+<div class="content">
+{body_html}
+</div>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
+@router.get("/docs/aws-install/markdown")
+async def aws_install_markdown():
+    """Serves the raw INSTALL.md so operators can download the file."""
+    import os
+    from fastapi.responses import FileResponse
+    md_path = os.path.normpath(os.path.join(
+        os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "..", "INSTALL.md"
+    ))
+    return FileResponse(md_path, media_type="text/markdown", filename="INSTALL.md")
+
