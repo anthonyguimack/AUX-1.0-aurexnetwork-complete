@@ -1044,3 +1044,23 @@ The previous `_flatten()` rule kept only truthy keys, which dropped numeric valu
 - Otherwise (ratings, scores, mixed) → render `"key: value"` pairs (e.g. `"Terminology: 4, Tools: 3, Capital Markets: 5, ..."`), skipping empty/null entries.
 - Self-tested via direct DB seeding all three dict shapes (rating, boolean, mixed). Endpoint output verified.
 
+
+## Stripe-from-CMS + Site URL + AWS-prep cleanup (Feb 27, 2026 — same day follow-up)
+
+### 1. CMS-driven Stripe configuration
+- New `Stripe` tab in **Settings** with: secret-key input (show/hide toggle, masked preview after save), Replace + Clear buttons, status badge (✓ Configured · TEST/LIVE / ⚠ Not configured), and a read-only **Webhook URL** code block with copy button.
+- New backend module `/app/backend/utils/runtime_config.py`: `get_stripe_api_key()` and `get_site_url()` look up CMS settings first, fall back to env. All 7 Stripe endpoints (`payments.py`, `bundles.py`, `mentor_slots.py`) now use the helper. Missing key → friendly `503` with operator-actionable message instead of a 500 crash.
+- New endpoint `GET /api/admin/stripe-status` returns `{configured, mode, webhook_url, site_url}` for the live UI badge.
+- Saved key never leaks: `/admin/settings` masks it (`sk_test_•••ABCD`), `/public/settings` strips `stripe_api_key`, `stripe_publishable_key`, `stripe_webhook_secret`.
+
+### 2. Editable Site URL (CMS-driven)
+- New first field in **Settings → General** (`data-testid='settings-site-url'`).
+- Server-side normalize: bare domain → `https://`, trailing slash stripped, whitespace trimmed. `mydomain.com` / `http://mydomain.com/` / `https://x.com//` all canonicalize cleanly.
+- Used by `webhook_url`, password-reset templates, QR/invite links — single source of truth, no restart required.
+
+### 3. AWS deploy hardening
+- Removed Emergent platform scripts (`emergent-main.js`, `debug-monitor.js`) and PostHog analytics block from `/app/frontend/public/index.html`. Two fewer external dependencies, plus removes a hardcoded analytics API key.
+- No other references to `assets.emergent.sh` or `posthog.com` exist in the repo.
+
+**Verified by testing_agent_v3_fork (iteration_78.json)** — 10/10 PASS (100% backend 26/26 pytest + 100% frontend, zero issues, zero regressions). Confirmed: keys never leak, normalization works on all edge cases, all 7 Stripe endpoints honor the new config hierarchy, no Emergent/PostHog references in index.html.
+
