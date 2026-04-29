@@ -58,6 +58,8 @@ export default function SettingsManager() {
   const [stripeStatus, setStripeStatus] = useState({ configured: false, mode: null, webhook_url: '', site_url: '' });
   const [stripeKeyDraft, setStripeKeyDraft] = useState(''); // unsaved new key (write-only)
   const [stripeKeyVisible, setStripeKeyVisible] = useState(false);
+  const [stripeTesting, setStripeTesting] = useState(false);
+  const [stripeTestResult, setStripeTestResult] = useState(null); // {ok, code, message, account_id, ...}
 
   useEffect(() => {
     adminAPI.getSettings().then(r => setSettings(r.data || {})).catch(console.error);
@@ -103,6 +105,28 @@ export default function SettingsManager() {
     if (!stripeStatus.webhook_url) return;
     navigator.clipboard?.writeText(stripeStatus.webhook_url);
     toast.success('Webhook URL copied');
+  };
+
+  const testStripeConnection = async () => {
+    setStripeTesting(true);
+    setStripeTestResult(null);
+    try {
+      // If the operator is currently typing a draft key, test THAT one;
+      // otherwise test whichever key is currently saved (CMS or env).
+      const draft = stripeKeyDraft.trim();
+      const r = await adminAPI.testStripeConnection(draft || null);
+      setStripeTestResult(r.data);
+      if (r.data?.ok) {
+        toast.success(`Stripe connection OK · ${r.data.mode?.toUpperCase()}`);
+      } else {
+        toast.error(r.data?.message || 'Stripe test failed');
+      }
+    } catch (e) {
+      toast.error(e.response?.data?.detail || 'Test failed');
+      setStripeTestResult({ ok: false, code: 'error', message: 'Test request failed.' });
+    } finally {
+      setStripeTesting(false);
+    }
   };
 
   const updateSection = (key, field, value) => {
@@ -728,6 +752,59 @@ export default function SettingsManager() {
                 Use a <strong>test key</strong> while testing, swap to a <strong>live key</strong> when going to production.
                 Click <em>Save Settings</em> at the bottom to apply.
               </p>
+
+              {/* Test connection */}
+              <div className="pt-3 border-t border-slate-100 flex items-center gap-3">
+                <button
+                  onClick={testStripeConnection}
+                  disabled={stripeTesting || (!stripeKeyDraft.trim() && !stripeStatus.configured)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs rounded-sm border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                  data-testid="stripe-test-btn"
+                >
+                  {stripeTesting ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Wifi className="w-3.5 h-3.5" />}
+                  Test connection
+                </button>
+                <span className="text-[11px] text-slate-400">
+                  {stripeKeyDraft.trim()
+                    ? 'Pings Stripe with the key you typed above.'
+                    : stripeStatus.configured
+                      ? 'Pings Stripe with the currently saved key.'
+                      : 'Type a key first or save one.'}
+                </span>
+              </div>
+
+              {stripeTestResult && (
+                <div
+                  className={`mt-1 rounded-sm border p-3 text-xs ${
+                    stripeTestResult.ok
+                      ? 'border-green-100 bg-green-50 text-green-800'
+                      : 'border-red-100 bg-red-50 text-red-700'
+                  }`}
+                  data-testid="stripe-test-result"
+                >
+                  {stripeTestResult.ok ? (
+                    <>
+                      <div className="flex items-center gap-1.5 font-semibold mb-1">
+                        <Check className="w-3.5 h-3.5" /> Connection successful · {stripeTestResult.mode?.toUpperCase()} mode
+                      </div>
+                      <div className="space-y-0.5">
+                        {stripeTestResult.business_name && <div>Business: <strong>{stripeTestResult.business_name}</strong></div>}
+                        {stripeTestResult.account_id && <div>Account ID: <code className="text-[10px]">{stripeTestResult.account_id}</code></div>}
+                        {stripeTestResult.email && <div>Email: {stripeTestResult.email}</div>}
+                        {stripeTestResult.country && <div>Country: {stripeTestResult.country?.toUpperCase()} · Currency: {stripeTestResult.default_currency?.toUpperCase()}</div>}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div className="flex items-center gap-1.5 font-semibold mb-1">
+                        <AlertTriangle className="w-3.5 h-3.5" /> Connection failed
+                        <span className="text-[10px] font-normal opacity-70">({stripeTestResult.code})</span>
+                      </div>
+                      <div>{stripeTestResult.message}</div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Webhook URL */}

@@ -243,6 +243,7 @@ export const adminAPI = {
   getMemberEnrollment: (memberId) => api.get(`/admin/members/${memberId}/enrollment`),
   // Stripe configuration status (Settings → Stripe tab)
   getStripeStatus: () => api.get('/admin/stripe-status'),
+  testStripeConnection: (apiKey) => api.post('/admin/stripe-test', apiKey ? { api_key: apiKey } : {}),
   // Calendar
   getCalendarEvents: () => api.get('/admin/calendar/events'),
   createCalendarEvent: (data) => api.post('/admin/calendar/events', data),

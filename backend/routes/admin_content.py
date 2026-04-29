@@ -381,6 +381,80 @@ async def admin_stripe_status(request: Request, user: dict = Depends(require_adm
         "site_url": site_url,
     }
 
+
+@router.post("/admin/stripe-test")
+async def admin_stripe_test(request: Request, user: dict = Depends(require_admin)):
+    """Pings Stripe to verify a key is live + valid.
+
+    Accepts an optional body `{api_key}` so operators can test a key BEFORE
+    saving it. If no api_key is supplied, falls back to the currently saved
+    one (CMS or env). Calls Stripe's GET /v1/account with the bearer key —
+    a successful 200 means the key is valid; 401 means invalid; anything
+    else is bubbled up as a server-side issue.
+    """
+    import httpx
+    from utils.runtime_config import get_stripe_api_key
+
+    body = {}
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    raw = (body.get("api_key") or "").strip()
+    api_key = raw if raw else (await get_stripe_api_key())
+    if not api_key:
+        return {
+            "ok": False,
+            "code": "no_key",
+            "message": "No Stripe key supplied or saved.",
+        }
+    if not (api_key.startswith("sk_test_") or api_key.startswith("sk_live_")):
+        return {
+            "ok": False,
+            "code": "bad_format",
+            "message": "Key must start with 'sk_test_' or 'sk_live_'.",
+        }
+    try:
+        async with httpx.AsyncClient(timeout=10.0) as client:
+            r = await client.get(
+                "https://api.stripe.com/v1/account",
+                headers={"Authorization": f"Bearer {api_key}"},
+            )
+    except httpx.RequestError as e:
+        return {"ok": False, "code": "network", "message": f"Could not reach Stripe: {e}"}
+
+    if r.status_code == 200:
+        data = r.json()
+        return {
+            "ok": True,
+            "code": "valid",
+            "mode": "test" if api_key.startswith("sk_test_") else "live",
+            "account_id": data.get("id"),
+            "business_name": (
+                data.get("business_profile") or {}
+            ).get("name") or data.get("display_name") or "",
+            "country": data.get("country"),
+            "default_currency": data.get("default_currency"),
+            "email": data.get("email"),
+        }
+    if r.status_code == 401:
+        return {
+            "ok": False,
+            "code": "invalid",
+            "message": "Stripe rejected the key (401 Unauthorized).",
+        }
+    # Surface Stripe's own error message when available
+    detail = ""
+    try:
+        detail = (r.json().get("error") or {}).get("message", "")
+    except Exception:
+        detail = r.text[:300]
+    return {
+        "ok": False,
+        "code": f"http_{r.status_code}",
+        "message": detail or f"Unexpected Stripe response (HTTP {r.status_code}).",
+    }
+
 # Pages
 @router.get("/admin/pages/{page_type}")
 async def admin_get_page(page_type: str, user: dict = Depends(require_admin)):

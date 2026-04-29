@@ -1064,3 +1064,13 @@ The previous `_flatten()` rule kept only truthy keys, which dropped numeric valu
 
 **Verified by testing_agent_v3_fork (iteration_78.json)** — 10/10 PASS (100% backend 26/26 pytest + 100% frontend, zero issues, zero regressions). Confirmed: keys never leak, normalization works on all edge cases, all 7 Stripe endpoints honor the new config hierarchy, no Emergent/PostHog references in index.html.
 
+
+## Stripe "Test connection" button (Feb 27, 2026 — same day follow-up)
+Adds preflight key validation to the Settings → Stripe tab.
+
+- New endpoint `POST /api/admin/stripe-test` — accepts optional `{api_key}` (so operators can validate a key BEFORE saving). Falls back to the currently saved CMS/env key if body empty. Pings `GET https://api.stripe.com/v1/account` via httpx and returns:
+  - `{ok: true, mode, account_id, business_name, country, default_currency, email}` on 200
+  - `{ok: false, code: 'bad_format' | 'invalid' | 'no_key' | 'network' | 'http_<n>', message}` otherwise
+- New "Test connection" button below the key input (`data-testid='stripe-test-btn'`); result panel `stripe-test-result` shows ✅ business profile (account ID + email + country/currency) or ❌ Stripe's own error message.
+- Self-tested all 4 paths: bad format / invalid key / empty body fallback / non-admin 403. No new deps; uses `httpx` which was already pinned.
+
