@@ -5,7 +5,7 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages, CreditCard, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-react';
 import { LANGUAGE_LABELS } from '../../lib/i18n';
 import LocalizedField from '../../components/admin/LocalizedField';
 import ImageUpload from '../../components/ImageUpload';
@@ -55,14 +55,54 @@ export default function SettingsManager() {
   const [loading, setLoading] = useState(false);
   const [testingConn, setTestingConn] = useState(false);
   const [testingEmail, setTestingEmail] = useState(false);
+  const [stripeStatus, setStripeStatus] = useState({ configured: false, mode: null, webhook_url: '', site_url: '' });
+  const [stripeKeyDraft, setStripeKeyDraft] = useState(''); // unsaved new key (write-only)
+  const [stripeKeyVisible, setStripeKeyVisible] = useState(false);
 
-  useEffect(() => { adminAPI.getSettings().then(r => setSettings(r.data || {})).catch(console.error); }, []);
+  useEffect(() => {
+    adminAPI.getSettings().then(r => setSettings(r.data || {})).catch(console.error);
+    adminAPI.getStripeStatus().then(r => setStripeStatus(r.data || {})).catch(() => {});
+  }, []);
 
   const save = async () => {
     setLoading(true);
-    try { await adminAPI.updateSettings(settings); toast.success('Settings saved! Refresh the page to see color changes.'); }
+    try {
+      // Only POST stripe_api_key if the operator typed something — empty string
+      // would clear the saved key, undefined leaves it untouched.
+      const payload = { ...settings };
+      if (stripeKeyDraft !== '') {
+        payload.stripe_api_key = stripeKeyDraft.trim();
+      }
+      const r = await adminAPI.updateSettings(payload);
+      // Server strips the key from the response — keep the masked preview only.
+      setSettings(r.data || {});
+      setStripeKeyDraft('');
+      setStripeKeyVisible(false);
+      adminAPI.getStripeStatus().then(s => setStripeStatus(s.data || {})).catch(() => {});
+      toast.success('Settings saved! Refresh the page to see color changes.');
+    }
     catch { toast.error('Error saving'); }
     finally { setLoading(false); }
+  };
+
+  const clearStripeKey = async () => {
+    if (!window.confirm('Clear the saved Stripe API key? Payments will stop until a new key is saved.')) return;
+    try {
+      await adminAPI.updateSettings({ stripe_api_key: '' });
+      setStripeKeyDraft('');
+      setStripeKeyVisible(false);
+      const s = await adminAPI.getStripeStatus();
+      setStripeStatus(s.data || {});
+      const r = await adminAPI.getSettings();
+      setSettings(r.data || {});
+      toast.success('Stripe key cleared');
+    } catch { toast.error('Error clearing key'); }
+  };
+
+  const copyWebhookUrl = () => {
+    if (!stripeStatus.webhook_url) return;
+    navigator.clipboard?.writeText(stripeStatus.webhook_url);
+    toast.success('Webhook URL copied');
   };
 
   const updateSection = (key, field, value) => {
@@ -150,11 +190,32 @@ export default function SettingsManager() {
           <TabsTrigger value="email"><Mail className="w-3 h-3 mr-1" />Email/SMTP</TabsTrigger>
           <TabsTrigger value="blogapi"><Rss className="w-3 h-3 mr-1" />Blog API</TabsTrigger>
           <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
+          <TabsTrigger value="stripe" data-testid="tab-stripe"><CreditCard className="w-3 h-3 mr-1" />Stripe</TabsTrigger>
           <TabsTrigger value="apis"><Plug className="w-3 h-3 mr-1" />APIs</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
           <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-4">
+            {/* Site URL — single source of truth for outbound links, webhooks, etc. */}
+            <div className="rounded-sm border border-blue-100 bg-blue-50/50 p-4 space-y-2">
+              <Label className="flex items-center gap-1.5">
+                <Globe className="w-3.5 h-3.5" /> Site URL
+                <span className="text-xs text-slate-400 font-normal">(domain or IP, with or without http://)</span>
+              </Label>
+              <Input
+                value={settings.site_url || ''}
+                onChange={e => setSettings({ ...settings, site_url: e.target.value })}
+                placeholder="https://yourdomain.com"
+                className="font-mono text-sm"
+                data-testid="settings-site-url"
+              />
+              <p className="text-xs text-slate-500">
+                Used in webhook URLs, password-reset emails, QR / invite-code links and other outbound URLs.
+                We&apos;ll auto-add <code>https://</code> if you omit it; trailing slash is removed.
+                Changes take effect immediately — no server restart needed.
+              </p>
+            </div>
+
             <div className="grid grid-cols-2 gap-4">
               <div><Label>Brand Name</Label>
                 <LocalizedField value={settings.brand_name} onChange={v => setSettings({...settings, brand_name: v})} render={({ value, onChange }) => (
@@ -583,6 +644,119 @@ export default function SettingsManager() {
             <div><Label>Welcome Email Template</Label>
               <p className="text-xs text-slate-400 mb-1">Use placeholders: {'{{first_name}}'}, {'{{last_name}}'}, {'{{membership_id}}'}, {'{{username}}'}, {'{{platform_name}}'}</p>
               <div className="mt-1"><RichTextEditor value={settings.welcome_email_template || ''} onChange={val => setSettings({...settings, welcome_email_template: val})} placeholder="Welcome email HTML template..." /></div>
+            </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="stripe">
+          <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-5" data-testid="stripe-tab">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h3 className="font-semibold flex items-center gap-2" style={{ color: 'var(--ad-heading, #1a2332)' }}>
+                  <CreditCard className="w-4 h-4" /> Stripe Configuration
+                </h3>
+                <p className="text-sm text-slate-500 mt-1">Manage Stripe payments without restarting the server.</p>
+              </div>
+              {stripeStatus.configured ? (
+                <span
+                  className="text-xs px-2.5 py-1 rounded-full font-medium"
+                  style={{
+                    backgroundColor: stripeStatus.mode === 'live' ? '#dcfce7' : '#fef3c7',
+                    color: stripeStatus.mode === 'live' ? '#15803d' : '#a16207',
+                  }}
+                  data-testid="stripe-status-badge"
+                >
+                  ✓ Configured · {stripeStatus.mode === 'live' ? 'LIVE' : stripeStatus.mode === 'test' ? 'TEST' : 'unknown mode'}
+                </span>
+              ) : (
+                <span className="text-xs px-2.5 py-1 rounded-full font-medium bg-amber-100 text-amber-800 flex items-center gap-1" data-testid="stripe-status-badge">
+                  <AlertTriangle className="w-3 h-3" /> Not configured
+                </span>
+              )}
+            </div>
+
+            {/* API Key */}
+            <div className="rounded-sm border border-slate-100 p-4 space-y-3">
+              <Label className="flex items-center gap-1.5">
+                Stripe Secret Key
+                <span className="text-xs text-slate-400 font-normal">(sk_test_... or sk_live_...)</span>
+              </Label>
+              {settings.stripe_api_key_set && stripeKeyDraft === '' ? (
+                <div className="flex items-center gap-2">
+                  <code className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm font-mono text-slate-500" data-testid="stripe-key-preview">
+                    {settings.stripe_api_key_preview || '•••'}
+                  </code>
+                  <button
+                    onClick={() => setStripeKeyDraft(' ')}
+                    className="px-3 py-2 text-sm rounded-sm border border-slate-200 hover:bg-slate-50"
+                    data-testid="stripe-key-replace"
+                  >Replace</button>
+                  <button
+                    onClick={clearStripeKey}
+                    className="px-3 py-2 text-sm rounded-sm border border-red-200 text-red-600 hover:bg-red-50"
+                    data-testid="stripe-key-clear"
+                  >Clear</button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Input
+                    type={stripeKeyVisible ? 'text' : 'password'}
+                    value={stripeKeyDraft.trim() === '' ? '' : stripeKeyDraft}
+                    onChange={e => setStripeKeyDraft(e.target.value)}
+                    placeholder="sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+                    className="flex-1 font-mono text-sm"
+                    autoComplete="off"
+                    data-testid="stripe-key-input"
+                  />
+                  <button
+                    onClick={() => setStripeKeyVisible(v => !v)}
+                    className="p-2 rounded-sm border border-slate-200 hover:bg-slate-50"
+                    title={stripeKeyVisible ? 'Hide' : 'Show'}
+                    data-testid="stripe-key-toggle-visibility"
+                  >{stripeKeyVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}</button>
+                  {settings.stripe_api_key_set && (
+                    <button
+                      onClick={() => { setStripeKeyDraft(''); setStripeKeyVisible(false); }}
+                      className="px-3 py-2 text-sm rounded-sm border border-slate-200 hover:bg-slate-50"
+                    >Cancel</button>
+                  )}
+                </div>
+              )}
+              <p className="text-xs text-slate-500">
+                Get your key from
+                <a href="https://dashboard.stripe.com/apikeys" target="_blank" rel="noreferrer" className="text-blue-600 hover:underline ml-1">Stripe Dashboard → Developers → API keys</a>.
+                Use a <strong>test key</strong> while testing, swap to a <strong>live key</strong> when going to production.
+                Click <em>Save Settings</em> at the bottom to apply.
+              </p>
+            </div>
+
+            {/* Webhook URL */}
+            <div className="rounded-sm border border-slate-100 p-4 space-y-2">
+              <Label>Webhook URL <span className="text-xs text-slate-400 font-normal">(register this in Stripe)</span></Label>
+              <div className="flex items-center gap-2">
+                <code
+                  className="flex-1 px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm font-mono select-all"
+                  data-testid="stripe-webhook-url"
+                >
+                  {stripeStatus.webhook_url || (settings.site_url ? `${settings.site_url.replace(/\/+$/, '')}/api/webhook/stripe` : '— set Site URL in General tab first —')}
+                </code>
+                <button
+                  onClick={copyWebhookUrl}
+                  disabled={!stripeStatus.webhook_url}
+                  className="p-2 rounded-sm border border-slate-200 hover:bg-slate-50 disabled:opacity-50"
+                  title="Copy"
+                  data-testid="stripe-webhook-copy"
+                ><Copy className="w-4 h-4" /></button>
+              </div>
+              <p className="text-xs text-slate-500">
+                In your Stripe dashboard → <strong>Developers → Webhooks → Add endpoint</strong>, paste this URL,
+                and select the event <code>checkout.session.completed</code> at minimum.
+                The URL is auto-generated from <strong>Settings → General → Site URL</strong>.
+              </p>
+            </div>
+
+            <div className="text-[11px] text-slate-400 italic">
+              Tip: keys saved here override the <code>STRIPE_API_KEY</code> environment variable, so you can rotate keys without redeploying.
             </div>
           </div>
         </TabsContent>

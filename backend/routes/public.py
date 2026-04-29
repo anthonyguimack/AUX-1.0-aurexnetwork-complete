@@ -11,7 +11,11 @@ async def get_public_settings():
     settings = await db.settings.find_one({}, {"_id": 0})
     if not settings:
         return {}
-    return {k: v for k, v in settings.items() if k not in ("smtp_password", "smtp_user")}
+    SENSITIVE = {
+        "smtp_password", "smtp_user",
+        "stripe_api_key", "stripe_publishable_key", "stripe_webhook_secret",
+    }
+    return {k: v for k, v in settings.items() if k not in SENSITIVE}
 
 @router.get("/public/hero")
 async def get_public_hero():

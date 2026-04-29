@@ -241,6 +241,8 @@ export const adminAPI = {
   reorderMyAccountNav: (ordered_ids) => api.put('/admin/myaccount-nav-reorder', { ordered_ids }),
   // Per-member enrollment Q&A (info modal)
   getMemberEnrollment: (memberId) => api.get(`/admin/members/${memberId}/enrollment`),
+  // Stripe configuration status (Settings → Stripe tab)
+  getStripeStatus: () => api.get('/admin/stripe-status'),
   // Calendar
   getCalendarEvents: () => api.get('/admin/calendar/events'),
   createCalendarEvent: (data) => api.post('/admin/calendar/events', data),

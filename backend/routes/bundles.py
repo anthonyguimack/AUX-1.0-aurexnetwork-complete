@@ -11,6 +11,7 @@ last; mentor-specific first). On booking cancellation the credit is restored.
 """
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin
+from utils.runtime_config import get_stripe_api_key, get_webhook_url
 from datetime import datetime, timezone
 import os
 import uuid
@@ -224,9 +225,10 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
         final_cents = max(0, base_cents - discount_cents)
         coupon_id = coupon["id"]
 
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/my-account/bundles/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/my-account/bundles"
@@ -280,9 +282,10 @@ async def member_bundle_checkout_status(session_id: str, request: Request):
         pack = await db.credit_packs.find_one({"purchase_session_id": session_id}, {"_id": 0})
         return {"payment_status": "paid", "credit_pack": pack}
 
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     status = await stripe_checkout.get_checkout_status(session_id)
 

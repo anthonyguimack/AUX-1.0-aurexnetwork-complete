@@ -1,8 +1,8 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, get_current_user, logger
+from utils.runtime_config import get_stripe_api_key, get_webhook_url
 from datetime import datetime, timezone
 import uuid
-import os
 
 router = APIRouter()
 
@@ -20,9 +20,10 @@ async def create_checkout(request: Request):
     if price <= 0:
         raise HTTPException(status_code=400, detail="Invalid price")
     from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/"
@@ -46,9 +47,10 @@ async def create_checkout(request: Request):
 @router.get("/checkout/status/{session_id}")
 async def checkout_status(session_id: str, request: Request):
     from emergentintegrations.payments.stripe.checkout import StripeCheckout
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     status = await stripe_checkout.get_checkout_status(session_id)
     update_data = {"status": status.status, "payment_status": status.payment_status}
@@ -61,9 +63,11 @@ async def checkout_status(session_id: str, request: Request):
 async def stripe_webhook(request: Request):
     body = await request.body()
     from emergentintegrations.payments.stripe.checkout import StripeCheckout
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        logger.warning("Stripe webhook received but no API key configured")
+        return {"status": "error", "detail": "Stripe not configured"}
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     try:
         event = await stripe_checkout.handle_webhook(body, request.headers.get("Stripe-Signature"))

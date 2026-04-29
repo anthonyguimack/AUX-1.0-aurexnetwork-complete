@@ -327,14 +327,59 @@ async def admin_list_purchases(user: dict = Depends(require_admin)):
 # Settings
 @router.get("/admin/settings")
 async def admin_get_settings(user: dict = Depends(require_admin)):
-    return await db.settings.find_one({}, {"_id": 0}) or {}
+    s = await db.settings.find_one({}, {"_id": 0}) or {}
+    # Return a masked preview of the Stripe key — never the full secret.
+    raw_key = s.get("stripe_api_key") or ""
+    if raw_key:
+        s["stripe_api_key_preview"] = (raw_key[:7] + "•••" + raw_key[-4:]) if len(raw_key) > 12 else "•••"
+        s["stripe_api_key_set"] = True
+    else:
+        s["stripe_api_key_preview"] = ""
+        s["stripe_api_key_set"] = False
+    s.pop("stripe_api_key", None)
+    return s
 
 @router.put("/admin/settings")
 async def admin_update_settings(request: Request, user: dict = Depends(require_admin)):
+    from utils.runtime_config import normalize_site_url
+
     body = await request.json()
+    if "site_url" in body:
+        body["site_url"] = normalize_site_url(body.get("site_url"))
+    # Stripe API key handling:
+    #   • non-empty string → save as-is
+    #   • empty string     → clear the saved key
+    #   • key not present  → leave existing value untouched
+    if "stripe_api_key" in body:
+        new_key = (body.get("stripe_api_key") or "").strip()
+        if not new_key:
+            await db.settings.update_one({}, {"$unset": {"stripe_api_key": ""}})
+            body.pop("stripe_api_key", None)
+        else:
+            body["stripe_api_key"] = new_key
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
-    await db.settings.update_one({}, {"$set": body}, upsert=True)
-    return await db.settings.find_one({}, {"_id": 0})
+    if body:
+        await db.settings.update_one({}, {"$set": body}, upsert=True)
+    return await admin_get_settings(user=user)
+
+
+@router.get("/admin/stripe-status")
+async def admin_stripe_status(request: Request, user: dict = Depends(require_admin)):
+    """Status indicator for the Stripe Settings tab. Tells the operator
+    whether the key is configured (DB or env) and surfaces the exact
+    webhook URL they need to register in their Stripe dashboard."""
+    from utils.runtime_config import get_stripe_api_key, get_webhook_url, get_site_url
+    api_key = await get_stripe_api_key()
+    webhook_url = await get_webhook_url(str(request.base_url))
+    site_url = await get_site_url(str(request.base_url))
+    is_test = api_key.startswith("sk_test_")
+    is_live = api_key.startswith("sk_live_")
+    return {
+        "configured": bool(api_key),
+        "mode": "test" if is_test else ("live" if is_live else None),
+        "webhook_url": webhook_url,
+        "site_url": site_url,
+    }
 
 # Pages
 @router.get("/admin/pages/{page_type}")

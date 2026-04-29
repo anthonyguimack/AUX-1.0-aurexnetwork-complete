@@ -2,6 +2,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin
 from routes.calendar_helpers import notify_waitlist_spot_open, notify_cancellation
+from utils.runtime_config import get_stripe_api_key, get_webhook_url
 from datetime import datetime, timezone, date, timedelta
 import uuid
 
@@ -643,9 +644,10 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
             await record_redemption(coupon_id, member["member_id"], "slots", original_cents, discount_cents, slot_id)
         return {"url": f"{origin_url}/my-account/my-bookings", "session_id": None, "zero_priced": True}
 
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/my-account/mentorship/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/my-account/mentor-calendar"
@@ -740,9 +742,10 @@ async def member_mentorship_checkout_status(session_id: str, request: Request):
         booking = await db.mentorship_bookings.find_one({"payment_session_id": session_id}, {"_id": 0})
         return {"payment_status": "paid", "booking_status": booking.get("status") if booking else "booked"}
 
-    api_key = os.environ.get("STRIPE_API_KEY", "")
-    host_url = str(request.base_url).rstrip("/")
-    webhook_url = f"{host_url}api/webhook/stripe"
+    api_key = await get_stripe_api_key()
+    if not api_key:
+        raise HTTPException(status_code=503, detail="Stripe is not configured.")
+    webhook_url = await get_webhook_url(str(request.base_url))
     stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     status = await stripe_checkout.get_checkout_status(session_id)
 
