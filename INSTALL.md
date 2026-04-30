@@ -234,6 +234,27 @@ pip install emergentintegrations==0.1.0 \
 
 The last line installs the Stripe wrapper from Emergent's public package index (no auth required — it's just hosted outside PyPI). If you don't sell paid mentorship/bundles you can skip this — only the 7 paid-Stripe endpoints need it.
 
+> **Important — Motor (MongoDB driver):**
+> The `motor` package is **already listed in `requirements.txt`** (pinned to `motor==3.3.1`) and is installed automatically by the step above. It is the async MongoDB driver that FastAPI uses to talk to your database — without it, the backend crashes on startup with `ModuleNotFoundError: No module named 'motor'`.
+>
+> If you ever see that error, it almost always means the install ran against the wrong Python. Two quick checks:
+>
+> 1. **The virtualenv is active.** Your prompt should start with `(venv)`. If not:
+>    ```bash
+>    cd /opt/consultant-cms/backend
+>    source venv/bin/activate
+>    ```
+>
+> 2. **Install Motor explicitly (fallback):**
+>    ```bash
+>    pip install motor==3.3.1
+>    ```
+>
+> Then restart the backend (`sudo systemctl restart consultant-backend`) and verify it boots without errors:
+> ```bash
+> sudo journalctl -u consultant-backend -n 30 --no-pager
+> ```
+
 ### 5.5 Install frontend dependencies
 
 ```bash
