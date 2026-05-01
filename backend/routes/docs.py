@@ -951,7 +951,7 @@ async def aws_install_guide():
     .content h3 { font-size: 15px; margin-top: 20px; }
     .content table { border-collapse: collapse; margin: 14px 0; width: 100%; font-size: 13px; }
     .content th, .content td { border: 1px solid #e2e8f0; padding: 8px 10px; text-align: left; vertical-align: top; }
-    .content th { background: #f8fafc; font-weight: 600; }
+    .content th { background: #f8fafc; color: #1a2332; font-weight: 600; }
     .content code { background: #f1f5f9; padding: 1px 6px; border-radius: 3px; font-size: 0.92em; }
     .content pre { background: #0f172a; color: #e2e8f0; padding: 14px 16px; border-radius: 6px; overflow-x: auto; font-size: 12px; line-height: 1.55; }
     .content pre code { background: transparent; color: inherit; padding: 0; }
