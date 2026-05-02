@@ -90,6 +90,11 @@ export default function MemberLogin() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
           </form>
+          <div className="mt-4 text-center">
+            <Link to="/my-account/forgot-password" className="text-xs text-gray-400 hover:text-[#c9a84c] hover:underline" data-testid="forgot-password-link">
+              Forgot your password?
+            </Link>
+          </div>
           <div className="mt-6 text-center">
             <p className="text-gray-500 text-sm">
               Don't have an account?{' '}

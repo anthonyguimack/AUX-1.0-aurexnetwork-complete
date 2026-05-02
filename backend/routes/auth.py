@@ -143,15 +143,19 @@ async def forgot_password(request: Request):
     token = generate_reset_token()
     await db.password_resets.insert_one({
         "email": email, "token": token,
-        "expires_at": (datetime.now(timezone.utc) + timedelta(hours=1)).isoformat(),
+        "expires_at": (datetime.now(timezone.utc) + timedelta(minutes=30)).isoformat(),
         "used": False, "created_at": datetime.now(timezone.utc).isoformat()
     })
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host"):
         try:
-            origin = request.headers.get("origin", "")
-            reset_url = f"{origin}/#reset_token={token}"
-            html = f"<h2>Password Reset</h2><p>Click <a href='{reset_url}'>here</a> to reset your password.</p><p>This link expires in 1 hour.</p>"
+            # Prefer the CMS-configured Site URL (Settings → General); fall back
+            # to the request Origin header so the link matches the page the
+            # user actually opened.
+            from utils.runtime_config import get_site_url
+            base = await get_site_url(request.headers.get("origin", ""))
+            reset_url = f"{base}/my-account/reset-password?token={token}" if base else f"/my-account/reset-password?token={token}"
+            html = f"<h2>Password Reset</h2><p>Click <a href='{reset_url}'>here</a> to reset your password.</p><p>This link expires in 30 minutes and can only be used once.</p>"
             await send_email_smtp(settings, email, member.get("first_name", ""), "Password Reset - Legacy", html)
         except Exception as e:
             logger.warning(f"Failed to send reset email: {e}")
@@ -175,6 +179,26 @@ async def reset_password(request: Request):
     await db.members.update_one({"email": reset["email"]}, {"$set": {"password_hash": hash_password(new_password)}})
     await db.password_resets.update_one({"token": token}, {"$set": {"used": True}})
     return {"message": "Password reset successfully"}
+
+
+@router.get("/auth/reset-password/verify")
+async def reset_password_verify(token: str):
+    """Quick token validation so the reset page can show a friendly
+    'expired or already used' message instead of letting the user type a
+    new password and only fail on submit."""
+    if not token:
+        return {"valid": False, "reason": "missing"}
+    reset = await db.password_resets.find_one({"token": token}, {"_id": 0})
+    if not reset:
+        return {"valid": False, "reason": "not_found"}
+    if reset.get("used"):
+        return {"valid": False, "reason": "used"}
+    expires_at = datetime.fromisoformat(reset["expires_at"])
+    if expires_at.tzinfo is None:
+        expires_at = expires_at.replace(tzinfo=timezone.utc)
+    if expires_at < datetime.now(timezone.utc):
+        return {"valid": False, "reason": "expired"}
+    return {"valid": True, "email": reset.get("email", "")}
 
 @router.post("/auth/change-password")
 async def change_password(request: Request):

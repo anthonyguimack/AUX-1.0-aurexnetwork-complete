@@ -51,6 +51,7 @@ export const authAPI = {
   exchangeSession: (sessionId) => api.post('/auth/session', { session_id: sessionId }),
   forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
   resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
+  verifyResetToken: (token) => api.get(`/auth/reset-password/verify?token=${encodeURIComponent(token)}`),
   changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
 };
 
