@@ -8,6 +8,17 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 - **Backend**: FastAPI, Motor (Async MongoDB), Pydantic, APIRouter
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
+
+## Latest Update (Feb 3, 2026)
+**Forgot Password flow — COMPLETED**
+- Routes registered in `App.js`: `/my-account/forgot-password` and `/my-account/reset-password`
+- Frontend pages: `MemberForgotPassword.js` (email entry → neutral success message), `MemberResetPassword.js` (verifies token on mount, dual-confirm new password, single-use redemption)
+- Backend endpoints (already present): `POST /api/auth/forgot-password`, `GET /api/auth/reset-password/verify`, `POST /api/auth/reset-password`
+- Tokens are 30-min expiry, single-use, stored in `password_resets` collection
+- Email delivery wired through `send_email_smtp` (auto-fires when CMS Settings → SMTP host is configured); reset URL uses `Settings → site_url` falling back to request Origin
+- Verified end-to-end via curl: request → fetch token from DB → verify → reset → re-verify (returns `used`) → login with new password ✓
+- Frontend smoke-tested: both pages render, invalid token shows "Link not valid" panel
+
 ## What's Been Implemented
 
 ### Core (Phase 1-2)

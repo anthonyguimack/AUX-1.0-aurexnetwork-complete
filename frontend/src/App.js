@@ -56,6 +56,8 @@ import AdminLoginPage from './pages/admin/AdminLoginPage';
 // Membership / My Account
 import MemberLogin from './pages/myaccount/MemberLogin';
 import MemberRegister from './pages/myaccount/MemberRegister';
+import MemberForgotPassword from './pages/myaccount/MemberForgotPassword';
+import MemberResetPassword from './pages/myaccount/MemberResetPassword';
 import MyAccountLayout from './pages/myaccount/MyAccountLayout';
 import MembershipProfile from './pages/myaccount/MembershipProfile';
 import MentorshipProfile from './pages/myaccount/MentorshipProfile';
@@ -446,6 +448,8 @@ function AppRouter() {
       <Routes>
         <Route path="/my-account/login" element={<MemberLogin />} />
         <Route path="/my-account/register" element={<MemberRegister />} />
+        <Route path="/my-account/forgot-password" element={<MemberForgotPassword />} />
+        <Route path="/my-account/reset-password" element={<MemberResetPassword />} />
         <Route path="/my-account" element={<MemberRoute><MyAccountLayout /></MemberRoute>}>
           <Route index element={<Navigate to="/my-account/membership-profile" replace />} />
           <Route path="membership-profile" element={<MembershipProfile />} />
