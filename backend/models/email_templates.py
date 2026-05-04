@@ -180,6 +180,34 @@ EMAIL_TEMPLATES: list[dict] = [
             "platform_name": "Legacy",
         },
     },
+    {
+        "key": "smtp_test",
+        "name": "SMTP Test Email",
+        "description": "Sent from Settings → Email SMTP → Send Test Email so the operator can verify SMTP delivery and preview the live branding.",
+        "variables": {
+            "recipient_email": "Address the test was sent to",
+            "platform_name": "Brand name from CMS Settings",
+            "sent_at": "Timestamp the test was triggered (UTC)",
+        },
+        "default_subject": "{{platform_name}} CMS — SMTP test email",
+        "default_body": (
+            "<h2 style=\"margin:0 0 16px;\">SMTP test successful</h2>"
+            "<p>If you're reading this, your <strong>{{platform_name}}</strong> SMTP "
+            "configuration is delivering messages correctly.</p>"
+            "<p>This message was sent to <strong>{{recipient_email}}</strong> at "
+            "<strong>{{sent_at}}</strong>. The branding, logo, button colour and footer "
+            "you see below are exactly what your members will see in their welcome, "
+            "password-reset and notification emails.</p>"
+            "<p style=\"margin:32px 0;\"><a href=\"#\" class=\"btn\">Sample call-to-action</a></p>"
+            "<p style=\"font-size:13px;color:#6b7280;\">You can change this template — or any other "
+            "transactional email — from CMS → Settings → Email Management.</p>"
+        ),
+        "sample_values": {
+            "recipient_email": "operator@example.com",
+            "platform_name": "Legacy",
+            "sent_at": "2026-02-04 14:30 UTC",
+        },
+    },
 ]
 
 
@@ -194,6 +222,29 @@ DEFAULT_EMAIL_BRANDING = {
     "primary_color": "#1a2332",
     "button_color": "#c9a84c",
     "button_text_color": "#0d0f14",
+    "font_family": "Inter",
     "footer_text": "© {{platform_name}} — All rights reserved.",
     "social_links": [],  # [{platform, url, icon}]
 }
+
+
+# Fonts the operator can pick from. Each entry maps the public label to a
+# Google-Fonts-friendly stack used in the rendered email <head>.  The order
+# matches the Section → Page Builder → Font selector to stay consistent.
+EMAIL_FONT_OPTIONS = [
+    {"label": "Inter",          "family": "Inter",          "stack": "'Inter', Arial, sans-serif",                "google": "Inter:wght@400;500;600;700"},
+    {"label": "Sora",           "family": "Sora",           "stack": "'Sora', Arial, sans-serif",                 "google": "Sora:wght@400;500;600;700"},
+    {"label": "Playfair",       "family": "Playfair",       "stack": "'Playfair Display', Georgia, serif",        "google": "Playfair+Display:wght@400;500;600;700"},
+    {"label": "Space Grotesk",  "family": "Space Grotesk",  "stack": "'Space Grotesk', Arial, sans-serif",        "google": "Space+Grotesk:wght@400;500;600;700"},
+    {"label": "DM Sans",        "family": "DM Sans",        "stack": "'DM Sans', Arial, sans-serif",              "google": "DM+Sans:wght@400;500;600;700"},
+]
+
+
+def get_font_config(family: str | None) -> dict:
+    """Return the font config matching `family` (case-insensitive), defaulting
+    to Inter when the value is unknown."""
+    name = (family or "").strip()
+    for f in EMAIL_FONT_OPTIONS:
+        if f["family"].lower() == name.lower():
+            return f
+    return EMAIL_FONT_OPTIONS[0]

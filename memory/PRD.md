@@ -9,6 +9,12 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
 
+## Latest Update (Feb 4, 2026 — afternoon)
+**Email Management refinements**
+- New 6th template **SMTP Test Email** (key `smtp_test`) — variables: `{{recipient_email}}`, `{{platform_name}}`, `{{sent_at}}`. The legacy `POST /api/admin/smtp/test-email` endpoint now renders through this template + the configured branding so the operator sees exactly what customers will see.
+- Templates tab layout: Live Preview moved into the middle column directly below the editor (no more right-column scrolling). Right column now sticky-positioned and contains only the Available Variables panel.
+- General Design: added **Font family** dropdown — Inter, Sora, Playfair, Space Grotesk, DM Sans — same options as Section → Page Builder → Font. Choice is stored on `email_branding` (defaults to Inter), embedded as a Google Fonts `@import` in every email head, and applied to body text, headings (`h1-h6`) and the branded button. Email-client fallback stack remains (e.g. `'Sora', Arial, sans-serif`).
+
 ## Latest Update (Feb 4, 2026)
 **Email Management + admin idempotency + reset rate-limit**
 - New CMS section **Settings → Email Management** with two tabs:

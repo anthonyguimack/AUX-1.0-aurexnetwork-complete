@@ -6,7 +6,9 @@ from models.database import db, send_email_smtp
 from models.email_templates import (
     EMAIL_TEMPLATES,
     DEFAULT_EMAIL_BRANDING,
+    EMAIL_FONT_OPTIONS,
     get_template_definition,
+    get_font_config,
 )
 
 logger = logging.getLogger(__name__)
@@ -77,22 +79,35 @@ def _wrap_with_branding(body_html: str, branding: dict, variables: dict, platfor
     """Wrap the rendered template body with the configured branding shell.
 
     Stays deliberately email-client-friendly: table-based, inline styles, no
-    external CSS, no flexbox, no custom fonts.  Buttons inside the body that
-    use class="btn" automatically pick up the configured button color.
-    """
+    flexbox.  Buttons inside the body that use class="btn" automatically pick
+    up the configured button color.  The font choice is applied via an
+    inline @import of the Google Font (clients that block remote CSS will
+    fall through to the system fallback in the stack)."""
     primary = branding.get("primary_color") or DEFAULT_EMAIL_BRANDING["primary_color"]
     btn_bg = branding.get("button_color") or DEFAULT_EMAIL_BRANDING["button_color"]
     btn_fg = branding.get("button_text_color") or DEFAULT_EMAIL_BRANDING["button_text_color"]
     logo_url = branding.get("logo_url") or ""
+    font = get_font_config(branding.get("font_family"))
+    font_stack = font["stack"]
+    google_fonts_param = font["google"]
     footer_text = _substitute(branding.get("footer_text") or "", {**variables, "platform_name": platform_name})
     social = branding.get("social_links") or []
 
     # Apply button styling to any anchor tagged with class="btn".
     btn_style = (f"display:inline-block;padding:12px 28px;background:{btn_bg};color:{btn_fg};"
-                 f"text-decoration:none;border-radius:8px;font-weight:600;font-family:Arial,sans-serif;")
+                 f"text-decoration:none;border-radius:8px;font-weight:600;font-family:{font_stack};")
     body_html = re.sub(
         r'<a([^>]*?)class="btn"([^>]*)>',
         lambda m: f'<a{m.group(1)}style="{btn_style}"{m.group(2)}>',
+        body_html,
+    )
+
+    # Headings that don't already declare a font-family inherit the chosen one.
+    body_html = re.sub(
+        r'<(h[1-6])([^>]*)>',
+        lambda m: (f'<{m.group(1)}{m.group(2)} style="font-family:{font_stack};">'
+                   if 'font-family' not in (m.group(2) or '')
+                   else f'<{m.group(1)}{m.group(2)}>'),
         body_html,
     )
 
@@ -100,7 +115,7 @@ def _wrap_with_branding(body_html: str, branding: dict, variables: dict, platfor
         f'<img src="{escape(logo_url)}" alt="{escape(platform_name)}" '
         f'style="max-height:48px;display:block;margin:0 auto 8px;" />'
         if logo_url else
-        f'<div style="font-size:22px;font-weight:700;color:#ffffff;font-family:Georgia,serif;">{escape(platform_name)}</div>'
+        f'<div style="font-size:22px;font-weight:700;color:#ffffff;font-family:{font_stack};">{escape(platform_name)}</div>'
     )
 
     socials_html = ""
@@ -115,16 +130,21 @@ def _wrap_with_branding(body_html: str, branding: dict, variables: dict, platfor
             socials_html = f'<div style="margin-top:8px;">{" ".join(items)}</div>'
 
     return f"""<!DOCTYPE html>
-<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"></head>
-<body style="margin:0;padding:0;background:#f3f4f6;font-family:Arial,Helvetica,sans-serif;color:#111827;">
+<html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+  @import url('https://fonts.googleapis.com/css2?family={google_fonts_param}&display=swap');
+  body, table, td, p, h1, h2, h3, h4, h5, h6, a, span, div {{ font-family: {font_stack}; }}
+</style>
+</head>
+<body style="margin:0;padding:0;background:#f3f4f6;font-family:{font_stack};color:#111827;">
   <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background:#f3f4f6;padding:24px 0;">
     <tr><td align="center">
-      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);">
+      <table role="presentation" width="600" cellpadding="0" cellspacing="0" style="max-width:600px;width:100%;background:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.06);font-family:{font_stack};">
         <tr><td style="background:{primary};padding:24px;text-align:center;">{logo_html}</td></tr>
-        <tr><td style="padding:32px 32px 24px;font-size:15px;line-height:1.6;color:#111827;">
+        <tr><td style="padding:32px 32px 24px;font-size:15px;line-height:1.6;color:#111827;font-family:{font_stack};">
           {body_html}
         </td></tr>
-        <tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;background:#f9fafb;text-align:center;font-size:12px;color:#6b7280;">
+        <tr><td style="padding:20px 32px;border-top:1px solid #e5e7eb;background:#f9fafb;text-align:center;font-size:12px;color:#6b7280;font-family:{font_stack};">
           {escape(footer_text)}
           {socials_html}
         </td></tr>

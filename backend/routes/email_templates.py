@@ -15,6 +15,7 @@ from models.database import db, require_admin, send_email_smtp, logger
 from models.email_templates import (
     EMAIL_TEMPLATES,
     DEFAULT_EMAIL_BRANDING,
+    EMAIL_FONT_OPTIONS,
     get_template_definition,
 )
 from utils.email_render import (
@@ -176,7 +177,8 @@ async def test_send_email_template(key: str, request: Request, user: dict = Depe
 
 @router.get("/admin/email-branding")
 async def get_email_branding(user: dict = Depends(require_admin)):
-    return await get_branding()
+    branding = await get_branding()
+    return {**branding, "available_fonts": EMAIL_FONT_OPTIONS}
 
 
 @router.put("/admin/email-branding")
@@ -188,6 +190,7 @@ async def update_email_branding(request: Request, user: dict = Depends(require_a
         "primary_color": body.get("primary_color") or DEFAULT_EMAIL_BRANDING["primary_color"],
         "button_color": body.get("button_color") or DEFAULT_EMAIL_BRANDING["button_color"],
         "button_text_color": body.get("button_text_color") or DEFAULT_EMAIL_BRANDING["button_text_color"],
+        "font_family": body.get("font_family") or DEFAULT_EMAIL_BRANDING["font_family"],
         "footer_text": body.get("footer_text") or "",
         "social_links": body.get("social_links") or [],
     }

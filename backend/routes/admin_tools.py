@@ -271,10 +271,26 @@ async def test_smtp_email(request: Request, user: dict = Depends(require_admin))
     to_email = body.get("test_email", body.get("email_to", ""))
     if not to_email:
         raise HTTPException(status_code=400, detail="Test email address required")
+    # Use the same template + branding pipeline as every other transactional
+    # email so the operator can verify exactly how customer-facing messages
+    # will look.  The body dict carries the *draft* SMTP settings the operator
+    # is currently editing (host/user/pass/etc.) — pass it straight through.
     try:
-        html = "<h2>Test Email from Legacy CMS</h2><p>If you received this email, your SMTP configuration is working correctly!</p>"
-        await send_email_smtp(body, to_email, "Test Recipient", "Legacy CMS - Test Email", html,
-                            body.get("email_from", body.get("smtp_user", "")), body.get("name_from", "Legacy CMS"))
+        from utils.email_render import render_email
+        from datetime import datetime, timezone
+        # Branding pulls platform_name from the saved settings; merge what we got.
+        saved = await db.settings.find_one({}, {"_id": 0}) or {}
+        platform_name = body.get("brand_name") or saved.get("brand_name", "Legacy")
+        rendered = await render_email("smtp_test", {
+            "recipient_email": to_email,
+            "platform_name": platform_name,
+            "sent_at": datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC"),
+        }, platform_name=platform_name)
+        await send_email_smtp(
+            body, to_email, "Test Recipient", rendered["subject"], rendered["html"],
+            body.get("email_from", body.get("smtp_user", "")),
+            body.get("name_from", f"{platform_name} CMS"),
+        )
         return {"success": True, "message": f"Test email sent to {to_email}!"}
     except Exception as e:
         return {"success": False, "message": f"Failed to send: {str(e)}"}
