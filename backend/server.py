@@ -38,6 +38,7 @@ from routes.coupons import router as coupons_router
 from routes.aurex_sections import router as aurex_sections_router
 from routes.hero_ab import router as hero_ab_router
 from routes.roles import router as roles_router, seed_system_roles
+from routes.email_templates import router as email_templates_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -57,6 +58,7 @@ api_router.include_router(coupons_router)
 api_router.include_router(aurex_sections_router)
 api_router.include_router(hero_ab_router)
 api_router.include_router(roles_router)
+api_router.include_router(email_templates_router)
 
 # Import seed data function
 from seed import seed_data
@@ -67,6 +69,8 @@ async def startup():
     from routes.enrollment import seed_enrollment_fields
     await seed_enrollment_fields()
     await seed_system_roles()
+    from utils.email_render import ensure_templates_seeded
+    await ensure_templates_seeded()
     from scheduler import start_scheduler
     start_scheduler()
 

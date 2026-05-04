@@ -64,6 +64,7 @@ const sidebarItems = [
   { label: 'Documentation', icon: ScrollText, href: '/admin/documentation', section: 'documentation' },
   { label: 'Backup', icon: Database, href: '/admin/backup', section: 'backup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings', section: 'settings' },
+  { label: 'Email Management', icon: Mail, href: '/admin/email-management', section: 'email_management' },
 ];
 
 export default function AdminLayout() {

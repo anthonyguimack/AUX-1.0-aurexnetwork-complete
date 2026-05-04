@@ -162,6 +162,15 @@ export const adminAPI = {
   // SMTP
   testSmtpConnection: (data) => api.post('/admin/smtp/test-connection', data),
   testSmtpEmail: (data) => api.post('/admin/smtp/test-email', data),
+  // Email Management — templates + branding wrapper
+  listEmailTemplates: () => api.get('/admin/email-templates'),
+  getEmailTemplate: (key) => api.get(`/admin/email-templates/${key}`),
+  updateEmailTemplate: (key, data) => api.put(`/admin/email-templates/${key}`, data),
+  resetEmailTemplate: (key) => api.post(`/admin/email-templates/${key}/reset`),
+  previewEmailTemplate: (key, draft) => api.post(`/admin/email-templates/${key}/preview`, draft || {}),
+  testSendEmailTemplate: (key, data) => api.post(`/admin/email-templates/${key}/test-send`, data),
+  getEmailBranding: () => api.get('/admin/email-branding'),
+  updateEmailBranding: (data) => api.put('/admin/email-branding', data),
   // Upload
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
   uploadFile: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload-file', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },

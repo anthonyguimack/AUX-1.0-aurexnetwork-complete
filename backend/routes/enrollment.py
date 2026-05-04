@@ -223,18 +223,17 @@ async def submit_enrollment(request: Request):
     # Send email with credentials
     try:
         settings = await db.settings.find_one({}, {"_id": 0})
-        platform_name = (settings or {}).get("brand_name", "Membership Platform")
-        html = f"""
-<h2>Welcome to {platform_name}!</h2>
-<p>Dear {first_name} {last_name},</p>
-<p>Your membership application has been submitted successfully. Here are your login credentials:</p>
-<p><strong>Email:</strong> {email}<br/>
-<strong>Password:</strong> {password}<br/>
-<strong>Membership ID:</strong> {membership_id}</p>
-<p>You can log in at any time using these credentials.</p>
-<p>Best regards,<br/>{platform_name} Team</p>
-"""
-        await send_email_smtp(settings, email, first_name, f"Welcome to {platform_name} - Your Credentials", html)
+        from utils.email_render import render_and_send
+        await render_and_send(
+            "welcome_enrollment", settings or {}, email, first_name,
+            variables={
+                "first_name": first_name,
+                "last_name": last_name,
+                "email": email,
+                "password": password,
+                "membership_id": membership_id,
+            },
+        )
     except Exception as e:
         logger.warning(f"Failed to send enrollment email: {e}")
 

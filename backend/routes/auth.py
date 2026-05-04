@@ -135,6 +135,10 @@ async def exchange_session(request: Request, response: Response):
 
 @router.post("/auth/forgot-password")
 async def forgot_password(request: Request):
+    # Throttle reset-link requests so the endpoint can't be abused to spam
+    # users' inboxes or enumerate accounts: max 3 per IP per 15 minutes.
+    from utils.rate_limit import enforce_rate_limit
+    await enforce_rate_limit(request, key="forgot_password", max_requests=3, window_seconds=15 * 60)
     body = await request.json()
     email = body.get("email", "").strip().lower()
     member = await db.members.find_one({"email": email, "role": {"$ne": "admin"}}, {"_id": 0})
@@ -155,8 +159,15 @@ async def forgot_password(request: Request):
             from utils.runtime_config import get_site_url
             base = await get_site_url(request.headers.get("origin", ""))
             reset_url = f"{base}/my-account/reset-password?token={token}" if base else f"/my-account/reset-password?token={token}"
-            html = f"<h2>Password Reset</h2><p>Click <a href='{reset_url}'>here</a> to reset your password.</p><p>This link expires in 30 minutes and can only be used once.</p>"
-            await send_email_smtp(settings, email, member.get("first_name", ""), "Password Reset - Legacy", html)
+            from utils.email_render import render_and_send
+            await render_and_send(
+                "password_reset", settings, email, member.get("first_name", ""),
+                variables={
+                    "name": member.get("first_name", "") or email.split("@")[0],
+                    "link": reset_url,
+                    "expiry_minutes": "30",
+                },
+            )
         except Exception as e:
             logger.warning(f"Failed to send reset email: {e}")
     return {"message": "If the email exists, a reset link has been sent."}

@@ -207,10 +207,22 @@ async def submit_contact(request: Request):
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host") and settings.get("email_to"):
         try:
-            html = f"<h2>New Contact Form Submission</h2><p><strong>Name:</strong> {contact['name']}</p><p><strong>Email:</strong> {contact['email']}</p><p><strong>Phone:</strong> {contact['phone']}</p><p><strong>Subject:</strong> {contact['subject']}</p><p><strong>Message:</strong></p><p>{contact['message']}</p>"
             cc_list = [c.strip() for c in settings.get("email_cc", "").split(",") if c.strip()]
-            await send_email_smtp(settings, settings["email_to"], settings.get("name_to", "Admin"),
-                                f"Contact: {contact['subject']}", html, settings.get("email_from", ""), contact["name"], cc_list)
+            from utils.email_render import render_and_send
+            await render_and_send(
+                "contact_form_admin", settings,
+                settings["email_to"], settings.get("name_to", "Admin"),
+                variables={
+                    "name": contact["name"],
+                    "email": contact["email"],
+                    "phone": contact["phone"],
+                    "subject": contact["subject"],
+                    "message": contact["message"],
+                },
+                from_email=settings.get("email_from", ""),
+                from_name=contact["name"],
+                cc_list=cc_list,
+            )
         except Exception as e:
             logger.warning(f"Failed to send contact email: {e}")
     return {"message": "Contact form submitted successfully", "id": contact["id"]}

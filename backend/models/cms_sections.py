@@ -90,6 +90,7 @@ CMS_SECTIONS = [
     {"key": "documentation",    "label": "Documentation",         "group": "system", "frontend_path": "/admin/documentation",    "url_prefix": ["/api/admin/documentation", "/api/admin/docs"]},
     {"key": "backup",           "label": "Backup",                "group": "system", "frontend_path": "/admin/backup",           "url_prefix": ["/api/admin/backup", "/api/admin/restore"]},
     {"key": "settings",         "label": "Settings",              "group": "system", "frontend_path": "/admin/settings",         "url_prefix": ["/api/admin/settings", "/api/admin/theme", "/api/admin/upload"]},
+    {"key": "email_management", "label": "Email Management",      "group": "system", "frontend_path": "/admin/email-management", "url_prefix": ["/api/admin/email-templates", "/api/admin/email-branding"]},
 
     # Security (admin-only, cannot be delegated)
     {"key": "roles_permissions", "label": "Roles & Permissions",  "group": "security", "frontend_path": "/admin/roles", "url_prefix": ["/api/admin/cms-roles", "/api/admin/cms-sections"], "admin_only": True},

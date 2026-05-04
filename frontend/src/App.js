@@ -36,6 +36,7 @@ import TestimonialsManager from './pages/admin/TestimonialsManager';
 import ContactsManager from './pages/admin/ContactsManager';
 import PurchasesManager from './pages/admin/PurchasesManager';
 import SettingsManager from './pages/admin/SettingsManager';
+import EmailManagement from './pages/admin/EmailManagement';
 import PagesManager from './pages/admin/PagesManager';
 import UsersManager from './pages/admin/UsersManager';
 import AnalyticsDashboard from './pages/admin/AnalyticsDashboard';
@@ -239,6 +240,7 @@ const ADMIN_ROUTES = [
   { path: 'contact-settings',                section: 'contact_settings',                 el: <ContactSettingsManager /> },
   { path: 'purchases',                       section: 'purchases',                        el: <PurchasesManager /> },
   { path: 'settings',                        section: 'settings',                         el: <SettingsManager /> },
+  { path: 'email-management',                section: 'email_management',                 el: <EmailManagement /> },
   { path: 'pages',                           section: 'pages',                            el: <PagesManager /> },
   { path: 'users',                           adminOnly: true,                             el: <UsersManager /> },
   { path: 'members',                         section: 'members',                          el: <MembersManager /> },

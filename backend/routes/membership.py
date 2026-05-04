@@ -148,17 +148,18 @@ async def send_invite_code(code_id: str, request: Request, member: dict = Depend
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host") and body.get("email"):
         try:
-            prefix = settings.get("aux_prefix", "AUX")
-            platform_name = settings.get("brand_name", "Legacy")
             origin = request.headers.get("origin", "")
             reg_url = f"{origin}/my-account/register?code={code_doc['code']}"
-            html = f"""<h2>You're Invited to {platform_name}!</h2>
-<p>Hello {body.get('first_name', '')},</p>
-<p>{member.get('first_name', '')} {member.get('last_name', '')} has invited you to join {platform_name}.</p>
-<p>Your invite code: <strong>{code_doc['code']}</strong></p>
-<p><a href="{reg_url}" style="background:#1a2e4a;color:white;padding:12px 24px;text-decoration:none;border-radius:4px;display:inline-block;">Register Now</a></p>
-<p>Or visit: {reg_url}</p>"""
-            await send_email_smtp(settings, body["email"], body.get("first_name", ""), f"Invitation to {platform_name}", html)
+            from utils.email_render import render_and_send
+            await render_and_send(
+                "invite_code", settings, body["email"], body.get("first_name", ""),
+                variables={
+                    "name": body.get("first_name", ""),
+                    "inviter_name": f"{member.get('first_name', '')} {member.get('last_name', '')}".strip(),
+                    "code": code_doc["code"],
+                    "register_link": reg_url,
+                },
+            )
         except Exception as e:
             logger.warning(f"Failed to send invite email: {e}")
     return {"message": "Invitation sent", "code": {**code_doc, **update}}
@@ -271,18 +272,16 @@ async def register_member(request: Request):
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host"):
         try:
-            platform_name = settings.get("brand_name", "Legacy")
-            welcome_template = settings.get("welcome_email_template", "")
-            if welcome_template:
-                html = welcome_template.replace("{{first_name}}", first_name).replace("{{last_name}}", last_name).replace("{{membership_id}}", membership_id).replace("{{username}}", username).replace("{{platform_name}}", platform_name)
-            else:
-                html = f"""<h2>Welcome to {platform_name}!</h2>
-<p>Hello {first_name},</p>
-<p>Your account has been created successfully.</p>
-<p><strong>Membership ID:</strong> {membership_id}</p>
-<p><strong>Username:</strong> {username}</p>
-<p>Please login at our platform to access your membership area.</p>"""
-            await send_email_smtp(settings, email, first_name, f"Welcome to {platform_name}!", html)
+            from utils.email_render import render_and_send
+            await render_and_send(
+                "welcome_register", settings, email, first_name,
+                variables={
+                    "name": first_name,
+                    "last_name": last_name,
+                    "membership_id": membership_id,
+                    "username": username,
+                },
+            )
         except Exception as e:
             logger.warning(f"Failed to send welcome email: {e}")
     return {

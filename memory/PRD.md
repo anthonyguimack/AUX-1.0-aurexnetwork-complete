@@ -9,6 +9,16 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
 
+## Latest Update (Feb 4, 2026)
+**Email Management + admin idempotency + reset rate-limit**
+- New CMS section **Settings → Email Management** with two tabs:
+  - **Templates** — list/edit subject + rich-text body for the 5 transactional emails (`password_reset`, `welcome_register`, `welcome_enrollment`, `invite_code`, `contact_form_admin`). Per-template variables panel, live preview iframe, "Send test" button, reset-to-default, enable/disable toggle.
+  - **General Design** — branding wrapper (logo, primary color, button color, button text color, footer text with `{{platform_name}}` support, optional social links). Wrapper auto-applied around every sent email; live sample preview.
+- Backend: `models/email_templates.py` (registry), `utils/email_render.py` (render + branding wrapper), `routes/email_templates.py` (CRUD + preview + test-send). Templates idempotent-seeded on startup.
+- All 5 email send-sites refactored to call `render_and_send(key, settings, to, name, variables)` so the operator's edits actually take effect without changing *when* emails fire.
+- Reset-link spam protection: `POST /api/auth/forgot-password` now rate-limited to 3 requests / 15 min per IP (in-memory sliding window, honours `X-Forwarded-For`). Verified end-to-end: requests 1-3 → 200, 4-5 → 429.
+- **Admin duplicate bug fixed**: `seed_data` now uses `role: "admin"` lookup instead of email lookup, so changing `ADMIN_EMAIL` in `.env` no longer creates a second admin. Existing duplicates are auto-collapsed on startup (kept the one matching env, deleted the rest, logged warning). Belt-and-brace guard added to the insert path.
+
 ## Latest Update (Feb 3, 2026)
 **Forgot Password flow — COMPLETED**
 - Routes registered in `App.js`: `/my-account/forgot-password` and `/my-account/reset-password`

@@ -7,15 +7,40 @@ logger = logging.getLogger(__name__)
 
 
 async def seed_data():
-    # Check if admin exists in unified members collection
-    admin_member = await db.members.find_one({"email": ADMIN_EMAIL})
+    # ─── Admin idempotency & duplicate cleanup ───────────────────────────────
+    # Historically the seed used `find_one({"email": ADMIN_EMAIL})` to decide
+    # whether to insert a new admin.  That meant if `ADMIN_EMAIL` in `.env`
+    # was changed between restarts (or differed from the email of a previously
+    # seeded admin), the lookup missed the existing admin and a *second* admin
+    # was inserted on every restart.  We now check by `role: "admin"` so the
+    # seed is idempotent regardless of the email value, and we collapse any
+    # accidental duplicates in one place.
+    admin_query_email = (ADMIN_EMAIL or "").strip().lower()
+    existing_admins = await db.members.find({"role": "admin"}, {"_id": 0}).to_list(100)
+    if len(existing_admins) > 1:
+        # Prefer the admin whose email matches the env, otherwise the oldest.
+        keeper = next((a for a in existing_admins if (a.get("email", "").lower() == admin_query_email)), None)
+        if keeper is None:
+            keeper = sorted(existing_admins, key=lambda a: a.get("created_at", ""))[0]
+        to_delete = [a["member_id"] for a in existing_admins if a["member_id"] != keeper["member_id"]]
+        await db.members.delete_many({"member_id": {"$in": to_delete}})
+        logger.warning(f"Removed {len(to_delete)} duplicate admin(s); kept {keeper.get('email')}")
+        existing_admins = [keeper]
+    admin_member = existing_admins[0] if existing_admins else None
+    if admin_member is None:
+        # Fall back to the legacy email-based lookup so a normal-role member
+        # whose email matches ADMIN_EMAIL gets promoted instead of duplicated.
+        admin_member = await db.members.find_one({"email": admin_query_email})
     if admin_member:
+        # Always operate on the actual admin's email (not the env value), in
+        # case the env was changed mid-flight and points at a different account.
+        admin_email_in_db = admin_member.get("email", "")
         # Ensure admin has the right role and fields
         if admin_member.get("role") != "admin":
-            await db.members.update_one({"email": ADMIN_EMAIL}, {"$set": {"role": "admin"}})
+            await db.members.update_one({"email": admin_email_in_db}, {"$set": {"role": "admin"}})
         # Ensure is_mentor and portfolio_development fields exist
         if "is_mentor" not in admin_member:
-            await db.members.update_one({"email": ADMIN_EMAIL}, {"$set": {"is_mentor": False, "portfolio_development": False}})
+            await db.members.update_one({"email": admin_email_in_db}, {"$set": {"is_mentor": False, "portfolio_development": False}})
         settings = await db.settings.find_one({}, {"_id": 0})
         if settings and "social_links" not in settings:
             await db.settings.update_one({}, {"$set": {
@@ -207,8 +232,13 @@ async def seed_data():
         })
         return
     logger.info("Seeding initial data...")
-    admin_member_id = f"member_{uuid.uuid4().hex[:12]}"
-    await db.members.insert_one({
+    # Belt-and-brace: even if upstream branches don't return early, never
+    # insert a second admin if one already exists in the collection.
+    if await db.members.find_one({"role": "admin"}):
+        logger.info("Admin already present — skipping admin insert.")
+    else:
+        admin_member_id = f"member_{uuid.uuid4().hex[:12]}"
+        await db.members.insert_one({
         "member_id": admin_member_id,
         "membership_number": 0,
         "membership_id": "ADMIN",
