@@ -16,16 +16,42 @@ logger = logging.getLogger(__name__)
 _VAR_RE = re.compile(r"\{\{\s*([a-zA-Z0-9_]+)\s*\}\}")
 
 
+def resolve_i18n(value, lang: str = "en") -> str:
+    """Some Settings values (brand_name, tagline, …) are stored as i18n
+    dicts: ``{"en": "Aurex Network", "es": "…"}``. Anywhere those values
+    flow into an email, we have to flatten them down to a plain string —
+    `html.escape` and Jinja-style substitution will choke on a dict.
+
+    Returns ``""`` for ``None``/empty, the dict's `lang` value (with sane
+    fallbacks), or the value cast to ``str`` for everything else.
+    """
+    if value is None or value == "":
+        return ""
+    if isinstance(value, dict):
+        if lang in value and value[lang]:
+            return str(value[lang])
+        if "en" in value and value["en"]:
+            return str(value["en"])
+        # First non-empty value, regardless of locale.
+        for v in value.values():
+            if v:
+                return str(v)
+        return ""
+    return str(value)
+
+
 def _substitute(text: str, variables: dict) -> str:
     """Replace `{{key}}` placeholders.  Unknown placeholders are left as-is
     so the operator can spot typos in the editor (rather than silently
-    rendering empty strings)."""
+    rendering empty strings).  Dict values (i18n) are auto-flattened."""
     if not text:
         return ""
     def _r(match):
         k = match.group(1)
         v = variables.get(k)
-        return str(v) if v is not None else match.group(0)
+        if v is None:
+            return match.group(0)
+        return resolve_i18n(v)
     return _VAR_RE.sub(_r, text)
 
 
@@ -83,6 +109,10 @@ def _wrap_with_branding(body_html: str, branding: dict, variables: dict, platfor
     up the configured button color.  The font choice is applied via an
     inline @import of the Google Font (clients that block remote CSS will
     fall through to the system fallback in the stack)."""
+    # Defensive: strip i18n dicts down to plain strings so html.escape never
+    # sees a dict (callers should already have flattened these, but the wrapper
+    # is the last line of defence).
+    platform_name = resolve_i18n(platform_name) or "Legacy"
     primary = branding.get("primary_color") or DEFAULT_EMAIL_BRANDING["primary_color"]
     btn_bg = branding.get("button_color") or DEFAULT_EMAIL_BRANDING["button_color"]
     btn_fg = branding.get("button_text_color") or DEFAULT_EMAIL_BRANDING["button_text_color"]
@@ -156,14 +186,47 @@ def _wrap_with_branding(body_html: str, branding: dict, variables: dict, platfor
 
 async def render_email(key: str, variables: dict, platform_name: str | None = None) -> dict:
     """Return `{subject, html}` for `key` after substituting variables and
-    applying the branding wrapper.  Pure function — does NOT send."""
+    applying the branding wrapper.  Pure function — does NOT send.
+
+    `platform_name` and `site_url` are auto-derived from CMS Settings →
+    General if the caller doesn't pass them explicitly, so every template
+    can reference `{{platform_name}}` / `{{site_url}}` without each call
+    site having to thread those through.  i18n dicts are flattened.
+
+    Resolution priority for `platform_name` and `site_url`:
+      1. Caller-supplied value (explicit kwarg or non-empty in `variables`)
+      2. CMS Settings → General (`brand_name`, `site_url`)
+      3. Sensible fallback (`"Legacy"` / origin from request)
+    Sample defaults in template registries lose to the real CMS values
+    so previews never lie."""
     template = await get_template(key)
     branding = await get_branding()
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+
     full_vars = {**variables}
-    if platform_name and "platform_name" not in full_vars:
-        full_vars["platform_name"] = platform_name
-    if "platform_name" not in full_vars:
-        full_vars["platform_name"] = "Legacy"
+
+    # ── platform_name ──
+    cms_brand = resolve_i18n(settings.get("brand_name"))
+    explicit_brand = resolve_i18n(platform_name)
+    full_vars["platform_name"] = (
+        explicit_brand
+        or cms_brand
+        or resolve_i18n(full_vars.get("platform_name"))
+        or "Legacy"
+    )
+
+    # ── site_url ──
+    cms_site_url = (settings.get("site_url") or "").rstrip("/")
+    if not full_vars.get("site_url"):
+        full_vars["site_url"] = cms_site_url or ""
+    if cms_site_url:  # CMS value wins over sample defaults
+        full_vars["site_url"] = cms_site_url
+
+    # Flatten any other dict values (defensive — operator-supplied vars).
+    for k, v in list(full_vars.items()):
+        if isinstance(v, dict):
+            full_vars[k] = resolve_i18n(v)
+
     subject = _substitute(template["subject"], full_vars)
     body_inner = _substitute(template["body"], full_vars)
     html = _wrap_with_branding(body_inner, branding, full_vars, full_vars["platform_name"])

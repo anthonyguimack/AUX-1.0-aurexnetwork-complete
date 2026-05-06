@@ -276,11 +276,11 @@ async def test_smtp_email(request: Request, user: dict = Depends(require_admin))
     # will look.  The body dict carries the *draft* SMTP settings the operator
     # is currently editing (host/user/pass/etc.) — pass it straight through.
     try:
-        from utils.email_render import render_email
+        from utils.email_render import render_email, resolve_i18n
         from datetime import datetime, timezone
         # Branding pulls platform_name from the saved settings; merge what we got.
         saved = await db.settings.find_one({}, {"_id": 0}) or {}
-        platform_name = body.get("brand_name") or saved.get("brand_name", "Legacy")
+        platform_name = resolve_i18n(body.get("brand_name") or saved.get("brand_name")) or "Legacy"
         rendered = await render_email("smtp_test", {
             "recipient_email": to_email,
             "platform_name": platform_name,
