@@ -197,6 +197,8 @@ async def get_blog_latest():
 @router.post("/contact")
 async def submit_contact(request: Request):
     body = await request.json()
+    from utils.rate_limit import public_form_guard
+    await public_form_guard(request, body, key="contact")
     contact = {
         "id": str(uuid.uuid4()), "name": body.get("name", ""), "email": body.get("email", ""),
         "phone": body.get("phone", ""), "subject": body.get("subject", ""),

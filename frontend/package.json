@@ -50,6 +50,7 @@
     "react": "^19.0.0",
     "react-day-picker": "8.10.1",
     "react-dom": "^19.0.0",
+    "react-google-recaptcha": "^3.1.0",
     "react-hook-form": "^7.56.2",
     "react-leaflet": "^5.0.0",
     "react-leaflet-cluster": "^4.1.3",

@@ -222,6 +222,16 @@ async def render_email(key: str, variables: dict, platform_name: str | None = No
     if cms_site_url:  # CMS value wins over sample defaults
         full_vars["site_url"] = cms_site_url
 
+    # Sample variables in the template registry use `https://example.com/...`
+    # placeholder URLs so the editor preview is readable even before the
+    # operator configures Site URL.  When Site URL *is* configured, swap
+    # those placeholders out so the preview / test-send shows the real
+    # destination rather than a broken example.com link.
+    if cms_site_url:
+        for k, v in list(full_vars.items()):
+            if isinstance(v, str) and v.startswith("https://example.com"):
+                full_vars[k] = cms_site_url + v[len("https://example.com"):]
+
     # Flatten any other dict values (defensive — operator-supplied vars).
     for k, v in list(full_vars.items()):
         if isinstance(v, dict):

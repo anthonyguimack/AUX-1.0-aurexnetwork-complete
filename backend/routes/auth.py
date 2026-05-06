@@ -9,6 +9,11 @@ router = APIRouter()
 @router.post("/auth/login")
 async def login(request: Request, response: Response):
     body = await request.json()
+    # Brute-force throttle: 5 login attempts per minute per IP. Login itself
+    # doesn't get a captcha (it would frustrate every page load); the rate
+    # limit is enough to neutralise password-spray attacks.
+    from utils.rate_limit import enforce_rate_limit
+    await enforce_rate_limit(request, key="login", max_requests=5, window_seconds=60)
     identifier = body.get("email", "").strip().lower()
     password = body.get("password", "")
     login_type = body.get("login_type", "any")
@@ -135,11 +140,14 @@ async def exchange_session(request: Request, response: Response):
 
 @router.post("/auth/forgot-password")
 async def forgot_password(request: Request):
-    # Throttle reset-link requests so the endpoint can't be abused to spam
-    # users' inboxes or enumerate accounts: max 3 per IP per 15 minutes.
-    from utils.rate_limit import enforce_rate_limit
-    await enforce_rate_limit(request, key="forgot_password", max_requests=3, window_seconds=15 * 60)
     body = await request.json()
+    # Hardening: keep the existing 3/15min throttle (stricter than the
+    # default 5/min because reset-link spam is high-impact) AND require
+    # captcha when enabled.
+    from utils.rate_limit import enforce_rate_limit
+    from utils.captcha import require_captcha
+    await enforce_rate_limit(request, key="forgot_password", max_requests=3, window_seconds=15 * 60)
+    await require_captcha(request, body)
     email = body.get("email", "").strip().lower()
     member = await db.members.find_one({"email": email, "role": {"$ne": "admin"}}, {"_id": 0})
     if not member:

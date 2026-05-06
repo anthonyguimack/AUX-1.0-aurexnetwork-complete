@@ -4,6 +4,7 @@ import { enrollmentAPI, geoAPI, publicAPI } from '../lib/api';
 import { useAuth } from '../lib/auth';
 import RichTextEditor from '../components/RichTextEditor';
 import { Lock, ChevronRight, Check, HelpCircle, Eye, EyeOff, Layers } from 'lucide-react';
+import CaptchaWidget from '../components/CaptchaWidget';
 import { toast } from 'sonner';
 import { useT } from '../lib/i18n';
 
@@ -73,6 +74,7 @@ export default function MembershipEnrollment() {
   const [cities, setCities] = useState([]);
   const [globalMsg, setGlobalMsg] = useState({ type: '', text: '' });
   const [step4Content, setStep4Content] = useState({ title: '', description: '' });
+  const [captchaToken, setCaptchaToken] = useState('');
 
   useEffect(() => {
     enrollmentAPI.getFields().then(r => setFields(r.data || [])).catch(() => {});
@@ -211,7 +213,7 @@ export default function MembershipEnrollment() {
     setLoading(true);
     setGlobalMsg({ type: '', text: '' });
     try {
-      const res = await enrollmentAPI.submit(formData);
+      const res = await enrollmentAPI.submit({ ...formData, captcha_token: captchaToken });
       const data = res.data;
       toast.success('Membership application submitted successfully!');
       if (data.token) {
@@ -503,12 +505,12 @@ export default function MembershipEnrollment() {
             </>
           )}
           {isLastStep && (
-            <button onClick={handleSubmit} disabled={loading}
-              className="flex items-center gap-2 px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 disabled:opacity-50"
-              style={{ borderColor: cv('submit-btn-border', '#1a2535'), color: cv('submit-btn-text', '#1a2535') }}
-              data-testid="enroll-submit-btn">
-              <Check className="w-4 h-4" /> Submit {loading && '...'}
-            </button>
+            <div className="flex flex-col items-end gap-3">
+              <CaptchaWidget onChange={setCaptchaToken} testId="enroll-captcha" />
+              <button onClick={handleSubmit} disabled={loading} className="flex items-center gap-2 px-6 py-2.5 rounded text-sm font-medium border transition-all hover:opacity-80 disabled:opacity-50" style={{ borderColor: cv('submit-btn-border', '#1a2535'), color: cv('submit-btn-text', '#1a2535') }} data-testid="enroll-submit-btn">
+                <Check className="w-4 h-4" /> Submit {loading && '...'}
+              </button>
+            </div>
           )}
         </div>
       </main>

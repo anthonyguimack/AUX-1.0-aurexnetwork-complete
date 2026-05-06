@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { publicAPI, contactAPI, checkoutAPI, blogExternalAPI } from '../lib/api';
+import CaptchaWidget from '../components/CaptchaWidget';
 import { useSettings, useTheme } from '../App';
 import { useAuth } from '../lib/auth';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
@@ -536,11 +537,13 @@ function ContactSection({ theme, contactSettings }) {
   const csSubtitle = tt(cs.subtitle) || "Let's Work Together";
   const csDescription = cleanHtml(tt(cs.description) || 'Have a project in mind? Let\'s discuss how we can help');
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [captchaToken, setCaptchaToken] = useState('');
   const [sending, setSending] = useState(false);
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSending(true);
-    try { await contactAPI.submit(form); toast.success('Message sent!'); setForm({ name: '', email: '', message: '' }); } catch { toast.error('Failed to send'); }
+    try { await contactAPI.submit({ ...form, captcha_token: captchaToken }); toast.success('Message sent!'); setForm({ name: '', email: '', message: '' }); setCaptchaToken(''); }
+    catch (err) { toast.error(err?.response?.data?.detail || 'Failed to send'); }
     finally { setSending(false); }
   };
 
@@ -553,6 +556,7 @@ function ContactSection({ theme, contactSettings }) {
         <form onSubmit={handleSubmit} className="space-y-5">
           <div className="grid grid-cols-2 gap-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" /></div>
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={5} className="w-full px-5 py-3.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:border-[#0D9488]" />
+          <div className="flex justify-center"><CaptchaWidget onChange={setCaptchaToken} testId="contact-captcha-modern" /></div>
           <button type="submit" disabled={sending} className="px-8 py-3.5 rounded-full text-white font-medium text-sm flex items-center gap-2 mx-auto disabled:opacity-50" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
         </form>
       </div>
@@ -566,6 +570,7 @@ function ContactSection({ theme, contactSettings }) {
         <form onSubmit={handleSubmit} className="border-2 p-10" style={{ borderColor: 'var(--color-primary, #1a2332)' }}>
           <div className="grid grid-cols-2 gap-4 mb-4"><input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Full Name" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /><input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Email Address" className="px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none" style={{ borderColor: 'var(--color-primary, #1a2332)' }} /></div>
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your message..." rows={5} className="w-full px-4 py-3 bg-[#faf9f6] border text-sm focus:outline-none mb-4" style={{ borderColor: 'var(--color-primary, #1a2332)' }} />
+          <div className="flex justify-center mb-4"><CaptchaWidget onChange={setCaptchaToken} testId="contact-captcha-classic" /></div>
           <button type="submit" disabled={sending} className="px-8 py-3 text-white font-medium text-sm flex items-center gap-2 mx-auto disabled:opacity-50" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
         </form>
       </div>
@@ -582,6 +587,7 @@ function ContactSection({ theme, contactSettings }) {
             <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder="Your Name" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
             <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder="Your Email" className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
             <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder="Your Message" rows={4} className="w-full px-5 py-3 bg-white/10 border border-white/20 rounded-sm text-white text-sm placeholder:text-white/40 focus:outline-none focus:border-white/40" />
+            <CaptchaWidget onChange={setCaptchaToken} testId="contact-captcha-default" />
             <button type="submit" disabled={sending} className="w-full py-3 text-white font-medium rounded-sm text-sm flex items-center justify-center gap-2 disabled:opacity-50" style={{ backgroundColor: 'var(--color-accent, #0D9488)' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} Send Message</button>
           </form>
         </div>

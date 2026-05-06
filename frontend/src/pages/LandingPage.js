@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import CaptchaWidget from '../components/CaptchaWidget';
 import { landingAPI } from '../lib/api';
 import { useSettings } from '../App';
 import { X } from 'lucide-react';
@@ -146,6 +147,8 @@ export default function LandingPage() {
   const [waitlistForm, setWaitlistForm] = useState({ first_name: '', last_name: '', email: '' });
   const [waitlistSubmitting, setWaitlistSubmitting] = useState(false);
   const [waitlistSuccess, setWaitlistSuccess] = useState(false);
+  const [contactCaptcha, setContactCaptcha] = useState('');
+  const [waitlistCaptcha, setWaitlistCaptcha] = useState('');
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [currentSlide, setCurrentSlide] = useState(0);
   const [slideAnimKey, setSlideAnimKey] = useState(0);
@@ -189,9 +192,10 @@ export default function LandingPage() {
     e.preventDefault();
     setContactSubmitting(true);
     try {
-      await landingAPI.submitContact(contactForm);
+      await landingAPI.submitContact({ ...contactForm, captcha_token: contactCaptcha });
       setContactSuccess(true);
       setContactForm({ first_name: '', email: '', subject: '', message: '' });
+      setContactCaptcha('');
     } catch { } finally { setContactSubmitting(false); }
   };
 
@@ -199,9 +203,10 @@ export default function LandingPage() {
     e.preventDefault();
     setWaitlistSubmitting(true);
     try {
-      await landingAPI.subscribe(waitlistForm);
+      await landingAPI.subscribe({ ...waitlistForm, captcha_token: waitlistCaptcha });
       setWaitlistSuccess(true);
       setWaitlistForm({ first_name: '', last_name: '', email: '' });
+      setWaitlistCaptcha('');
     } catch { } finally { setWaitlistSubmitting(false); }
   };
 
@@ -366,6 +371,7 @@ export default function LandingPage() {
                   <input type="email" placeholder={content.contact_email_ph || 'Your Email'} required value={contactForm.email} onChange={e => setContactForm({ ...contactForm, email: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50" style={inputDark} data-testid="lp-contact-email" />
                   <input placeholder={content.contact_subject_ph || 'Write the subject'} value={contactForm.subject} onChange={e => setContactForm({ ...contactForm, subject: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50" style={inputDark} data-testid="lp-contact-subject" />
                   <textarea placeholder={content.contact_message_ph || 'Your message here'} required rows={4} value={contactForm.message} onChange={e => setContactForm({ ...contactForm, message: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm placeholder:opacity-50 resize-none" style={inputDark} data-testid="lp-contact-message" />
+                  <CaptchaWidget onChange={setContactCaptcha} testId="lp-contact-captcha" />
                   <button type="submit" disabled={contactSubmitting} className="w-full py-3 rounded-lg text-sm font-semibold hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: cv('button-bg', '#c9a84c'), color: cv('button-text', '#0a0a12') }} data-testid="lp-contact-submit">
                     {contactSubmitting ? 'Sending...' : (content.contact_btn_text || 'Send my Message')}
                   </button>
@@ -399,6 +405,7 @@ export default function LandingPage() {
                 <input placeholder="Name" required value={waitlistForm.first_name} onChange={e => setWaitlistForm({ ...waitlistForm, first_name: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-name" />
                 <input placeholder="Last Name" required value={waitlistForm.last_name} onChange={e => setWaitlistForm({ ...waitlistForm, last_name: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-lastname" />
                 <input type="email" placeholder="Email" required value={waitlistForm.email} onChange={e => setWaitlistForm({ ...waitlistForm, email: e.target.value })} className="w-full px-4 py-3 rounded-lg text-sm" style={inputLight} data-testid="lp-waitlist-email" />
+                <div className="flex justify-center"><CaptchaWidget onChange={setWaitlistCaptcha} testId="lp-waitlist-captcha" /></div>
                 <button type="submit" disabled={waitlistSubmitting} className="w-full py-3 rounded-lg text-sm font-semibold hover:opacity-80 disabled:opacity-50" style={{ backgroundColor: '#1a1a2e', color: '#ffffff' }} data-testid="lp-waitlist-submit">
                   {waitlistSubmitting ? 'Submitting...' : (content.waitlist_btn_text || 'Submit')}
                 </button>

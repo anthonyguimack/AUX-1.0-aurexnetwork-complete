@@ -23,6 +23,7 @@ import { useT } from '../lib/i18n';
 import { useLang, itemHasLocale } from '../lib/i18n';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
 import { contactAPI, blogExternalAPI, checkoutAPI } from '../lib/api';
+import CaptchaWidget from './CaptchaWidget';
 import { useSettings } from '../App';
 
 const API = process.env.REACT_APP_BACKEND_URL;
@@ -918,11 +919,13 @@ export function AurexContactMono({ contactSettings, bg, font }) {
   const cs = contactSettings || {};
   const m = monoStyle(bg, font, '#111827');
   const [form, setForm] = useState({ name: '', email: '', message: '' });
+  const [captchaToken, setCaptchaToken] = useState('');
   const [sending, setSending] = useState(false);
   const submit = async (e) => {
     e.preventDefault();
     setSending(true);
-    try { await contactAPI.submit(form); toast.success('Message sent!'); setForm({ name: '', email: '', message: '' }); } catch { toast.error('Failed to send'); }
+    try { await contactAPI.submit({ ...form, captcha_token: captchaToken }); toast.success('Message sent!'); setForm({ name: '', email: '', message: '' }); setCaptchaToken(''); }
+    catch (err) { toast.error(err?.response?.data?.detail || 'Failed to send'); }
     finally { setSending(false); }
   };
   // When dark: transparent inputs; when light: soft gray inputs
@@ -942,6 +945,7 @@ export function AurexContactMono({ contactSettings, bg, font }) {
           <input value={form.name} onChange={e => setForm(p => ({...p, name: e.target.value}))} required placeholder={tt(cs.name_placeholder) || 'Your name'} className={inputClass} style={{ color: 'inherit' }} />
           <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder={tt(cs.email_placeholder) || 'Your email'} className={inputClass} style={{ color: 'inherit' }} />
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder={tt(cs.message_placeholder) || 'Your message'} rows={5} className={`${inputClass} resize-none`} style={{ color: 'inherit' }} />
+          <CaptchaWidget onChange={setCaptchaToken} testId="contact-captcha" />
           <button type="submit" disabled={sending} className="w-full py-3 rounded-sm font-semibold text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {tt(cs.submit_text) || 'Send message'}</button>
         </Reveal>
       </div>

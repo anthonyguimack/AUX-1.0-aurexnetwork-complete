@@ -39,6 +39,7 @@ from routes.aurex_sections import router as aurex_sections_router
 from routes.hero_ab import router as hero_ab_router
 from routes.roles import router as roles_router, seed_system_roles
 from routes.email_templates import router as email_templates_router
+from routes.captcha import router as captcha_router
 
 api_router.include_router(auth_router)
 api_router.include_router(public_router)
@@ -59,6 +60,7 @@ api_router.include_router(aurex_sections_router)
 api_router.include_router(hero_ab_router)
 api_router.include_router(roles_router)
 api_router.include_router(email_templates_router)
+api_router.include_router(captcha_router)
 
 # Import seed data function
 from seed import seed_data

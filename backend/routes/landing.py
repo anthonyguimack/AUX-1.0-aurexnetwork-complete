@@ -101,6 +101,8 @@ async def admin_delete_subscriber(item_id: str, user: dict = Depends(require_adm
 @router.post("/public/landing-subscribe")
 async def public_subscribe(request: Request):
     body = await request.json()
+    from utils.rate_limit import public_form_guard
+    await public_form_guard(request, body, key="landing_subscribe")
     email = body.get("email", "").strip().lower()
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")
@@ -131,6 +133,8 @@ async def admin_delete_landing_contact(item_id: str, user: dict = Depends(requir
 @router.post("/public/landing-contact")
 async def public_landing_contact(request: Request):
     body = await request.json()
+    from utils.rate_limit import public_form_guard
+    await public_form_guard(request, body, key="landing_contact")
     email = body.get("email", "").strip()
     if not email:
         raise HTTPException(status_code=400, detail="Email is required")

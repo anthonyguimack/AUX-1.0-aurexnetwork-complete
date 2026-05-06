@@ -9,6 +9,18 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
 
+## Latest Update (Feb 4, 2026 — evening)
+**reCAPTCHA + rate-limit + UX/email polish**
+- New CMS section **Settings → Captcha**: enable toggle, site key, secret key, version v2 (with Google admin link). Keys persisted in `captcha_settings` Mongo collection. Public endpoint `/api/public/captcha-config` exposes only `enabled` + `site_key` (never the secret).
+- Backend `utils/captcha.py` — Google siteverify integration, fail-closed when enabled-but-not-configured, no-op when disabled.
+- `utils/rate_limit.py` adds `public_form_guard()` combining 5 req/min/IP throttle + captcha verification. Applied to **every** public POST: `/api/contact`, `/api/member/register`, `/api/public/enrollment/submit`, `/api/public/landing-subscribe`, `/api/public/landing-contact`. Login also throttled at 5/min/IP (no captcha).
+- New `<CaptchaWidget>` React component pulls config dynamically, renders or hides itself, exposes a `reset()` ref for failed-submit retry. Wired into Aurex contact form, all 3 HomePage themes (modern/classic/default), Landing Page contact + waitlist, Member Register, Membership Enrollment, Forgot Password.
+- **Forgot/Reset password pages** restyled to use the My Account theme variables (`--ma-page-bg`, `--ma-button-bg`, `--ma-button-text`, `--ma-accent`, `--ma-input-bg`, `--ma-text-primary/secondary/muted`) so colours track the operator's CMS choices.
+- **Email rendering fixes**:
+  - i18n `brand_name` dicts (e.g. `{"en": "Aurex Network"}`) now flatten correctly via `resolve_i18n()` — no more `'dict' object has no attribute 'replace'` on SMTP test.
+  - `{{platform_name}}` always resolves from CMS Settings → General first (sample defaults lose).
+  - `{{site_url}}` auto-injected from CMS Settings → General; sample `https://example.com/...` URLs in template registries are rewritten to use the configured Site URL so previews + test sends point at the real domain.
+
 ## Latest Update (Feb 4, 2026 — afternoon)
 **Email Management refinements**
 - New 6th template **SMTP Test Email** (key `smtp_test`) — variables: `{{recipient_email}}`, `{{platform_name}}`, `{{sent_at}}`. The legacy `POST /api/admin/smtp/test-email` endpoint now renders through this template + the configured branding so the operator sees exactly what customers will see.

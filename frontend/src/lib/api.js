@@ -34,6 +34,7 @@ export const publicAPI = {
   getMyAccountLinks: () => api.get('/public/myaccount-links'),
   getMyAccountNav: () => api.get('/public/myaccount-nav'),
   getBlockedDates: () => api.get('/public/blocked-dates'),
+  getCaptchaConfig: () => api.get('/public/captcha-config'),
 };
 
 export const searchAPI = {
@@ -49,7 +50,7 @@ export const authAPI = {
   me: () => api.get('/auth/me'),
   logout: () => api.post('/auth/logout'),
   exchangeSession: (sessionId) => api.post('/auth/session', { session_id: sessionId }),
-  forgotPassword: (email) => api.post('/auth/forgot-password', { email }),
+  forgotPassword: (email, captchaToken) => api.post('/auth/forgot-password', { email, captcha_token: captchaToken }),
   resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
   verifyResetToken: (token) => api.get(`/auth/reset-password/verify?token=${encodeURIComponent(token)}`),
   changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
@@ -171,6 +172,9 @@ export const adminAPI = {
   testSendEmailTemplate: (key, data) => api.post(`/admin/email-templates/${key}/test-send`, data),
   getEmailBranding: () => api.get('/admin/email-branding'),
   updateEmailBranding: (data) => api.put('/admin/email-branding', data),
+  // Captcha
+  getCaptchaSettings: () => api.get('/admin/captcha-settings'),
+  updateCaptchaSettings: (data) => api.put('/admin/captcha-settings', data),
   // Upload
   uploadImage: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },
   uploadFile: (file) => { const fd = new FormData(); fd.append('file', file); return api.post('/upload-file', fd, { headers: { 'Content-Type': 'multipart/form-data' } }); },

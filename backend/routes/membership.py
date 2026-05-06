@@ -177,6 +177,8 @@ async def validate_invite_code(code: str):
 @router.post("/member/register")
 async def register_member(request: Request):
     body = await request.json()
+    from utils.rate_limit import public_form_guard
+    await public_form_guard(request, body, key="member_register")
     code_str = body.get("invite_code", "").strip()
     sponsor_number = body.get("sponsor_membership_number")  # QR-based
     sponsor_doc = None

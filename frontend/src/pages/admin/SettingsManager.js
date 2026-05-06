@@ -216,6 +216,7 @@ export default function SettingsManager() {
           <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
           <TabsTrigger value="stripe" data-testid="tab-stripe"><CreditCard className="w-3 h-3 mr-1" />Stripe</TabsTrigger>
           <TabsTrigger value="apis"><Plug className="w-3 h-3 mr-1" />APIs</TabsTrigger>
+          <TabsTrigger value="captcha" data-testid="tab-captcha"><Shield className="w-3 h-3 mr-1" />Captcha</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
@@ -869,7 +870,125 @@ export default function SettingsManager() {
             </div>
           </div>
         </TabsContent>
+
+        <TabsContent value="captcha">
+          <CaptchaSettingsTab />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ─── Captcha Settings tab ─────────────────────────────────────────
+// Stores the Google reCAPTCHA v2 site/secret keys plus a master enable
+// toggle.  The keys live in their own `captcha_settings` Mongo collection
+// (separate from the main settings doc) so they can be rotated without
+// touching the sprawling general-settings record.
+function CaptchaSettingsTab() {
+  const [data, setData] = useState({ enabled: false, site_key: '', secret_key: '', version: 'v2' });
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [showSecret, setShowSecret] = useState(false);
+
+  useEffect(() => {
+    adminAPI.getCaptchaSettings()
+      .then(r => setData(r.data || {}))
+      .catch(() => toast.error('Could not load captcha settings'))
+      .finally(() => setLoading(false));
+  }, []);
+
+  const save = async () => {
+    setSaving(true);
+    try {
+      await adminAPI.updateCaptchaSettings(data);
+      toast.success('Captcha settings saved');
+    } catch (e) {
+      toast.error('Save failed');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (loading) {
+    return <div className="p-6 flex justify-center"><Loader2 className="w-5 h-5 animate-spin text-gray-400" /></div>;
+  }
+
+  return (
+    <div className="bg-white rounded-lg border border-gray-200 p-6 space-y-5 max-w-3xl" data-testid="captcha-settings-form">
+      <div>
+        <h3 className="text-base font-semibold text-gray-900 flex items-center gap-2"><Shield className="w-4 h-4" /> Google reCAPTCHA v2</h3>
+        <p className="text-sm text-gray-500 mt-1">
+          Protects every public form (Contact, Member registration, Forgot password, Enrollment, Waiting list) against
+          bot abuse — required by AWS SES and other reputable email providers as a sending best-practice.
+          When disabled, the widget hides and forms accept submissions without verification.
+        </p>
+        <p className="text-xs text-gray-500 mt-2">
+          Get keys from <a href="https://www.google.com/recaptcha/admin" target="_blank" rel="noreferrer" className="text-blue-600 underline">Google reCAPTCHA admin</a> &mdash; choose <strong>reCAPTCHA v2 → "I'm not a robot" Checkbox</strong>.
+        </p>
+      </div>
+
+      <div className="flex items-center gap-3 p-3 bg-gray-50 rounded border border-gray-200">
+        <Switch checked={data.enabled} onCheckedChange={(v) => setData(d => ({ ...d, enabled: v }))} data-testid="captcha-enabled-toggle" />
+        <div>
+          <Label className="font-medium">Enable Captcha</Label>
+          <p className="text-xs text-gray-500">When ON, every public form requires a successful captcha challenge.</p>
+        </div>
+      </div>
+
+      <div>
+        <Label className="text-xs font-medium text-gray-700">Site Key (public)</Label>
+        <Input
+          type="text"
+          value={data.site_key}
+          onChange={e => setData(d => ({ ...d, site_key: e.target.value }))}
+          placeholder="6Lfn...AAAA"
+          className="mt-1 font-mono text-sm"
+          data-testid="captcha-site-key"
+        />
+      </div>
+
+      <div>
+        <Label className="text-xs font-medium text-gray-700">Secret Key (private)</Label>
+        <div className="relative mt-1">
+          <Input
+            type={showSecret ? 'text' : 'password'}
+            value={data.secret_key}
+            onChange={e => setData(d => ({ ...d, secret_key: e.target.value }))}
+            placeholder="6Lfn...AAAA"
+            className="font-mono text-sm pr-10"
+            data-testid="captcha-secret-key"
+          />
+          <button type="button" onClick={() => setShowSecret(s => !s)} className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700" aria-label="Toggle secret visibility">
+            {showSecret ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
+        <p className="text-xs text-gray-500 mt-1">Server-side only — never returned by the public config endpoint.</p>
+      </div>
+
+      <div className="pt-3 border-t border-gray-100 flex gap-2">
+        <button
+          onClick={save}
+          disabled={saving}
+          className="px-4 py-2 bg-[#1a2332] text-white rounded-md text-sm font-medium flex items-center gap-2 hover:bg-[#243046] disabled:opacity-50"
+          data-testid="captcha-save"
+        >
+          {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+          Save
+        </button>
+      </div>
+
+      {data.enabled && data.site_key && data.secret_key && (
+        <div className="bg-emerald-50 border border-emerald-200 rounded p-3 text-xs text-emerald-800 flex items-start gap-2">
+          <Check className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>Captcha is active. Public forms now require the &quot;I&apos;m not a robot&quot; check before submission.</span>
+        </div>
+      )}
+      {data.enabled && (!data.site_key || !data.secret_key) && (
+        <div className="bg-amber-50 border border-amber-200 rounded p-3 text-xs text-amber-800 flex items-start gap-2">
+          <AlertTriangle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+          <span>Captcha is enabled but a key is missing — public forms will reject every submission until both keys are filled in.</span>
+        </div>
+      )}
     </div>
   );
 }
