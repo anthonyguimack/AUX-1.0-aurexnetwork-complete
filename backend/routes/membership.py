@@ -148,8 +148,13 @@ async def send_invite_code(code_id: str, request: Request, member: dict = Depend
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host") and body.get("email"):
         try:
-            origin = request.headers.get("origin", "")
-            reg_url = f"{origin}/my-account/register?code={code_doc['code']}"
+            # Always prefer the CMS-configured Site URL so emails point at
+            # the canonical production domain rather than whatever ingress
+            # host happens to be in the request Origin header (e.g. an
+            # internal cluster preview URL).
+            from utils.runtime_config import get_site_url
+            base = await get_site_url(request.headers.get("origin", ""))
+            reg_url = f"{base}/my-account/register?code={code_doc['code']}" if base else f"/my-account/register?code={code_doc['code']}"
             from utils.email_render import render_and_send
             await render_and_send(
                 "invite_code", settings, body["email"], body.get("first_name", ""),
