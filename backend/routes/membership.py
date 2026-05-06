@@ -983,11 +983,21 @@ async def admin_get_member_ebank(member_id: str, user: dict = Depends(require_ad
 
 @router.post("/member/generate-qr")
 async def generate_member_qr(request: Request, member: dict = Depends(get_current_member)):
-    """Generate QR code for sponsor-based registration."""
+    """Generate QR code for sponsor-based registration.
+
+    URL resolution priority (matches the email-link helper so QR codes and
+    invite-emails always agree):
+      1. CMS Settings → General → Site URL
+      2. SITE_URL env var
+      3. Frontend-supplied `base_url`
+      4. Request Origin header
+    """
     body = await request.json()
-    base_url = body.get("base_url", "").rstrip("/")
+    fallback = (body.get("base_url") or request.headers.get("origin", "") or "").rstrip("/")
+    from utils.runtime_config import get_site_url
+    base_url = await get_site_url(fallback)
     if not base_url:
-        raise HTTPException(status_code=400, detail="base_url is required")
+        raise HTTPException(status_code=400, detail="Site URL not configured. Set it in CMS → Settings → General.")
     reg_url = f"{base_url}/my-account/register?sponsor={member['membership_number']}"
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(reg_url)
@@ -1007,11 +1017,14 @@ async def generate_member_qr(request: Request, member: dict = Depends(get_curren
 
 @router.post("/admin/members/{member_id}/generate-qr")
 async def admin_generate_member_qr(member_id: str, request: Request, user: dict = Depends(require_admin)):
-    """Admin generates QR for a member."""
+    """Admin generates QR for a member.  Same URL resolution as the
+    member-side endpoint — CMS Site URL wins."""
     body = await request.json()
-    base_url = body.get("base_url", "").rstrip("/")
+    fallback = (body.get("base_url") or request.headers.get("origin", "") or "").rstrip("/")
+    from utils.runtime_config import get_site_url
+    base_url = await get_site_url(fallback)
     if not base_url:
-        raise HTTPException(status_code=400, detail="base_url is required")
+        raise HTTPException(status_code=400, detail="Site URL not configured. Set it in CMS → Settings → General.")
     member = await db.members.find_one({"member_id": member_id}, {"_id": 0})
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")
