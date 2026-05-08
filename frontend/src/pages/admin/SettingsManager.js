@@ -1145,5 +1145,50 @@ function ThemePreview({ themeId }) {
       </div>
     );
   }
+  if (themeId === 'personalbrand') {
+    return (
+      <div className="w-full h-full bg-[#fbf6ee] flex flex-col text-[3px]" style={{ fontFamily: "'Playfair Display', serif" }}>
+        {/* Header — cream */}
+        <div className="bg-[#fbf6ee] h-[8%] border-b border-[#e8dccd] flex items-center px-[5%]">
+          <div className="w-[10%] h-[50%] bg-[#3a2517] rounded-sm" />
+          <div className="flex-1 flex justify-end gap-[3%]">
+            <div className="w-[8%] h-[40%] bg-[#7c6651]/50 rounded-full" />
+            <div className="w-[8%] h-[40%] bg-[#7c6651]/50 rounded-full" />
+            <div className="w-[12%] h-[50%] bg-[#c08552] rounded-sm" />
+          </div>
+        </div>
+        {/* Hero — warm cream + portrait-style accent */}
+        <div className="h-[28%] bg-[#fbf6ee] flex items-center px-[5%] gap-[4%]">
+          <div className="w-[20%] h-[80%] bg-gradient-to-br from-[#c08552] to-[#a36a3e] rounded-full" />
+          <div className="flex-1">
+            <div className="w-[20%] h-[2px] bg-[#c08552] rounded mb-2" />
+            <div className="w-[80%] h-[5px] bg-[#2a1810] rounded mb-1" />
+            <div className="w-[60%] h-[3px] bg-[#7c6651] rounded mb-2" />
+            <div className="w-[25%] h-[5px] bg-[#3a2517] rounded-sm" />
+          </div>
+        </div>
+        {/* Services — warm white cards */}
+        <div className="h-[18%] bg-white flex gap-[3%] px-[5%] py-[2%]">
+          <div className="flex-1 bg-[#fbf6ee] border border-[#e8dccd] rounded" />
+          <div className="flex-1 bg-[#fbf6ee] border border-[#e8dccd] rounded" />
+          <div className="flex-1 bg-[#fbf6ee] border border-[#e8dccd] rounded" />
+        </div>
+        {/* Reading List / Testimonials — terracotta band */}
+        <div className="h-[18%] bg-[#c08552] flex items-center justify-center px-[5%]">
+          <div className="w-[60%] text-center">
+            <div className="w-[60%] mx-auto h-[3px] bg-white rounded mb-1" />
+            <div className="w-[80%] mx-auto h-[2px] bg-white/70 rounded" />
+          </div>
+        </div>
+        {/* Contact — espresso footer */}
+        <div className="h-[10%] bg-[#3a2517] flex items-center justify-around px-[5%]">
+          <div className="w-[10%] h-[40%] bg-[#c08552]/40 rounded" />
+          <div className="w-[10%] h-[40%] bg-[#c08552]/40 rounded" />
+          <div className="w-[10%] h-[40%] bg-[#c08552]/40 rounded" />
+        </div>
+        <div className="flex-1 bg-[#2a1810]" />
+      </div>
+    );
+  }
   return null;
 }

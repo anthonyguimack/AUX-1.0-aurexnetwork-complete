@@ -158,16 +158,17 @@ export default function SectionOrderManager() {
   const loadAll = useCallback(async () => {
     if (!theme) return;
     try {
+      const isAurexLike = theme === 'aurex' || theme === 'personalbrand';
       const [orderRes, settingsRes, configRes] = await Promise.all([
         adminAPI.getSectionOrder(theme === 'default' ? null : theme),
         adminAPI.getSettings(),
-        theme === 'aurex' ? adminAPI.getSectionConfig('aurex') : Promise.resolve({ data: {} }),
+        isAurexLike ? adminAPI.getSectionConfig(theme) : Promise.resolve({ data: {} }),
       ]);
       let nextOrder = orderRes.data || [];
-      // Ensure any newly added Aurex section types automatically appear in
+      // Ensure any newly added Aurex-family section types automatically appear in
       // the builder even if the admin saved the order before we added them.
-      if (theme === 'aurex') {
-        const known = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+      if (isAurexLike) {
+        const known = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'reading_list', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
         const missing = known.filter(k => !nextOrder.includes(k));
         if (missing.length) nextOrder = [...nextOrder, ...missing];
       }
@@ -198,17 +199,18 @@ export default function SectionOrderManager() {
   const handleSave = async () => {
     setLoading(true);
     try {
+      const isAurexLike = theme === 'aurex' || theme === 'personalbrand';
       await adminAPI.updateSectionOrder(order, theme === 'default' ? null : theme);
       await adminAPI.updateSettings({ sections });
-      if (theme === 'aurex') {
-        await adminAPI.updateSectionConfig(configs, 'aurex');
+      if (isAurexLike) {
+        await adminAPI.updateSectionConfig(configs, theme);
       }
       toast.success(`Saved ${theme === 'default' ? '(legacy order)' : `for ${theme} theme`}`);
     } catch (err) { toast.error(err.response?.data?.detail || 'Error saving'); }
     finally { setLoading(false); }
   };
 
-  const showAurexControls = theme === 'aurex';
+  const showAurexControls = theme === 'aurex' || theme === 'personalbrand';
 
   return (
     <div data-testid="section-order-manager">
@@ -226,7 +228,7 @@ export default function SectionOrderManager() {
             <label className="text-xs text-slate-500">Editing:</label>
             <select value={theme || ''} onChange={(e) => setTheme(e.target.value)} className="text-sm border border-slate-200 rounded px-3 py-1.5 bg-white" data-testid="theme-scope-select">
               <option value="default">Default / Modern / Classic (legacy order)</option>
-              {THEMES.filter(t => t.id === 'aurex').map(t => <option key={t.id} value={t.id}>{t.name} — full config</option>)}
+              {THEMES.filter(t => t.id === 'aurex' || t.id === 'personalbrand').map(t => <option key={t.id} value={t.id}>{t.name} — full config</option>)}
             </select>
           </div>
           <button onClick={handleSave} disabled={loading} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2 disabled:opacity-50" data-testid="section-save-btn">

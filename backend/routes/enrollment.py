@@ -119,8 +119,11 @@ async def check_enrollment_email(request: Request):
 @router.post("/public/enrollment/submit")
 async def submit_enrollment(request: Request):
     body = await request.json()
-    from utils.rate_limit import public_form_guard
-    await public_form_guard(request, body, key="enrollment_submit")
+    # Rate-limit only — no captcha on the multi-step enrollment form per
+    # operator preference (the funnel is long enough that bots rarely make
+    # it to step 4 and a captcha here adds friction for serious applicants).
+    from utils.rate_limit import enforce_rate_limit
+    await enforce_rate_limit(request, key="enrollment_submit", max_requests=5, window_seconds=60)
     form_data = body.get("form_data", {})
     email = form_data.get("email", "").strip().lower()
     password = form_data.get("password", "")

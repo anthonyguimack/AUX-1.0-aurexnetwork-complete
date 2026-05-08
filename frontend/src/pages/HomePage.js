@@ -43,7 +43,7 @@ import {
   AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
   AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
 } from '../components/AurexSections';
-import { AUREX_FONTS } from '../lib/themeColors';
+import { AUREX_FONTS, isAurexFamily, PERSONALBRAND_DEFAULTS } from '../lib/themeColors';
 
 /* ==================== ABOUT ==================== */
 function AboutSection({ data, theme }) {
@@ -630,12 +630,41 @@ export default function HomePage() {
   }, []);
 
   const sections = settings.sections || {};
-  const isAurex = (settings.active_theme || 'default') === 'aurex';
+  const activeTheme = settings.active_theme || 'default';
+  // Aurex-family themes (Aurex One-page + Personal Brand Pro) all share the
+  // same one-page section architecture, just with different default colours
+  // and typography.  Treating them as a single render pipeline keeps the
+  // section components DRY.
+  const isAurex = isAurexFamily(activeTheme);
+  const isPersonalBrand = activeTheme === 'personalbrand';
+
+  // Apply Personal Brand Pro warm defaults to :root so the existing Aurex
+  // mono components inherit terracotta accents / cream backgrounds without
+  // any per-component code changes.  Operator overrides from
+  // Settings → Colors → Website continue to win because they're written to
+  // :root *after* this effect runs.
+  useEffect(() => {
+    if (!isPersonalBrand) return;
+    const root = document.documentElement;
+    const previous = {};
+    Object.entries(PERSONALBRAND_DEFAULTS).forEach(([k, v]) => {
+      previous[k] = root.style.getPropertyValue(k);
+      // Only set if the operator hasn't already overridden it via Settings.
+      if (!previous[k]) root.style.setProperty(k, v);
+    });
+    return () => {
+      Object.keys(previous).forEach((k) => {
+        if (!previous[k]) root.style.removeProperty(k);
+      });
+    };
+  }, [isPersonalBrand]);
   const aurexData = useAurexSections();
-  const aurexConfigs = (settings.section_configs && settings.section_configs.aurex) || {};
-  const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+  // Each Aurex-family theme keeps its own section_configs scope so the
+  // operator can have separate per-section bg/font choices for each layout.
+  const aurexConfigs = (settings.section_configs && settings.section_configs[activeTheme]) || (settings.section_configs && settings.section_configs.aurex) || {};
+  const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'reading_list', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
   const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
-  const perThemeOrder = settings.section_orders && settings.section_orders[settings.active_theme || 'default'];
+  const perThemeOrder = settings.section_orders && settings.section_orders[activeTheme];
   let sectionOrder = perThemeOrder || settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
   // If Aurex theme is active, append any known Aurex keys that the stored order
   // is missing (can happen after we add new Aurex sections like `aurex_video`

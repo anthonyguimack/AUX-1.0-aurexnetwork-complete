@@ -90,7 +90,7 @@ export default function HeroSection({ data, slides }) {
     };
   };
 
-  const isModernLike = theme === 'modern' || theme === 'aurex';
+  const isModernLike = theme === 'modern' || theme === 'aurex' || theme === 'personalbrand';
   const heroClasses = isModernLike
     ? 'relative min-h-[750px] md:min-h-[800px] flex items-center overflow-hidden'
     : theme === 'classic'

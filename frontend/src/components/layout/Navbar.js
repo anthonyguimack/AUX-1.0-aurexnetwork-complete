@@ -8,12 +8,13 @@ import { useT } from '../../lib/i18n';
 import { Menu, X, LogIn, LogOut, Facebook, Twitter, Instagram, Linkedin, Github, Youtube, Search } from 'lucide-react';
 import LoginModal from '../LoginModal';
 import SearchBar from '../SearchBar';
+import { isAurexFamily } from '../../lib/themeColors';
 
 const socialIconMap = { facebook: Facebook, twitter: Twitter, instagram: Instagram, linkedin: Linkedin, github: Github, youtube: Youtube };
 
 export default function Navbar() {
   const theme = useTheme();
-  if (theme === 'modern' || theme === 'aurex') return <ModernNavbar />;
+  if (theme === 'modern' || isAurexFamily(theme)) return <ModernNavbar />;
   if (theme === 'classic') return <ClassicNavbar />;
   return <DefaultNavbar />;
 }

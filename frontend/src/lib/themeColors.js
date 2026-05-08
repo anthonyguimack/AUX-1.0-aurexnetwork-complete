@@ -259,7 +259,35 @@ export const THEMES = [
     name: 'Aurex One-page',
     description: 'Monochromatic one-page template — clean whites/grays/darks, per-section background & font picker, and global drag-drop ordering.',
   },
+  {
+    id: 'personalbrand',
+    name: 'Personal Brand Pro',
+    description: 'Warm, personal one-page template for independent professionals — credit analysts, AI innovators, real-estate experts. Cream/sand/terracotta defaults, serif-led typography, same section library as Aurex.',
+  },
 ];
+
+// Themes that share the Aurex section architecture (per-section bg + font,
+// drag-drop ordering, the AurexFooMono components).  Helper centralises the
+// check so we don't sprinkle `theme === 'aurex' || theme === 'personalbrand'`
+// across the codebase.
+export function isAurexFamily(themeId) {
+  return themeId === 'aurex' || themeId === 'personalbrand';
+}
+
+// Personal Brand Pro: warm defaults that the operator can override from
+// Settings → Colors → Website.  These are CSS variable values applied to
+// :root when the theme is active so the existing Aurex components inherit
+// them without code changes.
+export const PERSONALBRAND_DEFAULTS = {
+  '--color-primary': '#3a2517',          // Deep espresso
+  '--color-accent': '#c08552',           // Warm terracotta
+  '--color-bg': '#fbf6ee',               // Cream
+  '--color-card': '#ffffff',
+  '--color-heading': '#2a1810',          // Near-black brown
+  '--color-text': '#3d2818',
+  '--color-secondary-text': '#7c6651',   // Soft warm gray
+  '--color-border': '#e8dccd',           // Sand
+};
 
 // ── Aurex theme: official monochromatic palette ──────────────────────────
 // Only these 7 swatches are allowed as section backgrounds. Text color

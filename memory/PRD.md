@@ -9,6 +9,15 @@ Multi-page consultant website with CMS admin panel, Stripe payments, Theme Engin
 - **Database**: MongoDB | **Auth**: JWT + Google OAuth | **Payments**: Stripe
 
 
+## Latest Update (Feb 5, 2026)
+**Personal Brand Pro template + Reading List + QR/captcha refinements**
+- Removed captcha (and its backend hook) from `/membership-enrollment` per operator preference — funnel kept only the 5/min/IP rate limit. Welcome / contact / register / forgot-password still have captcha.
+- **My Account → Invite Code** now auto-regenerates the QR on mount so the displayed `register?sponsor=…` URL always reflects the current CMS Site URL (no stale cluster URLs from before the operator set Site URL).
+- **CMS → Members → Generate QR** + **My Account → Invite Code → Generate QR** both go through `get_site_url()` → CMS Settings wins over Origin/`base_url`. Verified end-to-end with a non-trivial Site URL.
+- New theme **Personal Brand Pro** (id `personalbrand`) added to Settings → Themes selector and Page Builder "Editing" dropdown. Shares the entire Aurex One-page section library (Hero, About, Services, News, Blog, Reading List, Audience, Process, Video, Pricing, Team, Testimonials, Events, Partners, Clients, Map, Contact) with a warm cream/terracotta default palette (overridable from Settings → Colors → Website). Each theme keeps its own `section_configs` and `section_orders` scope so layouts don't collide.
+- Helper `isAurexFamily(themeId)` introduced in `lib/themeColors.js` so `theme === 'aurex' || theme === 'personalbrand'` is centralised. `Navbar`, `HeroSection`, `HomePage`, `SectionOrderManager` all routed through it.
+- Reading List section confirmed wired into the Aurex section map and now appears by default in the Page Builder for both Aurex One-page and Personal Brand Pro scopes.
+
 ## Latest Update (Feb 4, 2026 — evening)
 **reCAPTCHA + rate-limit + UX/email polish**
 - New CMS section **Settings → Captcha**: enable toggle, site key, secret key, version v2 (with Google admin link). Keys persisted in `captcha_settings` Mongo collection. Public endpoint `/api/public/captcha-config` exposes only `enabled` + `site_key` (never the secret).

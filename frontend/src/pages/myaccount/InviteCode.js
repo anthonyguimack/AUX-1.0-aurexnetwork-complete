@@ -74,12 +74,25 @@ export default function InviteCode() {
     link.click();
   };
 
-  // Sync member qr_code on mount
+  // On mount, always re-fetch a fresh QR so the displayed URL reflects the
+  // current CMS Site URL.  Without this, members see a stale `qr_url`
+  // baked into the auth/me payload from before the operator (re)set Site URL.
   useEffect(() => {
-    if (member?.qr_code && !qrData.qr_code) {
-      setQrData({ qr_code: member.qr_code, qr_url: member.qr_url || '' });
-    }
-  }, [member]); // eslint-disable-line
+    if (!member?.can_create_qr) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await memberAPI.generateQR({ base_url: window.location.origin });
+        if (!cancelled) setQrData({ qr_code: r.data.qr_code, qr_url: r.data.qr_url });
+      } catch (e) {
+        // Fall back to whatever was cached on the member doc — better than blank.
+        if (!cancelled && member?.qr_code) {
+          setQrData({ qr_code: member.qr_code, qr_url: member.qr_url || '' });
+        }
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [member?.member_id, member?.can_create_qr]); // eslint-disable-line
 
   return (
     <div data-testid="invite-code-page">
