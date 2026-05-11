@@ -372,11 +372,11 @@ export default function MembersManager() {
                           if (!editing.member_id) { toast.error('Save the member first'); return; }
                           setQrLoading(true);
                           try {
-                            const baseUrl = window.location.origin;
-                            const r = await adminAPI.generateMemberQR(editing.member_id, { base_url: baseUrl });
+                            // No base_url passed — backend uses CMS Settings → Site URL (strict).
+                            const r = await adminAPI.generateMemberQR(editing.member_id, {});
                             setEditing(prev => ({ ...prev, qr_code: r.data.qr_code, qr_url: r.data.qr_url }));
                             toast.success('QR generated!');
-                          } catch (e) { toast.error('Failed to generate QR'); }
+                          } catch (e) { toast.error(e?.response?.data?.detail || 'Failed to generate QR'); }
                           finally { setQrLoading(false); }
                         }} className="text-[#0D9488] underline text-sm font-medium" disabled={qrLoading} data-testid="generate-qr-btn">
                           {qrLoading ? 'Generating...' : 'Click Here'}

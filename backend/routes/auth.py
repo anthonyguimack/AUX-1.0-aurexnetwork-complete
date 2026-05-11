@@ -161,12 +161,19 @@ async def forgot_password(request: Request):
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host"):
         try:
-            # Prefer the CMS-configured Site URL (Settings → General); fall back
-            # to the request Origin header so the link matches the page the
-            # user actually opened.
+            # Reset URLs MUST point at the canonical Site URL. Falling back
+            # to the request Origin would put the Emergent preview host in
+            # the reset link, which (a) confuses users and (b) breaks the
+            # moment the preview URL rotates.  If Site URL isn't set we
+            # still record the token (the operator can recover via the DB
+            # or by configuring Settings and clicking "forgot" again) but
+            # we skip the email send.
             from utils.runtime_config import get_site_url
-            base = await get_site_url(request.headers.get("origin", ""))
-            reset_url = f"{base}/my-account/reset-password?token={token}" if base else f"/my-account/reset-password?token={token}"
+            base = await get_site_url("")
+            if not base:
+                logger.warning("Skipping reset-password email: Site URL not configured in CMS → Settings → General.")
+                return {"message": "If the email exists, a reset link has been sent."}
+            reset_url = f"{base}/my-account/reset-password?token={token}"
             from utils.email_render import render_and_send
             await render_and_send(
                 "password_reset", settings, email, member.get("first_name", ""),

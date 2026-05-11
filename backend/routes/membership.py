@@ -148,23 +148,28 @@ async def send_invite_code(code_id: str, request: Request, member: dict = Depend
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host") and body.get("email"):
         try:
-            # Always prefer the CMS-configured Site URL so emails point at
-            # the canonical production domain rather than whatever ingress
-            # host happens to be in the request Origin header (e.g. an
-            # internal cluster preview URL).
+            # Email links MUST use the canonical Site URL (CMS Settings →
+            # General).  We never fall back to the request Origin here
+            # because the Origin can be any ingress/cluster preview host —
+            # those URLs in emails break the moment the preview URL
+            # rotates.  If Site URL isn't set, skip the email send entirely
+            # (the invite code itself is still created and shown in the UI).
             from utils.runtime_config import get_site_url
-            base = await get_site_url(request.headers.get("origin", ""))
-            reg_url = f"{base}/my-account/register?code={code_doc['code']}" if base else f"/my-account/register?code={code_doc['code']}"
-            from utils.email_render import render_and_send
-            await render_and_send(
-                "invite_code", settings, body["email"], body.get("first_name", ""),
-                variables={
-                    "name": body.get("first_name", ""),
-                    "inviter_name": f"{member.get('first_name', '')} {member.get('last_name', '')}".strip(),
-                    "code": code_doc["code"],
-                    "register_link": reg_url,
-                },
-            )
+            base = await get_site_url("")  # strict: no Origin fallback
+            if not base:
+                logger.warning("Skipping invite email: Site URL not configured in CMS → Settings → General.")
+            else:
+                reg_url = f"{base}/my-account/register?code={code_doc['code']}"
+                from utils.email_render import render_and_send
+                await render_and_send(
+                    "invite_code", settings, body["email"], body.get("first_name", ""),
+                    variables={
+                        "name": body.get("first_name", ""),
+                        "inviter_name": f"{member.get('first_name', '')} {member.get('last_name', '')}".strip(),
+                        "code": code_doc["code"],
+                        "register_link": reg_url,
+                    },
+                )
         except Exception as e:
             logger.warning(f"Failed to send invite email: {e}")
     return {"message": "Invitation sent", "code": {**code_doc, **update}}
@@ -985,19 +990,21 @@ async def admin_get_member_ebank(member_id: str, user: dict = Depends(require_ad
 async def generate_member_qr(request: Request, member: dict = Depends(get_current_member)):
     """Generate QR code for sponsor-based registration.
 
-    URL resolution priority (matches the email-link helper so QR codes and
-    invite-emails always agree):
-      1. CMS Settings → General → Site URL
-      2. SITE_URL env var
-      3. Frontend-supplied `base_url`
-      4. Request Origin header
+    The encoded URL MUST be the canonical Site URL configured in CMS →
+    Settings → General. We never fall back to the request Origin or to
+    the frontend-supplied `base_url` — those values are typically the
+    Emergent preview host or a cluster ingress, which would bake an
+    impermanent URL into the QR code printed on business cards / shared
+    by sponsors.  If Site URL isn't set the endpoint returns 400 so the
+    operator gets an immediate, actionable error.
     """
-    body = await request.json()
-    fallback = (body.get("base_url") or request.headers.get("origin", "") or "").rstrip("/")
     from utils.runtime_config import get_site_url
-    base_url = await get_site_url(fallback)
+    base_url = await get_site_url("")  # strict: ignore Origin / base_url
     if not base_url:
-        raise HTTPException(status_code=400, detail="Site URL not configured. Set it in CMS → Settings → General.")
+        raise HTTPException(
+            status_code=400,
+            detail="Site URL is not configured. Open CMS → Settings → General and set the Site URL (e.g. https://yourdomain.com) before generating QR codes.",
+        )
     reg_url = f"{base_url}/my-account/register?sponsor={member['membership_number']}"
     qr = qrcode.QRCode(version=1, box_size=10, border=4)
     qr.add_data(reg_url)
@@ -1017,14 +1024,15 @@ async def generate_member_qr(request: Request, member: dict = Depends(get_curren
 
 @router.post("/admin/members/{member_id}/generate-qr")
 async def admin_generate_member_qr(member_id: str, request: Request, user: dict = Depends(require_admin)):
-    """Admin generates QR for a member.  Same URL resolution as the
-    member-side endpoint — CMS Site URL wins."""
-    body = await request.json()
-    fallback = (body.get("base_url") or request.headers.get("origin", "") or "").rstrip("/")
+    """Admin generates QR for a member.  Strict Site URL — same reasoning
+    as the member-side endpoint."""
     from utils.runtime_config import get_site_url
-    base_url = await get_site_url(fallback)
+    base_url = await get_site_url("")  # strict
     if not base_url:
-        raise HTTPException(status_code=400, detail="Site URL not configured. Set it in CMS → Settings → General.")
+        raise HTTPException(
+            status_code=400,
+            detail="Site URL is not configured. Open CMS → Settings → General and set the Site URL before generating QR codes.",
+        )
     member = await db.members.find_one({"member_id": member_id}, {"_id": 0})
     if not member:
         raise HTTPException(status_code=404, detail="Member not found")

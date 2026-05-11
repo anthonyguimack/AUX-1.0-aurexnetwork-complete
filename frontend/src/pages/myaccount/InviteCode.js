@@ -19,7 +19,10 @@ export default function InviteCode() {
   const [sending, setSending] = useState(false);
   const [copied, setCopied] = useState(null);
   const [qrGenerating, setQrGenerating] = useState(false);
-  const [qrData, setQrData] = useState({ qr_code: member?.qr_code || '', qr_url: member?.qr_url || '' });
+  // Start blank — the mount effect immediately re-fetches a fresh QR.
+  // Using `member.qr_code` here would briefly flash the stale value baked
+  // in from before the operator configured Site URL.
+  const [qrData, setQrData] = useState({ qr_code: '', qr_url: '' });
   const ctx = useOutletContext() || {};
   const title = ctx.sectionLabel ? ctx.sectionLabel('invite-code', 'Invite Code') : 'Invite Code';
 
@@ -57,12 +60,16 @@ export default function InviteCode() {
 
   const handleGenerateQR = async () => {
     setQrGenerating(true);
+    setQrError('');
     try {
-      const baseUrl = window.location.origin;
-      const r = await memberAPI.generateQR({ base_url: baseUrl });
+      const r = await memberAPI.generateQR();
       setQrData({ qr_code: r.data.qr_code, qr_url: r.data.qr_url });
       toast.success('QR Code generated!');
-    } catch (e) { toast.error(e.response?.data?.detail || 'Failed to generate QR'); }
+    } catch (e) {
+      const msg = e?.response?.data?.detail || 'Failed to generate QR';
+      setQrError(msg);
+      toast.error(msg);
+    }
     finally { setQrGenerating(false); }
   };
 
@@ -74,21 +81,30 @@ export default function InviteCode() {
     link.click();
   };
 
+  const [qrError, setQrError] = useState('');
   // On mount, always re-fetch a fresh QR so the displayed URL reflects the
-  // current CMS Site URL.  Without this, members see a stale `qr_url`
-  // baked into the auth/me payload from before the operator (re)set Site URL.
+  // current CMS Site URL.  If the backend returns 400 (Site URL not set)
+  // we surface a clear admin-actionable message rather than silently
+  // showing whatever stale value is cached on the member document.
   useEffect(() => {
     if (!member?.can_create_qr) return;
     let cancelled = false;
     (async () => {
       try {
-        const r = await memberAPI.generateQR({ base_url: window.location.origin });
-        if (!cancelled) setQrData({ qr_code: r.data.qr_code, qr_url: r.data.qr_url });
-      } catch (e) {
-        // Fall back to whatever was cached on the member doc — better than blank.
-        if (!cancelled && member?.qr_code) {
-          setQrData({ qr_code: member.qr_code, qr_url: member.qr_url || '' });
+        const r = await memberAPI.generateQR();
+        if (!cancelled) {
+          setQrData({ qr_code: r.data.qr_code, qr_url: r.data.qr_url });
+          setQrError('');
         }
+      } catch (e) {
+        if (cancelled) return;
+        const msg = e?.response?.data?.detail || '';
+        if (msg.toLowerCase().includes('site url')) {
+          // Don't keep the stale QR — it would mislead the user. Show the fix instructions.
+          setQrData({ qr_code: '', qr_url: '' });
+          setQrError(msg);
+        }
+        // Other failures (network etc): keep whatever the user already had.
       }
     })();
     return () => { cancelled = true; };
@@ -130,7 +146,14 @@ export default function InviteCode() {
             </div>
           ) : (
             <div className="text-center py-4">
-              <p className="text-sm mb-3" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Generate a QR code for sponsor-based registration. Share it to invite new members.</p>
+              {qrError ? (
+                <div className="mb-4 p-3 rounded-lg text-left text-sm" style={{ background: 'color-mix(in srgb, #f59e0b 12%, transparent)', border: '1px solid color-mix(in srgb, #f59e0b 30%, transparent)', color: '#fcd34d' }} data-testid="qr-error">
+                  <p className="font-medium mb-1">QR code cannot be generated yet</p>
+                  <p className="text-xs opacity-90">{qrError}</p>
+                </div>
+              ) : (
+                <p className="text-sm mb-3" style={{ color: 'var(--ma-text-secondary, #9ca3af)' }}>Generate a QR code for sponsor-based registration. Share it to invite new members.</p>
+              )}
               <button onClick={handleGenerateQR} disabled={qrGenerating}
                 className="inline-flex items-center gap-2 px-5 py-2 rounded text-sm font-semibold disabled:opacity-50"
                 style={{ backgroundColor: 'var(--ma-button-bg, #c9a84c)', color: 'var(--ma-button-text, #0d0f14)' }}
