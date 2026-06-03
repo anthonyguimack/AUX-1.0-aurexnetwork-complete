@@ -9,9 +9,10 @@ import { Checkbox } from '../../components/ui/checkbox';
 import RichTextEditor from '../../components/RichTextEditor';
 import ImageUpload from '../../components/ImageUpload';
 import HeroCanvasEditor from '../../components/HeroCanvasEditor';
+import { useSettings } from '../../App';
 
 const effectOptions = ['top', 'right', 'bottom', 'left'];
-const API_URL = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL as API_URL } from '../../lib/config';
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API_URL}${v}` : v) : null;
 
 function resolveVideoUrl(url) {
@@ -28,9 +29,15 @@ function resolveVideoUrl(url) {
 }
 
 function HeroSlidePreview({ form }) {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const headingFont = isPB ? "'Plus Jakarta Sans', 'Inter', sans-serif" : "'Playfair Display', serif";
   const bg = resolveSrc(form.background);
   const photoSrc = resolveSrc(form.photo);
   const videoEmbedUrl = resolveVideoUrl(form.video_embed);
+
+  const toL = (x, fb = 100) => `${((x ?? fb) / 700) * 100}%`;
+  const toT = (y, fb = 50)  => `${((y ?? fb) / 300) * 100}%`;
 
   const hasContent = form.title || form.subtitle || form.description || form.button_text || form.button_2_text || form.button_3_text ||
     (form.slide_type === 'photo' && form.photo) || (form.slide_type === 'video' && form.video_embed);
@@ -48,47 +55,49 @@ function HeroSlidePreview({ form }) {
       ) : (
         <div className="absolute inset-0 bg-[#0f172a]" />
       )}
-      {!bg && <div className="absolute inset-0" style={{ background: 'linear-gradient(to right, rgba(26,35,50,0.93), rgba(26,35,50,0.6))' }} />}
+      <div className="absolute inset-0" style={{ background: 'linear-gradient(160deg, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 100%)' }} />
 
       <div className="relative w-full h-full">
         {form.title && (
-          <div className="absolute max-w-[55%] px-1" style={{ left: `${(form.title_x || 100) / 7}%`, top: `${(form.title_y || 50) / 3}%` }}>
-            <div className="text-lg md:text-xl xl:text-2xl font-bold leading-tight [&_em]:italic [&_p]:m-0" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: form.title }} />
+          <div className="absolute max-w-[55%] px-1" style={{ left: toL(form.title_x), top: toT(form.title_y, 50) }}>
+            <div className="text-lg md:text-xl xl:text-2xl font-bold leading-tight [&_em]:italic [&_p]:m-0" style={{ fontFamily: headingFont, color: 'white' }} dangerouslySetInnerHTML={{ __html: form.title }} />
           </div>
         )}
         {form.subtitle && (
-          <div className="absolute max-w-[55%] px-1" style={{ left: `${(form.subtitle_x || 100) / 7}%`, top: `${(form.subtitle_y || 80) / 3}%` }}>
-            <div className="text-xs md:text-sm font-semibold [&_em]:italic [&_p]:m-0" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: form.subtitle }} />
+          <div className="absolute max-w-[55%] px-1" style={{ left: toL(form.subtitle_x), top: toT(form.subtitle_y, 80) }}>
+            <div className={`text-xs md:text-sm font-semibold [&_em]:italic [&_p]:m-0`} style={{ fontFamily: headingFont, color: isPB ? 'var(--color-primary, #c08552)' : 'white' }} dangerouslySetInnerHTML={{ __html: form.subtitle }} />
           </div>
         )}
         {form.description && (
-          <div className="absolute max-w-[45%] px-1" style={{ left: `${(form.description_x || 100) / 7}%`, top: `${(form.description_y || 120) / 3}%` }}>
-            <div className="text-[10px] md:text-xs leading-relaxed [&_p]:m-0" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: form.description }} />
+          <div className="absolute max-w-[45%] px-1" style={{ left: toL(form.description_x), top: toT(form.description_y, 120) }}>
+            <div className="text-[10px] md:text-xs leading-relaxed [&_p]:m-0" style={{ color: 'rgba(255,255,255,0.7)', fontFamily: headingFont }} dangerouslySetInnerHTML={{ __html: form.description }} />
           </div>
         )}
         {(form.button_text || form.button_2_text || form.button_3_text) && (
-          <div className="absolute px-1 flex flex-wrap gap-1.5" style={{ left: `${(form.button_x || 100) / 7}%`, top: `${(form.button_y || 180) / 3}%` }}>
+          <div className="absolute px-1 flex flex-wrap gap-1.5" style={{ left: toL(form.button_x), top: toT(form.button_y, 180) }}>
             {[
               { t: form.button_text, primary: true },
               { t: form.button_2_text, primary: false },
               { t: form.button_3_text, primary: false },
             ].filter(b => b.t).map((b, i) => (
-              <span key={i} className={`inline-flex items-center gap-1 px-3 py-1 md:px-4 md:py-1.5 rounded-sm font-medium text-[10px] md:text-xs ${b.primary ? 'bg-white' : 'bg-transparent border border-white text-white'}`} style={b.primary ? { color: '#1a2332' } : undefined}>
+              <span key={i}
+                className={`inline-flex items-center gap-1 px-3 py-1 md:px-4 md:py-1.5 font-medium text-[10px] md:text-xs ${isPB ? 'rounded-full' : 'rounded-sm'} ${b.primary ? 'bg-white' : 'bg-transparent border border-white text-white'}`}
+                style={b.primary ? { color: '#1a2332', fontFamily: headingFont } : { fontFamily: headingFont }}>
                 {b.t} {b.primary && <ArrowRight className="w-2.5 h-2.5" />}
               </span>
             ))}
           </div>
         )}
         {form.slide_type === 'video' && videoEmbedUrl && (
-          <div className="absolute" style={{ left: `${(form.media_x || 400) / 7}%`, top: `${(form.media_y || 50) / 3}%`, width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
-            <div className="rounded-md overflow-hidden shadow-2xl aspect-video border border-white/10">
+          <div className="absolute" style={{ left: toL(form.media_x, 400), top: toT(form.media_y), width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
+            <div className={`overflow-hidden shadow-2xl aspect-video border border-white/10 ${isPB ? 'rounded-2xl' : 'rounded-md'}`}>
               <iframe src={videoEmbedUrl} className="w-full h-full" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowFullScreen title="Preview" />
             </div>
           </div>
         )}
         {form.slide_type === 'photo' && photoSrc && (
-          <div className="absolute" style={{ left: `${(form.media_x || 400) / 7}%`, top: `${(form.media_y || 50) / 3}%`, width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
-            <img src={photoSrc} alt="" className="rounded-md shadow-2xl w-full object-cover border border-white/10" style={form.media_height ? { maxHeight: `${Math.min(form.media_height * 0.45, 200)}px` } : { maxHeight: '180px' }} />
+          <div className="absolute" style={{ left: toL(form.media_x, 400), top: toT(form.media_y), width: form.media_width ? `${Math.min(form.media_width * 0.45, 280)}px` : '200px' }}>
+            <img src={photoSrc} alt="" className={`shadow-2xl w-full object-cover border border-white/10 ${isPB ? 'rounded-2xl' : 'rounded-md'}`} style={form.media_height ? { maxHeight: `${Math.min(form.media_height * 0.45, 200)}px` } : { maxHeight: '180px' }} />
           </div>
         )}
       </div>
@@ -118,6 +127,8 @@ const defaultSlide = {
   title_start: 1500, subtitle_start: 2000, description_start: 2500,
   button_start: 3000, media_start: 1000,
   assigned_pages: [],
+  // Personal Brand template scope: '' = Business (default) | 'lifestyle' | 'personal'
+  pb_personality: '',
 };
 
 const quillCls = "[&_.ql-toolbar]:!bg-slate-50 [&_.ql-toolbar]:!border-slate-200 [&_.ql-container]:!border-slate-200 [&_.ql-editor]:!min-h-[80px]";
@@ -413,6 +424,44 @@ export default function HeroSlideForm() {
           })}
         </div>
         {sitePages.length === 0 && <p className="text-xs text-slate-400">Loading pages...</p>}
+      </div>
+
+      {/* Template Scope — Personal Brand mini-site selector */}
+      <div className={sectionCls} data-testid="slide-template-scope-section">
+        <h2 className={sectionTitle}>Template Scope</h2>
+        <p className="text-xs text-slate-400 mb-3">
+          Choose which mini-site homepage this slide belongs to. Only relevant for the{' '}
+          <span className="font-medium text-slate-600">Personal Brand Pro</span> template — ignored on all other themes.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { value: '',          label: 'PB — Business',  hint: 'Default homepage (main landing)',  cls: 'border-slate-400  bg-slate-50'   },
+            { value: 'lifestyle', label: 'PB — Lifestyle',  hint: 'Lifestyle mini-site homepage',     cls: 'border-emerald-400 bg-emerald-50' },
+            { value: 'personal',  label: 'PB — Personal',   hint: 'Personal mini-site homepage',      cls: 'border-violet-400  bg-violet-50'  },
+          ].map(opt => {
+            const active = (form.pb_personality || '') === opt.value;
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-3 p-3 rounded-sm border-2 cursor-pointer transition-all ${active ? opt.cls : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
+                data-testid={`scope-${opt.value || 'business'}`}
+              >
+                <input
+                  type="radio"
+                  name="pb_personality"
+                  value={opt.value}
+                  checked={active}
+                  onChange={() => setForm(p => ({ ...p, pb_personality: opt.value }))}
+                  className="mt-0.5 accent-[#0D9488]"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-[#1a2332]">{opt.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{opt.hint}</p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
       </div>
 
       {/* Revolution Slider Parameters */}

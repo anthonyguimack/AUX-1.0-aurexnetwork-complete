@@ -600,7 +600,11 @@ function ContactSection({ theme, contactSettings }) {
 }
 
 /* ==================== HOME PAGE ==================== */
-export default function HomePage() {
+// `personality` is the PB mini-site key ('business' | 'lifestyle' | 'personal').
+// Passed by MiniSiteHome in App.js when visiting /lifestyle or /personal.
+// Defaults to 'business' (the main Personal Brand homepage at /).
+export default function HomePage({ personality }) {
+  const pbPersonality = personality || 'business';
   const settings = useSettings();
   const theme = useTheme();
   const { user } = useAuth();
@@ -669,7 +673,20 @@ export default function HomePage() {
   // Personal Brand Pro default order — matches section numbers §2-§11 in PersonalBrandSections.js
   const pbDefaultOrder = ['hero', 'about', 'services', 'aurex_audience', 'portfolio', 'testimonials', 'aurex_team', 'contact', 'reading_list', 'gallery', 'news', 'blog', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_events', 'aurex_partners', 'aurex_clients', 'map', 'map_global', 'map_conferences', 'map_recommended'];
   const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
-  const perThemeOrder = settings.section_orders && settings.section_orders[activeTheme];
+  // ── Section order ─────────────────────────────────────────────────────────
+  // For Personal Brand, each mini-site has its own saved section order stored
+  // under a separate key: personalbrand (business), personalbrand_lifestyle,
+  // personalbrand_personal.  Fall back through the chain to pbDefaultOrder.
+  const pbOrderKey = isPersonalBrand
+    ? (pbPersonality === 'lifestyle' ? 'personalbrand_lifestyle'
+      : pbPersonality === 'personal' ? 'personalbrand_personal'
+      : 'personalbrand')
+    : activeTheme;
+  const perThemeOrder = settings.section_orders && (
+    isPersonalBrand
+      ? settings.section_orders[pbOrderKey] || settings.section_orders[activeTheme]
+      : settings.section_orders[activeTheme]
+  );
   let sectionOrder = perThemeOrder || settings.section_order || (isPersonalBrand ? pbDefaultOrder : isAurex ? aurexDefaultOrder : legacyDefault);
   // If Aurex theme is active, append any known Aurex keys that the stored order
   // is missing (can happen after we add new Aurex sections like `aurex_video`
@@ -679,7 +696,22 @@ export default function HomePage() {
     const missing = knownAurexKeys.filter(k => !sectionOrder.includes(k));
     if (missing.length) sectionOrder = [...sectionOrder, ...missing];
   }
-  const homeSlides = heroSlides.filter(s => !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home'));
+
+  // ── Hero slides — filtered by personality in PB mode ─────────────────────
+  // Each PB mini-site shows only its own slides (selected via the
+  // "Template Scope" field in the CMS hero editor).
+  // pb_personality '' / 'business' → Business (default); existing slides
+  // without pb_personality set are treated as Business for backwards compat.
+  const homeSlides = heroSlides.filter(s => {
+    const onHome = !s.assigned_pages || s.assigned_pages.length === 0 || s.assigned_pages.includes('home');
+    if (!onHome) return false;
+    if (!isPersonalBrand) return true; // non-PB: show all home slides
+    const sp = s.pb_personality || '';
+    if (pbPersonality === 'lifestyle') return sp === 'lifestyle';
+    if (pbPersonality === 'personal')  return sp === 'personal';
+    // Business (default): slides with no scope set, or explicitly 'business'
+    return !sp || sp === 'business';
+  });
 
   const mapsLang = settings.maps_language || 'local';
 
