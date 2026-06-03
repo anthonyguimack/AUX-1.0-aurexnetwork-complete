@@ -908,8 +908,8 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
                 }}
                 data-testid={`pb-audience-card-${item.id}`}
               >
-                {/* Badge / Eyebrow */}
-                {(item.eyebrow || item.badge) && (
+                {/* Badge / Eyebrow — always resolve through tt() to handle localized objects */}
+                {(tt(item.eyebrow) || item.badge) && (
                   <div className="mb-6">
                     <span
                       className="inline-block px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider"
@@ -918,7 +918,7 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
                         color: cardText,
                       }}
                     >
-                      {item.eyebrow || item.badge}
+                      {tt(item.eyebrow) || item.badge}
                     </span>
                   </div>
                 )}
