@@ -684,13 +684,15 @@ export default function HomePage() {
   const mapsLang = settings.maps_language || 'local';
 
   // Renders an Aurex section with per-section bg + font pulled from CMS.
+  // In Personal Brand mode also passes the sequential sectionNumber so each
+  // section's eyebrow shows "NN/ label" just like the native PB components.
   const aurexSection = (key, Comp) => {
     const cfg = aurexConfigs[key] || {};
     const data = aurexData[key] || { config: {}, items: [] };
     // For Personal Brand Pro, default to Plus Jakarta Sans when no font is explicitly chosen.
     const fallbackFont = isPersonalBrand ? PB_FONT_CSS : undefined;
     const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : fallbackFont;
-    return <Comp key={key} config={data.config || {}} items={data.items || []} bg={cfg.bg_color} font={font} />;
+    return <Comp key={key} config={data.config || {}} items={data.items || []} bg={cfg.bg_color} font={font} sectionNumber={isPersonalBrand ? pbSectionNumbers[key] : undefined} />;
   };
 
   // Pulls per-section bg + font for a legacy section rendered in its Aurex mono variant,

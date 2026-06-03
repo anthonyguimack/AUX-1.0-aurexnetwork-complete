@@ -886,6 +886,11 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
               {tt(config.title)}
             </h2>
           )}
+          {tt(config.subtitle) && (
+            <p className="mt-4 text-base leading-relaxed max-w-2xl" style={{ color: subColor }} data-testid="pb-audience-subtitle">
+              {tt(config.subtitle)}
+            </p>
+          )}
         </Reveal>
 
         {/* Cascade grid */}

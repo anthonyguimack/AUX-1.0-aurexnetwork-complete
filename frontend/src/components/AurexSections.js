@@ -26,7 +26,7 @@ import { contactAPI, blogExternalAPI, checkoutAPI } from '../lib/api';
 import CaptchaWidget from './CaptchaWidget';
 import { useSettings } from '../App';
 
-const API = process.env.REACT_APP_BACKEND_URL;
+import { BACKEND_URL as API } from '../lib/config';
 const resolveImg = (src) => (src && src.startsWith('/api') ? `${API}${src}` : src);
 
 // ─── Scroll-reveal wrapper (IntersectionObserver) ────────────────────────
@@ -85,15 +85,28 @@ function SectionShell({ bg, font, contrast, className = '', children, ...rest })
   );
 }
 
-function SectionHeader({ title, subtitle, contrast, centered = true }) {
+function SectionHeader({ title, subtitle, eyebrow, contrast, centered = true, sectionNumber, action }) {
   const tt = useT();
+  const eyebrowText = tt(eyebrow);
   const t1 = tt(title);
   const t2 = tt(subtitle);
-  if (!t1 && !t2) return null;
+  if (!eyebrowText && !t1 && !t2 && !sectionNumber) return null;
+  // When a section number or right-side action (CTA button) is present → left-aligned split layout.
+  // Otherwise keep the default centred layout.
+  const isLeft = !centered || sectionNumber != null || action != null;
   return (
-    <Reveal className={`${centered ? 'text-center' : ''} mb-12 md:mb-16`}>
-      {t1 && <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t1}</h2>}
-      {t2 && <p className={`mt-4 max-w-2xl ${centered ? 'mx-auto' : ''} ${contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{t2}</p>}
+    <Reveal className={`${isLeft ? 'flex items-end justify-between gap-6 flex-wrap' : 'text-center'} mb-12 md:mb-16`}>
+      <div>
+        {(eyebrowText || sectionNumber) && (
+          <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold mb-3 ${contrast === 'light' ? 'text-gray-300' : 'text-gray-500'}`}>
+            {sectionNumber && <span className="mr-1" style={{ color: 'var(--color-primary)' }}>{sectionNumber}/</span>}
+            {eyebrowText}
+          </p>
+        )}
+        {t1 && <h2 className="text-3xl md:text-5xl font-bold tracking-tight">{t1}</h2>}
+        {t2 && <p className={`mt-4 max-w-2xl ${!isLeft ? 'mx-auto' : ''} ${contrast === 'light' ? 'text-gray-300' : 'text-gray-600'}`}>{t2}</p>}
+      </div>
+      {action && <div className="shrink-0 self-end">{action}</div>}
     </Reveal>
   );
 }
@@ -120,7 +133,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
   const ctaUrl = tt(config.cta_url);
   return (
     <SectionShell {...c} id="aurex-audience" data-testid="aurex-section-audience">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} />
       <div className={`grid gap-8 ${cols === 1 ? 'grid-cols-1 max-w-md mx-auto' : cols === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-4xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         {visibleItems.map((i, idx) => (
           <Reveal as="article" delay={idx * 100} key={i.id} className="border rounded-xl p-8" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB' }} data-testid={`audience-card-${i.id}`}>
@@ -143,14 +156,14 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
 
 // ─── 2. Our Process (vertical timeline, alternating) ─────────────────────
 
-export function AurexProcess({ config = {}, items = [], bg, font, contrast }) {
+export function AurexProcess({ config = {}, items = [], bg, font, contrast, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const c = { bg: bg || '#1F2937', font, contrast: contrast || aurexContrastFor(bg || '#1F2937') };
   const visibleItems = items.filter(i => itemHasLocale(i.title, lang));
   return (
     <SectionShell {...c} id="aurex-process" data-testid="aurex-section-process">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} />
       <div className="relative max-w-3xl mx-auto">
         {/* Center vertical line */}
         <div className="absolute left-8 md:left-1/2 top-2 bottom-2 w-px md:-translate-x-px" style={{ backgroundColor: c.contrast === 'light' ? 'rgba(255,255,255,.2)' : 'rgba(17,24,39,.15)' }} />
@@ -191,7 +204,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   return (
     <SectionShell {...c} id="aurex-pricing" data-testid="aurex-section-pricing">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} />
       {config.show_toggle && (
         <div className="flex justify-center mb-10">
           <div className="inline-flex rounded-full p-1 border" style={{ borderColor: c.contrast === 'light' ? 'rgba(255,255,255,.2)' : '#E5E7EB' }}>
@@ -253,7 +266,7 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
   };
   return (
     <SectionShell {...c} id="aurex-team" data-testid="aurex-section-team">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} />
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
         {visible.map((m, idx) => {
           // `m.social_links` is a dict { [networkId]: url }. Fall back to legacy fields.
@@ -304,14 +317,22 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
 
 // ─── 5. Events (from AUX Calendar) ───────────────────────────────────────
 
-export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
+export function AurexEvents({ config = {}, items = [], bg, font, contrast, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const visibleItems = items.filter(e => itemHasLocale(e.title, lang));
+  const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
+  const btnCls = 'inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80';
+  // View-all button lives in the header (right side) when items exist
+  const viewAllBtn = (config.view_all_url && visibleItems.length > 0 && tt(config.view_all_text)) ? (
+    <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className={btnCls} style={btnStyle}>
+      {tt(config.view_all_text)} <ArrowRight className="w-4 h-4" />
+    </a>
+  ) : null;
   return (
     <SectionShell {...c} id="aurex-events" data-testid="aurex-section-events">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} action={viewAllBtn} />
       {visibleItems.length === 0 ? (
         <p className="text-center text-sm" style={{ color: c.contrast === 'light' ? 'rgba(255,255,255,.6)' : '#6b7280' }}>{tt(config.empty_message) || 'No upcoming events.'}</p>
       ) : (
@@ -332,16 +353,11 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast }) {
                     {e.start_time}{e.end_time ? ` – ${e.end_time}` : ''}{e.location ? ` · ${e.location}` : ''}
                   </p>
                 </div>
-                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-sm text-xs font-semibold transition-colors" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>{tt(config.view_text) || 'View'} <ArrowRight className="w-3 h-3" /></Link>
+                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-sm text-xs font-semibold transition-colors" style={btnStyle}>{tt(config.view_text) || 'View'} <ArrowRight className="w-3 h-3" /></Link>
               </Reveal>
             );
           })}
         </ul>
-      )}
-      {config.view_all_url && visibleItems.length > 0 && tt(config.view_all_text) && (
-        <div className="text-center mt-10">
-          <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>{tt(config.view_all_text)} <ArrowRight className="w-4 h-4" /></a>
-        </div>
       )}
     </SectionShell>
   );
@@ -372,44 +388,44 @@ function LogoRow({ items, autoscroll, scrollSpeed, contrast, className = '' }) {
   );
 }
 
-export function AurexPartners({ config = {}, items = [], bg, font, contrast }) {
+export function AurexPartners({ config = {}, items = [], bg, font, contrast, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#111827', font, contrast: contrast || aurexContrastFor(bg || '#111827') };
+  const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
+  const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
+    <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
+       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
+      {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
+    </a>
+  ) : null;
   return (
     <SectionShell {...c} id="aurex-partners" data-testid="aurex-section-partners">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} action={ctaBtn} />
       <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed} contrast={c.contrast} />
-      {tt(config.cta_text) && tt(config.cta_url) && (
-        <div className="text-center mt-10">
-          <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>
-            {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      )}
     </SectionShell>
   );
 }
 
 // ─── 7. Our Clients (light bg, gallery style) ────────────────────────────
 
-export function AurexClients({ config = {}, items = [], bg, font, contrast }) {
+export function AurexClients({ config = {}, items = [], bg, font, contrast, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
+  const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
+  const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
+    <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
+       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
+      {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
+    </a>
+  ) : null;
   return (
     <SectionShell {...c} id="aurex-clients" data-testid="aurex-section-clients">
-      <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} action={ctaBtn} />
       <LogoRow items={visibleItems} autoscroll={config.autoscroll} scrollSpeed={config.scroll_speed || 30} contrast={c.contrast} className="py-8" />
-      {tt(config.cta_text) && tt(config.cta_url) && (
-        <div className="text-center mt-10">
-          <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>
-            {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
-          </a>
-        </div>
-      )}
     </SectionShell>
   );
 }
@@ -430,7 +446,7 @@ function buildEmbedUrl(url, autoplay) {
   return null;
 }
 
-export function AurexVideo({ config = {}, bg, font, contrast }) {
+export function AurexVideo({ config = {}, bg, font, contrast, sectionNumber }) {
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const url = config.video_url;
   const embed = buildEmbedUrl(url, config.autoplay);
@@ -439,8 +455,8 @@ export function AurexVideo({ config = {}, bg, font, contrast }) {
   if (!url) return null;
   return (
     <SectionShell {...c} id="aurex-video" data-testid="aurex-section-video">
-      {(config.title || config.subtitle) && (
-        <SectionHeader title={config.title} subtitle={config.subtitle} contrast={c.contrast} />
+      {(config.eyebrow || config.title || config.subtitle || sectionNumber) && (
+        <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} />
       )}
       <Reveal className="max-w-5xl mx-auto">
         <div className="relative rounded-xl overflow-hidden shadow-2xl" style={{ aspectRatio: aspect, backgroundColor: '#000' }}>
@@ -467,6 +483,7 @@ export function useAurexSections() {
     const keys = [
       ...SECTIONS_ITEMIZED, 'aurex_events', 'aurex_video',
       'aurex_services_cfg', 'aurex_testimonials_cfg', 'aurex_news_cfg', 'aurex_blog_cfg', 'aurex_locations_cfg',
+      'aurex_reading_cfg', 'aurex_portfolio_cfg', 'aurex_gallery_cfg',
     ];
     Promise.all(keys.map(k => fetch(`${API}/api/public/aurex/${k}`).then(r => r.ok ? r.json() : { config: {}, items: [] }).catch(() => ({ config: {}, items: [] }))))
       .then(results => {
@@ -625,7 +642,7 @@ export function AurexServicesMono({ services, bg, font, cmsConfig = {} }) {
 }
 
 // News
-export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
+export function AurexNewsMono({ posts, bg, font, cmsConfig = {}, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const filtered = (posts || []).filter(p => itemHasLocale(p.title, lang));
@@ -636,7 +653,12 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            {tt(cmsConfig.eyebrow) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow)}</p>}
+            {(sectionNumber || tt(cmsConfig.eyebrow)) && (
+              <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold mb-3`} style={{ color: 'var(--color-primary)' }}>
+                {sectionNumber && <span className="mr-1">{sectionNumber}/</span>}
+                {tt(cmsConfig.eyebrow)}
+              </p>
+            )}
             {tt(cmsConfig.title) && <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="news-title">{tt(cmsConfig.title)}</h2>}
             {tt(cmsConfig.subtitle) && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
@@ -667,7 +689,7 @@ export function AurexNewsMono({ posts, bg, font, cmsConfig = {} }) {
 }
 
 // External Blog
-export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
+export function AurexBlogMono({ bg, font, cmsConfig = {}, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const settings = useSettings();
@@ -685,7 +707,12 @@ export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            {tt(cmsConfig.eyebrow) && <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow)}</p>}
+            {(sectionNumber || tt(cmsConfig.eyebrow)) && (
+              <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold mb-3`} style={{ color: 'var(--color-primary)' }}>
+                {sectionNumber && <span className="mr-1">{sectionNumber}/</span>}
+                {tt(cmsConfig.eyebrow)}
+              </p>
+            )}
             {tt(cmsConfig.title) && <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="blog-title">{tt(cmsConfig.title)}</h2>}
             {tt(cmsConfig.subtitle) && <p className={`mt-2 max-w-2xl ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
@@ -708,7 +735,7 @@ export function AurexBlogMono({ bg, font, cmsConfig = {} }) {
 }
 
 // Reading List
-export function AurexReadingMono({ books, bg, font }) {
+export function AurexReadingMono({ books, bg, font, cmsConfig = {} }) {
   const tt = useT();
   const { lang } = useLang();
   const filtered = (books || []).filter(b => itemHasLocale(b.title, lang));
@@ -719,10 +746,11 @@ export function AurexReadingMono({ books, bg, font }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Reading</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="reading-title">Reading List</h2>
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Reading'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="reading-title">{tt(cmsConfig.title) || 'Reading List'}</h2>
+            {tt(cmsConfig.subtitle) && <p className={`mt-3 ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
-          <Link to="/reading-list" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">View all <ArrowRight className="w-4 h-4" /></Link>
+          <Link to={tt(cmsConfig.cta_url) || '/reading-list'} target={cmsConfig.cta_new_tab ? '_blank' : '_self'} rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">{tt(cmsConfig.cta_text) || 'View all'} <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-6">
           {filtered.slice(0, 5).map((b, idx) => {
@@ -775,7 +803,8 @@ export function AurexMapMono({ maps, locations, title, mapsLang, bg, font, cmsCo
 }
 
 // Portfolio
-export function AurexPortfolioMono({ items, bg, font }) {
+export function AurexPortfolioMono({ items, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   const { lang } = useLang();
   const filtered = (items || []).filter(i => itemHasLocale(i.title, lang));
   if (!filtered.length) return null;
@@ -785,10 +814,11 @@ export function AurexPortfolioMono({ items, bg, font }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Our work</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="portfolio-title">Featured Projects</h2>
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Our work'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="portfolio-title">{tt(cmsConfig.title) || 'Featured Projects'}</h2>
+            {tt(cmsConfig.subtitle) && <p className={`mt-3 ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
-          <Link to="/featured-projects" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid="portfolio-view-all">View all <ArrowRight className="w-4 h-4" /></Link>
+          <Link to={tt(cmsConfig.cta_url) || '/featured-projects'} target={cmsConfig.cta_new_tab ? '_blank' : '_self'} rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all" data-testid="portfolio-view-all">{tt(cmsConfig.cta_text) || 'View all'} <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {filtered.slice(0, 4).map((p, idx) => (
@@ -810,7 +840,8 @@ export function AurexPortfolioMono({ items, bg, font }) {
 }
 
 // Gallery
-export function AurexGalleryMono({ items, bg, font }) {
+export function AurexGalleryMono({ items, bg, font, cmsConfig = {} }) {
+  const tt = useT();
   const { lang } = useLang();
   const filtered = (items || []).filter(i => itemHasLocale(i.title, lang));
   if (!filtered.length) return null;
@@ -820,10 +851,11 @@ export function AurexGalleryMono({ items, bg, font }) {
       <div className="max-w-7xl mx-auto">
         <Reveal className="flex items-end justify-between mb-12 flex-wrap gap-4">
           <div>
-            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>Moments</p>
-            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="gallery-title">Gallery</h2>
+            <p className={`text-[11px] uppercase tracking-[0.3em] font-semibold ${m.eyebrowClass} mb-3`}>{tt(cmsConfig.eyebrow) || 'Moments'}</p>
+            <h2 className="text-3xl md:text-5xl font-bold tracking-tight" data-testid="gallery-title">{tt(cmsConfig.title) || 'Gallery'}</h2>
+            {tt(cmsConfig.subtitle) && <p className={`mt-3 ${m.mutedClass}`}>{tt(cmsConfig.subtitle)}</p>}
           </div>
-          <Link to="/gallery" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">View all <ArrowRight className="w-4 h-4" /></Link>
+          <Link to={tt(cmsConfig.cta_url) || '/gallery'} target={cmsConfig.cta_new_tab ? '_blank' : '_self'} rel="noopener noreferrer" className="text-sm font-medium inline-flex items-center gap-1 hover:gap-2 transition-all">{tt(cmsConfig.cta_text) || 'View all'} <ArrowRight className="w-4 h-4" /></Link>
         </Reveal>
         <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
           {filtered.slice(0, 6).map((img, idx) => (
