@@ -18,6 +18,18 @@ import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster/dist/MarkerCluster.css';
 import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
+import HeroSection from '../components/HeroSection';
+import {
+  AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, AurexVideo, useAurexSections,
+  AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
+  AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
+} from '../components/AurexSections';
+import { AUREX_FONTS, isAurexFamily, PERSONALBRAND_DEFAULTS, PB_FONT_CSS } from '../lib/themeColors';
+import {
+  PBHero, PBAbout, PBServices, PBAudience, PBPortfolio, PBTestimonials, PBTeam, PBContact,
+  PBReadingList, PBGallery,
+} from '../components/PersonalBrandSections';
+import { BACKEND_URL as API } from '../lib/config';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -27,7 +39,6 @@ L.Icon.Default.mergeOptions({
 });
 
 const iconMap = { 'briefcase': Briefcase, 'trending-up': TrendingUp, 'bar-chart-3': BarChart3, 'monitor': Monitor };
-const API = process.env.REACT_APP_BACKEND_URL;
 const cleanHtml = (html) => {
   if (html == null) return '';
   const str = typeof html === 'string' ? html : String(html);
@@ -36,14 +47,6 @@ const cleanHtml = (html) => {
     .replace(/&nbsp\b/gi, ' ')
     .replace(/\u00A0/g, ' ');
 };
-
-import HeroSection from '../components/HeroSection';
-import {
-  AurexAudience, AurexProcess, AurexPricing, AurexTeam, AurexEvents, AurexPartners, AurexClients, AurexVideo, useAurexSections,
-  AurexAboutMono, AurexServicesMono, AurexNewsMono, AurexBlogMono, AurexReadingMono,
-  AurexMapMono, AurexPortfolioMono, AurexGalleryMono, AurexTestimonialsMono, AurexContactMono,
-} from '../components/AurexSections';
-import { AUREX_FONTS, isAurexFamily, PERSONALBRAND_DEFAULTS } from '../lib/themeColors';
 
 /* ==================== ABOUT ==================== */
 function AboutSection({ data, theme }) {
@@ -292,7 +295,7 @@ function ReadingListSection({ books, theme }) {
         <div className={`grid gap-6 ${theme === 'modern' ? 'grid-cols-2 md:grid-cols-4 lg:grid-cols-5' : theme === 'classic' ? 'grid-cols-2 md:grid-cols-3 lg:grid-cols-4' : 'grid-cols-2 md:grid-cols-3 lg:grid-cols-5'}`}>
           {books.slice(0, theme === 'modern' ? 5 : theme === 'classic' ? 4 : 5).map(b => {
             const coverImg = b.image || b.cover_image;
-            const imgSrc = coverImg ? (coverImg.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${coverImg}` : coverImg) : null;
+            const imgSrc = coverImg ? (coverImg.startsWith('/api') ? `${API}${coverImg}` : coverImg) : null;
             return (
             <Link to="/reading-list" key={b.id} className={`group transition-all ${theme === 'modern' ? 'rounded-xl overflow-hidden shadow-sm hover:shadow-lg bg-white' : theme === 'classic' ? 'border-2 overflow-hidden hover:shadow-md bg-white' : 'rounded-lg overflow-hidden shadow-sm hover:shadow-md bg-white'}`} style={theme === 'classic' ? { borderColor: 'var(--color-primary, #1a2332)' } : {}}>
               {imgSrc ? (
@@ -616,17 +619,17 @@ export default function HomePage() {
 
   useEffect(() => {
     publicAPI.getAbout().then(r => setAbout(r.data)).catch(() => {});
-    publicAPI.getServices().then(r => setServices(r.data)).catch(() => {});
-    publicAPI.getBlog().then(r => setPosts(r.data?.posts || r.data || [])).catch(() => {});
-    publicAPI.getBooks().then(r => setBooks(r.data)).catch(() => {});
-    publicAPI.getMaps().then(r => setMaps(r.data)).catch(() => {});
-    publicAPI.getMapLocations('global_business').then(r => setLocations(r.data)).catch(() => {});
-    publicAPI.getMapLocations('conferences').then(r => setLocConferences(r.data)).catch(() => {});
-    publicAPI.getMapLocations('recommended_sites').then(r => setLocRecommended(r.data)).catch(() => {});
-    publicAPI.getPortfolio().then(r => setPortfolio(r.data)).catch(() => {});
-    publicAPI.getGallery().then(r => setGallery(r.data)).catch(() => {});
-    publicAPI.getTestimonials().then(r => setTestimonials(r.data)).catch(() => {});
-    publicAPI.getHeroSlides().then(r => setHeroSlides(r.data)).catch(() => {});
+    publicAPI.getServices().then(r => setServices(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getBlog().then(r => setPosts(Array.isArray(r.data?.posts) ? r.data.posts : Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getBooks().then(r => setBooks(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMaps().then(r => setMaps(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('global_business').then(r => setLocations(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('conferences').then(r => setLocConferences(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('recommended_sites').then(r => setLocRecommended(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getPortfolio().then(r => setPortfolio(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getGallery().then(r => setGallery(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getTestimonials().then(r => setTestimonials(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getHeroSlides().then(r => setHeroSlides(Array.isArray(r.data) ? r.data : [])).catch(() => {});
   }, []);
 
   const sections = settings.sections || {};
@@ -663,9 +666,11 @@ export default function HomePage() {
   // operator can have separate per-section bg/font choices for each layout.
   const aurexConfigs = (settings.section_configs && settings.section_configs[activeTheme]) || (settings.section_configs && settings.section_configs.aurex) || {};
   const aurexDefaultOrder = ['hero', 'about', 'aurex_audience', 'services', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_team', 'testimonials', 'reading_list', 'aurex_events', 'news', 'blog', 'aurex_partners', 'aurex_clients', 'map', 'contact'];
+  // Personal Brand Pro default order — matches section numbers §2-§11 in PersonalBrandSections.js
+  const pbDefaultOrder = ['hero', 'about', 'services', 'aurex_audience', 'portfolio', 'testimonials', 'aurex_team', 'contact', 'reading_list', 'gallery', 'news', 'blog', 'aurex_process', 'aurex_video', 'aurex_pricing', 'aurex_events', 'aurex_partners', 'aurex_clients', 'map', 'map_global', 'map_conferences', 'map_recommended'];
   const legacyDefault = ['hero', 'about', 'services', 'news', 'blog', 'reading_list', 'locations', 'map_global', 'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'testimonials', 'contact'];
   const perThemeOrder = settings.section_orders && settings.section_orders[activeTheme];
-  let sectionOrder = perThemeOrder || settings.section_order || (isAurex ? aurexDefaultOrder : legacyDefault);
+  let sectionOrder = perThemeOrder || settings.section_order || (isPersonalBrand ? pbDefaultOrder : isAurex ? aurexDefaultOrder : legacyDefault);
   // If Aurex theme is active, append any known Aurex keys that the stored order
   // is missing (can happen after we add new Aurex sections like `aurex_video`
   // without asking the admin to re-save).
@@ -682,7 +687,9 @@ export default function HomePage() {
   const aurexSection = (key, Comp) => {
     const cfg = aurexConfigs[key] || {};
     const data = aurexData[key] || { config: {}, items: [] };
-    const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : undefined;
+    // For Personal Brand Pro, default to Plus Jakarta Sans when no font is explicitly chosen.
+    const fallbackFont = isPersonalBrand ? PB_FONT_CSS : undefined;
+    const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : fallbackFont;
     return <Comp key={key} config={data.config || {}} items={data.items || []} bg={cfg.bg_color} font={font} />;
   };
 
@@ -690,7 +697,9 @@ export default function HomePage() {
   // plus the CMS-editable header/CTA overrides stored under the matching `aurex_<key>_cfg` entry.
   const aurexMono = (key) => {
     const cfg = aurexConfigs[key] || {};
-    const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : undefined;
+    // For Personal Brand Pro, default to Plus Jakarta Sans when no font is explicitly chosen.
+    const fallbackFont = isPersonalBrand ? PB_FONT_CSS : undefined;
+    const font = cfg.font_family ? (AUREX_FONTS.find(f => f.key === cfg.font_family)?.css) : fallbackFont;
     const overrideKey = {
       services: 'aurex_services_cfg',
       testimonials: 'aurex_testimonials_cfg',
@@ -701,32 +710,128 @@ export default function HomePage() {
       map_global: 'aurex_locations_cfg',
       map_conferences: 'aurex_locations_cfg',
       map_recommended: 'aurex_locations_cfg',
+      reading_list: 'aurex_reading_cfg',
+      portfolio: 'aurex_portfolio_cfg',
+      gallery: 'aurex_gallery_cfg',
     }[key];
     const override = overrideKey ? (aurexData[overrideKey]?.config || {}) : {};
     return { bg: cfg.bg_color, font, cmsConfig: override };
   };
 
+  // ── Dynamic section numbers for Personal Brand Pro ────────────────────────
+  // Count each visible, non-hero section in order; skip hero. The number is
+  // passed as `sectionNumber` prop so all PB components show "NN/ eyebrow".
+  const pbSectionNumbers = (() => {
+    if (!isPersonalBrand) return {};
+    const result = {};
+    let counter = 0;
+    const skipKeys = new Set(['hero']);
+    sectionOrder.forEach(key => {
+      if (skipKeys.has(key)) return;
+      const sec = sections[key];
+      if (sec?.enabled === false) return;
+      // Only count keys that have a rendered component in the sectionMap.
+      const knownKeys = [
+        'about', 'services', 'aurex_audience', 'aurex_process', 'aurex_pricing',
+        'aurex_team', 'testimonials', 'reading_list', 'aurex_events', 'news', 'blog',
+        'aurex_partners', 'aurex_clients', 'map', 'locations', 'map_global',
+        'map_conferences', 'map_recommended', 'portfolio', 'gallery', 'contact',
+        'aurex_video',
+      ];
+      if (!knownKeys.includes(key)) return;
+      counter++;
+      result[key] = String(counter).padStart(2, '0');
+    });
+    return result;
+  })();
+
+  // ── Personal Brand Pro helpers ────────────────────────────────────────────
+  // Ticker phrases: parse from settings tagline (comma/pipe separated) or defaults.
+  const pbTickerPhrases = (() => {
+    const raw = settings.tagline || settings.meta_description || '';
+    const resolved = typeof raw === 'object' ? (raw.en || raw.es || Object.values(raw)[0] || '') : String(raw || '');
+    const parts = resolved.split(/[,|]/).map(s => s.trim()).filter(Boolean);
+    return parts.length >= 2 ? parts : [
+      'Boost your brand visibility',
+      'Grow faster with strategy',
+      'Drive meaningful results',
+      'Build lasting relationships',
+      'Scale with confidence',
+    ];
+  })();
+
+  // PB audience section (Digitak-style staggered cascade)
+  const pbAudienceData = aurexData['aurex_audience'] || { config: {}, items: [] };
+  const pbAudienceCfg = aurexConfigs['aurex_audience'] || {};
+
+  // PB team section
+  const pbTeamData = aurexData['aurex_team'] || { config: {}, items: [] };
+  const pbTeamCfg = aurexConfigs['aurex_team'] || {};
+
   const sectionMap = {
-    hero: homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null,
-    about: isAurex ? <AurexAboutMono key="about" data={about} {...aurexMono('about')} /> : <AboutSection key="about" data={about} theme={theme} />,
-    services: isAurex ? <AurexServicesMono key="services" services={services} {...aurexMono('services')} /> : <ServicesSection key="services" services={services} theme={theme} />,
-    news: isAurex ? <AurexNewsMono key="news" posts={posts} {...aurexMono('news')} /> : <NewsSection key="news" posts={posts} theme={theme} />,
-    blog: isAurex ? <AurexBlogMono key="blog" {...aurexMono('blog')} /> : <ExternalBlogSection key="blog" theme={theme} />,
-    reading_list: isAurex ? <AurexReadingMono key="reading" books={books} {...aurexMono('reading_list')} /> : <ReadingListSection key="reading" books={books} theme={theme} />,
+    // ── Hero: PBHero wraps the ticker bar + editorial hero ──
+    hero: isPersonalBrand
+      ? (homeSlides.length > 0 ? <PBHero key="hero" slides={homeSlides} tickerPhrases={pbTickerPhrases} /> : null)
+      : (homeSlides.length > 0 ? <HeroSection key="hero" slides={homeSlides} data={homeSlides[0]} /> : null),
+
+    // ── About ──
+    about: isPersonalBrand
+      ? <PBAbout key="about" data={about} {...aurexMono('about')} sectionNumber={pbSectionNumbers['about']} />
+      : isAurex ? <AurexAboutMono key="about" data={about} {...aurexMono('about')} />
+      : <AboutSection key="about" data={about} theme={theme} />,
+
+    // ── Services ──
+    services: isPersonalBrand
+      ? <PBServices key="services" services={services} {...aurexMono('services')} sectionNumber={pbSectionNumbers['services']} />
+      : isAurex ? <AurexServicesMono key="services" services={services} {...aurexMono('services')} />
+      : <ServicesSection key="services" services={services} theme={theme} />,
+
+    // ── News / Blog / Reading / Map ──
+    news: isAurex ? <AurexNewsMono key="news" posts={posts} {...aurexMono('news')} sectionNumber={isPersonalBrand ? pbSectionNumbers['news'] : undefined} /> : <NewsSection key="news" posts={posts} theme={theme} />,
+    blog: isAurex ? <AurexBlogMono key="blog" {...aurexMono('blog')} sectionNumber={isPersonalBrand ? pbSectionNumbers['blog'] : undefined} /> : <ExternalBlogSection key="blog" theme={theme} />,
+    reading_list: isPersonalBrand
+      ? <PBReadingList key="reading" books={books} {...aurexMono('reading_list')} sectionNumber={pbSectionNumbers['reading_list']} />
+      : isAurex ? <AurexReadingMono key="reading" books={books} {...aurexMono('reading_list')} />
+      : <ReadingListSection key="reading" books={books} theme={theme} />,
     map: isAurex ? <AurexMapMono key="map" maps={maps} locations={locations} mapsLang={mapsLang} {...aurexMono('map')} /> : <MapSection key="map" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
     locations: isAurex ? <AurexMapMono key="locations" maps={maps} locations={locations} mapsLang={mapsLang} {...aurexMono('locations')} /> : <MapSection key="locations" maps={maps} locations={locations} theme={theme} mapsLang={mapsLang} />,
     map_global: isAurex ? <AurexMapMono key="map_global" maps={maps} locations={locations} title="Global Business Presence" mapsLang={mapsLang} {...aurexMono('map_global')} /> : <MapSection key="map_global" maps={maps} locations={locations} theme={theme} title="Global Business Presence" mapsLang={mapsLang} />,
     map_conferences: isAurex ? <AurexMapMono key="map_conferences" maps={maps} locations={locConferences} title="Conferences" mapsLang={mapsLang} {...aurexMono('map_conferences')} /> : <MapSection key="map_conferences" maps={maps} locations={locConferences} theme={theme} title="Conferences" mapsLang={mapsLang} />,
     map_recommended: isAurex ? <AurexMapMono key="map_recommended" maps={maps} locations={locRecommended} title="Recommended Sites" mapsLang={mapsLang} {...aurexMono('map_recommended')} /> : <MapSection key="map_recommended" maps={maps} locations={locRecommended} theme={theme} title="Recommended Sites" mapsLang={mapsLang} />,
-    portfolio: isAurex ? <AurexPortfolioMono key="portfolio" items={portfolio} {...aurexMono('portfolio')} /> : <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
-    gallery: isAurex ? <AurexGalleryMono key="gallery" items={gallery} {...aurexMono('gallery')} /> : <GallerySection key="gallery" items={gallery} theme={theme} />,
-    testimonials: isAurex ? <AurexTestimonialsMono key="testimonials" items={testimonials} {...aurexMono('testimonials')} /> : <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
-    contact: isAurex ? <AurexContactMono key="contact" contactSettings={settings.contact_settings} {...aurexMono('contact')} /> : <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
-    // Aurex Theme 2.0 sections — only meaningful when active_theme = 'aurex'
-    aurex_audience: aurexSection('aurex_audience', AurexAudience),
+
+    // ── Portfolio ──
+    portfolio: isPersonalBrand
+      ? <PBPortfolio key="portfolio" items={portfolio} {...aurexMono('portfolio')} sectionNumber={pbSectionNumbers['portfolio']} />
+      : isAurex ? <AurexPortfolioMono key="portfolio" items={portfolio} {...aurexMono('portfolio')} />
+      : <PortfolioSection key="portfolio" items={portfolio} theme={theme} />,
+
+    // ── Gallery ──
+    gallery: isPersonalBrand
+      ? <PBGallery key="gallery" items={gallery} {...aurexMono('gallery')} sectionNumber={pbSectionNumbers['gallery']} />
+      : isAurex ? <AurexGalleryMono key="gallery" items={gallery} {...aurexMono('gallery')} />
+      : <GallerySection key="gallery" items={gallery} theme={theme} />,
+
+    // ── Testimonials ──
+    testimonials: isPersonalBrand
+      ? <PBTestimonials key="testimonials" items={testimonials} {...aurexMono('testimonials')} sectionNumber={pbSectionNumbers['testimonials']} />
+      : isAurex ? <AurexTestimonialsMono key="testimonials" items={testimonials} {...aurexMono('testimonials')} />
+      : <TestimonialsSection key="testimonials" items={testimonials} theme={theme} />,
+
+    // ── Contact ──
+    contact: isPersonalBrand
+      ? <PBContact key="contact" contactSettings={settings.contact_settings} {...aurexMono('contact')} sectionNumber={pbSectionNumbers['contact']} />
+      : isAurex ? <AurexContactMono key="contact" contactSettings={settings.contact_settings} {...aurexMono('contact')} />
+      : <ContactSection key="contact" theme={theme} contactSettings={settings.contact_settings} />,
+
+    // ── Aurex 2.0 sections — PB uses PBAudience + PBTeam, Aurex uses originals ──
+    aurex_audience: isPersonalBrand
+      ? <PBAudience key="aurex_audience" config={pbAudienceData.config} items={pbAudienceData.items} bg={pbAudienceCfg.bg_color} sectionNumber={pbSectionNumbers['aurex_audience']} />
+      : aurexSection('aurex_audience', AurexAudience),
     aurex_process: aurexSection('aurex_process', AurexProcess),
     aurex_pricing: aurexSection('aurex_pricing', AurexPricing),
-    aurex_team: aurexSection('aurex_team', AurexTeam),
+    aurex_team: isPersonalBrand
+      ? <PBTeam key="aurex_team" config={pbTeamData.config} items={pbTeamData.items} bg={pbTeamCfg.bg_color} sectionNumber={pbSectionNumbers['aurex_team']} />
+      : aurexSection('aurex_team', AurexTeam),
     aurex_events: aurexSection('aurex_events', AurexEvents),
     aurex_partners: aurexSection('aurex_partners', AurexPartners),
     aurex_clients: aurexSection('aurex_clients', AurexClients),
