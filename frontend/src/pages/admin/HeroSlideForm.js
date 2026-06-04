@@ -203,6 +203,44 @@ export default function HeroSlideForm() {
         </button>
       </div>
 
+      {/* Template Scope — Personal Brand mini-site selector (first field) */}
+      <div className={sectionCls} data-testid="slide-template-scope-section">
+        <h2 className={sectionTitle}>Template Scope</h2>
+        <p className="text-xs text-slate-400 mb-3">
+          Choose which mini-site homepage this slide belongs to. Only relevant for the{' '}
+          <span className="font-medium text-slate-600">Personal Brand Pro</span> template — ignored on all other themes.
+        </p>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { value: '',          label: 'PB — Business',  hint: 'Default homepage (main landing)',  cls: 'border-slate-400  bg-slate-50'   },
+            { value: 'lifestyle', label: 'PB — Lifestyle',  hint: 'Lifestyle mini-site homepage',     cls: 'border-emerald-400 bg-emerald-50' },
+            { value: 'personal',  label: 'PB — Personal',   hint: 'Personal mini-site homepage',      cls: 'border-violet-400  bg-violet-50'  },
+          ].map(opt => {
+            const active = (form.pb_personality || '') === opt.value;
+            return (
+              <label
+                key={opt.value}
+                className={`flex items-start gap-3 p-3 rounded-sm border-2 cursor-pointer transition-all ${active ? opt.cls : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
+                data-testid={`scope-${opt.value || 'business'}`}
+              >
+                <input
+                  type="radio"
+                  name="pb_personality"
+                  value={opt.value}
+                  checked={active}
+                  onChange={() => setForm(p => ({ ...p, pb_personality: opt.value }))}
+                  className="mt-0.5 accent-[#0D9488]"
+                />
+                <div>
+                  <p className="text-sm font-semibold text-[#1a2332]">{opt.label}</p>
+                  <p className="text-xs text-slate-400 mt-0.5">{opt.hint}</p>
+                </div>
+              </label>
+            );
+          })}
+        </div>
+      </div>
+
       {/* Timer */}
       <div className={sectionCls}>
         <h2 className={sectionTitle}>Timer</h2>
@@ -424,44 +462,6 @@ export default function HeroSlideForm() {
           })}
         </div>
         {sitePages.length === 0 && <p className="text-xs text-slate-400">Loading pages...</p>}
-      </div>
-
-      {/* Template Scope — Personal Brand mini-site selector */}
-      <div className={sectionCls} data-testid="slide-template-scope-section">
-        <h2 className={sectionTitle}>Template Scope</h2>
-        <p className="text-xs text-slate-400 mb-3">
-          Choose which mini-site homepage this slide belongs to. Only relevant for the{' '}
-          <span className="font-medium text-slate-600">Personal Brand Pro</span> template — ignored on all other themes.
-        </p>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-          {[
-            { value: '',          label: 'PB — Business',  hint: 'Default homepage (main landing)',  cls: 'border-slate-400  bg-slate-50'   },
-            { value: 'lifestyle', label: 'PB — Lifestyle',  hint: 'Lifestyle mini-site homepage',     cls: 'border-emerald-400 bg-emerald-50' },
-            { value: 'personal',  label: 'PB — Personal',   hint: 'Personal mini-site homepage',      cls: 'border-violet-400  bg-violet-50'  },
-          ].map(opt => {
-            const active = (form.pb_personality || '') === opt.value;
-            return (
-              <label
-                key={opt.value}
-                className={`flex items-start gap-3 p-3 rounded-sm border-2 cursor-pointer transition-all ${active ? opt.cls : 'border-slate-100 bg-slate-50 hover:border-slate-200'}`}
-                data-testid={`scope-${opt.value || 'business'}`}
-              >
-                <input
-                  type="radio"
-                  name="pb_personality"
-                  value={opt.value}
-                  checked={active}
-                  onChange={() => setForm(p => ({ ...p, pb_personality: opt.value }))}
-                  className="mt-0.5 accent-[#0D9488]"
-                />
-                <div>
-                  <p className="text-sm font-semibold text-[#1a2332]">{opt.label}</p>
-                  <p className="text-xs text-slate-400 mt-0.5">{opt.hint}</p>
-                </div>
-              </label>
-            );
-          })}
-        </div>
       </div>
 
       {/* Revolution Slider Parameters */}

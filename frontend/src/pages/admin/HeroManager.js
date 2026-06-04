@@ -12,6 +12,18 @@ const fmtDt = (d) => {
   return m ? `${m[2]}/${m[3]}/${m[1]} ${m[4]}:${m[5]}` : d;
 };
 
+// Scope badge — mirrors the CategoryBadge pattern from PagesManager
+const SCOPE_META = {
+  '':          { label: 'PB — Business',  cls: 'bg-slate-100 text-slate-600' },
+  'business':  { label: 'PB — Business',  cls: 'bg-slate-100 text-slate-600' },
+  'lifestyle': { label: 'PB — Lifestyle', cls: 'bg-emerald-50 text-emerald-600' },
+  'personal':  { label: 'PB — Personal',  cls: 'bg-violet-50  text-violet-600' },
+};
+function ScopeBadge({ pb_personality }) {
+  const meta = SCOPE_META[pb_personality || ''] || SCOPE_META[''];
+  return <span className={`inline-flex items-center px-2 py-0.5 rounded-sm text-xs font-medium ${meta.cls}`}>{meta.label}</span>;
+}
+
 export default function HeroManager() {
   const [slides, setSlides] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -37,7 +49,7 @@ export default function HeroManager() {
   };
 
   const dt = useDataTable(slides, {
-    searchAccessor: s => `${s.title || ''} ${s.subtitle || ''} ${s.slide_type || ''}`,
+    searchAccessor: s => `${s.title || ''} ${s.subtitle || ''} ${s.slide_type || ''} ${s.pb_personality || 'business'}`,
     defaultSort: { key: 'date_start', dir: 'desc' },
     storageKey: 'hero',
   });
@@ -70,6 +82,7 @@ export default function HeroManager() {
                 <SortableTh dt={dt} field="title">Title</SortableTh>
                 <SortableTh dt={dt} field="subtitle">Subtitle</SortableTh>
                 <SortableTh dt={dt} field="slide_type" align="center">Type</SortableTh>
+                <SortableTh dt={dt} field="pb_personality" align="center">Scope</SortableTh>
                 <SortableTh dt={dt} field="date_start">Start Date</SortableTh>
                 <SortableTh dt={dt} field="date_end">End Date</SortableTh>
                 <th className="text-right p-3">Actions</th>
@@ -87,6 +100,7 @@ export default function HeroManager() {
                       <span className="inline-flex items-center gap-1 text-xs bg-blue-50 text-blue-600 px-2 py-0.5 rounded"><Image className="w-3 h-3" /> Photo</span>
                     )}
                   </td>
+                  <td className="p-3 text-center"><ScopeBadge pb_personality={s.pb_personality} /></td>
                   <td className="p-3 text-slate-500 text-xs">{fmtDt(s.date_start)}</td>
                   <td className="p-3 text-slate-500 text-xs">{fmtDt(s.date_end)}</td>
                   <td className="p-3 text-right">

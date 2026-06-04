@@ -872,20 +872,31 @@ export default function HomePage({ personality }) {
     aurex_video: aurexSection('aurex_video', AurexVideo),
   };
 
+  // Logged-in check shared between global login_required and PB auth gates.
+  const isLoggedIn = !!(user && (user.id || user.member_id || user.username || user.email));
+
   return (
     <main data-testid="home-page">
       {sectionOrder.map(key => {
         const sec = sections[key];
+
+        // ── Global visibility (all themes) ───────────────────────────────
         // Eye OFF → hidden from everyone.
         if (sec?.enabled === false) return null;
-        // Padlock ON → only logged-in members see it. Anonymous visitors
-        // get nothing (we don't render a "login prompt" stub here because
-        // the admin explicitly chose to hide the section rather than gate
-        // it interactively). The auth user object uses different id keys
-        // depending on how it was populated (`id` from /auth/me, `member_id`
-        // from member login, `username`/`email` fallback) — any of those
-        // indicate a logged-in session.
-        if (sec?.login_required === true && !(user && (user.id || user.member_id || user.username || user.email))) return null;
+        // Padlock ON → only logged-in users see it.
+        if (sec?.login_required === true && !isLoggedIn) return null;
+
+        // ── Personal Brand per-personality auth gates ─────────────────────
+        // Set via CMS → Page Builder → Personal Brand (eye / lock per tab).
+        // 'hidden'  → section is off for this personality.
+        // 'members' → requires login for this personality.
+        // 'public'  → always visible for this personality.
+        if (isPersonalBrand) {
+          const gate = settings.section_auth_gates?.[pbPersonality]?.[key];
+          if (gate === 'hidden') return null;
+          if (gate === 'members' && !isLoggedIn) return null;
+        }
+
         return sectionMap[key] || null;
       })}
     </main>
