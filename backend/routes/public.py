@@ -1,4 +1,5 @@
 from fastapi import APIRouter, HTTPException, Request, Query
+from typing import Optional
 from models.database import db, send_email_smtp, logger
 from datetime import datetime, timezone
 import uuid
@@ -51,7 +52,9 @@ async def get_public_hero_slides(page: str = Query("")):
 async def get_public_site_pages():
     """Returns all site pages (system + custom) for hero assignment and other uses."""
     system_pages = [
-        {"id": "home", "title": "Home", "url": "/", "system": True},
+        {"id": "home", "title": "Home (Business)", "url": "/", "system": True},
+        {"id": "lifestyle", "title": "Lifestyle (mini-site home)", "url": "/lifestyle", "system": True},
+        {"id": "personal", "title": "Personal (mini-site home)", "url": "/personal", "system": True},
         {"id": "news", "title": "News", "url": "/news", "system": True},
         {"id": "gallery", "title": "Gallery", "url": "/gallery", "system": True},
         {"id": "reading-list", "title": "Reading List", "url": "/reading-list", "system": True},
@@ -61,8 +64,18 @@ async def get_public_site_pages():
     return system_pages + custom
 
 @router.get("/public/about")
-async def get_public_about():
-    return await db.about.find_one({}, {"_id": 0}) or {}
+async def get_public_about(personality: Optional[str] = Query(None)):
+    """
+    No personality param → global About (used by all non-PB themes, unchanged).
+    personality = 'business'|'lifestyle'|'personal' → PB mini-site About.
+    Falls back to the global About if no personality-specific document exists yet.
+    """
+    if personality and personality in ("business", "lifestyle", "personal"):
+        doc = await db.about.find_one({"pb_personality": personality}, {"_id": 0})
+        if doc:
+            return doc
+        # Graceful fallback to global when personality doc not yet configured
+    return await db.about.find_one({"pb_personality": {"$exists": False}}, {"_id": 0}) or {}
 
 @router.get("/public/services")
 async def get_public_services():

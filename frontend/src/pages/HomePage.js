@@ -622,7 +622,12 @@ export default function HomePage({ personality }) {
   const [heroSlides, setHeroSlides] = useState([]);
 
   useEffect(() => {
-    publicAPI.getAbout().then(r => setAbout(r.data)).catch(() => {});
+    // In Personal Brand mode fetch the personality-specific About so each
+    // mini-site can have independent content. The backend falls back to the
+    // global About if no personality-specific document exists yet.
+    const pbMode = settings.active_theme === 'personalbrand';
+    publicAPI.getAbout(pbMode ? pbPersonality : undefined)
+      .then(r => setAbout(r.data)).catch(() => {});
     publicAPI.getServices().then(r => setServices(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     publicAPI.getBlog().then(r => setPosts(Array.isArray(r.data?.posts) ? r.data.posts : Array.isArray(r.data) ? r.data : [])).catch(() => {});
     publicAPI.getBooks().then(r => setBooks(Array.isArray(r.data) ? r.data : [])).catch(() => {});
