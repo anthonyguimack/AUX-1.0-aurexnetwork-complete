@@ -670,7 +670,10 @@ export default function HomePage({ personality }) {
       });
     };
   }, [isPersonalBrand]);
-  const aurexData = useAurexSections();
+  // In Personal Brand mode pass the active personality so aurex_team (and any
+  // future PB-scoped sections) fetch their mini-site-specific data.
+  // All other themes pass undefined → identical behaviour to before.
+  const aurexData = useAurexSections(isPersonalBrand ? pbPersonality : undefined);
   // Each Aurex-family theme keeps its own section_configs scope so the
   // operator can have separate per-section bg/font choices for each layout.
   const aurexConfigs = (settings.section_configs && settings.section_configs[activeTheme]) || (settings.section_configs && settings.section_configs.aurex) || {};

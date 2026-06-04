@@ -477,7 +477,10 @@ export function AurexVideo({ config = {}, bg, font, contrast, sectionNumber }) {
 
 const SECTIONS_ITEMIZED = ['aurex_audience', 'aurex_process', 'aurex_pricing', 'aurex_team', 'aurex_partners', 'aurex_clients'];
 
-export function useAurexSections() {
+// `personality` = undefined → all sections fetch global data (Aurex One-page + other themes)
+// `personality` = 'business'|'lifestyle'|'personal' → PB mini-site: aurex_team fetches
+//   personality-specific data; all other sections still fetch global data unchanged.
+export function useAurexSections(personality) {
   const [data, setData] = useState({});
   useEffect(() => {
     const keys = [
@@ -485,13 +488,21 @@ export function useAurexSections() {
       'aurex_services_cfg', 'aurex_testimonials_cfg', 'aurex_news_cfg', 'aurex_blog_cfg', 'aurex_locations_cfg',
       'aurex_reading_cfg', 'aurex_portfolio_cfg', 'aurex_gallery_cfg',
     ];
-    Promise.all(keys.map(k => fetch(`${API}/api/public/aurex/${k}`).then(r => r.ok ? r.json() : { config: {}, items: [] }).catch(() => ({ config: {}, items: [] }))))
+    // Sections that support per-personality data in PB mode.
+    // Only aurex_team for now; extend this set as more sections are personalised.
+    const PB_SCOPED = new Set(['aurex_team']);
+    Promise.all(keys.map(k => {
+      const param = (personality && PB_SCOPED.has(k)) ? `?personality=${personality}` : '';
+      return fetch(`${API}/api/public/aurex/${k}${param}`)
+        .then(r => r.ok ? r.json() : { config: {}, items: [] })
+        .catch(() => ({ config: {}, items: [] }));
+    }))
       .then(results => {
         const map = {};
         keys.forEach((k, i) => { map[k] = results[i]; });
         setData(map);
       });
-  }, []);
+  }, [personality]);
   return data;
 }
 

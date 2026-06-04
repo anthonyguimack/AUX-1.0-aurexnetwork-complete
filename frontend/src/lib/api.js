@@ -300,13 +300,15 @@ export const adminAPI = {
   updateCoupon: (id, d) => api.put(`/admin/coupons/${id}`, d),
   deleteCoupon: (id) => api.delete(`/admin/coupons/${id}`),
   // Aurex Sections (generic CRUD for all 7 new one-page sections)
-  getAurexConfig: (section) => api.get(`/admin/aurex/${section}/config`),
-  saveAurexConfig: (section, data) => api.put(`/admin/aurex/${section}/config`, data),
-  getAurexItems: (section) => api.get(`/admin/aurex/${section}/items`),
-  createAurexItem: (section, data) => api.post(`/admin/aurex/${section}/items`, data),
-  updateAurexItem: (section, id, data) => api.put(`/admin/aurex/${section}/items/${id}`, data),
-  deleteAurexItem: (section, id) => api.delete(`/admin/aurex/${section}/items/${id}`),
-  reorderAurexItems: (section, order) => api.put(`/admin/aurex/${section}/reorder`, { order }),
+  // `personality` = undefined → global doc (Aurex One-page + other themes, unchanged)
+  // `personality` = 'business'|'lifestyle'|'personal' → PB mini-site doc
+  getAurexConfig:   (section, personality) => api.get(`/admin/aurex/${section}/config`,  personality ? { params: { personality } } : {}),
+  saveAurexConfig:  (section, data, personality) => api.put(`/admin/aurex/${section}/config`, data, personality ? { params: { personality } } : {}),
+  getAurexItems:    (section, personality) => api.get(`/admin/aurex/${section}/items`,   personality ? { params: { personality } } : {}),
+  createAurexItem:  (section, data, personality) => api.post(`/admin/aurex/${section}/items`, data, personality ? { params: { personality } } : {}),
+  updateAurexItem:  (section, id, data) => api.put(`/admin/aurex/${section}/items/${id}`, data),  // ID is UUID — no personality needed
+  deleteAurexItem:  (section, id) => api.delete(`/admin/aurex/${section}/items/${id}`),           // ID is UUID — no personality needed
+  reorderAurexItems:(section, order) => api.put(`/admin/aurex/${section}/reorder`, { order }),
 };
 
 // Member API (unified - uses same auth_token)
