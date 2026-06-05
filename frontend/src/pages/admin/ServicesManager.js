@@ -88,11 +88,17 @@ export default function ServicesManager() {
     if (!over || active.id === over.id) return;
     const oldIndex = items.findIndex(i => i.id === active.id);
     const newIndex = items.findIndex(i => i.id === over.id);
-    const reordered = arrayMove(items, oldIndex, newIndex);
-    // Reflect optimistically then persist each item's new order to the backend
+    const originalOrders = new Map(items.map(s => [s.id, s.order ?? 0]));
+    // Update both array positions and `order` field values so useDataTable
+    // doesn't re-sort by stale field values and snap rows back.
+    const reordered = arrayMove(items, oldIndex, newIndex).map((s, idx) => ({ ...s, order: idx }));
     setItems(reordered);
     try {
-      await Promise.all(reordered.map((s, idx) => s.order !== idx ? adminAPI.updateService(s.id, { ...s, order: idx }) : Promise.resolve()));
+      await Promise.all(
+        reordered
+          .filter(s => originalOrders.get(s.id) !== s.order)
+          .map(s => adminAPI.updateService(s.id, { ...s }))
+      );
       toast.success('Order saved');
     } catch { toast.error('Failed to save order'); load(); }
   };

@@ -14,11 +14,17 @@ import { useAuth } from '../../lib/auth';
  * Usage:
  *   <Route path="blog" element={<CmsSectionGuard section="blog"><BlogManager /></CmsSectionGuard>} />
  */
+/**
+ * section: string key OR array of keys.
+ * Allowed if the user has the role "admin" OR their effective_permissions
+ * includes ANY of the supplied keys.
+ */
 export function CmsSectionGuard({ section, children }) {
   const { user } = useAuth();
   const perms = (user?.effective_permissions) || [];
-  const allowed = user?.role === 'admin' || perms.includes(section);
-  if (!allowed) return <Forbidden section={section} />;
+  const keys = Array.isArray(section) ? section : [section];
+  const allowed = user?.role === 'admin' || keys.some(k => perms.includes(k));
+  if (!allowed) return <Forbidden section={keys[0]} />;
   return children;
 }
 

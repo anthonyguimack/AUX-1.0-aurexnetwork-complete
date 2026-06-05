@@ -60,6 +60,9 @@ chainlit.md
 
 # Deployment
 .vercel
+.last-deploy
+.last-deploy-acapital
+.last-deploy-carlosartiles
 
 # Data and databases
 agenthub/agents/youtube/db

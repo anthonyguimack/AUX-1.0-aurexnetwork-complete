@@ -22,6 +22,7 @@ export default function Navbar() {
 function useNavData() {
   const { user, logout } = useAuth();
   const settings = useSettings();
+  const theme = useTheme();
   const [navPages, setNavPages] = useState([]);
   const [loginOpen, setLoginOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
@@ -32,7 +33,50 @@ function useNavData() {
     publicAPI.getNavPages().then(r => setNavPages(r.data || [])).catch(() => {});
   }, []);
 
-  const headerPages = navPages.filter(p => p.show_in_header).sort((a, b) => (a.order || 0) - (b.order || 0));
+  // Personal Brand mini-sites ("personalities"). Each navigation section acts
+  // as its own mini-site within the Personal Brand theme: the active personality
+  // is derived from the URL, and the header menu is scoped to that personality's
+  // category. Business is the default experience (loads at "/").
+  const isPB = theme === 'personalbrand';
+  // category defaults to 'all' (universal) when unset.
+  // 'business' pages belong to the PB Business mini-site (shown at '/').
+  const catOf = (p) => p.category || 'all';
+  // Resolve the page currently being viewed so its category can drive the
+  // active mini-site even when the page lives on its own custom URL (e.g.
+  // /travel-recommendations) rather than under the /lifestyle or /personal
+  // mini-site home path.
+  const currentPage = navPages.find(p => p.url === location.pathname || `/page/${p.id}` === location.pathname);
+  // PB_PERSONALITIES: valid mini-site scope values for the personality switcher.
+  const PB_PERSONALITIES = new Set(['business', 'lifestyle', 'personal']);
+  const activePersonality = !isPB
+    ? 'business'
+    : location.pathname.startsWith('/lifestyle')
+      ? 'lifestyle'
+      : location.pathname.startsWith('/personal')
+        ? 'personal'
+        : (currentPage && PB_PERSONALITIES.has(currentPage.category))
+          ? currentPage.category
+          : 'business';
+  // PB_CATS: categories that are exclusive to the Personal Brand template.
+  // Pages with these categories must never appear in other templates' navbars.
+  const PB_CATS = new Set(['business', 'lifestyle', 'personal']);
+
+  // On the Personal Brand theme: scope to the active personality's pages.
+  // On every other theme: show only universal pages (category === 'all' or
+  // no category set), hiding any PB-specific pages that were created for
+  // the business / lifestyle / personal mini-sites.
+  const scopedPages = isPB
+    ? navPages.filter(p => catOf(p) === activePersonality)
+    : navPages.filter(p => !PB_CATS.has(p.category));
+  const headerPages = scopedPages.filter(p => p.show_in_header).sort((a, b) => (a.order || 0) - (b.order || 0));
+
+  // Static cross-mini-site switch links, always present on the Personal Brand
+  // theme so visitors can move between Business / Lifestyle / Personal.
+  const miniSiteLinks = isPB ? [
+    { key: 'business', title: 'Business', url: '/' },
+    { key: 'lifestyle', title: 'Lifestyle', url: '/lifestyle' },
+    { key: 'personal', title: 'Personal', url: '/personal' },
+  ] : [];
 
   const handlePageClick = (page, e) => {
     if (page.login_required && !user) { e.preventDefault(); setLoginOpen(true); return; }
@@ -63,7 +107,7 @@ function useNavData() {
   const hasCmsAccess = !!user && (user.role === 'admin' || (user.effective_permissions || []).length > 0);
   const hasMyAccount = !!user && (user.role === 'admin' || (user.cms_roles || []).includes('role_member'));
 
-  return { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount };
+  return { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount, isPB, activePersonality, miniSiteLinks };
 }
 
 function NavLinks({ headerPages, isExternal, handlePageClick, location, user }) {
@@ -160,7 +204,7 @@ function DefaultNavbar() {
 
 function ModernNavbar() {
   const tt = useT();
-  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount } = useNavData();
+  const { user, logout, settings, socialLinks, headerPages, handlePageClick, isExternal, isAdmin, location, loginOpen, setLoginOpen, searchOpen, setSearchOpen, hasCmsAccess, hasMyAccount, isPB, activePersonality, miniSiteLinks } = useNavData();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [scrolled, setScrolled] = useState(false);
   const [hasHero, setHasHero] = useState(true);
@@ -224,6 +268,16 @@ function ModernNavbar() {
               const props = isExt ? { href, target: page.open_in_new_tab ? '_blank' : '_self', rel: 'noreferrer' } : { to: href, onClick: e => handlePageClick(page, e) };
               return <Comp key={page.id} {...props} className="text-sm font-medium tracking-wide uppercase transition-colors hover:opacity-70" style={{ color: location.pathname === href ? 'var(--color-accent, #0D9488)' : textColor, letterSpacing: '0.1em' }} data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}>{page.title}</Comp>;
             })}
+            {isPB && miniSiteLinks.length > 0 && (
+              <span className="flex items-center gap-6 pl-6 ml-2 border-l" style={{ borderColor: showSolid ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.3)' }} data-testid="minisite-switch">
+                {miniSiteLinks.map(link => (
+                  <Link key={link.key} to={link.url}
+                    className="text-sm font-semibold tracking-wide uppercase transition-colors hover:opacity-70"
+                    style={{ color: activePersonality === link.key ? 'var(--color-accent, #0D9488)' : textColor, letterSpacing: '0.1em' }}
+                    data-testid={`minisite-link-${link.key}`}>{link.title}</Link>
+                ))}
+              </span>
+            )}
           </nav>
           <div className="flex items-center gap-3">
             {user ? (
@@ -247,6 +301,13 @@ function ModernNavbar() {
               const href = page.url || `/page/${page.id}`;
               return <Link key={page.id} to={href} onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-heading-color, #1a2332)' }}>{page.title}</Link>;
             })}
+            {isPB && miniSiteLinks.length > 0 && (
+              <div className="pt-3 mt-2 border-t border-slate-100 space-y-3">
+                {miniSiteLinks.map(link => (
+                  <Link key={link.key} to={link.url} onClick={() => setMobileOpen(false)} className="block text-sm font-semibold uppercase tracking-wide" style={{ color: activePersonality === link.key ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)' }} data-testid={`minisite-link-mobile-${link.key}`}>{link.title}</Link>
+                ))}
+              </div>
+            )}
             {hasMyAccount && <Link to="/my-account/membership-profile" onClick={() => setMobileOpen(false)} className="block text-sm font-medium" style={{ color: 'var(--color-accent, #0D9488)' }}>My Account</Link>}
           </div>
         )}
@@ -319,7 +380,26 @@ function ClassicNavbar() {
               const isExt = isExternal(page.url);
               const Comp = isExt ? 'a' : Link;
               const props = isExt ? { href, target: page.open_in_new_tab ? '_blank' : '_self', rel: 'noreferrer' } : { to: href, onClick: e => handlePageClick(page, e) };
-              return <Comp key={page.id} {...props} className="text-sm font-medium px-4 py-2 transition-colors" style={{ color: location.pathname === href ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)', borderBottom: location.pathname === href ? '2px solid var(--color-accent, #0D9488)' : '2px solid transparent', fontFamily: "'Playfair Display', serif" }} data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}>{page.title}</Comp>;
+              const isActivePage = location.pathname === href;
+              return (
+                <Comp
+                  key={page.id}
+                  {...props}
+                  className="text-sm font-medium px-4 py-2 transition-colors"
+                  style={{
+                    color: isActivePage ? 'var(--color-accent, #0D9488)' : 'var(--color-heading-color, #1a2332)',
+                    borderBottom: isActivePage ? '2px solid var(--color-accent, #0D9488)' : '2px solid transparent',
+                    fontFamily: "'Playfair Display', serif",
+                    display: 'inline-flex', alignItems: 'center', gap: '6px',
+                  }}
+                  data-testid={`nav-${page.title.toLowerCase().replace(/\s/g, '-')}`}
+                >
+                  {isActivePage && (
+                    <span aria-hidden="true" style={{ width: '5px', height: '5px', borderRadius: '50%', backgroundColor: 'var(--color-accent, #0D9488)', display: 'inline-block', flexShrink: 0 }} />
+                  )}
+                  {page.title}
+                </Comp>
+              );
             })}
           </nav>
           <button onClick={() => setMobileOpen(!mobileOpen)} className="md:hidden p-2" style={{ color: 'var(--color-heading-color, #1a2332)' }}>

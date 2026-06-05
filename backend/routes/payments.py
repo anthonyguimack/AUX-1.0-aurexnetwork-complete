@@ -1,6 +1,7 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, get_current_user, logger
 from utils.runtime_config import get_stripe_api_key, get_webhook_url
+from utils.stripe_helpers import StripeHelper
 from datetime import datetime, timezone
 import uuid
 
@@ -19,12 +20,9 @@ async def create_checkout(request: Request):
     price = float(service.get("price", 0))
     if price <= 0:
         raise HTTPException(status_code=400, detail="Invalid price")
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/checkout/success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/"
     metadata = {"service_id": service_id, "service_name": service.get("title", "")}
@@ -34,9 +32,15 @@ async def create_checkout(request: Request):
         metadata["user_email"] = user.get("email", "")
     except Exception:
         pass
-    checkout_req = CheckoutSessionRequest(amount=price, currency=service.get("currency", "usd"),
-        success_url=success_url, cancel_url=cancel_url, metadata=metadata)
-    session = await stripe_checkout.create_checkout_session(checkout_req)
+    helper = StripeHelper(api_key)
+    session = await helper.create_checkout_session(
+        amount=price,
+        currency=service.get("currency", "usd"),
+        product_name=service.get("title", "Service"),
+        success_url=success_url,
+        cancel_url=cancel_url,
+        metadata=metadata,
+    )
     tx = {"id": str(uuid.uuid4()), "session_id": session.session_id, "service_id": service_id,
           "service_name": service.get("title", ""), "amount": price, "currency": service.get("currency", "usd"),
           "status": "initiated", "payment_status": "pending", "metadata": metadata,
@@ -46,13 +50,11 @@ async def create_checkout(request: Request):
 
 @router.get("/checkout/status/{session_id}")
 async def checkout_status(session_id: str, request: Request):
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-    status = await stripe_checkout.get_checkout_status(session_id)
+    helper = StripeHelper(api_key)
+    status = await helper.get_checkout_status(session_id)
     update_data = {"status": status.status, "payment_status": status.payment_status}
     if status.payment_status == "paid":
         update_data["paid_at"] = datetime.now(timezone.utc).isoformat()
@@ -62,15 +64,13 @@ async def checkout_status(session_id: str, request: Request):
 @router.post("/webhook/stripe")
 async def stripe_webhook(request: Request):
     body = await request.body()
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     api_key = await get_stripe_api_key()
     if not api_key:
         logger.warning("Stripe webhook received but no API key configured")
         return {"status": "error", "detail": "Stripe not configured"}
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
+    helper = StripeHelper(api_key)
     try:
-        event = await stripe_checkout.handle_webhook(body, request.headers.get("Stripe-Signature"))
+        event = await helper.handle_webhook(body, request.headers.get("Stripe-Signature"))
         if event.payment_status == "paid":
             await db.payment_transactions.update_one({"session_id": event.session_id},
                 {"$set": {"status": "complete", "payment_status": "paid", "paid_at": datetime.now(timezone.utc).isoformat()}})

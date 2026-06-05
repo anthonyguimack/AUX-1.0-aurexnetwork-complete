@@ -53,6 +53,25 @@ export default function PageEditorDialog({ editing, setEditing, open, setOpen, o
                     <Input type="number" value={editing.order || 0} onChange={e => setEditing({ ...editing, order: parseInt(e.target.value) || 0 })} className="mt-1 w-24" />
                   </div>
                 </div>
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <Label className="text-xs text-slate-500">Template scope</Label>
+                    <select
+                      value={editing.category || 'all'}
+                      onChange={e => setEditing({ ...editing, category: e.target.value })}
+                      className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1 focus:outline-none focus:border-[#0D9488]"
+                      data-testid="page-category-select"
+                    >
+                      <option value="all">All Templates (universal)</option>
+                      <option value="business">Personal Brand — Business</option>
+                      <option value="lifestyle">Personal Brand — Lifestyle</option>
+                      <option value="personal">Personal Brand — Personal</option>
+                    </select>
+                    <p className="text-xs text-slate-400 mt-0.5">
+                      "All Templates" shows this page on every theme. Personal Brand options restrict the page to that mini-site only.
+                    </p>
+                  </div>
+                </div>
                 <div>
                   <Label className="text-xs text-slate-500">Summary</Label>
                   <textarea value={editing.summary || ''} onChange={e => setEditing({ ...editing, summary: e.target.value })} rows={2} className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-sm text-sm mt-1" />

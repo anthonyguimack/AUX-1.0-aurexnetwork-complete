@@ -60,6 +60,16 @@ async def get_current_user(request: Request) -> dict:
             member = await db.members.find_one({"member_id": session["user_id"]}, {"_id": 0})
             if member:
                 return member
+        else:
+            # Cookie holds a direct-login JWT (not an OAuth session ID).
+            # Decode it so browser-navigated requests (no Authorization header) work.
+            try:
+                payload = pyjwt.decode(token, JWT_SECRET, algorithms=["HS256"])
+                member = await db.members.find_one({"member_id": payload["user_id"]}, {"_id": 0})
+                if member:
+                    return member
+            except (pyjwt.ExpiredSignatureError, pyjwt.InvalidTokenError):
+                pass
     auth_header = request.headers.get("Authorization", "")
     if auth_header.startswith("Bearer "):
         token = auth_header[7:]

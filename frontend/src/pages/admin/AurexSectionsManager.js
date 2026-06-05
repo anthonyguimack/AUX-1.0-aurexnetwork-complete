@@ -163,8 +163,16 @@ const PB_SECTION_TABS = [
   { key: 'lifestyle',  label: 'PB — Lifestyle',  hint: 'Personal Brand Lifestyle mini-site',  cls: 'border-emerald-400 text-emerald-700' },
   { key: 'personal',   label: 'PB — Personal',   hint: 'Personal Brand Personal mini-site',   cls: 'border-violet-400  text-violet-700'  },
 ];
-// Sections that have personality-scoped data. Extend this set as more sections are personalised.
-const PB_SCOPED_SECTIONS = new Set(['aurex_team']);
+// Every Aurex section supports per-personality data — the backend already stores
+// config and items keyed by pb_personality. Listing all keys here enables the
+// Global | PB–Business | PB–Lifestyle | PB–Personal tab strip in the admin.
+const PB_SCOPED_SECTIONS = new Set([
+  'aurex_audience', 'aurex_process', 'aurex_pricing', 'aurex_team',
+  'aurex_partners', 'aurex_clients', 'aurex_events', 'aurex_video',
+  'aurex_services_cfg', 'aurex_testimonials_cfg', 'aurex_news_cfg',
+  'aurex_blog_cfg', 'aurex_locations_cfg',
+  'aurex_reading_cfg', 'aurex_portfolio_cfg', 'aurex_gallery_cfg',
+]);
 
 function SectionEditor({ sectionKey }) {
   const settings = useSettings();
@@ -307,8 +315,8 @@ function SectionEditor({ sectionKey }) {
             Content scope
           </p>
           <p className="text-xs text-slate-400 mb-3">
-            Each Personal Brand mini-site has its own independent team — members, section title, and all settings.
-            <span className="ml-1 font-medium text-slate-600">Global</span> is used by the Aurex One-page theme.
+            Each Personal Brand mini-site has its own independent content — section title, items, and all settings.
+            <span className="ml-1 font-medium text-slate-600">Global</span> is used by the Aurex One-page theme and as a fallback for any PB mini-site not yet configured.
           </p>
           <div className="flex flex-wrap gap-2" role="tablist">
             {PB_SECTION_TABS.map(tab => {
@@ -337,7 +345,7 @@ function SectionEditor({ sectionKey }) {
           {activeTab && (
             <p className="text-[11px] text-slate-400 mt-2">
               {PB_SECTION_TABS.find(t => t.key === activeTab)?.hint}
-              {' — '}section title and members are exclusive to the <strong>{activeTab}</strong> mini-site.
+              {' — '}content here is exclusive to the <strong>{activeTab}</strong> mini-site.
               Falls back to Global if left unconfigured.
             </p>
           )}

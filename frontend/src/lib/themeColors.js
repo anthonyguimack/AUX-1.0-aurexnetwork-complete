@@ -235,6 +235,22 @@ export function injectThemeColors(themeColors, overrides = {}) {
   });
   const meFormBg = me.form_bg || ENROLLMENT_COLORS.find(c => c.key === 'form_bg').default;
   root.style.setProperty('--me-color-scheme', schemeFor(meFormBg));
+
+  // Personal Brand Pro colors (--color-* overrides, applied only when theme is active)
+  const pb = themeColors?.personal_brand || {};
+  if (Object.keys(pb).length > 0) {
+    PERSONALBRAND_COLORS.forEach(c => {
+      const val = pb[c.key];
+      if (!val) return;
+      const cssKey = `--color-${c.key.replace(/_/g, '-')}`;
+      root.style.setProperty(cssKey, val);
+      if (c.key === 'heading')        root.style.setProperty('--color-heading', val);
+      if (c.key === 'text')           root.style.setProperty('--color-body-text', val);
+      if (c.key === 'secondary_text') root.style.setProperty('--color-secondary-text', val);
+      if (c.key === 'button_bg')      root.style.setProperty('--color-button-bg', val);
+      if (c.key === 'button_text')    root.style.setProperty('--color-button-text', val);
+    });
+  }
 }
 
 // Theme definitions
@@ -289,6 +305,22 @@ export const PERSONALBRAND_DEFAULTS = {
   '--color-border': '#e8dccd',           // Sand
 };
 
+// CMS-editable color palette for Personal Brand Pro (Settings → Colors).
+// Keys map to themeColors.personal_brand.{key} in the DB; values are injected
+// as --color-{key} CSS variables, overriding the PERSONALBRAND_DEFAULTS above.
+export const PERSONALBRAND_COLORS = [
+  { key: 'primary',        label: 'Primary Color',      default: '#3a2517' },
+  { key: 'accent',         label: 'Accent Color',       default: '#c08552' },
+  { key: 'bg',             label: 'Page Background',    default: '#fbf6ee' },
+  { key: 'card',           label: 'Card Background',    default: '#ffffff' },
+  { key: 'heading',        label: 'Heading Color',      default: '#2a1810' },
+  { key: 'text',           label: 'Body Text',          default: '#3d2818' },
+  { key: 'secondary_text', label: 'Secondary Text',     default: '#7c6651' },
+  { key: 'border',         label: 'Border Color',       default: '#e8dccd' },
+  { key: 'button_bg',      label: 'Button Background',  default: '#3a2517' },
+  { key: 'button_text',    label: 'Button Text',        default: '#ffffff' },
+];
+
 // ── Aurex theme: official monochromatic palette ──────────────────────────
 // Only these 7 swatches are allowed as section backgrounds. Text color
 // flips automatically to the opposite end of the contrast curve.
@@ -304,12 +336,16 @@ export const AUREX_PALETTE = [
 
 // Font picker — Google Fonts loaded in public/index.html when Aurex theme active.
 export const AUREX_FONTS = [
+  { key: 'plus_jakarta',   label: 'Plus Jakarta Sans', css: "'Plus Jakarta Sans', 'Inter', sans-serif", note: 'Personal Brand Pro default' },
   { key: 'sora',           label: 'Sora',           css: "'Sora', sans-serif",           note: 'Modern, geometric' },
   { key: 'inter',          label: 'Inter',          css: "'Inter', sans-serif",          note: 'Neutral, legible' },
   { key: 'playfair',       label: 'Playfair Display', css: "'Playfair Display', serif",  note: 'Elegant serif' },
   { key: 'space_grotesk',  label: 'Space Grotesk',  css: "'Space Grotesk', sans-serif",  note: 'Technical' },
   { key: 'dm_sans',        label: 'DM Sans',        css: "'DM Sans', sans-serif",        note: 'Friendly' },
 ];
+
+// Default font CSS string for Personal Brand Pro template
+export const PB_FONT_CSS = "'Plus Jakarta Sans', 'Inter', sans-serif";
 
 // Returns 'dark' or 'light' based on bg luminance — used for auto-contrast.
 export function aurexContrastFor(hex) {

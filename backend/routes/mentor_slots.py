@@ -3,6 +3,7 @@ from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin
 from routes.calendar_helpers import notify_waitlist_spot_open, notify_cancellation
 from utils.runtime_config import get_stripe_api_key, get_webhook_url
+from utils.stripe_helpers import StripeHelper
 from datetime import datetime, timezone, date, timedelta
 import uuid
 
@@ -554,8 +555,6 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
     Creates a `pending_payment` booking so the seat is soft-held until payment
     clears. On payment success the status-poll endpoint flips it to `booked`.
     """
-    import os
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
     from routes.membership import get_current_member
     member = await get_current_member(request)
     slot = await db.mentorship_slots.find_one({"id": slot_id}, {"_id": 0})
@@ -647,8 +646,6 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/my-account/mentorship/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/my-account/mentor-calendar"
     metadata = {
@@ -662,14 +659,15 @@ async def member_mentorship_checkout(slot_id: str, request: Request):
         "discount_cents": str(discount_cents),
     }
     currency = (slot.get("currency") or "usd").lower()
-    checkout_req = CheckoutSessionRequest(
+    helper = StripeHelper(api_key)
+    session = await helper.create_checkout_session(
         amount=price_cents / 100.0,
         currency=currency,
+        product_name=slot.get("title", "Mentorship Session"),
         success_url=success_url,
         cancel_url=cancel_url,
         metadata=metadata,
     )
-    session = await stripe_checkout.create_checkout_session(checkout_req)
 
     # Upsert a pending booking tied to this session
     if existing:
@@ -729,8 +727,6 @@ async def member_mentorship_checkout_status(session_id: str, request: Request):
     Safe to call repeatedly — if the booking is already confirmed, this
     short-circuits and returns the cached `paid` state.
     """
-    import os
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     from routes.membership import get_current_member
     member = await get_current_member(request)
 
@@ -745,9 +741,8 @@ async def member_mentorship_checkout_status(session_id: str, request: Request):
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-    status = await stripe_checkout.get_checkout_status(session_id)
+    helper = StripeHelper(api_key)
+    status = await helper.get_checkout_status(session_id)
 
     update = {"status": status.status, "payment_status": status.payment_status}
     if status.payment_status == "paid":

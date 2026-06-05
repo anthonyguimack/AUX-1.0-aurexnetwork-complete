@@ -217,6 +217,9 @@ export default function SectionOrderManager() {
   // Allows the admin to drag-drop sections in each personality tab without
   // affecting the other two.  All three are saved together on "Save".
   const [pbOrdersMap, setPbOrdersMap] = useState({ business: [], lifestyle: [], personal: [] });
+  // Which PB personality is currently shown on the public site.
+  // null = Global (no per-personality content served); 'business'|'lifestyle'|'personal' = that mini-site.
+  const [pbActivePersonality, setPbActivePersonality] = useState(null);
   const [loading, setLoading] = useState(false);
   const [activeTheme, setActiveTheme] = useState(null);
   const [theme, setTheme] = useState(null);
@@ -256,6 +259,9 @@ export default function SectionOrderManager() {
       setSections(settingsRes.data?.sections || {});
       setConfigs(configRes.data || {});
       setAuthGates(settingsRes.data?.section_auth_gates || {});
+      if (isPBTheme) {
+        setPbActivePersonality(settingsRes.data?.pb_active_personality || null);
+      }
 
       if (isPBTheme) {
         // Build per-personality orders.  If a personality's order was never
@@ -368,7 +374,10 @@ export default function SectionOrderManager() {
         await adminAPI.updateSectionOrder(order, theme === 'default' ? null : theme);
       }
       // Always save global sections + auth gates together so neither overwrites the other.
-      await adminAPI.updateSettings({ sections, ...(isPB ? { section_auth_gates: authGates } : {}) });
+      await adminAPI.updateSettings({
+        sections,
+        ...(isPB ? { section_auth_gates: authGates, pb_active_personality: pbActivePersonality } : {}),
+      });
       if (isAurexLike) await adminAPI.updateSectionConfig(configs, theme);
       toast.success(isPB
         ? 'Saved — all 3 Personal Brand personality orders + visibility gates'
@@ -467,6 +476,40 @@ export default function SectionOrderManager() {
             <span className="inline-flex items-center gap-1"><LockOpen className="w-3 h-3" /> Public</span>
             <span className="text-[10px]">✦ custom order saved</span>
           </p>
+
+          {/* Active mini-site selector — determines which personality's section content
+              (titles, subtitles, items) is served to visitors on the public website. */}
+          <div className="mt-4 pt-4 border-t border-slate-200">
+            <p className="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">
+              Active mini-site on website
+            </p>
+            <p className="text-[11px] text-slate-400 mb-2">
+              Choose which mini-site's section content visitors see. Global = shared content used by all themes.
+            </p>
+            <div className="flex flex-wrap gap-2">
+              {[
+                { key: null,        label: 'Global (default)', cls: 'border-sky-400 text-sky-700' },
+                { key: 'business',  label: 'Business',         cls: 'border-slate-400 text-slate-700' },
+                { key: 'lifestyle', label: 'Lifestyle',        cls: 'border-emerald-400 text-emerald-700' },
+                { key: 'personal',  label: 'Personal',         cls: 'border-violet-400 text-violet-700' },
+              ].map(({ key, label, cls }) => {
+                const isActive = pbActivePersonality === key;
+                return (
+                  <button
+                    key={key ?? '__global__'}
+                    onClick={() => setPbActivePersonality(key)}
+                    className={`px-3 py-1.5 rounded-sm text-xs font-semibold border-2 transition-colors ${
+                      isActive ? `bg-white shadow-sm ${cls}` : 'border-transparent text-slate-400 hover:text-slate-600 hover:bg-white/60'
+                    }`}
+                    data-testid={`pb-active-personality-${key ?? 'global'}`}
+                  >
+                    {label}
+                    {isActive && <span className="ml-1.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600">● LIVE</span>}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       )}
 

@@ -21,15 +21,16 @@ about the full catalog.
 """
 
 CMS_GROUPS = [
-    {"key": "main",       "label": "Main"},
-    {"key": "content",    "label": "Content"},
-    {"key": "landing",    "label": "Landing Page"},
-    {"key": "enrollment", "label": "Membership Enrollment"},
-    {"key": "calendar",   "label": "Calendar"},
-    {"key": "myaccount",  "label": "My Account"},
-    {"key": "membership", "label": "Membership"},
-    {"key": "system",     "label": "System"},
-    {"key": "security",   "label": "Security"},
+    {"key": "main",          "label": "Main"},
+    {"key": "content",       "label": "Content"},
+    {"key": "landing",       "label": "Landing Page"},
+    {"key": "enrollment",    "label": "Membership Enrollment"},
+    {"key": "calendar",      "label": "Calendar"},
+    {"key": "myaccount",     "label": "My Account"},
+    {"key": "membership",    "label": "Membership"},
+    {"key": "system",        "label": "System"},
+    {"key": "documentation", "label": "Documentation"},
+    {"key": "security",      "label": "Security"},
 ]
 
 CMS_SECTIONS = [
@@ -87,10 +88,18 @@ CMS_SECTIONS = [
     {"key": "aurex_sections",   "label": "Aurex Sections",        "group": "system", "frontend_path": "/admin/aurex-sections",   "url_prefix": ["/api/admin/aurex"]},
     {"key": "seo",              "label": "SEO",                   "group": "system", "frontend_path": "/admin/seo",              "url_prefix": ["/api/admin/seo"]},
     {"key": "geo",              "label": "Countries, States, Cities", "group": "system", "frontend_path": "/admin/geo",          "url_prefix": ["/api/admin/geo"]},
-    {"key": "documentation",    "label": "Documentation",         "group": "system", "frontend_path": "/admin/documentation",    "url_prefix": ["/api/admin/documentation", "/api/admin/docs"]},
     {"key": "backup",           "label": "Backup",                "group": "system", "frontend_path": "/admin/backup",           "url_prefix": ["/api/admin/backup", "/api/admin/restore"]},
     {"key": "settings",         "label": "Settings",              "group": "system", "frontend_path": "/admin/settings",         "url_prefix": ["/api/admin/settings", "/api/admin/theme", "/api/admin/upload"]},
     {"key": "email_management", "label": "Email Management",      "group": "system", "frontend_path": "/admin/email-management", "url_prefix": ["/api/admin/email-templates", "/api/admin/email-branding"]},
+
+    # Documentation — each manual is a separate grantable permission
+    {"key": "doc_flow_diagram",     "label": "Use Case & Flow Diagram",  "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/flow-diagram"]},
+    {"key": "doc_technical",        "label": "Technical Documentation",  "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/technical"]},
+    {"key": "doc_operator_manual",  "label": "Operator Manual (CMS)",    "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/operator-manual"]},
+    {"key": "doc_user_guide",       "label": "User Guide (Members)",     "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/user-guide"]},
+    {"key": "doc_testing_manual",   "label": "Testing Manual",           "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/testing-manual"]},
+    {"key": "doc_aws_install",      "label": "AWS Installation Guide",   "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/aws-install"]},
+    {"key": "doc_feature_audit",    "label": "Feature Audit",            "group": "documentation", "frontend_path": "/admin/documentation", "url_prefix": ["/api/docs/feature-audit"]},
 
     # Security (admin-only, cannot be delegated)
     {"key": "roles_permissions", "label": "Roles & Permissions",  "group": "security", "frontend_path": "/admin/roles", "url_prefix": ["/api/admin/cms-roles", "/api/admin/cms-sections"], "admin_only": True},

@@ -61,7 +61,7 @@ const sidebarItems = [
   { label: 'Aurex Sections', icon: Sparkles, href: '/admin/aurex-sections', section: 'aurex_sections' },
   { label: 'SEO', icon: Globe, href: '/admin/seo', section: 'seo' },
   { label: 'Countries, States, Cities', icon: MapPin, href: '/admin/geo', section: 'geo' },
-  { label: 'Documentation', icon: ScrollText, href: '/admin/documentation', section: 'documentation' },
+  { label: 'Documentation', icon: ScrollText, href: '/admin/documentation', section: ['doc_flow_diagram','doc_technical','doc_operator_manual','doc_user_guide','doc_testing_manual','doc_aws_install','doc_feature_audit'] },
   { label: 'Backup', icon: Database, href: '/admin/backup', section: 'backup' },
   { label: 'Settings', icon: Settings, href: '/admin/settings', section: 'settings' },
   { label: 'Email Management', icon: Mail, href: '/admin/email-management', section: 'email_management' },
@@ -98,7 +98,10 @@ export default function AdminLayout() {
         continue;
       }
       if (item.admin_only && !isAdmin) continue;
-      if (!isAdmin && item.section && !perms.has(item.section)) continue;
+      if (!isAdmin && item.section) {
+        const keys = Array.isArray(item.section) ? item.section : [item.section];
+        if (!keys.some(k => perms.has(k))) continue;
+      }
       if (pendingDivider) { result.push(pendingDivider); pendingDivider = null; }
       result.push(item);
     }

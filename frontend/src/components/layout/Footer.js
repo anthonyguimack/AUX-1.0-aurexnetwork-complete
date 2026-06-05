@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { Facebook, Twitter, Instagram, Linkedin, Youtube, ArrowRight, Send } from 'lucide-react';
 import { useSettings } from '../../App';
 import { publicAPI } from '../../lib/api';
+import { BACKEND_URL } from '../../lib/config';
 import { useT } from '../../lib/i18n';
 
 const socialIconMap = { facebook: Facebook, twitter: Twitter, instagram: Instagram, linkedin: Linkedin, youtube: Youtube };
@@ -27,8 +28,11 @@ function useFooterData() {
 function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc, theme }) {
   const tt = useT();
   const isClassic = theme === 'classic';
-  const fontFamily = isClassic ? "'Playfair Display', serif" : undefined;
-  const API = process.env.REACT_APP_BACKEND_URL;
+  const isPersonalBrand = theme === 'personalbrand';
+  const fontFamily = isClassic ? "'Playfair Display', serif"
+    : isPersonalBrand ? "'Plus Jakarta Sans', 'Inter', sans-serif"
+    : undefined;
+  const API = BACKEND_URL;
   const brandName = tt(settings.brand_name) || 'Legacy';
 
   // Split footer pages into two columns
@@ -133,7 +137,7 @@ function FooterContent({ settings, socialLinks, footerPages, isExternal, logoSrc
 function DefaultFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
-  const API = process.env.REACT_APP_BACKEND_URL;
+  const API = BACKEND_URL;
   const logoOff = settings.logo_off;
   const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
@@ -147,7 +151,7 @@ function DefaultFooter() {
 function ModernFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
-  const API = process.env.REACT_APP_BACKEND_URL;
+  const API = BACKEND_URL;
   const logoOff = settings.logo_off;
   const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
@@ -164,7 +168,7 @@ function ModernFooter() {
 function ClassicFooter() {
   const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
   if (isAdmin) return null;
-  const API = process.env.REACT_APP_BACKEND_URL;
+  const API = BACKEND_URL;
   const logoOff = settings.logo_off;
   const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
 
@@ -177,10 +181,32 @@ function ClassicFooter() {
   );
 }
 
+function PersonalBrandFooter() {
+  const { settings, socialLinks, footerPages, isExternal, isAdmin } = useFooterData();
+  if (isAdmin) return null;
+  const API = BACKEND_URL;
+  const logoOff = settings.logo_off;
+  const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${API}${logoOff}` : logoOff) : null;
+
+  return (
+    <footer
+      data-testid="site-footer"
+      style={{
+        backgroundColor: 'var(--color-footer-bg, #111111)',
+        color: 'var(--color-footer-text, #ffffff)',
+        fontFamily: "'Plus Jakarta Sans', 'Inter', sans-serif",
+      }}
+    >
+      <FooterContent settings={settings} socialLinks={socialLinks} footerPages={footerPages} isExternal={isExternal} logoSrc={logoSrc} theme="personalbrand" />
+    </footer>
+  );
+}
+
 export default function Footer() {
   const settings = useSettings();
   const theme = settings.active_theme || 'default';
   if (theme === 'modern') return <ModernFooter />;
   if (theme === 'classic') return <ClassicFooter />;
+  if (theme === 'personalbrand') return <PersonalBrandFooter />;
   return <DefaultFooter />;
 }

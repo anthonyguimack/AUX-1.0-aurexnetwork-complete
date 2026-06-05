@@ -120,15 +120,20 @@ function SettingsProvider({ children }) {
       .catch(() => setSettings({ _loaded: true }));
   }, []);
 
-  // Apply CSS variables from theme_colors (new) and colors (legacy)
+  // Apply CSS variables from theme_colors (new) and colors (legacy).
+  // active_theme is included so the Personal Brand Pro palette override (which
+  // runs at the end of injectThemeColors) fires whenever the theme changes.
   useEffect(() => {
     const themeColors = settings.theme_colors || {};
     // Migrate legacy colors.* into website group if theme_colors.website is empty
     if (!themeColors.website && settings.colors) {
       themeColors.website = settings.colors;
     }
-    injectThemeColors(themeColors, { my_account_color_scheme: settings.my_account_color_scheme });
-  }, [settings.theme_colors, settings.colors, settings.my_account_color_scheme]);
+    injectThemeColors(themeColors, {
+      my_account_color_scheme: settings.my_account_color_scheme,
+      active_theme: settings.active_theme,
+    });
+  }, [settings.theme_colors, settings.colors, settings.my_account_color_scheme, settings.active_theme]);
 
   // Dynamic favicon
   useEffect(() => {
@@ -259,7 +264,7 @@ const ADMIN_ROUTES = [
   { path: 'landing-subscribers',             section: 'landing_subscribers',              el: <LandingSubscribersManager /> },
   { path: 'landing-contacts',                section: 'landing_contacts',                 el: <LandingContactsManager /> },
   { path: 'enrollment-fields',               section: 'enrollment_fields',                el: <EnrollmentFieldsManager /> },
-  { path: 'documentation',                   section: 'documentation',                    el: <DocumentationManager /> },
+  { path: 'documentation',                   section: ['doc_flow_diagram','doc_technical','doc_operator_manual','doc_user_guide','doc_testing_manual','doc_aws_install','doc_feature_audit'], el: <DocumentationManager /> },
   { path: 'quick-links',                     section: 'quick_links',                      el: <QuickLinksManager /> },
   { path: 'myaccount-nav',                   section: 'myaccount_nav',                    el: <MyAccountNavManager /> },
   { path: 'calendar/global',                 section: 'calendar_global',                  el: <GlobalEventsManager /> },
@@ -310,8 +315,10 @@ function PageProtectedRoute({ children }) {
 
   if (checking || authLoading || memberLoading) return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
 
-  // If page requires login
-  if (pageData?.login_required) {
+  // If page requires login. The entire Personal mini-site (category === 'personal')
+  // is private by definition, so any Personal page is gated behind login even if
+  // its individual "Login Required" flag was left off.
+  if (pageData?.login_required || pageData?.category === 'personal') {
     // Admin bypasses all restrictions
     if (user?.role === 'admin') return children;
 
@@ -358,6 +365,50 @@ function PageProtectedRoute({ children }) {
   }
 
   return children;
+}
+
+// Personal Brand mini-site home ("personality" landing page). Lifestyle and
+// Personal each reuse the HomePage section engine with a different personality.
+// On any non-Personal-Brand theme these URLs fall back to the normal dynamic
+// page resolver so a custom CMS page at the same path still works.
+// `requireLogin` gates the entire Personal mini-site behind a logged-in session.
+function MiniSiteHome({ personality, requireLogin = false }) {
+  const theme = useTheme();
+  const { user, loading: authLoading } = useAuth();
+  const { member, loading: memberLoading } = useMember();
+  const [showLogin, setShowLogin] = useState(false);
+
+  if (theme !== 'personalbrand') {
+    return <PageProtectedRoute><DynamicPage /></PageProtectedRoute>;
+  }
+
+  if (requireLogin) {
+    if (authLoading || memberLoading) {
+      return <div className="min-h-screen flex items-center justify-center"><div className="animate-spin w-8 h-8 border-2 border-[var(--color-accent,#0D9488)] border-t-transparent rounded-full"></div></div>;
+    }
+    const loggedIn = (user && (user.id || user.member_id || user.username || user.email)) || member;
+    if (!loggedIn) {
+      return (
+        <>
+          <div className="min-h-screen flex items-center justify-center bg-slate-50">
+            <div className="text-center max-w-md mx-auto px-6">
+              <div className="w-16 h-16 mx-auto mb-4 rounded-full flex items-center justify-center" style={{ backgroundColor: 'var(--color-primary, #1a2332)' }}>
+                <span className="text-white text-2xl" style={{ fontFamily: 'Playfair Display, serif' }}>L</span>
+              </div>
+              <h2 className="text-xl font-bold mb-2" style={{ color: 'var(--color-heading, #1a2332)', fontFamily: 'Playfair Display, serif' }}>Private Area</h2>
+              <p className="text-slate-500 text-sm mb-6">The Personal space is reserved for the inner circle. Please log in to continue.</p>
+              <button onClick={() => setShowLogin(true)} className="px-6 py-2.5 rounded-sm text-sm font-medium" style={{ backgroundColor: 'var(--color-button-bg, #1a2332)', color: 'var(--color-button-text, #fff)' }} data-testid="personal-login-btn">
+                Login to Continue
+              </button>
+            </div>
+          </div>
+          <LoginModal open={showLogin} onClose={() => setShowLogin(false)} />
+        </>
+      );
+    }
+  }
+
+  return <HomePage personality={personality} />;
 }
 
 function MemberRoute({ children }) {
@@ -505,6 +556,8 @@ function AppRouter() {
             <SystemPageHero />
             <Routes>
               <Route path="/" element={<HomePage />} />
+        <Route path="/lifestyle" element={<MiniSiteHome personality="lifestyle" />} />
+        <Route path="/personal" element={<MiniSiteHome personality="personal" />} />
         <Route path="/news" element={<NewsPage />} />
         <Route path="/news/:slug" element={<NewsDetailPage />} />
         <Route path="/reading-list" element={<ReadingListPage />} />

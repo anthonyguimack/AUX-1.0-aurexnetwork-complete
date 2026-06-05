@@ -3,6 +3,7 @@ import { ArrowRight } from 'lucide-react';
 import { useTheme } from '../App';
 import { useT } from '../lib/i18n';
 import { normalizeRichText } from '../lib/richText';
+import { toLeftPct, toTopPct, effectStyle as heroEffectStyle, HERO_KEYFRAMES } from '../lib/heroCoords';
 
 function resolveVideoEmbed(url) {
   if (!url) return null;
@@ -81,14 +82,7 @@ export default function HeroSection({ data, slides }) {
   const bg = slide.background || slide.background_image || '';
   const speed = slide.speed_per_layer || 400;
 
-  const effectStyle = (effect, startDelay) => {
-    const dir = effect || 'top';
-    const transforms = { top: 'translateY(-40px)', bottom: 'translateY(40px)', left: 'translateX(-40px)', right: 'translateX(40px)' };
-    return {
-      animation: `heroLayerIn ${speed}ms ease-out ${startDelay || 0}ms both`,
-      '--hero-from': transforms[dir] || 'translateY(-40px)',
-    };
-  };
+  const effectStyle = (effect, startDelay) => heroEffectStyle(effect, startDelay, speed);
 
   const isModernLike = theme === 'modern' || theme === 'aurex' || theme === 'personalbrand';
   const heroClasses = isModernLike
@@ -105,12 +99,7 @@ export default function HeroSection({ data, slides }) {
 
   return (
     <section className={heroClasses} data-testid="hero-section">
-      <style>{`
-        @keyframes heroLayerIn {
-          from { opacity: 0; transform: var(--hero-from); }
-          to { opacity: 1; transform: translate(0,0); }
-        }
-      `}</style>
+      <style>{HERO_KEYFRAMES}</style>
       <div className="absolute inset-0 bg-cover bg-center transition-all duration-700" style={{ backgroundImage: bg ? `url(${bg})` : 'none' }} />
       <div className="absolute inset-0" style={overlayStyle} />
 
@@ -129,32 +118,32 @@ export default function HeroSection({ data, slides }) {
             {/* Desktop (lg+): Absolute positioning from CMS coordinates */}
             <div className="relative w-full hidden lg:block" style={{ minHeight: '400px' }}>
               {slide.title && (
-                <div className="absolute max-w-[55%]" style={{ left: `${(slide.title_x || 100) / 7}%`, top: `${(slide.title_y || 50) / 3}%`, ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
+                <div className="absolute max-w-[55%]" style={{ left: toLeftPct(slide.title_x, 100), top: toTopPct(slide.title_y, 50), ...effectStyle(slide.title_effect, slide.title_start) }} data-testid="hero-title">
                   <div className="text-5xl xl:text-6xl font-bold leading-tight [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.title)) }} />
                 </div>
               )}
               {slide.subtitle && (
-                <div className="absolute max-w-[55%]" style={{ left: `${(slide.subtitle_x || 100) / 7}%`, top: `${(slide.subtitle_y || 80) / 3}%`, ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle-lg">
+                <div className="absolute max-w-[55%]" style={{ left: toLeftPct(slide.subtitle_x, 100), top: toTopPct(slide.subtitle_y, 80), ...effectStyle(slide.subtitle_effect, slide.subtitle_start) }} data-testid="hero-subtitle-lg">
                   <div className="text-xl font-semibold [&_em]:italic" style={{ fontFamily: 'Playfair Display, serif', color: 'white' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.subtitle)) }} />
                 </div>
               )}
               {slide.description && (
-                <div className="absolute max-w-[45%]" style={{ left: `${(slide.description_x || 100) / 7}%`, top: `${(slide.description_y || 120) / 3}%`, ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description-lg">
+                <div className="absolute max-w-[45%]" style={{ left: toLeftPct(slide.description_x, 100), top: toTopPct(slide.description_y, 120), ...effectStyle(slide.description_effect, slide.description_start) }} data-testid="hero-description-lg">
                   <div className="text-lg leading-relaxed" style={{ color: 'rgba(255,255,255,0.7)' }} dangerouslySetInnerHTML={{ __html: normalizeRichText(tt(slide.description)) }} />
                 </div>
               )}
               {(slide.button_text || slide.button_2_text || slide.button_3_text) && (
-                <div className="absolute" style={{ left: `${(slide.button_x || 100) / 7}%`, top: `${(slide.button_y || 180) / 3}%`, ...effectStyle(slide.button_effect, slide.button_start) }}>
+                <div className="absolute" style={{ left: toLeftPct(slide.button_x, 100), top: toTopPct(slide.button_y, 180), ...effectStyle(slide.button_effect, slide.button_start) }}>
                   <HeroButtonsRow slide={slide} dataTestId="hero-cta-btn-lg" />
                 </div>
               )}
               {(slide.slide_type === 'video' && slide.video_embed) && (
-                <div className="absolute" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
+                <div className="absolute" style={{ left: toLeftPct(slide.media_x, 400), top: toTopPct(slide.media_y, 50), width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
                   <VideoEmbed url={slide.video_embed} className="rounded-lg overflow-hidden shadow-2xl aspect-video" style={slide.media_height ? { height: `${slide.media_height}px`, aspectRatio: 'unset' } : {}} />
                 </div>
               )}
               {(slide.slide_type === 'photo' && slide.photo) && (
-                <div className="absolute" style={{ left: `${(slide.media_x || 400) / 7}%`, top: `${(slide.media_y || 50) / 3}%`, width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
+                <div className="absolute" style={{ left: toLeftPct(slide.media_x, 400), top: toTopPct(slide.media_y, 50), width: slide.media_width ? `${slide.media_width}px` : '420px', ...effectStyle(slide.media_effect, slide.media_start) }}>
                   <img src={slide.photo} alt="" className="rounded-lg shadow-2xl w-full object-cover" style={slide.media_height ? { maxHeight: `${slide.media_height}px` } : { maxHeight: '400px' }} />
                 </div>
               )}

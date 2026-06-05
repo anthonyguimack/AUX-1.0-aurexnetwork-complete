@@ -12,8 +12,8 @@ last; mentor-specific first). On booking cancellation the credit is restored.
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin
 from utils.runtime_config import get_stripe_api_key, get_webhook_url
+from utils.stripe_helpers import StripeHelper
 from datetime import datetime, timezone
-import os
 import uuid
 
 router = APIRouter()
@@ -175,7 +175,6 @@ async def member_get_bundle(bundle_id: str, request: Request):
 async def member_bundle_checkout(bundle_id: str, request: Request):
     """Start a Stripe session to purchase this bundle. On success, a credit_pack
     is created via the status-poll endpoint."""
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout, CheckoutSessionRequest
     from routes.membership import get_current_member
     member = await get_current_member(request)
     bundle = await db.session_bundles.find_one({"id": bundle_id, "active": True}, {"_id": 0})
@@ -228,8 +227,6 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured. Set the API key in CMS → Settings → Stripe.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
     success_url = f"{origin_url}/my-account/bundles/checkout-success?session_id={{CHECKOUT_SESSION_ID}}"
     cancel_url = f"{origin_url}/my-account/bundles"
     metadata = {
@@ -241,14 +238,15 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
         "original_cents": str(original_cents),
         "discount_cents": str(discount_cents),
     }
-    req = CheckoutSessionRequest(
+    helper = StripeHelper(api_key)
+    session = await helper.create_checkout_session(
         amount=final_cents / 100.0,
         currency=(bundle.get("currency") or "usd").lower(),
+        product_name=bundle.get("name", "Session Bundle"),
         success_url=success_url,
         cancel_url=cancel_url,
         metadata=metadata,
     )
-    session = await stripe_checkout.create_checkout_session(req)
     await db.payment_transactions.insert_one({
         "id": str(uuid.uuid4()),
         "session_id": session.session_id,
@@ -271,7 +269,6 @@ async def member_bundle_checkout(bundle_id: str, request: Request):
 
 @router.get("/member/bundles/checkout/status/{session_id}")
 async def member_bundle_checkout_status(session_id: str, request: Request):
-    from emergentintegrations.payments.stripe.checkout import StripeCheckout
     from routes.membership import get_current_member
     member = await get_current_member(request)
     tx = await db.payment_transactions.find_one({"session_id": session_id}, {"_id": 0})
@@ -285,9 +282,8 @@ async def member_bundle_checkout_status(session_id: str, request: Request):
     api_key = await get_stripe_api_key()
     if not api_key:
         raise HTTPException(status_code=503, detail="Stripe is not configured.")
-    webhook_url = await get_webhook_url(str(request.base_url))
-    stripe_checkout = StripeCheckout(api_key=api_key, webhook_url=webhook_url)
-    status = await stripe_checkout.get_checkout_status(session_id)
+    helper = StripeHelper(api_key)
+    status = await helper.get_checkout_status(session_id)
 
     update = {"status": status.status, "payment_status": status.payment_status}
     if status.payment_status == "paid":

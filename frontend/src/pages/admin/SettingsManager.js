@@ -10,7 +10,7 @@ import { LANGUAGE_LABELS } from '../../lib/i18n';
 import LocalizedField from '../../components/admin/LocalizedField';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
-import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, THEMES } from '../../lib/themeColors';
+import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, PERSONALBRAND_COLORS, THEMES } from '../../lib/themeColors';
 import { MAP_LANGUAGES } from '../../lib/mapConfig';
 
 function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
@@ -192,6 +192,7 @@ export default function SettingsManager() {
   const adminColors = tc.admin || {};
   const landingPageColors = tc.landing_page || {};
   const enrollmentColors = tc.enrollment || {};
+  const personalBrandColors = tc.personal_brand || {};
 
   const activeTheme = settings.active_theme || 'default';
 
@@ -496,6 +497,14 @@ export default function SettingsManager() {
               values={enrollmentColors}
               onChange={(key, val) => updateThemeColor('enrollment', key, val)}
               testIdPrefix="enrollment"
+            />
+            <ColorGroup
+              title="Personal Brand Pro"
+              description="Colors for the Personal Brand Pro theme — primary, accent, backgrounds, headings, text, borders. Overrides Website defaults when this theme is active."
+              colors={PERSONALBRAND_COLORS}
+              values={personalBrandColors}
+              onChange={(key, val) => updateThemeColor('personal_brand', key, val)}
+              testIdPrefix="personalbrand"
             />
           </div>
         </TabsContent>
