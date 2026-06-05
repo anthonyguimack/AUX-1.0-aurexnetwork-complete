@@ -1060,9 +1060,9 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
               {/* Dark gradient overlay */}
               <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
               {/* Brand overlay (center) */}
-              {p.client && (
+              {tt(p.client) && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-white font-black text-2xl md:text-3xl tracking-widest uppercase opacity-80">{p.client}</span>
+                  <span className="text-white font-black text-2xl md:text-3xl tracking-widest uppercase opacity-80">{tt(p.client)}</span>
                 </div>
               )}
               {/* Info below */}
@@ -1070,7 +1070,7 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
                 <h3 className="text-white font-bold text-xl mb-1">{tt(p.title)}</h3>
                 <p className="text-xs font-semibold uppercase tracking-[0.2em]" style={{ color: 'var(--color-primary)' }}>
                   <span className="mr-1.5">✳</span>
-                  {p.category}
+                  {tt(p.category)}
                   {p.year && `, ${p.year}`}
                 </p>
               </div>
