@@ -488,11 +488,10 @@ export function useAurexSections(personality) {
       'aurex_services_cfg', 'aurex_testimonials_cfg', 'aurex_news_cfg', 'aurex_blog_cfg', 'aurex_locations_cfg',
       'aurex_reading_cfg', 'aurex_portfolio_cfg', 'aurex_gallery_cfg',
     ];
-    // Sections that support per-personality data in PB mode.
-    // Only aurex_team for now; extend this set as more sections are personalised.
-    const PB_SCOPED = new Set(['aurex_team']);
     Promise.all(keys.map(k => {
-      const param = (personality && PB_SCOPED.has(k)) ? `?personality=${personality}` : '';
+      // Pass personality for every section so CMS "Content Scope" per-personality
+      // data is fetched. The backend falls back to global when no scoped doc exists.
+      const param = personality ? `?personality=${personality}` : '';
       return fetch(`${API}/api/public/aurex/${k}${param}`)
         .then(r => r.ok ? r.json() : { config: {}, items: [] })
         .catch(() => ({ config: {}, items: [] }));
