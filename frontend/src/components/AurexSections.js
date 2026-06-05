@@ -145,7 +145,7 @@ export function AurexAudience({ config = {}, items = [], bg, font, contrast }) {
       </div>
       {ctaText && ctaUrl && (
         <div className="text-center mt-12">
-          <a href={ctaUrl} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }} data-testid="audience-cta">
+          <a href={ctaUrl} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }} data-testid="audience-cta">
             {ctaText} <ArrowRight className="w-4 h-4" />
           </a>
         </div>
@@ -217,7 +217,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
       <div className={`grid gap-6 ${visibleItems.length === 1 ? 'grid-cols-1 max-w-sm mx-auto' : visibleItems.length === 2 ? 'grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto' : 'grid-cols-1 md:grid-cols-2 lg:grid-cols-3'}`}>
         {visibleItems.map((plan, idx) => {
           const price = annual ? plan.price_annual || plan.price : plan.price;
-          const features = parseFeatures(plan.features);
+          const features = parseFeatures(tt(plan.features));
           const featured = !!plan.is_featured;
           return (
             <Reveal as="article" delay={idx * 100} key={plan.id} className={`rounded-2xl p-8 flex flex-col border transition-all ${featured ? 'scale-[1.03] lg:scale-[1.05] shadow-xl' : ''}`} style={{ borderColor: featured ? '#111827' : (c.contrast === 'light' ? 'rgba(255,255,255,.15)' : '#E5E7EB'), backgroundColor: featured && c.contrast === 'dark' ? '#FFFFFF' : undefined, color: featured && c.contrast === 'dark' ? '#111827' : undefined, borderWidth: featured ? 2 : 1 }} data-testid={`plan-card-${plan.id}`}>
@@ -226,7 +226,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
               )}
               <h3 className="text-xl font-semibold mb-2">{tt(plan.name)}</h3>
               <div className="mb-6">
-                <span className="text-4xl font-bold">{plan.currency || '$'}{price}</span>
+                <span className="text-4xl font-bold">{tt(plan.currency) || '$'}{tt(price)}</span>
                 {plan.period && <span className="text-sm text-gray-500 ml-1">{tt(plan.period)}</span>}
               </div>
               <ul className="flex-1 space-y-3 mb-8">
@@ -238,7 +238,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
                 ))}
               </ul>
               {plan.cta_text && (
-                <a href={plan.cta_url || '#'} target={plan.cta_new_tab ? '_blank' : '_self'} rel={plan.cta_new_tab ? 'noopener noreferrer' : undefined} className={`w-full text-center py-2.5 rounded-sm text-sm font-semibold transition-colors inline-flex items-center justify-center gap-2`} style={{ backgroundColor: featured ? '#111827' : 'transparent', color: featured ? '#FFFFFF' : 'inherit', border: featured ? 'none' : '1.5px solid currentColor' }}>{tt(plan.cta_text)} {featured && <ArrowRight className="w-4 h-4" />}</a>
+                <a href={plan.cta_url || '#'} target={plan.cta_new_tab ? '_blank' : '_self'} rel={plan.cta_new_tab ? 'noopener noreferrer' : undefined} className={`w-full text-center py-2.5 rounded-full text-sm font-semibold transition-colors inline-flex items-center justify-center gap-2`} style={{ backgroundColor: featured ? '#111827' : 'transparent', color: featured ? '#FFFFFF' : 'inherit', border: featured ? 'none' : '1.5px solid currentColor' }}>{tt(plan.cta_text)} {featured && <ArrowRight className="w-4 h-4" />}</a>
               )}
             </Reveal>
           );
@@ -308,7 +308,7 @@ export function AurexTeam({ config = {}, items = [], bg, font, contrast }) {
       </div>
       {config.show_view_all && config.view_all_url && tt(config.view_all_text) && (
         <div className="text-center mt-12">
-          <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>{tt(config.view_all_text)} <ArrowRight className="w-4 h-4" /></a>
+          <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80" style={{ border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}>{tt(config.view_all_text)} <ArrowRight className="w-4 h-4" /></a>
         </div>
       )}
     </SectionShell>
@@ -323,7 +323,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast, secti
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const visibleItems = items.filter(e => itemHasLocale(e.title, lang));
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
-  const btnCls = 'inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80';
+  const btnCls = 'inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80';
   // View-all button lives in the header (right side) when items exist
   const viewAllBtn = (config.view_all_url && visibleItems.length > 0 && tt(config.view_all_text)) ? (
     <a href={config.view_all_url} target={config.view_all_new_tab ? '_blank' : '_self'} rel={config.view_all_new_tab ? 'noopener noreferrer' : undefined} className={btnCls} style={btnStyle}>
@@ -353,7 +353,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast, secti
                     {e.start_time}{e.end_time ? ` – ${e.end_time}` : ''}{e.location ? ` · ${e.location}` : ''}
                   </p>
                 </div>
-                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-sm text-xs font-semibold transition-colors" style={btnStyle}>{tt(config.view_text) || 'View'} <ArrowRight className="w-3 h-3" /></Link>
+                <Link to={`/my-account/event/${e.id}`} className="shrink-0 inline-flex items-center gap-1.5 px-5 py-2 rounded-full text-xs font-semibold transition-colors" style={btnStyle}>{tt(config.view_text) || 'View'} <ArrowRight className="w-3 h-3" /></Link>
               </Reveal>
             );
           })}
@@ -396,7 +396,7 @@ export function AurexPartners({ config = {}, items = [], bg, font, contrast, sec
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
   const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
     <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
-       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
+       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
       {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
     </a>
   ) : null;
@@ -418,7 +418,7 @@ export function AurexClients({ config = {}, items = [], bg, font, contrast, sect
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
   const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
     <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
-       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
+       className="inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80" style={btnStyle}>
       {tt(config.cta_text)} <ArrowRight className="w-4 h-4" />
     </a>
   ) : null;
@@ -539,8 +539,8 @@ function monoStyle(bg, font, fallbackBg = '#FFFFFF') {
   };
 }
 
-// Unified button used everywhere in the Aurex mono template. Rectangular
-// (not pill), 1.5px border, matches the section's contrast automatically.
+// Unified button used everywhere in the Aurex mono template. Pill (rounded-full),
+// 1.5px border, matches the section's contrast automatically.
 // Honors admin's "open in new tab" config per button.
 function MonoButton({ href, text, newTab, m, extraClass = '', dataTestId, children }) {
   const tt = useT();
@@ -551,7 +551,7 @@ function MonoButton({ href, text, newTab, m, extraClass = '', dataTestId, childr
       href={tt(href) || '#'}
       target={newTab ? '_blank' : '_self'}
       rel={newTab ? 'noopener noreferrer' : undefined}
-      className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-sm text-sm font-semibold transition-all hover:opacity-80 ${extraClass}`}
+      className={`inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80 ${extraClass}`}
       style={{ border: `1.5px solid ${m.isDark ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: m.isDark ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' }}
       data-testid={dataTestId}
     >
@@ -989,7 +989,7 @@ export function AurexContactMono({ contactSettings, bg, font }) {
           <input type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} required placeholder={tt(cs.email_placeholder) || 'Your email'} className={inputClass} style={{ color: 'inherit' }} />
           <textarea value={form.message} onChange={e => setForm(p => ({...p, message: e.target.value}))} required placeholder={tt(cs.message_placeholder) || 'Your message'} rows={5} className={`${inputClass} resize-none`} style={{ color: 'inherit' }} />
           <CaptchaWidget onChange={setCaptchaToken} testId="contact-captcha" />
-          <button type="submit" disabled={sending} className="w-full py-3 rounded-sm font-semibold text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {tt(cs.submit_text) || 'Send message'}</button>
+          <button type="submit" disabled={sending} className="w-full py-3 rounded-full font-semibold text-sm inline-flex items-center justify-center gap-2 disabled:opacity-50 transition-colors" style={{ backgroundColor: m.isDark ? '#FFFFFF' : '#111827', color: m.isDark ? '#111827' : '#FFFFFF' }} data-testid="contact-submit">{sending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} {tt(cs.submit_text) || 'Send message'}</button>
         </Reveal>
       </div>
     </section>
