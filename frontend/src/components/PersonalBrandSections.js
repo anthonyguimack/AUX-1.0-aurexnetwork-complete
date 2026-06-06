@@ -27,7 +27,6 @@ import { contactAPI } from '../lib/api';
 import CaptchaWidget from './CaptchaWidget';
 import { useSettings } from '../App';
 import { BACKEND_URL as API } from '../lib/config';
-import { aurexContrastFor } from '../lib/themeColors';
 
 const resolveImg = (src) => (src && src.startsWith('/api') ? `${API}${src}` : src);
 
@@ -35,16 +34,34 @@ const resolveImg = (src) => (src && src.startsWith('/api') ? `${API}${src}` : sr
 // Falls back to `defaultColor` when no bg override is set.
 const pbTextFor = (bg, defaultColor) => {
   if (!bg || !bg.startsWith('#')) return defaultColor;
-  return aurexContrastFor(bg) === 'light' ? '#ffffff' : '#111111';
+  return pbIsDark(bg) ? '#ffffff' : '#111111';
 };
 // Secondary / muted text — slightly transparent version of the text color.
 const pbSubFor = (bg, defaultColor) => {
   if (!bg || !bg.startsWith('#')) return defaultColor;
-  return aurexContrastFor(bg) === 'light' ? 'rgba(255,255,255,0.65)' : '#475569';
+  return pbIsDark(bg) ? 'rgba(255,255,255,0.65)' : '#475569';
 };
+// Border color that reads on both dark and light section backgrounds.
+const pbBorderFor = (isDark) =>
+  isDark ? 'rgba(255,255,255,0.25)' : 'rgba(0,0,0,0.2)';
 const PB_FONT = "'Plus Jakarta Sans', 'Inter', sans-serif";
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
+
+// Returns true when bg is "dark" (Gray 700 #374151 or darker, BT.601 luma ≤ 0.250).
+// Rule: dark bg → white text; lighter bg → black text.
+// Used by every PB section so that changing the CMS section background
+// automatically drives correct text/border colors throughout the section.
+function pbIsDark(bg, defaultDark = false) {
+  if (!bg || !bg.startsWith('#')) return defaultDark;
+  let h = bg.slice(1);
+  if (h.length === 3) h = h.split('').map(c => c + c).join('');
+  if (h.length !== 6) return defaultDark;
+  const r = parseInt(h.slice(0, 2), 16);
+  const g = parseInt(h.slice(2, 4), 16);
+  const b = parseInt(h.slice(4, 6), 16);
+  return (r * 299 + g * 587 + b * 114) / 255000 <= 0.250;
+}
 
 function pbShell(bg, extra = '') {
   return { style: { backgroundColor: bg, fontFamily: PB_FONT }, className: `pb-section ${extra}` };
@@ -711,6 +728,7 @@ export function PBServices({ services = [], bg, cmsConfig = {}, sectionNumber })
   const filtered = services.filter(s => itemHasLocale(s.title, lang));
   if (!filtered.length) return null;
   const sectionBg = bg || '#0f0f0f';
+  const isDark    = pbIsDark(bg, true);
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
 
@@ -746,9 +764,10 @@ export function PBServices({ services = [], bg, cmsConfig = {}, sectionNumber })
                   href={tt(cmsConfig.cta_url) || '#'}
                   target={cmsConfig.cta_new_tab ? '_blank' : '_self'}
                   rel="noopener noreferrer"
-                  className="inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-bold border-2 border-white/30 text-white transition-all duration-300"
+                  className="inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-bold transition-all duration-300"
+                  style={{ border: `2px solid ${pbBorderFor(isDark)}`, color: textColor, backgroundColor: 'transparent' }}
                   onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-button-bg)'; e.currentTarget.style.color = 'var(--color-button-text)'; e.currentTarget.style.borderColor = 'var(--color-button-bg)'; }}
-                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                  onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = textColor; e.currentTarget.style.borderColor = pbBorderFor(isDark); }}
                   data-testid="pb-services-cta"
                 >
                   {tt(cmsConfig.cta_text)} <ArrowRight className="w-4 h-4" />
@@ -856,7 +875,7 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
   const tt = useT();
   const { lang } = useLang();
   const sectionBg = bg || '#ffffff';
-  const isDark = bg ? aurexContrastFor(bg) === 'light' : false;
+  const isDark    = pbIsDark(bg, false);
   const textColor = isDark ? '#ffffff' : '#111111';
   const subColor  = isDark ? 'rgba(255,255,255,0.65)' : '#475569';
   const visibleItems = items.filter(i => itemHasLocale(i.title, lang)).slice(0, 4);
@@ -977,6 +996,7 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
   const filtered = items.filter(i => itemHasLocale(i.title, lang));
   if (!filtered.length) return null;
   const sectionBg = bg || '#ffffff';
+  const isDark    = pbIsDark(bg, false);
   const textColor = pbTextFor(bg, '#111111');
   const subColor  = pbSubFor(bg, 'var(--color-body-text, #475569)');
 
@@ -1000,7 +1020,7 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
             <React.Fragment key={i}>
               <span
                 className="font-black uppercase"
-                style={{ fontSize: 'clamp(32px, 5vw, 64px)', letterSpacing: '-0.02em', color: i % 2 === 0 ? 'var(--color-primary)' : '#e5e7eb' }}
+                style={{ fontSize: 'clamp(32px, 5vw, 64px)', letterSpacing: '-0.02em', color: i % 2 === 0 ? 'var(--color-primary)' : (isDark ? 'rgba(255,255,255,0.15)' : 'rgba(0,0,0,0.1)') }}
               >
                 {text}
               </span>
@@ -1096,7 +1116,7 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
               target={cmsConfig.cta_new_tab ? '_blank' : '_self'}
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-bold transition-all duration-300 pb-btn-hover"
-              style={{ border: '2px solid #111', color: '#111' }}
+              style={{ border: `2px solid ${textColor}`, color: textColor }}
               data-testid="pb-portfolio-view-all"
             >
               {tt(cmsConfig.cta_text)} <ArrowRight className="w-4 h-4" />
@@ -1240,6 +1260,7 @@ export function PBTeam({ config = {}, items = [], bg, sectionNumber }) {
   const settings = useSettings();
   const networks = (settings.social_links || []).filter(n => n.platform);
   const sectionBg = bg || '#0f0f0f';
+  const isDark    = pbIsDark(bg, true);
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
   const filtered = items.filter(i => itemHasLocale(i.name, lang));
@@ -1281,9 +1302,10 @@ export function PBTeam({ config = {}, items = [], bg, sectionNumber }) {
                 href={config.view_all_url}
                 target={config.view_all_new_tab ? '_blank' : '_self'}
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold border-2 border-white/30 text-white transition-all duration-300"
+                className="inline-flex items-center gap-2 rounded-full px-8 py-3 text-sm font-bold transition-all duration-300"
+                style={{ border: `2px solid ${pbBorderFor(isDark)}`, color: textColor, backgroundColor: 'transparent' }}
                 onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-button-bg)'; e.currentTarget.style.color = 'var(--color-button-text)'; e.currentTarget.style.borderColor = 'var(--color-button-bg)'; }}
-                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+                onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = textColor; e.currentTarget.style.borderColor = pbBorderFor(isDark); }}
                 data-testid="pb-team-view-all"
               >
                 {tt(config.view_all_text)} <ArrowRight className="w-4 h-4" />
@@ -1458,6 +1480,7 @@ export function PBGallery({ items = [], bg, cmsConfig = {}, sectionNumber }) {
   const filtered = items.filter(i => i.image);
   if (!filtered.length) return null;
   const sectionBg = bg || '#0f0f0f';
+  const isDark    = pbIsDark(bg, true);
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
 
@@ -1491,9 +1514,10 @@ export function PBGallery({ items = [], bg, cmsConfig = {}, sectionNumber }) {
               href={tt(cmsConfig.cta_url) || '/gallery'}
               target={cmsConfig.cta_new_tab ? '_blank' : '_self'}
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-bold border-2 border-white/30 text-white transition-all duration-300"
+              className="inline-flex items-center gap-2 rounded-full px-7 py-2.5 text-sm font-bold transition-all duration-300"
+              style={{ border: `2px solid ${pbBorderFor(isDark)}`, color: textColor, backgroundColor: 'transparent' }}
               onMouseEnter={e => { e.currentTarget.style.backgroundColor = 'var(--color-button-bg)'; e.currentTarget.style.color = 'var(--color-button-text)'; e.currentTarget.style.borderColor = 'var(--color-button-bg)'; }}
-              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = '#fff'; e.currentTarget.style.borderColor = 'rgba(255,255,255,0.3)'; }}
+              onMouseLeave={e => { e.currentTarget.style.backgroundColor = 'transparent'; e.currentTarget.style.color = textColor; e.currentTarget.style.borderColor = pbBorderFor(isDark); }}
               data-testid="pb-gallery-view-all"
             >
               {tt(cmsConfig.cta_text)} <ArrowRight className="w-4 h-4" />
@@ -1525,9 +1549,9 @@ export function PBGallery({ items = [], bg, cmsConfig = {}, sectionNumber }) {
 export function PBContact({ contactSettings = {}, bg, sectionNumber }) {
   const tt = useT();
   const sectionBg = bg || '#111111';
+  const isDark    = pbIsDark(bg, true);
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
-  const isDark = bg ? aurexContrastFor(bg) === 'light' : true;
   const [form, setForm] = useState({ name: '', email: '', message: '' });
   const [captchaToken, setCaptchaToken] = useState('');
   const [sending, setSending] = useState(false);
