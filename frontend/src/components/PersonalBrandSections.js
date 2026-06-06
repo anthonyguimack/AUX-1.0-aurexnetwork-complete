@@ -48,10 +48,11 @@ const PB_FONT = "'Plus Jakarta Sans', 'Inter', sans-serif";
 
 // ─── Shared helpers ──────────────────────────────────────────────────────────
 
-// Returns true when bg is "dark" (Gray 700 #374151 or darker, BT.601 luma ≤ 0.250).
-// Rule: dark bg → white text; lighter bg → black text.
-// Used by every PB section so that changing the CMS section background
-// automatically drives correct text/border colors throughout the section.
+// Returns true when bg is "dark" (Gray 700 #374151 or darker → white text).
+// BT.601 luma threshold = 0.300:
+//   Gray 700 (#374151) luma ≈ 0.2503 → dark ✓   white text
+//   Gray 200 (#E5E7EB) luma ≈ 0.9053 → light ✓  black text
+// All PB sections use this so changing the CMS bg drives all text colors.
 function pbIsDark(bg, defaultDark = false) {
   if (!bg || !bg.startsWith('#')) return defaultDark;
   let h = bg.slice(1);
@@ -60,7 +61,7 @@ function pbIsDark(bg, defaultDark = false) {
   const r = parseInt(h.slice(0, 2), 16);
   const g = parseInt(h.slice(2, 4), 16);
   const b = parseInt(h.slice(4, 6), 16);
-  return (r * 299 + g * 587 + b * 114) / 255000 <= 0.250;
+  return (r * 299 + g * 587 + b * 114) / 255000 <= 0.300;
 }
 
 function pbShell(bg, extra = '') {
@@ -69,15 +70,17 @@ function pbShell(bg, extra = '') {
 
 const stripHtml = (h) => (h || '').replace(/<[^>]*>/g, '').replace(/&nbsp;/g, ' ').trim();
 
-// Eyebrow label — small red/primary prefixed with number slash
-function PBEyebrow({ number, text, light = false }) {
+// Eyebrow label — section number + small label above the title.
+// onDark=true  → white/70 so it reads on Gray 700+ backgrounds.
+// onDark=false → var(--color-primary) for brand accent on light backgrounds.
+function PBEyebrow({ number, text, onDark = false }) {
   const tt = useT();
   const label = tt(text);
   if (!label && !number) return null;
   return (
     <p
       className="text-[11px] font-semibold uppercase tracking-[0.25em] mb-5"
-      style={{ color: 'var(--color-primary)' }}
+      style={{ color: onDark ? 'rgba(255,255,255,0.75)' : 'var(--color-primary)' }}
     >
       {number && <span className="mr-1">{number}/</span>}
       {label}
@@ -584,6 +587,7 @@ export function PBAbout({ data = {}, bg, statStrip = [], sectionNumber }) {
   if (!itemHasLocale(data?.title, lang)) return null;
   const img = resolveImg(data.image);
   const sectionBg = bg || 'var(--color-bg, #ffffff)';
+  const isDark    = pbIsDark(bg, false);
   const textColor = pbTextFor(bg, '#111111');
   const subColor  = pbSubFor(bg, 'var(--color-body-text, #475569)');
 
@@ -599,7 +603,7 @@ export function PBAbout({ data = {}, bg, statStrip = [], sectionNumber }) {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left — text */}
           <Reveal>
-            <PBEyebrow number={sectionNumber} text={data.label || data.eyebrow || 'Who we are'} />
+            <PBEyebrow number={sectionNumber} text={data.label || data.eyebrow || 'Who we are'} onDark={isDark} />
             <h2
               className="font-black tracking-tight leading-[1.0] mb-6"
               style={{ fontSize: 'clamp(36px, 5vw, 64px)', letterSpacing: '-0.02em' }}
@@ -742,7 +746,7 @@ export function PBServices({ services = [], bg, cmsConfig = {}, sectionNumber })
       <div className="max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24">
         {/* Header */}
         <Reveal className="mb-14">
-          <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Our quality services'} />
+          <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Our quality services'} onDark={isDark} />
           <div className="flex flex-wrap items-end gap-8 justify-between">
             <div className="flex-1 min-w-0">
               {tt(cmsConfig.title) && (
@@ -895,7 +899,7 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24">
         {/* Header */}
         <Reveal className="mb-16">
-          <PBEyebrow number={sectionNumber} text={config.eyebrow || 'Why choose us'} />
+          <PBEyebrow number={sectionNumber} text={config.eyebrow || 'Why choose us'} onDark={isDark} />
           {tt(config.title) && (
             <h2
               className="font-black tracking-tight leading-[1.0]"
@@ -1039,7 +1043,7 @@ export function PBPortfolio({ items = [], bg, cmsConfig = {}, sectionNumber }) {
         {/* Section header */}
         {(tt(cmsConfig.eyebrow) || tt(cmsConfig.title) || tt(cmsConfig.subtitle) || sectionNumber) && (
           <Reveal className="mb-10">
-            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Featured Work'} />
+            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Featured Work'} onDark={isDark} />
             {tt(cmsConfig.title) && (
               <h2
                 className="font-black tracking-tight leading-[1.0]"
@@ -1135,6 +1139,7 @@ export function PBTestimonials({ items = [], bg, cmsConfig = {}, sectionNumber }
   const filtered = items.filter(t => t.visible !== false && itemHasLocale(t.content, lang));
   if (!filtered.length) return null;
   const sectionBg = bg || '#0f0f0f';
+  const isDark    = pbIsDark(bg, true);
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
 
@@ -1152,7 +1157,7 @@ export function PBTestimonials({ items = [], bg, cmsConfig = {}, sectionNumber }
         {/* Header row: eyebrow + title + subtitle left, rating right */}
         <Reveal className="flex flex-wrap items-start justify-between gap-6 mb-16">
           <div>
-            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Real testimonials'} />
+            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Real testimonials'} onDark={isDark} />
             {tt(cmsConfig.title) && (
               <h2
                 className="font-black tracking-tight leading-[1.0]"
@@ -1282,7 +1287,7 @@ export function PBTeam({ config = {}, items = [], bg, sectionNumber }) {
       <div className="max-w-7xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24 mb-14">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-end">
           <Reveal>
-            <PBEyebrow number={sectionNumber} text={config.eyebrow || 'Our team'} />
+            <PBEyebrow number={sectionNumber} text={config.eyebrow || 'Our team'} onDark={isDark} />
             <h2
               className="font-black leading-[0.95] tracking-tight"
               style={{ fontSize: 'clamp(44px, 6.5vw, 96px)', letterSpacing: '-0.03em', color: textColor }}
@@ -1393,6 +1398,7 @@ export function PBReadingList({ books = [], bg, cmsConfig = {}, sectionNumber })
   const filtered = books.filter(b => b.title);
   if (!filtered.length) return null;
   const sectionBg = bg || 'var(--color-bg, #ffffff)';
+  const isDark    = pbIsDark(bg, false);
   const textColor = pbTextFor(bg, '#111111');
   const subColor  = pbSubFor(bg, 'var(--color-body-text, #475569)');
 
@@ -1407,7 +1413,7 @@ export function PBReadingList({ books = [], bg, cmsConfig = {}, sectionNumber })
         {/* Header */}
         <Reveal className="flex flex-wrap items-end justify-between gap-6 mb-12">
           <div>
-            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Reading List'} />
+            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Reading List'} onDark={isDark} />
             {tt(cmsConfig.title) && (
               <h2
                 className="font-black tracking-tight leading-[1.0]"
@@ -1495,7 +1501,7 @@ export function PBGallery({ items = [], bg, cmsConfig = {}, sectionNumber }) {
         {/* Header */}
         <Reveal className="flex flex-wrap items-end justify-between gap-6 mb-12">
           <div>
-            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Moments'} />
+            <PBEyebrow number={sectionNumber} text={cmsConfig.eyebrow || 'Moments'} onDark={isDark} />
             {tt(cmsConfig.title) && (
               <h2
                 className="font-black tracking-tight leading-[1.0]"
@@ -1589,7 +1595,7 @@ export function PBContact({ contactSettings = {}, bg, sectionNumber }) {
       <div className="max-w-6xl mx-auto px-6 sm:px-10 md:px-16 lg:px-24">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-14 items-center">
           <Reveal>
-            <PBEyebrow number={sectionNumber} text={tt(contactSettings.title) || 'Get in touch'} />
+            <PBEyebrow number={sectionNumber} text={tt(contactSettings.title) || 'Get in touch'} onDark={isDark} />
             {tt(contactSettings.subtitle) && (
               <h2
                 className="font-black tracking-tight leading-[1.0] mb-5"
