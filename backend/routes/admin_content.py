@@ -103,15 +103,16 @@ async def admin_update_hero(request: Request, user: dict = Depends(require_admin
 
 # About
 @router.get("/admin/about")
-async def admin_get_about(user: dict = Depends(require_admin)):
-    return await db.about.find_one({}, {"_id": 0}) or {}
+async def admin_get_about(personality: str = None, user: dict = Depends(require_admin)):
+    return await db.about.find_one({"personality": personality}, {"_id": 0}) or {}
 
 @router.put("/admin/about")
-async def admin_update_about(request: Request, user: dict = Depends(require_admin)):
+async def admin_update_about(request: Request, personality: str = None, user: dict = Depends(require_admin)):
     body = await request.json()
+    body["personality"] = personality
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
-    await db.about.update_one({}, {"$set": body}, upsert=True)
-    return await db.about.find_one({}, {"_id": 0})
+    await db.about.update_one({"personality": personality}, {"$set": body}, upsert=True)
+    return await db.about.find_one({"personality": personality}, {"_id": 0})
 
 # Services
 @router.get("/admin/services")

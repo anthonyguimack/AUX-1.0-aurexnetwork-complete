@@ -62,8 +62,13 @@ async def get_public_site_pages():
     return system_pages + custom
 
 @router.get("/public/about")
-async def get_public_about():
-    return await db.about.find_one({}, {"_id": 0}) or {}
+async def get_public_about(personality: str = None):
+    doc = None
+    if personality:
+        doc = await db.about.find_one({"personality": personality}, {"_id": 0})
+    if not doc:
+        doc = await db.about.find_one({"personality": None}, {"_id": 0}) or {}
+    return doc
 
 @router.get("/public/services")
 async def get_public_services():
