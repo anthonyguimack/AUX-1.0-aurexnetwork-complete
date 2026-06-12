@@ -3,7 +3,7 @@ import { adminAPI } from '../../lib/api';
 import { toast } from 'sonner';
 import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
-import { Plus, Pencil, Trash2, Eye, EyeOff, Save, Loader2, GripVertical, ExternalLink, ArrowLeft } from 'lucide-react';
+import { Plus, Pencil, Trash2, Eye, EyeOff, Save, Loader2, GripVertical, ExternalLink, ArrowLeft, KeyRound } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -20,6 +20,7 @@ function SortableLinkRow({ link, onEdit, onDelete, onToggle }) {
         <p className="text-sm font-medium" style={{ color: link.active ? 'var(--ad-heading, #1a2332)' : '#9ca3af' }}>
           {link.label}
           {link.new_tab && <ExternalLink className="w-3 h-3 inline ml-1.5 text-slate-400" />}
+          {link.sso_enabled && <KeyRound className="w-3 h-3 inline ml-1.5 text-amber-500" title="SSO handoff enabled" />}
         </p>
         <p className="text-xs text-slate-400 truncate">{link.url}</p>
       </div>
@@ -67,7 +68,7 @@ export default function QuickLinksManager() {
   };
 
   const openEdit = (link) => setEditing({ ...link });
-  const openNew = () => setEditing({ id: null, label: '', url: '', new_tab: false, active: true });
+  const openNew = () => setEditing({ id: null, label: '', url: '', new_tab: false, active: true, sso_enabled: false });
 
   const saveLink = async () => {
     if (!editing.label || !editing.url) { toast.error('Label and URL are required'); return; }
@@ -112,7 +113,7 @@ export default function QuickLinksManager() {
             <Label className="text-xs text-slate-500">URL *</Label>
             <Input value={editing.url} onChange={e => setEditing(p => ({ ...p, url: e.target.value }))} placeholder="https://example.com or /page" data-testid="ql-url-input" />
           </div>
-          <div className="flex items-center gap-6">
+          <div className="flex flex-wrap items-center gap-6">
             <label className="flex items-center gap-2 cursor-pointer text-sm">
               <input type="checkbox" checked={editing.new_tab} onChange={e => setEditing(p => ({ ...p, new_tab: e.target.checked }))} className="accent-[#0D9488]" data-testid="ql-new-tab" />
               Open in new tab
@@ -121,7 +122,19 @@ export default function QuickLinksManager() {
               <input type="checkbox" checked={editing.active} onChange={e => setEditing(p => ({ ...p, active: e.target.checked }))} className="accent-[#0D9488]" data-testid="ql-active" />
               Active
             </label>
+            <label className="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="checkbox" checked={!!editing.sso_enabled} onChange={e => setEditing(p => ({ ...p, sso_enabled: e.target.checked }))} className="accent-[#0D9488]" data-testid="ql-sso-enabled" />
+              <span className="flex items-center gap-1">
+                <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                Enable SSO handoff
+              </span>
+            </label>
           </div>
+          {editing.sso_enabled && (
+            <p className="text-xs text-amber-600 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+              When clicked, the member's session token will be appended to this URL as <code className="font-mono">?token=…</code> before redirecting. The destination must call <code className="font-mono">/api/auth/sso/verify</code> to authenticate.
+            </p>
+          )}
           <div className="flex gap-3 pt-2">
             <button onClick={saveLink} className="px-5 py-2 rounded text-sm font-medium text-white flex items-center gap-2" style={{ backgroundColor: 'var(--ad-button-bg, #0D9488)' }} data-testid="ql-save-btn">
               <Save className="w-4 h-4" /> {editing.id ? 'Update' : 'Create'}

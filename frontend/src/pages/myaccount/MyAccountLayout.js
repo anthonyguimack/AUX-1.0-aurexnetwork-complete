@@ -55,6 +55,7 @@ export default function MyAccountLayout() {
   const [notifications, setNotifications] = useState([]);
   const [ssoLoading, setSsoLoading] = useState(false);
   const [ssoError, setSsoError] = useState('');
+  const [ssoLoadingId, setSsoLoadingId] = useState(null);
 
   const fetchUnread = useCallback(() => {
     memberAPI.getUnreadCount().then(r => setUnreadCount(r.data?.count || 0)).catch(() => {});
@@ -156,6 +157,32 @@ export default function MyAccountLayout() {
       setSsoLoading(false);
     }
   };
+  const handleSsoLink = async (ql, e) => {
+    e.preventDefault();
+    if (ssoLoadingId) return;
+    setSsoLoadingId(ql.id);
+    try {
+      const res = await authAPI.generateSsoToken();
+      const { sso_token } = res.data;
+      const sep = ql.url.includes('?') ? '&' : '?';
+      const dest = `${ql.url}${sep}token=${sso_token}`;
+      if (ql.new_tab) {
+        window.open(dest, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = dest;
+      }
+    } catch {
+      // silently fall back to plain navigation on error
+      if (ql.new_tab) {
+        window.open(ql.url, '_blank', 'noopener,noreferrer');
+      } else {
+        window.location.href = ql.url;
+      }
+    } finally {
+      setSsoLoadingId(null);
+    }
+  };
+
   const tt = useT();
   const brandName = tt(settings.brand_name) || 'Legacy';
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
@@ -300,20 +327,38 @@ export default function MyAccountLayout() {
                   return (
                     <React.Fragment key={ql.id}>
                       {idx > 0 && <span className="text-xs mx-0.5 select-none" style={{ color: v('text-muted', '#6b7280') }}>|</span>}
-                      <a
-                        href={ql.url}
-                        target={ql.new_tab ? '_blank' : '_self'}
-                        rel={ql.new_tab ? 'noopener noreferrer' : undefined}
-                        className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
-                        style={isActive
-                          ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') }
-                          : { color: v('accent', '#c9a84c') }
-                        }
-                        data-testid={`quick-link-${ql.label.toLowerCase().replace(/\s/g, '-')}`}
-                      >
-                        {ql.label}
-                        {ql.new_tab && <ExternalLink className="w-2.5 h-2.5" />}
-                      </a>
+                      {ql.sso_enabled ? (
+                        <button
+                          onClick={(e) => handleSsoLink(ql, e)}
+                          disabled={ssoLoadingId === ql.id}
+                          className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
+                          style={isActive
+                            ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14'), opacity: ssoLoadingId === ql.id ? 0.6 : 1 }
+                            : { color: v('accent', '#c9a84c'), opacity: ssoLoadingId === ql.id ? 0.6 : 1 }
+                          }
+                          data-testid={`quick-link-${ql.label.toLowerCase().replace(/\s/g, '-')}`}
+                        >
+                          {ssoLoadingId === ql.id
+                            ? <Loader2 className="w-2.5 h-2.5 animate-spin" />
+                            : <ExternalLink className="w-2.5 h-2.5" />}
+                          {ql.label}
+                        </button>
+                      ) : (
+                        <a
+                          href={ql.url}
+                          target={ql.new_tab ? '_blank' : '_self'}
+                          rel={ql.new_tab ? 'noopener noreferrer' : undefined}
+                          className="px-2.5 py-1 rounded text-xs font-medium transition-colors flex items-center gap-1 whitespace-nowrap"
+                          style={isActive
+                            ? { backgroundColor: v('accent', '#c9a84c'), color: v('button-text', '#0d0f14') }
+                            : { color: v('accent', '#c9a84c') }
+                          }
+                          data-testid={`quick-link-${ql.label.toLowerCase().replace(/\s/g, '-')}`}
+                        >
+                          {ql.label}
+                          {ql.new_tab && <ExternalLink className="w-2.5 h-2.5" />}
+                        </a>
+                      )}
                     </React.Fragment>
                   );
                 })}
