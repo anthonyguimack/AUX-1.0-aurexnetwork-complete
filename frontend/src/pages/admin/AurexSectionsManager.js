@@ -181,7 +181,9 @@ function SectionEditor({ sectionKey }) {
 
   const schema = AUREX_SECTIONS[sectionKey];
   // null = Global; 'business'|'lifestyle'|'personal' = PB mini-site tab
-  const [activeTab, setActiveTab] = useState(null);
+  // Default to 'business' so PB theme admins land on production data immediately.
+  // For non-PB themes showPersonalityTabs=false so tabPersonality resolves to undefined regardless.
+  const [activeTab, setActiveTab] = useState('business');
   // Track which tabs have at least a title saved (config) or at least one item
   const [savedTabs, setSavedTabs] = useState(new Set());
   const [config, setConfig] = useState({});
@@ -212,13 +214,16 @@ function SectionEditor({ sectionKey }) {
     } catch (err) { toast.error(`Failed to load ${schema.label}`); }
   };
 
-  // Reload when section key or active tab changes
+  // Reload when section key, active tab, or personality visibility changes.
+  // tabPersonality encodes both activeTab and showPersonalityTabs, so when
+  // settings load asynchronously and flip showPersonalityTabs false→true,
+  // tabPersonality changes (undefined→'business') and triggers a re-fetch.
   useEffect(() => {
     setConfig({});
     setItems([]);
     loadAll(tabPersonality);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sectionKey, activeTab]);
+  }, [sectionKey, tabPersonality]);
 
   // Pre-check PB tabs for saved-state badges when personality tabs are visible
   useEffect(() => {

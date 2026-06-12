@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request, Response, Depends, UploadFile, File
+from fastapi import APIRouter, HTTPException, Request, Response, Depends, UploadFile, File, BackgroundTasks
 from models.database import db, verify_password, create_jwt_token, hash_password, send_email_smtp, get_current_user, require_admin, logger, UPLOAD_DIR
+from utils.kms_sync import sync_member_to_kms, push_password_to_kms
 from datetime import datetime, timezone, timedelta
 import uuid
 import secrets
@@ -185,7 +186,7 @@ async def validate_invite_code(code: str):
     return {"valid": True, "code": code, "sponsor_membership_id": doc["owner_membership_id"]}
 
 @router.post("/member/register")
-async def register_member(request: Request):
+async def register_member(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
     from utils.rate_limit import public_form_guard
     await public_form_guard(request, body, key="member_register")
@@ -268,6 +269,9 @@ async def register_member(request: Request):
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
+    # Sync to KMS — fire-and-forget, does not block the registration response
+    _reg_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(sync_member_to_kms, _reg_settings, new_member, password)
     # Mark invite code as used (only if invite code was used)
     if code_doc:
         await db.invite_codes.update_one({"id": code_doc["id"]}, {"$set": {
@@ -582,7 +586,7 @@ async def admin_list_members(user: dict = Depends(require_admin)):
     return members
 
 @router.post("/admin/members")
-async def admin_create_member(request: Request, user: dict = Depends(require_admin)):
+async def admin_create_member(request: Request, background_tasks: BackgroundTasks, user: dict = Depends(require_admin)):
     body = await request.json()
     email = body.get("email", "").strip().lower()
     if not email:
@@ -653,15 +657,20 @@ async def admin_create_member(request: Request, user: dict = Depends(require_adm
         "created_at": datetime.now(timezone.utc).isoformat()
     }
     await db.members.insert_one(new_member)
+    # Sync to KMS — fire-and-forget
+    _adm_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(sync_member_to_kms, _adm_settings, new_member, password)
     return {k: v for k, v in new_member.items() if k not in ("password_hash", "_id")}
 
 @router.put("/admin/members/{member_id}")
-async def admin_update_member(member_id: str, request: Request, user: dict = Depends(require_admin)):
+async def admin_update_member(member_id: str, request: Request, background_tasks: BackgroundTasks, user: dict = Depends(require_admin)):
     body = await request.json()
     body.pop("_id", None)
     body.pop("password_hash", None)
+    _plain_password = None
     if "password" in body and body["password"]:
-        body["password_hash"] = hash_password(body.pop("password"))
+        _plain_password = body.pop("password")
+        body["password_hash"] = hash_password(_plain_password)
     else:
         body.pop("password", None)
     if "email" in body:
@@ -684,6 +693,11 @@ async def admin_update_member(member_id: str, request: Request, user: dict = Dep
             body["sponsor_id"] = None
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
     await db.members.update_one({"member_id": member_id}, {"$set": body})
+    if _plain_password:
+        updated = await db.members.find_one({"member_id": member_id}, {"_id": 0, "email": 1})
+        if updated:
+            _upd_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+            background_tasks.add_task(push_password_to_kms, _upd_settings, updated["email"], _plain_password)
     return await db.members.find_one({"member_id": member_id}, {"_id": 0, "password_hash": 0})
 
 @router.delete("/admin/members/{member_id}")
@@ -890,7 +904,7 @@ async def get_my_level(member: dict = Depends(get_current_member)):
 # ---- Change Password ----
 
 @router.put("/member/change-password")
-async def member_change_password(request: Request, member: dict = Depends(get_current_member)):
+async def member_change_password(request: Request, background_tasks: BackgroundTasks, member: dict = Depends(get_current_member)):
     body = await request.json()
     new_password = body.get("new_password", "")
     confirm = body.get("confirm_password", "")
@@ -902,6 +916,8 @@ async def member_change_password(request: Request, member: dict = Depends(get_cu
         {"member_id": member["member_id"]},
         {"$set": {"password_hash": hash_password(new_password), "updated_at": datetime.now(timezone.utc).isoformat()}}
     )
+    _pw_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(push_password_to_kms, _pw_settings, member["email"], new_password)
     return {"message": "Password changed successfully"}
 
 
@@ -993,7 +1009,7 @@ async def generate_member_qr(request: Request, member: dict = Depends(get_curren
     The encoded URL MUST be the canonical Site URL configured in CMS →
     Settings → General. We never fall back to the request Origin or to
     the frontend-supplied `base_url` — those values are typically the
-    Emergent preview host or a cluster ingress, which would bake an
+    a local dev host or a cluster ingress, which would bake an
     impermanent URL into the QR code printed on business cards / shared
     by sponsors.  If Site URL isn't set the endpoint returns 400 so the
     operator gets an immediate, actionable error.

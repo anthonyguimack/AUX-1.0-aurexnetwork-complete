@@ -73,6 +73,11 @@ async def startup():
     await seed_system_roles()
     from utils.email_render import ensure_templates_seeded
     await ensure_templates_seeded()
+    try:
+        from models.database import db
+        await db.sso_tokens.create_index("expires_at", expireAfterSeconds=0)
+    except Exception:
+        pass
     from scheduler import start_scheduler
     start_scheduler()
 

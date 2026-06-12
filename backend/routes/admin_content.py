@@ -1,5 +1,4 @@
-from fastapi import APIRouter, HTTPException, Request, Depends, Query
-from typing import Optional
+from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin, hash_password
 from datetime import datetime, timezone
 from slugify import slugify
@@ -103,33 +102,16 @@ async def admin_update_hero(request: Request, user: dict = Depends(require_admin
     return await db.hero.find_one({}, {"_id": 0})
 
 # About
-# `personality` = None → global doc (non-PB themes, unchanged behaviour)
-# `personality` = 'business'|'lifestyle'|'personal' → PB mini-site doc
-def _about_filter(personality: Optional[str]):
-    if personality and personality in ("business", "lifestyle", "personal"):
-        return {"pb_personality": personality}
-    return {"pb_personality": {"$exists": False}}
-
 @router.get("/admin/about")
-async def admin_get_about(
-    personality: Optional[str] = Query(None),
-    user: dict = Depends(require_admin),
-):
-    return await db.about.find_one(_about_filter(personality), {"_id": 0}) or {}
+async def admin_get_about(user: dict = Depends(require_admin)):
+    return await db.about.find_one({}, {"_id": 0}) or {}
 
 @router.put("/admin/about")
-async def admin_update_about(
-    request: Request,
-    personality: Optional[str] = Query(None),
-    user: dict = Depends(require_admin),
-):
+async def admin_update_about(request: Request, user: dict = Depends(require_admin)):
     body = await request.json()
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
-    filt = _about_filter(personality)
-    if personality and personality in ("business", "lifestyle", "personal"):
-        body["pb_personality"] = personality
-    await db.about.update_one(filt, {"$set": body}, upsert=True)
-    return await db.about.find_one(filt, {"_id": 0})
+    await db.about.update_one({}, {"$set": body}, upsert=True)
+    return await db.about.find_one({}, {"_id": 0})
 
 # Services
 @router.get("/admin/services")
@@ -355,6 +337,9 @@ async def admin_get_settings(user: dict = Depends(require_admin)):
         s["stripe_api_key_preview"] = ""
         s["stripe_api_key_set"] = False
     s.pop("stripe_api_key", None)
+    # kms_sync_key: never expose the raw value; only report whether it is set.
+    s["kms_sync_key_set"] = bool(s.get("kms_sync_key"))
+    s.pop("kms_sync_key", None)
     return s
 
 @router.put("/admin/settings")
@@ -375,6 +360,14 @@ async def admin_update_settings(request: Request, user: dict = Depends(require_a
             body.pop("stripe_api_key", None)
         else:
             body["stripe_api_key"] = new_key
+    # kms_sync_key: same write-only pattern as stripe_api_key
+    if "kms_sync_key" in body:
+        new_sync_key = (body.get("kms_sync_key") or "").strip()
+        if not new_sync_key:
+            await db.settings.update_one({}, {"$unset": {"kms_sync_key": ""}})
+            body.pop("kms_sync_key", None)
+        else:
+            body["kms_sync_key"] = new_sync_key
     body["updated_at"] = datetime.now(timezone.utc).isoformat()
     if body:
         await db.settings.update_one({}, {"$set": body}, upsert=True)
@@ -510,14 +503,6 @@ async def admin_create_nav_page(request: Request, user: dict = Depends(require_a
         body.setdefault(k, False)
     for k in ("banner_image", "summary", "content"):
         body.setdefault(k, "")
-    # Page template scope:
-    # 'all'       = shown in every template (universal — the default for new pages)
-    # 'business'  = Personal Brand → Business mini-site only
-    # 'lifestyle' = Personal Brand → Lifestyle mini-site only
-    # 'personal'  = Personal Brand → Personal mini-site only
-    cat = body.get("category")
-    if cat not in ("all", "business", "lifestyle", "personal"):
-        body["category"] = "all"
     result = await crud_create("nav_pages", body)
     await _sync_page_type(body)
     return result
@@ -555,34 +540,10 @@ async def seed_system_pages(user: dict = Depends(require_admin)):
             sp["page_type"] = ""
             sp["layout"] = ""
             sp["zones"] = {}
-            sp["category"] = "all"   # system pages are universal across all templates
             sp["created_at"] = datetime.now(timezone.utc).isoformat()
             await db.nav_pages.insert_one(sp)
             seeded += 1
     return {"seeded": seeded}
-
-@router.post("/admin/migrate-page-categories")
-async def migrate_page_categories(user: dict = Depends(require_admin)):
-    """One-shot migration: pages that have category='business' but were created
-    before the 'all' default was introduced (i.e. they have no explicit PB
-    intent) are reset to category='all' so they stop leaking into non-PB themes.
-    Pages already set to 'lifestyle' or 'personal' are left untouched because
-    those are deliberately PB-specific.
-    Returns counts of updated vs skipped documents."""
-    result = await db.nav_pages.update_many(
-        {"category": "business", "system": {"$ne": True}},
-        {"$set": {"category": "all"}}
-    )
-    system_result = await db.nav_pages.update_many(
-        {"category": "business", "system": True},
-        {"$set": {"category": "all"}}
-    )
-    return {
-        "migrated_user_pages": result.modified_count,
-        "migrated_system_pages": system_result.modified_count,
-        "total": result.modified_count + system_result.modified_count,
-        "note": "Pages with category='lifestyle' or 'personal' were not touched."
-    }
 
 # Gallery Albums (CRUD)
 @router.get("/admin/gallery-albums")

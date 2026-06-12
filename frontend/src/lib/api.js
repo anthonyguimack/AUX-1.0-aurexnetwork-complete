@@ -1,5 +1,5 @@
 import axios from 'axios';
-const API = `${process.env.REACT_APP_BACKEND_URL}/api`;
+const API = `${process.env.REACT_APP_BACKEND_URL || ''}/api`;
 const api = axios.create({ baseURL: API, withCredentials: true });
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('auth_token');
@@ -11,7 +11,7 @@ export const publicAPI = {
   getSettings: () => api.get('/public/settings'),
   getHero: () => api.get('/public/hero'),
   getHeroSlides: (page = '') => api.get(`/public/hero-slides${page ? `?page=${page}` : ''}`),
-  getAbout: (personality) => api.get('/public/about', personality ? { params: { personality } } : {}),
+  getAbout: () => api.get('/public/about'),
   getServices: () => api.get('/public/services'),
   getBlog: (page = 1, limit = 9, category = '') => api.get(`/public/blog?page=${page}&limit=${limit}&category=${category}`),
   getBlogDetail: (slug) => api.get(`/public/blog/${slug}`),
@@ -54,6 +54,7 @@ export const authAPI = {
   resetPassword: (token, password) => api.post('/auth/reset-password', { token, password }),
   verifyResetToken: (token) => api.get(`/auth/reset-password/verify?token=${encodeURIComponent(token)}`),
   changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { current_password: currentPassword, new_password: newPassword }),
+  generateSsoToken: () => api.post('/auth/sso/generate'),
 };
 
 export const contactAPI = { submit: (data) => api.post('/contact', data) };
@@ -87,8 +88,8 @@ export const adminAPI = {
   createHeroSlide: (data) => api.post('/admin/hero-slides', data),
   updateHeroSlide: (id, data) => api.put(`/admin/hero-slides/${id}`, data),
   deleteHeroSlide: (id) => api.delete(`/admin/hero-slides/${id}`),
-  getAbout: (personality) => api.get('/admin/about', personality ? { params: { personality } } : {}),
-  updateAbout: (data, personality) => api.put('/admin/about', data, personality ? { params: { personality } } : {}),
+  getAbout: () => api.get('/admin/about'),
+  updateAbout: (data) => api.put('/admin/about', data),
   getServices: () => api.get('/admin/services'),
   createService: (data) => api.post('/admin/services', data),
   updateService: (id, data) => api.put(`/admin/services/${id}`, data),
@@ -138,6 +139,8 @@ export const adminAPI = {
   getPurchases: () => api.get('/admin/purchases'),
   getSettings: () => api.get('/admin/settings'),
   updateSettings: (data) => api.put('/admin/settings', data),
+  getKmsSyncFailures: () => api.get('/admin/kms-sync/failures'),
+  retryKmsSync: () => api.post('/admin/kms-sync/retry'),
   getPage: (type) => api.get(`/admin/pages/${type}`),
   updatePage: (type, data) => api.put(`/admin/pages/${type}`, data),
   // Nav Pages

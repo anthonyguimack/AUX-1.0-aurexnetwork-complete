@@ -440,3 +440,56 @@ async def delete_backup(backup_id: str, user: dict = Depends(require_admin)):
     if result.deleted_count == 0:
         raise HTTPException(status_code=404, detail="Backup not found")
     return {"message": "Backup deleted"}
+
+
+# ── KMS sync ──────────────────────────────────────────────────────────────────
+
+@router.get("/admin/kms-sync/failures")
+async def kms_sync_failures(user: dict = Depends(require_admin)):
+    """List pending failed KMS sync records."""
+    docs = await db.kms_sync_failures.find(
+        {"retried": False}, {"_id": 0}
+    ).sort("created_at", -1).limit(100).to_list(100)
+    return docs
+
+
+@router.post("/admin/kms-sync/retry")
+async def kms_sync_retry(user: dict = Depends(require_admin)):
+    """Re-attempt KMS sync for every unretried failure.
+    Marks each record retried=True whether it succeeds or not, so the list
+    stays clean.  Fresh failures (if KMS is still down) are re-inserted as
+    new records by sync_member_to_kms itself."""
+    from utils.kms_sync import sync_member_to_kms
+
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    failures = await db.kms_sync_failures.find(
+        {"retried": False}, {"_id": 0}
+    ).to_list(200)
+
+    if not failures:
+        return {"retried": 0, "message": "No pending failures"}
+
+    results = []
+    for rec in failures:
+        email = rec.get("email", "")
+        member_id = rec.get("member_id", "")
+        # Re-fetch the member so we have the full document including membership_number
+        member = await db.members.find_one({"member_id": member_id}, {"_id": 0}) if member_id else None
+        if not member:
+            await db.kms_sync_failures.update_many(
+                {"member_id": member_id, "retried": False},
+                {"$set": {"retried": True, "retry_note": "member not found in DB"}}
+            )
+            results.append({"email": email, "status": "skipped — member not found"})
+            continue
+
+        # Mark retried before attempting so duplicates don't pile up
+        await db.kms_sync_failures.update_many(
+            {"member_id": member_id, "retried": False},
+            {"$set": {"retried": True, "retried_at": datetime.now(timezone.utc).isoformat()}}
+        )
+        # sync_member_to_kms will insert a new failure record if this still fails
+        await sync_member_to_kms(settings, member)
+        results.append({"email": email, "status": "retried"})
+
+    return {"retried": len(results), "results": results}

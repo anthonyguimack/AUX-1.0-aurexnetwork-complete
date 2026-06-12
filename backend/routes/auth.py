@@ -1,8 +1,10 @@
-from fastapi import APIRouter, HTTPException, Request, Response, Depends
+from fastapi import APIRouter, HTTPException, Request, Response, Depends, BackgroundTasks
 from models.database import db, verify_password, create_jwt_token, hash_password, generate_reset_token, get_current_user, get_user_permissions, send_email_smtp, logger
 from datetime import datetime, timezone, timedelta
 import uuid
 import httpx
+import secrets
+from utils.kms_sync import push_password_to_kms
 
 router = APIRouter()
 
@@ -75,17 +77,9 @@ async def logout(request: Request, response: Response):
 
 @router.post("/auth/session")
 async def exchange_session(request: Request, response: Response):
-    body = await request.json()
-    session_id = body.get("session_id", "")
-    if not session_id:
-        raise HTTPException(status_code=400, detail="session_id required")
-    async with httpx.AsyncClient() as http_client:
-        resp = await http_client.get(
-            "https://demobackend.emergentagent.com/auth/v1/env/oauth/session-data",
-            headers={"X-Session-ID": session_id})
-        if resp.status_code != 200:
-            raise HTTPException(status_code=401, detail="Invalid session")
-        data = resp.json()
+    # Google OAuth via third-party provider has been removed.
+    # Re-implement with a self-hosted OAuth flow before re-enabling this endpoint.
+    raise HTTPException(status_code=501, detail="Google login is not configured on this server")
     email = data.get("email", "").strip().lower()
     name = data.get("name", "")
     picture = data.get("picture", "")
@@ -161,13 +155,8 @@ async def forgot_password(request: Request):
     settings = await db.settings.find_one({}, {"_id": 0})
     if settings and settings.get("smtp_host"):
         try:
-            # Reset URLs MUST point at the canonical Site URL. Falling back
-            # to the request Origin would put the Emergent preview host in
-            # the reset link, which (a) confuses users and (b) breaks the
-            # moment the preview URL rotates.  If Site URL isn't set we
-            # still record the token (the operator can recover via the DB
-            # or by configuring Settings and clicking "forgot" again) but
-            # we skip the email send.
+            # Reset URLs MUST point at the canonical Site URL (CMS → Settings → General).
+            # If Site URL isn't configured we still record the token but skip the email.
             from utils.runtime_config import get_site_url
             base = await get_site_url("")
             if not base:
@@ -188,7 +177,7 @@ async def forgot_password(request: Request):
     return {"message": "If the email exists, a reset link has been sent."}
 
 @router.post("/auth/reset-password")
-async def reset_password(request: Request):
+async def reset_password(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
     token = body.get("token", "")
     new_password = body.get("password", "")
@@ -204,6 +193,8 @@ async def reset_password(request: Request):
         raise HTTPException(status_code=400, detail="Token expired")
     await db.members.update_one({"email": reset["email"]}, {"$set": {"password_hash": hash_password(new_password)}})
     await db.password_resets.update_one({"token": token}, {"$set": {"used": True}})
+    _pw_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(push_password_to_kms, _pw_settings, reset["email"], new_password)
     return {"message": "Password reset successfully"}
 
 
@@ -227,7 +218,7 @@ async def reset_password_verify(token: str):
     return {"valid": True, "email": reset.get("email", "")}
 
 @router.post("/auth/change-password")
-async def change_password(request: Request):
+async def change_password(request: Request, background_tasks: BackgroundTasks):
     user = await get_current_user(request)
     body = await request.json()
     current = body.get("current_password", "")
@@ -236,4 +227,71 @@ async def change_password(request: Request):
     if not verify_password(current, full_member.get("password_hash", "")):
         raise HTTPException(status_code=400, detail="Current password incorrect")
     await db.members.update_one({"member_id": user["member_id"]}, {"$set": {"password_hash": hash_password(new)}})
+    _pw_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(push_password_to_kms, _pw_settings, user["email"], new)
     return {"message": "Password changed successfully"}
+
+
+@router.post("/auth/sync/password-inbound")
+async def password_sync_inbound(request: Request):
+    """Receive a password change pushed from the KMS.
+    Authenticated by X-Sync-Key header (same shared secret as member-sync).
+    Does NOT trigger an outgoing sync — loop prevention.
+    """
+    provided_key = request.headers.get("X-Sync-Key", "")
+    settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    stored_key = (settings.get("kms_sync_key") or "").strip()
+    if not stored_key or not secrets.compare_digest(provided_key, stored_key):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
+    body = await request.json()
+    email = body.get("email", "").strip().lower()
+    new_password = body.get("new_password", "")
+    if not email or not new_password:
+        raise HTTPException(status_code=400, detail="email and new_password required")
+
+    member = await db.members.find_one({"email": email}, {"_id": 0, "member_id": 1})
+    if not member:
+        raise HTTPException(status_code=404, detail="Member not found")
+
+    await db.members.update_one({"email": email}, {"$set": {"password_hash": hash_password(new_password)}})
+    return {"status": "updated"}
+
+
+@router.post("/auth/sso/generate")
+async def sso_generate(request: Request):
+    user = await get_current_user(request)
+    token = str(uuid.uuid4())
+    now = datetime.now(timezone.utc)
+    await db.sso_tokens.insert_one({
+        "token": token,
+        "member_id": user["member_id"],
+        "email": user["email"],
+        "created_at": now,
+        "expires_at": now + timedelta(seconds=60),
+    })
+    return {"sso_token": token}
+
+
+@router.get("/auth/sso/verify")
+async def sso_verify(token: str):
+    now = datetime.now(timezone.utc)
+    record = await db.sso_tokens.find_one({
+        "token": token,
+        "expires_at": {"$gt": now},
+    })
+    if not record:
+        raise HTTPException(status_code=401, detail="Invalid or expired SSO token")
+    await db.sso_tokens.delete_one({"token": token})
+    # Include name + membership_number so KMS can auto-provision with correct id_membership
+    member = await db.members.find_one(
+        {"member_id": record["member_id"]},
+        {"_id": 0, "first_name": 1, "last_name": 1, "membership_number": 1}
+    )
+    return {
+        "email": record["email"],
+        "member_id": record["member_id"],
+        "first_name": (member or {}).get("first_name", ""),
+        "last_name": (member or {}).get("last_name", ""),
+        "membership_number": (member or {}).get("membership_number", 0),
+    }

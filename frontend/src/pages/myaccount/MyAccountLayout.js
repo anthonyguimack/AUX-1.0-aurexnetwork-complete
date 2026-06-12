@@ -1,7 +1,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { useMember } from '../../lib/memberAuth';
-import { publicAPI, memberAPI } from '../../lib/api';
+import { publicAPI, memberAPI, authAPI } from '../../lib/api';
+import { BACKEND_URL } from '../../lib/config';
 import {
   User, Key, Users, Briefcase, LogOut, Menu, X, ChevronRight, Home, Award, UserCheck, Loader2, Wallet, ExternalLink, Bell, CalendarDays, BookOpen, Rss, BarChart3, Package
 } from 'lucide-react';
@@ -52,6 +53,8 @@ export default function MyAccountLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
+  const [ssoLoading, setSsoLoading] = useState(false);
+  const [ssoError, setSsoError] = useState('');
 
   const fetchUnread = useCallback(() => {
     memberAPI.getUnreadCount().then(r => setUnreadCount(r.data?.count || 0)).catch(() => {});
@@ -138,6 +141,21 @@ export default function MyAccountLayout() {
   }, [isRouteAllowed, levelPerms, navigate]);
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
+
+  const handleKmsLogin = async () => {
+    const kmsUrl = (settings.kms_url || '').replace(/\/$/, '');
+    if (!kmsUrl) return;
+    setSsoLoading(true);
+    setSsoError('');
+    try {
+      const res = await authAPI.generateSsoToken();
+      const { sso_token } = res.data;
+      window.location.href = `${kmsUrl}/sso-login?token=${sso_token}`;
+    } catch {
+      setSsoError('Connection failed. Please try again.');
+      setSsoLoading(false);
+    }
+  };
   const tt = useT();
   const brandName = tt(settings.brand_name) || 'Legacy';
   const navItems = levelPerms !== null ? ALL_NAV_ITEMS.filter(item => {
@@ -177,7 +195,7 @@ export default function MyAccountLayout() {
           <Link to="/" className="flex items-center gap-2" data-testid="myaccount-brand">
             {(() => {
               const logoOff = settings.logo_off;
-              const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${process.env.REACT_APP_BACKEND_URL}${logoOff}` : logoOff) : null;
+              const logoSrc = logoOff ? (logoOff.startsWith('/api') ? `${BACKEND_URL}${logoOff}` : logoOff) : null;
               if (logoSrc) return <img src={logoSrc} alt={brandName} className="h-8 w-auto object-contain" data-testid="sidebar-logo-img" />;
               return (
                 <>
@@ -236,6 +254,23 @@ export default function MyAccountLayout() {
           <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}>
             <Home className="w-4 h-4" /><span>Back to Website</span>
           </Link>
+          {settings.kms_url && <button
+            onClick={handleKmsLogin}
+            disabled={ssoLoading}
+            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors"
+            style={{ color: v('accent', '#c9a84c'), opacity: ssoLoading ? 0.6 : 1 }}
+            onMouseEnter={e => { if (!ssoLoading) e.currentTarget.style.opacity = '0.7'; }}
+            onMouseLeave={e => { if (!ssoLoading) e.currentTarget.style.opacity = '1'; }}
+            data-testid="kms-sso-btn">
+            {ssoLoading
+              ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
+              : <ExternalLink className="w-4 h-4 flex-shrink-0" />}
+            <span>{ssoLoading ? 'Connecting...' : 'Knowledge Hub'}</span>
+          </button>
+          }
+          {ssoError && (
+            <p className="px-3 text-xs mt-0.5" style={{ color: '#ef4444' }}>{ssoError}</p>
+          )}
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}

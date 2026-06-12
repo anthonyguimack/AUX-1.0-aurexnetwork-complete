@@ -1,5 +1,6 @@
-from fastapi import APIRouter, HTTPException, Request, Depends
+from fastapi import APIRouter, HTTPException, Request, Depends, BackgroundTasks
 from models.database import db, hash_password, verify_password, create_jwt_token, send_email_smtp, require_admin, logger
+from utils.kms_sync import sync_member_to_kms
 from datetime import datetime, timezone
 import uuid
 
@@ -117,7 +118,7 @@ async def check_enrollment_email(request: Request):
 
 
 @router.post("/public/enrollment/submit")
-async def submit_enrollment(request: Request):
+async def submit_enrollment(request: Request, background_tasks: BackgroundTasks):
     body = await request.json()
     # Rate-limit only — no captcha on the multi-step enrollment form per
     # operator preference (the funnel is long enough that bots rarely make
@@ -197,6 +198,9 @@ async def submit_enrollment(request: Request):
         "registration_source": "enrollment",
     }
     await db.members.insert_one(new_member)
+    # Sync to KMS — fire-and-forget
+    _enr_settings = await db.settings.find_one({}, {"_id": 0}) or {}
+    background_tasks.add_task(sync_member_to_kms, _enr_settings, new_member, password)
 
     # Save full enrollment application data
     app_doc = {

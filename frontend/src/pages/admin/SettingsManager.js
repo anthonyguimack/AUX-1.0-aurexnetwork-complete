@@ -5,12 +5,12 @@ import { Input } from '../../components/ui/input';
 import { Label } from '../../components/ui/label';
 import { Switch } from '../../components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '../../components/ui/tabs';
-import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages, CreditCard, Eye, EyeOff, Copy, AlertTriangle } from 'lucide-react';
+import { Save, Loader2, Globe, Palette, Mail, Shield, Plug, Rss, Plus, Trash2, Send, Wifi, Users, Layout, ChevronDown, ChevronRight, Check, Map, Languages, CreditCard, Eye, EyeOff, Copy, AlertTriangle, Link2, RefreshCw, XCircle } from 'lucide-react';
 import { LANGUAGE_LABELS } from '../../lib/i18n';
 import LocalizedField from '../../components/admin/LocalizedField';
 import ImageUpload from '../../components/ImageUpload';
 import RichTextEditor from '../../components/RichTextEditor';
-import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, PERSONALBRAND_COLORS, THEMES } from '../../lib/themeColors';
+import { WEBSITE_COLORS, MYACCOUNT_COLORS, ADMIN_COLORS, LANDING_PAGE_COLORS, ENROLLMENT_COLORS, THEMES } from '../../lib/themeColors';
 import { MAP_LANGUAGES } from '../../lib/mapConfig';
 
 function ColorGroup({ title, description, colors, values, onChange, testIdPrefix }) {
@@ -58,6 +58,8 @@ export default function SettingsManager() {
   const [stripeStatus, setStripeStatus] = useState({ configured: false, mode: null, webhook_url: '', site_url: '' });
   const [stripeKeyDraft, setStripeKeyDraft] = useState(''); // unsaved new key (write-only)
   const [stripeKeyVisible, setStripeKeyVisible] = useState(false);
+  const [kmsSyncKeyDraft, setKmsSyncKeyDraft] = useState(''); // write-only, never returned by server
+  const [kmsSyncKeyVisible, setKmsSyncKeyVisible] = useState(false);
   const [stripeTesting, setStripeTesting] = useState(false);
   const [stripeTestResult, setStripeTestResult] = useState(null); // {ok, code, message, account_id, ...}
 
@@ -75,11 +77,16 @@ export default function SettingsManager() {
       if (stripeKeyDraft !== '') {
         payload.stripe_api_key = stripeKeyDraft.trim();
       }
+      if (kmsSyncKeyDraft !== '') {
+        payload.kms_sync_key = kmsSyncKeyDraft.trim();
+      }
       const r = await adminAPI.updateSettings(payload);
-      // Server strips the key from the response — keep the masked preview only.
+      // Server strips secrets from the response — keep masked flags only.
       setSettings(r.data || {});
       setStripeKeyDraft('');
       setStripeKeyVisible(false);
+      setKmsSyncKeyDraft('');
+      setKmsSyncKeyVisible(false);
       adminAPI.getStripeStatus().then(s => setStripeStatus(s.data || {})).catch(() => {});
       toast.success('Settings saved! Refresh the page to see color changes.');
     }
@@ -192,7 +199,6 @@ export default function SettingsManager() {
   const adminColors = tc.admin || {};
   const landingPageColors = tc.landing_page || {};
   const enrollmentColors = tc.enrollment || {};
-  const personalBrandColors = tc.personal_brand || {};
 
   const activeTheme = settings.active_theme || 'default';
 
@@ -217,6 +223,7 @@ export default function SettingsManager() {
           <TabsTrigger value="membership"><Users className="w-3 h-3 mr-1" />Membership</TabsTrigger>
           <TabsTrigger value="stripe" data-testid="tab-stripe"><CreditCard className="w-3 h-3 mr-1" />Stripe</TabsTrigger>
           <TabsTrigger value="apis"><Plug className="w-3 h-3 mr-1" />APIs</TabsTrigger>
+          <TabsTrigger value="integrations" data-testid="tab-integrations"><Link2 className="w-3 h-3 mr-1" />Integrations</TabsTrigger>
           <TabsTrigger value="captcha" data-testid="tab-captcha"><Shield className="w-3 h-3 mr-1" />Captcha</TabsTrigger>
         </TabsList>
 
@@ -498,14 +505,6 @@ export default function SettingsManager() {
               onChange={(key, val) => updateThemeColor('enrollment', key, val)}
               testIdPrefix="enrollment"
             />
-            <ColorGroup
-              title="Personal Brand Pro"
-              description="Colors for the Personal Brand Pro theme — primary, accent, backgrounds, headings, text, borders. Overrides Website defaults when this theme is active."
-              colors={PERSONALBRAND_COLORS}
-              values={personalBrandColors}
-              onChange={(key, val) => updateThemeColor('personal_brand', key, val)}
-              testIdPrefix="personalbrand"
-            />
           </div>
         </TabsContent>
 
@@ -713,7 +712,7 @@ export default function SettingsManager() {
             <div className="rounded-sm border border-slate-100 p-4 space-y-3">
               <Label className="flex items-center gap-1.5">
                 Stripe Secret Key
-                <span className="text-xs text-slate-400 font-normal">(sk_test_... or sk_live_...)</span>
+                <span className="text-xs text-slate-400 font-normal">(test or live secret key from Stripe dashboard)</span>
               </Label>
               {settings.stripe_api_key_set && stripeKeyDraft === '' ? (
                 <div className="flex items-center gap-2">
@@ -737,7 +736,7 @@ export default function SettingsManager() {
                     type={stripeKeyVisible ? 'text' : 'password'}
                     value={stripeKeyDraft.trim() === '' ? '' : stripeKeyDraft}
                     onChange={e => setStripeKeyDraft(e.target.value)}
-                    placeholder="sk_test_xxxxxxxxxxxxxxxxxxxxxxxx"
+                    placeholder="Paste your Stripe secret key here"
                     className="flex-1 font-mono text-sm"
                     autoComplete="off"
                     data-testid="stripe-key-input"
@@ -855,7 +854,7 @@ export default function SettingsManager() {
             <div className="space-y-3">
               {[
                 { name: 'Stripe', desc: 'Payment processing for services checkout', status: settings.stripe_configured !== false, config: 'API key configured in backend environment', category: 'Payments' },
-                { name: 'Google OAuth', desc: 'Social login via Emergent-managed Google Auth', status: true, config: 'Managed by Emergent platform', category: 'Authentication' },
+                { name: 'Google OAuth', desc: 'Social login — pending self-hosted OAuth implementation', status: false, config: 'Not configured — implement self-hosted Google OAuth to enable', category: 'Authentication' },
                 { name: 'SMTP (Email)', desc: 'Transactional emails — contact form, invitations, welcome emails', status: !!(settings.smtp_host && settings.smtp_user), config: settings.smtp_host ? `Host: ${settings.smtp_host}:${settings.smtp_port || 587}` : 'Not configured — set up in Email/SMTP tab', category: 'Email' },
                 { name: 'External Blog API', desc: 'Fetches blog posts from an external JSON endpoint', status: !!settings.blog_api_url, config: settings.blog_api_url || 'Not configured — set up in Blog API tab', category: 'Content' },
                 { name: 'Leaflet / OpenStreetMap', desc: 'Interactive maps for location display', status: true, config: 'Open-source — no API key needed', category: 'Maps' },
@@ -880,10 +879,145 @@ export default function SettingsManager() {
           </div>
         </TabsContent>
 
+        <TabsContent value="integrations">
+          <div className="bg-white rounded-sm border border-slate-100 p-6 space-y-8" data-testid="integrations-tab">
+            <KmsSyncPanel />
+            {/* KMS — Knowledge Management System */}
+            <div>
+              <h3 className="font-semibold mb-1" style={{ color: 'var(--ad-heading, #1a2332)' }}>Knowledge Management System (KMS)</h3>
+              <p className="text-sm text-slate-500 mb-5">
+                Connect this site to its paired KMS instance. When configured, new members are automatically
+                created in the KMS and the My Account sidebar shows a <strong>Knowledge Hub</strong> button
+                that logs users in without re-entering credentials (SSO).
+              </p>
+              <div className="space-y-4 max-w-lg">
+                <div>
+                  <Label className="text-xs font-medium text-slate-600 mb-1 block">KMS Base URL</Label>
+                  <Input
+                    value={settings.kms_url || ''}
+                    onChange={e => setSettings(prev => ({ ...prev, kms_url: e.target.value }))}
+                    placeholder="https://insights.yoursite.com"
+                    data-testid="kms-url-input"
+                  />
+                  <p className="text-xs text-slate-400 mt-1">The root URL of the KMS — no trailing slash. Leave blank to disable KMS integration.</p>
+                </div>
+                <div>
+                  <Label className="text-xs font-medium text-slate-600 mb-1 block">
+                    KMS Sync Key
+                    {settings.kms_sync_key_set
+                      ? <span className="ml-2 text-[10px] bg-green-100 text-green-700 px-1.5 py-0.5 rounded">Set</span>
+                      : <span className="ml-2 text-[10px] bg-slate-100 text-slate-500 px-1.5 py-0.5 rounded">Not set</span>}
+                  </Label>
+                  <div className="flex gap-2">
+                    <div className="relative flex-1">
+                      <Input
+                        type={kmsSyncKeyVisible ? 'text' : 'password'}
+                        value={kmsSyncKeyDraft}
+                        onChange={e => setKmsSyncKeyDraft(e.target.value)}
+                        placeholder={settings.kms_sync_key_set ? '••••••••  (leave blank to keep current)' : 'Paste or generate a secret key'}
+                        data-testid="kms-sync-key-input"
+                      />
+                      <button type="button" onClick={() => setKmsSyncKeyVisible(v => !v)}
+                        className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600">
+                        {kmsSyncKeyVisible ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                      </button>
+                    </div>
+                    <button type="button"
+                      onClick={() => { const k = Array.from(crypto.getRandomValues(new Uint8Array(32))).map(b => b.toString(16).padStart(2,'0')).join(''); setKmsSyncKeyDraft(k); setKmsSyncKeyVisible(true); }}
+                      className="px-3 py-2 text-xs bg-slate-100 hover:bg-slate-200 rounded border border-slate-200 whitespace-nowrap">
+                      Generate
+                    </button>
+                  </div>
+                  <p className="text-xs text-slate-400 mt-1">
+                    Shared secret between this site and the KMS. Set the same value as <code className="bg-slate-100 px-1 rounded">AUX_SYNC_KEY</code> in the KMS server <code className="bg-slate-100 px-1 rounded">.env</code>. Never expose this value publicly.
+                  </p>
+                </div>
+              </div>
+            </div>
+            {/* Status row */}
+            <div className="border-t border-slate-100 pt-4">
+              <p className="text-xs font-medium text-slate-500 mb-2">Current status</p>
+              <div className="flex items-center gap-3 text-sm">
+                <span className={`flex items-center gap-1.5 ${settings.kms_url ? 'text-green-600' : 'text-slate-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${settings.kms_url ? 'bg-green-500' : 'bg-slate-300'}`} />
+                  KMS URL {settings.kms_url ? `configured (${settings.kms_url})` : 'not configured'}
+                </span>
+                <span className={`flex items-center gap-1.5 ${settings.kms_sync_key_set ? 'text-green-600' : 'text-slate-400'}`}>
+                  <span className={`w-2 h-2 rounded-full ${settings.kms_sync_key_set ? 'bg-green-500' : 'bg-slate-300'}`} />
+                  Sync key {settings.kms_sync_key_set ? 'set' : 'not set'}
+                </span>
+              </div>
+            </div>
+          </div>
+        </TabsContent>
+
         <TabsContent value="captcha">
           <CaptchaSettingsTab />
         </TabsContent>
       </Tabs>
+    </div>
+  );
+}
+
+// ─── KMS Sync Panel ───────────────────────────────────────────────
+function KmsSyncPanel() {
+  const [failures, setFailures] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [retrying, setRetrying] = useState(false);
+  const [result, setResult] = useState(null);
+
+  const load = () => {
+    setLoading(true);
+    adminAPI.getKmsSyncFailures()
+      .then(r => setFailures(r.data || []))
+      .catch(() => setFailures([]))
+      .finally(() => setLoading(false));
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const retry = async () => {
+    setRetrying(true);
+    setResult(null);
+    try {
+      const r = await adminAPI.retryKmsSync();
+      setResult(r.data);
+      load();
+    } catch { setResult({ message: 'Retry request failed.' }); }
+    finally { setRetrying(false); }
+  };
+
+  if (loading) return null;
+  if (failures.length === 0 && !result) return null;
+
+  return (
+    <div className="border border-amber-200 bg-amber-50 rounded-sm p-4" data-testid="kms-sync-panel">
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center gap-2">
+          <XCircle className="w-4 h-4 text-amber-500" />
+          <span className="text-sm font-medium text-amber-800">
+            {failures.length} pending KMS sync {failures.length === 1 ? 'failure' : 'failures'}
+          </span>
+        </div>
+        <button onClick={retry} disabled={retrying || failures.length === 0}
+          className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-amber-600 text-white rounded hover:bg-amber-700 disabled:opacity-50">
+          {retrying ? <Loader2 className="w-3 h-3 animate-spin" /> : <RefreshCw className="w-3 h-3" />}
+          {retrying ? 'Retrying…' : 'Retry all'}
+        </button>
+      </div>
+      <div className="space-y-1 max-h-40 overflow-y-auto">
+        {failures.map((f, i) => (
+          <div key={i} className="flex items-center justify-between text-xs py-1 border-b border-amber-100">
+            <span className="text-amber-900 font-medium">{f.email}</span>
+            <span className="text-amber-600 font-mono">{f.error}</span>
+          </div>
+        ))}
+      </div>
+      {result && (
+        <p className="text-xs text-amber-700 mt-2">
+          {result.retried != null ? `Retried ${result.retried} record(s).` : result.message}
+        </p>
+      )}
     </div>
   );
 }
