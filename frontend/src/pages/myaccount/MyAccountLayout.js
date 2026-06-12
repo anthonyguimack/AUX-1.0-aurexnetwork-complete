@@ -53,8 +53,6 @@ export default function MyAccountLayout() {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifOpen, setNotifOpen] = useState(false);
   const [notifications, setNotifications] = useState([]);
-  const [ssoLoading, setSsoLoading] = useState(false);
-  const [ssoError, setSsoError] = useState('');
   const [ssoLoadingId, setSsoLoadingId] = useState(null);
 
   const fetchUnread = useCallback(() => {
@@ -143,20 +141,6 @@ export default function MyAccountLayout() {
 
   const handleLogout = () => { logout(); navigate('/my-account/login'); };
 
-  const handleKmsLogin = async () => {
-    const kmsUrl = (settings.kms_url || '').replace(/\/$/, '');
-    if (!kmsUrl) return;
-    setSsoLoading(true);
-    setSsoError('');
-    try {
-      const res = await authAPI.generateSsoToken();
-      const { sso_token } = res.data;
-      window.location.href = `${kmsUrl}/sso-login?token=${sso_token}`;
-    } catch {
-      setSsoError('Connection failed. Please try again.');
-      setSsoLoading(false);
-    }
-  };
   const handleSsoLink = async (ql, e) => {
     e.preventDefault();
     if (ssoLoadingId) return;
@@ -281,23 +265,6 @@ export default function MyAccountLayout() {
           <Link to="/" className="flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}>
             <Home className="w-4 h-4" /><span>Back to Website</span>
           </Link>
-          {settings.kms_url && <button
-            onClick={handleKmsLogin}
-            disabled={ssoLoading}
-            className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors"
-            style={{ color: v('accent', '#c9a84c'), opacity: ssoLoading ? 0.6 : 1 }}
-            onMouseEnter={e => { if (!ssoLoading) e.currentTarget.style.opacity = '0.7'; }}
-            onMouseLeave={e => { if (!ssoLoading) e.currentTarget.style.opacity = '1'; }}
-            data-testid="kms-sso-btn">
-            {ssoLoading
-              ? <Loader2 className="w-4 h-4 animate-spin flex-shrink-0" />
-              : <ExternalLink className="w-4 h-4 flex-shrink-0" />}
-            <span>{ssoLoading ? 'Connecting...' : 'Knowledge Hub'}</span>
-          </button>
-          }
-          {ssoError && (
-            <p className="px-3 text-xs mt-0.5" style={{ color: '#ef4444' }}>{ssoError}</p>
-          )}
           <button onClick={handleLogout} className="w-full flex items-center gap-3 px-3 py-2 text-sm rounded transition-colors" style={{ color: v('sidebar-text', '#9ca3af') }}
             onMouseEnter={e => { e.currentTarget.style.opacity = '0.7'; }}
             onMouseLeave={e => { e.currentTarget.style.opacity = '1'; }}
