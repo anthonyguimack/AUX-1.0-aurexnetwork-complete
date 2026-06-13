@@ -11,11 +11,17 @@ import ImageUpload from '../../components/ImageUpload';
 import LocalizedField from '../../components/admin/LocalizedField';
 import { adminText } from '../../lib/i18n';
 import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 const emptyPost = { title: '', summary: '', content: '', category: '', author: '', image: '', published: true };
 const emptyCategory = { name: '' };
 
 export default function BlogManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -26,17 +32,28 @@ export default function BlogManager() {
   const [editCat, setEditCat] = useState(null);
   const [catLoading, setCatLoading] = useState(false);
 
-  const load = () => {
-    adminAPI.getBlog().then(r => setItems(r.data)).catch(console.error);
+  // Posts are personality-scoped; categories are a shared taxonomy (global).
+  const load = (personality = activeTab) => {
+    adminAPI.getBlog(personality).then(r => setItems(r.data)).catch(console.error);
     adminAPI.getBlogCategories().then(r => setCategories(r.data || [])).catch(() => {});
   };
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(activeTab); }, [activeTab]);
+
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getBlog(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editing.id) await adminAPI.updateBlog(editing.id, editing);
-      else await adminAPI.createBlog(editing);
+      else await adminAPI.createBlog(editing, activeTab);
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved!'); setOpen(false); load();
     } catch { toast.error('Error saving'); }
     finally { setLoading(false); }
@@ -93,6 +110,7 @@ export default function BlogManager() {
           <button onClick={() => { setEditing({...emptyPost}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-blog-btn"><Plus className="w-4 h-4" /> New Post</button>
         </div>
       </div>
+      <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="News / Blog scope" noun="posts" />
       <DataTableToolbar dt={dt} testId="blog" placeholder="Search by title, category, author…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">

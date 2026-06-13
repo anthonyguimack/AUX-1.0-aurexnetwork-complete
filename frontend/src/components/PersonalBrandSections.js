@@ -883,6 +883,7 @@ export function PBAudience({ config = {}, items = [], bg, sectionNumber }) {
   const textColor = isDark ? '#ffffff' : '#111111';
   const subColor  = isDark ? 'rgba(255,255,255,0.65)' : '#475569';
   const visibleItems = items.filter(i => itemHasLocale(i.title, lang)).slice(0, 4);
+  if (!visibleItems.length) return null;   // hide section when no items
 
   // Stagger offsets for the cascade effect
   const topOffsets = ['0px', '40px', '20px', '60px'];
@@ -1269,6 +1270,7 @@ export function PBTeam({ config = {}, items = [], bg, sectionNumber }) {
   const textColor = pbTextFor(bg, '#ffffff');
   const subColor  = pbSubFor(bg, 'rgba(255,255,255,0.6)');
   const filtered = items.filter(i => itemHasLocale(i.name, lang));
+  if (!filtered.length) return null;   // hide section when no team members
 
   const iconFor = (network) => {
     const key = String(network?.icon || network?.platform || '').toLowerCase().replace(/[^a-z]/g, '');

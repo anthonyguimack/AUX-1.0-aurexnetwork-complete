@@ -11,6 +11,8 @@ import { Switch } from '../../components/ui/switch';
 import RichTextEditor from '../../components/RichTextEditor';
 import LocalizedField from '../../components/admin/LocalizedField';
 import { adminText } from '../../lib/i18n';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 // dnd-kit: same primitives already used elsewhere (SectionOrderManager, PageBuilder)
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
@@ -52,20 +54,35 @@ function ServiceRow({ item, onEdit, onDelete, onToggle }) {
 }
 
 export default function ServicesManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const load = () => adminAPI.getServices().then(r => setItems((r.data || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))).catch(console.error);
-  useEffect(() => { load(); }, []);
+  const load = (personality = activeTab) => adminAPI.getServices(personality).then(r => setItems((r.data || []).sort((a, b) => (a.order ?? 0) - (b.order ?? 0)))).catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(activeTab); }, [activeTab]);
+
+  // Badge which personality tabs already have their own content.
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getServices(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editing.id) { await adminAPI.updateService(editing.id, editing); }
-      else { await adminAPI.createService({ ...editing, order: items.length }); }
+      else { await adminAPI.createService({ ...editing, order: items.length }, activeTab); }
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved!'); setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setLoading(false); }
@@ -124,6 +141,7 @@ export default function ServicesManager() {
           <Plus className="w-4 h-4" /> Add New
         </button>
       </div>
+      <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="Services scope" noun="services" />
       <DataTableToolbar dt={dt} testId="services" placeholder="Search by title, type…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">

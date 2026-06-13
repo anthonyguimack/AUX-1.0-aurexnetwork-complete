@@ -8,23 +8,39 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '../../componen
 import { Plus, Edit2, Trash2 } from 'lucide-react';
 import ImageUpload from '../../components/ImageUpload';
 import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 const emptyItem = { title: '', description: '', image: '', tags: [], link: '', open_in_new_tab: false };
 
 export default function PortfolioManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const load = () => adminAPI.getPortfolio().then(r => setItems(r.data)).catch(console.error);
-  useEffect(() => { load(); }, []);
+  const load = (personality = activeTab) => adminAPI.getPortfolio(personality).then(r => setItems(r.data)).catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(activeTab); }, [activeTab]);
+
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getPortfolio(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editing.id) await adminAPI.updatePortfolio(editing.id, editing);
-      else await adminAPI.createPortfolio(editing);
+      else await adminAPI.createPortfolio(editing, activeTab);
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved!'); setOpen(false); load();
     } catch { toast.error('Error'); } finally { setLoading(false); }
   };
@@ -41,6 +57,7 @@ export default function PortfolioManager() {
         <h1 className="text-2xl font-bold text-[#1a2332]" style={{ fontFamily: 'Playfair Display, serif' }}>Portfolio Manager</h1>
         <button onClick={() => { setEditing({...emptyItem}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2"><Plus className="w-4 h-4" /> Add Project</button>
       </div>
+      <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="Portfolio scope" noun="projects" />
       <DataTableToolbar dt={dt} testId="portfolio" placeholder="Search by title, tags…" />
       <div className="bg-white rounded-sm border border-slate-100">
         <table className="w-full text-sm">

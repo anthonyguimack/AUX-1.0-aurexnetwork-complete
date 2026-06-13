@@ -1,5 +1,5 @@
 import React from 'react';
-import { FileText, Map, BookOpen, Wrench, ExternalLink, ClipboardCheck, Server, LayoutList } from 'lucide-react';
+import { FileText, Map, BookOpen, Wrench, ExternalLink, ClipboardCheck, Server, LayoutList, Palette } from 'lucide-react';
 import { useAuth } from '../../lib/auth';
 
 const API = process.env.REACT_APP_BACKEND_URL || '';
@@ -36,6 +36,14 @@ const DOCS = [
     icon: FileText,
     url: `${API}/api/docs/user-guide`,
     color: '#059669',
+  },
+  {
+    key: 'doc_personal_brand',
+    title: 'Personal Brand Template — Operator Manual',
+    description: 'Non-technical guide to managing every section of the Personal Brand template: the three mini-sites (Business / Lifestyle / Personal), content scopes, page builder, and every field of every section.',
+    icon: Palette,
+    url: `${API}/api/docs/personal-brand-manual`,
+    color: '#7c3aed',
   },
   {
     key: 'doc_testing_manual',

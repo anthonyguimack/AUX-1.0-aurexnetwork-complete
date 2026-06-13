@@ -11,6 +11,8 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, rectSortingStrategy, useSortable, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import ImageUpload from '../../components/ImageUpload';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 const emptyItem = { title: '', summary: '', image: '', category: '', link: '', open_in_new_tab: false, order: 0 };
 const emptyCategory = { name: '', slug: '', order: 0 };
@@ -44,6 +46,10 @@ function SortableGalleryCard({ item, onEdit, onDelete, onToggleSelect, isSelecte
 }
 
 export default function GalleryManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [items, setItems] = useState([]);
   const [categories, setCategories] = useState([]);
   const [editing, setEditing] = useState(null);
@@ -56,11 +62,21 @@ export default function GalleryManager() {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 8 } }));
 
-  const load = () => {
-    adminAPI.getGallery().then(r => setItems(r.data)).catch(console.error);
+  // Photos are personality-scoped; categories are a shared taxonomy (global).
+  const load = (personality = activeTab) => {
+    adminAPI.getGallery(personality).then(r => setItems(r.data)).catch(console.error);
     adminAPI.getGalleryCategories().then(r => setCategories(r.data || [])).catch(() => {});
   };
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(activeTab); }, [activeTab]);
+
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getGallery(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const handleDragEnd = async (event) => {
     const { active, over } = event;
@@ -81,7 +97,8 @@ export default function GalleryManager() {
     try {
       const data = { ...editing, order: editing.order ?? items.length };
       if (editing.id) await adminAPI.updateGallery(editing.id, data);
-      else await adminAPI.createGallery(data);
+      else await adminAPI.createGallery(data, activeTab);
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved!'); setOpen(false); load();
     } catch { toast.error('Error'); } finally { setLoading(false); }
   };
@@ -134,6 +151,8 @@ export default function GalleryManager() {
           <button onClick={() => { setEditing({...emptyItem, order: items.length}); setOpen(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-photo-btn"><Plus className="w-4 h-4" /> Add Photo</button>
         </div>
       </div>
+
+      <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="Gallery scope" noun="photos" />
 
       <DndContext sensors={sensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
         <SortableContext items={items.map(i => i.id)} strategy={rectSortingStrategy}>

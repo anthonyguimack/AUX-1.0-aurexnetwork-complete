@@ -161,6 +161,7 @@ export function AurexProcess({ config = {}, items = [], bg, font, contrast, sect
   const { lang } = useLang();
   const c = { bg: bg || '#1F2937', font, contrast: contrast || aurexContrastFor(bg || '#1F2937') };
   const visibleItems = items.filter(i => itemHasLocale(i.title, lang));
+  if (!visibleItems.length) return null;   // hide section when no items
   return (
     <SectionShell {...c} id="aurex-process" data-testid="aurex-section-process">
       <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} sectionNumber={sectionNumber} />
@@ -202,6 +203,7 @@ export function AurexPricing({ config = {}, items = [], bg, font, contrast }) {
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
   const [annual, setAnnual] = useState(false);
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
+  if (!visibleItems.length) return null;   // hide section when no items
   return (
     <SectionShell {...c} id="aurex-pricing" data-testid="aurex-section-pricing">
       <SectionHeader title={config.title} subtitle={config.subtitle} eyebrow={config.eyebrow} contrast={c.contrast} />
@@ -322,6 +324,7 @@ export function AurexEvents({ config = {}, items = [], bg, font, contrast, secti
   const { lang } = useLang();
   const c = { bg: bg || '#FFFFFF', font, contrast: contrast || aurexContrastFor(bg || '#FFFFFF') };
   const visibleItems = items.filter(e => itemHasLocale(e.title, lang));
+  if (!visibleItems.length) return null;   // hide section when no events
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
   const btnCls = 'inline-flex items-center gap-2 px-7 py-2.5 rounded-full text-sm font-semibold transition-all hover:opacity-80';
   // View-all button lives in the header (right side) when items exist
@@ -393,6 +396,7 @@ export function AurexPartners({ config = {}, items = [], bg, font, contrast, sec
   const { lang } = useLang();
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#111827', font, contrast: contrast || aurexContrastFor(bg || '#111827') };
+  if (!visibleItems.length) return null;   // hide section when no items
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
   const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
     <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
@@ -415,6 +419,7 @@ export function AurexClients({ config = {}, items = [], bg, font, contrast, sect
   const { lang } = useLang();
   const visibleItems = items.filter(i => itemHasLocale(i.name, lang));
   const c = { bg: bg || '#F4F6F8', font, contrast: contrast || aurexContrastFor(bg || '#F4F6F8') };
+  if (!visibleItems.length) return null;   // hide section when no items
   const btnStyle = { border: `1.5px solid ${c.contrast === 'light' ? 'rgba(255,255,255,0.7)' : '#111827'}`, color: c.contrast === 'light' ? '#FFFFFF' : '#111827', backgroundColor: 'transparent' };
   const ctaBtn = (tt(config.cta_text) && tt(config.cta_url)) ? (
     <a href={tt(config.cta_url)} target={config.cta_new_tab ? '_blank' : '_self'} rel={config.cta_new_tab ? 'noopener noreferrer' : undefined}
@@ -478,8 +483,9 @@ export function AurexVideo({ config = {}, bg, font, contrast, sectionNumber }) {
 const SECTIONS_ITEMIZED = ['aurex_audience', 'aurex_process', 'aurex_pricing', 'aurex_team', 'aurex_partners', 'aurex_clients'];
 
 // `personality` = undefined → all sections fetch global data (Aurex One-page + other themes)
-// `personality` = 'business'|'lifestyle'|'personal' → PB mini-site: aurex_team fetches
-//   personality-specific data; all other sections still fetch global data unchanged.
+// `personality` = 'business'|'lifestyle'|'personal' → PB mini-site: every section fetches
+//   its personality-specific config + items, with the backend falling back to the global
+//   doc when no scoped content exists for that personality.
 export function useAurexSections(personality) {
   const [data, setData] = useState({});
   useEffect(() => {

@@ -593,6 +593,237 @@ async def operator_manual(user: dict = Depends(_doc_guard)):
     return HTMLResponse(content=html)
 
 
+@router.get("/docs/personal-brand-manual", response_class=HTMLResponse)
+async def personal_brand_manual(user: dict = Depends(_doc_guard)):
+    """Operator manual for managing the Personal Brand template content via the CMS.
+    Written for a non-technical operator. Derived from the live codebase + schemas."""
+    settings = await _get_settings()
+    brand = settings.get("brand_name", "Personal Brand")
+    if isinstance(brand, dict):
+        brand = brand.get("en") or next((v for v in brand.values() if v), "Personal Brand")
+    today = datetime.now().strftime("%B %d, %Y")
+
+    html = f"""<!DOCTYPE html><html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Personal Brand Template — Operator Manual — {brand}</title>
+<style>{BASE_CSS}{PRINT_CSS}
+.shot {{ border: 2px dashed #c9a84c; background: #fffdf5; color: #92722a; padding: 18px; margin: 16px 0; border-radius: 6px; text-align: center; font-size: 14px; font-style: italic; }}
+.scope {{ display:inline-block; padding:2px 9px; border-radius:4px; font-size:12px; font-weight:600; margin:0 2px; }}
+.scope-g {{ background:#e0f2fe; color:#0369a1; }}
+.scope-b {{ background:#e2e8f0; color:#334155; }}
+.scope-l {{ background:#d1fae5; color:#047857; }}
+.scope-p {{ background:#ede9fe; color:#6d28d9; }}
+.path {{ background:#f1f5f9; padding:2px 8px; border-radius:3px; font-size:13px; color:#0D9488; font-weight:600; white-space:nowrap; }}
+</style></head><body>
+<div class="toolbar no-print">
+  <span style="font-weight:600;">Personal Brand Template — Operator Manual</span>
+  <div><button onclick="window.print()">Save as PDF</button> <a href="/admin/documentation">Back to Docs</a></div>
+</div>
+<div class="spacer no-print"></div>
+
+<div class="cover">
+  <h1>{brand}</h1>
+  <p class="subtitle">Personal Brand Template &mdash; Complete Operator Manual</p>
+  <p class="meta">Version 1.0 &middot; {today}</p>
+</div>
+
+<div class="content">
+
+<div class="info-box">
+This manual explains how to manage <strong>every part</strong> of the Personal Brand website from the admin panel (the CMS). It is written for an operator with <strong>no technical knowledge</strong>. You do not need to touch any code &mdash; everything here is done by clicking, typing, and dragging inside the CMS.
+</div>
+
+<h1>1. The Big Picture: One Person, Three Mini-Sites</h1>
+<p>The Personal Brand template is really <strong>three websites in one</strong>, called <em>personalities</em> or <em>mini-sites</em>. They share the same building blocks but can show completely different content:</p>
+<table>
+<tr><th>Mini-site</th><th>Web address</th><th>Typical use</th></tr>
+<tr><td><span class="scope scope-b">Business</span></td><td><span class="path">/</span> (the main homepage)</td><td>The professional / corporate face</td></tr>
+<tr><td><span class="scope scope-l">Lifestyle</span></td><td><span class="path">/lifestyle</span></td><td>A softer, lifestyle-focused face</td></tr>
+<tr><td><span class="scope scope-p">Personal</span></td><td><span class="path">/personal</span></td><td>The most personal / private face</td></tr>
+</table>
+<p>A visitor who opens the main address sees the <strong>Business</strong> mini-site. Adding <span class="path">/lifestyle</span> or <span class="path">/personal</span> to the address opens the other two.</p>
+<div class="shot">📷 Screenshot: the three mini-sites side by side (Business homepage, /lifestyle, /personal) showing different content.</div>
+
+<h2>1.1 The Four "Scopes" — the most important idea in this manual</h2>
+<p>Almost every content screen in the CMS has a row of tabs at the top that look like this:</p>
+<p style="text-align:center;margin:14px 0;">
+<span class="scope scope-g">Global</span>
+<span class="scope scope-b">PB — Business</span>
+<span class="scope scope-l">PB — Lifestyle</span>
+<span class="scope scope-p">PB — Personal</span>
+</p>
+<table>
+<tr><th>Tab</th><th>What content placed here does</th></tr>
+<tr><td><span class="scope scope-g">Global</span></td><td>A <strong>shared fallback</strong>. Used by other website themes, and shown on any mini-site that has <em>nothing of its own</em> in that section.</td></tr>
+<tr><td><span class="scope scope-b">Business</span></td><td>Shows <strong>only</strong> on the Business mini-site (the main <span class="path">/</span> homepage).</td></tr>
+<tr><td><span class="scope scope-l">Lifestyle</span></td><td>Shows <strong>only</strong> on <span class="path">/lifestyle</span>.</td></tr>
+<tr><td><span class="scope scope-p">Personal</span></td><td>Shows <strong>only</strong> on <span class="path">/personal</span>.</td></tr>
+</table>
+<div class="info-box"><strong>The golden rule:</strong> When you open a section's tab and add content, that content appears <strong>only on that mini-site</strong>. If a mini-site's tab is left empty, the section borrows from <span class="scope scope-g">Global</span>. If <em>both</em> are empty, the section is <strong>hidden completely</strong> on that mini-site (no empty space, no blank box).</div>
+<div class="warn-box"><strong>Today's setup:</strong> on this site all real content currently lives in the <span class="scope scope-b">Business</span> tabs, and the <span class="scope scope-g">Global</span> tabs were emptied on purpose. That is why each section currently appears only on the Business homepage. To make Lifestyle or Personal show a section, open that section's <span class="scope scope-l">Lifestyle</span> / <span class="scope scope-p">Personal</span> tab and add content there.</div>
+<div class="shot">📷 Screenshot: a content manager (e.g. Services) with the Global / Business / Lifestyle / Personal tab strip highlighted, showing the "● configured" / "● not configured" badges.</div>
+
+<h2>1.2 A section only shows when it has content</h2>
+<p>Every section automatically <strong>hides itself</strong> when it has nothing to show for the mini-site being viewed. You never get an empty band or a broken-looking gap. The small section numbers on the site (the "01 /", "02 /" labels above each title) also renumber automatically, so there are never any skipped numbers.</p>
+
+<h1>2. Logging In</h1>
+<p>Open <span class="path">/admin/login</span> and enter your admin email and password.</p>
+<div class="warn-box"><strong>Important:</strong> the admin login (<span class="path">/admin/login</span>) is different from the member login (<span class="path">/my-account/login</span>). Use the admin one to manage content.</div>
+<p>After logging in you will see the admin dashboard. All content tools are in the left sidebar.</p>
+<div class="shot">📷 Screenshot: the admin login screen and the dashboard with the left sidebar.</div>
+
+<h1>3. Two Languages (English &amp; Spanish)</h1>
+<p>Most text fields are <strong>bilingual</strong>. Where a field supports two languages you will see small <strong>EN</strong> / <strong>ES</strong> tabs on that field. Type the English text under <strong>EN</strong> and the Spanish text under <strong>ES</strong>.</p>
+<div class="info-box"><strong>Good to know:</strong> the languages are kept strictly separate. If you fill in only English and leave Spanish empty, a visitor viewing the site in Spanish will see <strong>nothing</strong> for that field. Fill in both languages to be safe.</div>
+<div class="shot">📷 Screenshot: a text field showing the EN / ES language tabs.</div>
+
+<h1>4. Adding Images</h1>
+<p>Wherever a section asks for an image (photo, logo, cover, avatar) you will see an <strong>image box</strong>. Click it to upload a picture from your computer, or paste a web address. Uploaded images are stored on the site automatically. For logos, transparent <strong>PNG</strong> files look best.</p>
+<div class="shot">📷 Screenshot: the image upload box (drag-and-drop / choose file).</div>
+
+<h1>5. The Page Builder — Order, Show/Hide, Colours</h1>
+<p>Go to <strong>Sections &rarr; Page Builder</strong> in the sidebar. This is where you control the <strong>order</strong> and <strong>visibility</strong> of every section &mdash; separately for each mini-site.</p>
+<p>At the top you choose which template you are editing; for this site choose <strong>Personal Brand Pro</strong>. You then see three personality tabs &mdash; <span class="scope scope-b">Business</span>, <span class="scope scope-l">Lifestyle</span>, <span class="scope scope-p">Personal</span> &mdash; each with its own independent list of sections.</p>
+<table>
+<tr><th>Control</th><th>What it does</th></tr>
+<tr><td>Drag handle</td><td>Drag a section up or down to change the order it appears on that mini-site.</td></tr>
+<tr><td>Eye icon</td><td>Show or hide the section on that mini-site.</td></tr>
+<tr><td>Lock icon</td><td>Make the section <strong>members-only</strong> (visitors must log in to see it).</td></tr>
+<tr><td>Background colour</td><td>Pick the section's background colour from the palette.</td></tr>
+<tr><td>Font</td><td>Pick the section's font (defaults to the template font, Plus Jakarta Sans).</td></tr>
+</table>
+<div class="info-box">Because each personality tab has its own list, you can show a section on Business but hide it on Lifestyle, or put sections in a different order on each mini-site.</div>
+<div class="shot">📷 Screenshot: the Page Builder showing the Business / Lifestyle / Personal tabs and a draggable section list with eye + lock icons and colour swatches.</div>
+
+<h1>6. Section Headers vs. Section Content</h1>
+<p>For several sections the <strong>header</strong> (the small eyebrow, big title, subtitle and the "View all" button) is edited in one place, and the <strong>items</strong> (the cards, photos, posts, etc.) are edited in another. The header editors are grouped under <strong>Aurex Sections</strong> and are named "… — Section Configuration". For each section below this manual tells you where both live.</p>
+<div class="info-box"><strong>Reminder:</strong> the "Section Configuration" header editors also have the Global / Business / Lifestyle / Personal tabs, so each mini-site can have its own title and subtitle for the same section.</div>
+
+<h1>7. Every Section, One by One</h1>
+<p>Below is every section of the Personal Brand homepage: what it is, where to edit it, and each field in plain language. Unless noted, the <strong>scope tabs</strong> from Section 1.1 apply to each editor.</p>
+
+<h2>7.1 Hero (the big top banner)</h2>
+<p><strong>Where:</strong> <strong>Hero / Carousel</strong> in the sidebar. Each slide has a <strong>Template Scope</strong> selector at the very top (Business / Lifestyle / Personal) &mdash; this decides which mini-site the slide belongs to. A slide with no scope is treated as Business.</p>
+<table>
+<tr><th>Field</th><th>What it does</th></tr>
+<tr><td>Template Scope</td><td>Which mini-site this slide appears on (Business / Lifestyle / Personal).</td></tr>
+<tr><td>Slide type</td><td>Photo or video background (or the classic editorial layout).</td></tr>
+<tr><td>Headline / Subtitle / Description</td><td>The main words on the banner (bilingual). Hero text is always shown in white.</td></tr>
+<tr><td>Buttons (up to 3)</td><td>Each button has its own text, link, and "open in new window" option.</td></tr>
+<tr><td>Position (drag canvas)</td><td>Drag the text and buttons to place them anywhere on the banner. On phones everything stacks automatically.</td></tr>
+<tr><td>Background image / video</td><td>The picture or video behind the text.</td></tr>
+</table>
+<div class="info-box">The scrolling phrase strip at the very top of the page (the "marquee") is generated from your site tagline &mdash; set it in <strong>Settings</strong>.</div>
+<div class="shot">📷 Screenshot: the Hero slide editor showing the Template Scope radio buttons and the drag-to-position canvas.</div>
+
+<h2>7.2 About Us</h2>
+<p><strong>Where:</strong> <strong>About Us Manager</strong>. One screen, with the four scope tabs.</p>
+<table>
+<tr><th>Field</th><th>What it does</th></tr>
+<tr><td>Eyebrow / Label</td><td>Small line above the title (e.g. "About me").</td></tr>
+<tr><td>Title</td><td>The big heading. <em>If the title is empty, the whole About section is hidden.</em></td></tr>
+<tr><td>Description</td><td>The main paragraph(s) — rich text (bold, lists, links).</td></tr>
+<tr><td>Image</td><td>Your photo.</td></tr>
+<tr><td>Signature name / title</td><td>The handwritten-style name and role shown under the text.</td></tr>
+<tr><td>Phone</td><td>Optional contact number.</td></tr>
+<tr><td>Button text / URL / new window</td><td>Optional call-to-action button.</td></tr>
+</table>
+<div class="shot">📷 Screenshot: About Us Manager with the scope tabs and the photo + signature fields.</div>
+
+<h2>7.3 Services</h2>
+<p><strong>Items:</strong> <strong>Services &amp; Products</strong> manager. <strong>Header:</strong> Aurex Sections &rarr; "Services — Section Configuration".</p>
+<table>
+<tr><th>Field (per service card)</th><th>What it does</th></tr>
+<tr><td>Title</td><td>Service name (bilingual).</td></tr>
+<tr><td>Short description</td><td>The text shown on the card (rich text).</td></tr>
+<tr><td>Full content</td><td>The longer text shown on the service's own detail page.</td></tr>
+<tr><td>Image / Icon</td><td>Picture or icon for the card.</td></tr>
+<tr><td>Price / Currency / Type</td><td>Optional price and whether it is a service or product.</td></tr>
+<tr><td>External URL + new tab</td><td>If set, the "read more" link points here instead of the detail page.</td></tr>
+<tr><td>Visible (eye)</td><td>Hide a single service without deleting it.</td></tr>
+<tr><td>Drag handle</td><td>Reorder the cards.</td></tr>
+</table>
+<div class="shot">📷 Screenshot: Services manager list with scope tabs, drag handles, and the eye (hide) toggle.</div>
+
+<h2>7.4 "This Is For You" (Audience)</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Aurex is for you". Header fields: eyebrow, title, subtitle, and a call-to-action button. Each <strong>card</strong> has: eyebrow, icon, title (required), and a rich-text description.</p>
+<div class="shot">📷 Screenshot: the Audience section editor (header fields + the card list).</div>
+
+<h2>7.5 Our Process</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Our Process". Header: eyebrow, title, subtitle. Each <strong>step</strong> has: step number (leave blank for automatic), step title (required), and a rich-text description. Steps are shown as an alternating vertical timeline.</p>
+
+<h2>7.6 Pricing</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Pricing". The header has an optional <strong>Monthly/Annual switch</strong>. Each <strong>plan</strong> has: name, monthly price, annual price, currency, period label, a badge (e.g. "Most popular"), a "Featured plan" toggle, a button, and a <strong>Features</strong> box (one feature per line — start a line with ✗ to show it as not-included).</p>
+<div class="shot">📷 Screenshot: the Pricing plan editor showing the features box and the "Featured plan" toggle.</div>
+
+<h2>7.7 Our Team</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Our Team". The header has a "View all" button and a "Max members on site" number. Each <strong>member</strong> has: full name, role, photo, a short bio, and social profile links (the available networks come from your <strong>Settings &rarr; Social Links</strong>).</p>
+
+<h2>7.8 Video</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Video". Paste a YouTube, Vimeo, or direct <code>.mp4</code> link. Options: poster image, autoplay (muted), and aspect ratio (16:9, 4:3, 1:1, 21:9). <em>If the video URL is empty, the section is hidden.</em></p>
+
+<h2>7.9 Events</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Events" controls only the header and display options (how many to show, "upcoming only", a "View all" button). The actual events come from <strong>Calendar &rarr; Global Events</strong>. The section hides when there are no events to show.</p>
+
+<h2>7.10 Partners &amp; 7.11 Clients</h2>
+<p><strong>Where:</strong> Aurex Sections &rarr; "Partners" / "Our Clients". These are logo strips. The header has optional auto-scrolling carousel settings. Each <strong>logo</strong> has: an internal name, the logo image (PNG/SVG), an optional link, and where the link opens.</p>
+<div class="shot">📷 Screenshot: the Partners logo list with logo uploads.</div>
+
+<h2>7.12 Testimonials</h2>
+<p><strong>Items:</strong> <strong>Legends &amp; Testimonials</strong> manager. <strong>Header:</strong> Aurex Sections &rarr; "Testimonials — Section Configuration". Each testimonial has: author photo, author name, title/role, and the quote. Use the eye icon to hide one without deleting it, and drag to reorder.</p>
+
+<h2>7.13 Reading List (Books)</h2>
+<p><strong>Items:</strong> <strong>Reading List Manager</strong>. <strong>Header:</strong> Aurex Sections &rarr; "Reading List — Section Configuration". Each book has: title, author, description, synopsis, "who is it for", "about the author", cover image, an Amazon link, and a "Featured" toggle.</p>
+
+<h2>7.14 Portfolio (Featured Work)</h2>
+<p><strong>Items:</strong> <strong>Portfolio Manager</strong>. <strong>Header:</strong> Aurex Sections &rarr; "Portfolio (Featured Work) — Section Configuration". Each project has: title, description, image, tags (comma-separated), and an optional link with "open in new tab".</p>
+
+<h2>7.15 Gallery</h2>
+<p><strong>Items:</strong> <strong>Gallery Manager</strong> (drag photos to reorder; they save automatically). <strong>Header:</strong> Aurex Sections &rarr; "Gallery — Section Configuration". Each photo has: title, summary, image, category, and an optional link. <em>Categories are shared across all mini-sites.</em></p>
+<div class="shot">📷 Screenshot: Gallery manager grid with drag-to-reorder and the Categories button.</div>
+
+<h2>7.16 News / Blog</h2>
+<p><strong>Items:</strong> <strong>Blog Manager</strong>. <strong>Header:</strong> Aurex Sections &rarr; "Latest News — Section Configuration". Each post has: title, summary (rich text), full content, category, author, featured image, and a "Published" toggle (only published posts appear on the site). <em>Categories are shared across all mini-sites.</em></p>
+
+<h2>7.17 Maps / Locations</h2>
+<p><strong>Items:</strong> <strong>Maps Manager &rarr; Locations</strong> tab (the scope tabs apply to the location pins). <strong>Header:</strong> Aurex Sections &rarr; "Our Locations — Section Configuration". Each location pin has: name, latitude/longitude (click the mini-map to set them), description, map type (Global Business / Conferences / Recommended Sites), and an optional link. The section hides when there are no pins.</p>
+<div class="shot">📷 Screenshot: Maps manager Locations tab with the click-to-place mini-map.</div>
+
+<h2>7.18 Contact</h2>
+<p><strong>Where:</strong> the contact details come from <strong>Settings</strong> and are <strong>shared by all three mini-sites</strong> (there are no separate Business/Lifestyle/Personal versions for contact).</p>
+
+<h1>8. Common Tasks (Step-by-Step)</h1>
+<h3>Make a section appear on the Lifestyle mini-site</h3>
+<ol>
+<li>Open that section's manager (e.g. Services).</li>
+<li>Click the <span class="scope scope-l">PB — Lifestyle</span> tab.</li>
+<li>Add the items / fill the fields you want for Lifestyle.</li>
+<li>Save. Open <span class="path">/lifestyle</span> to check.</li>
+</ol>
+<h3>Copy the look of Business to another mini-site</h3>
+<p>There is no automatic "copy" button in the CMS. Open the other mini-site's tab and re-enter the content. (Ask your administrator if you need a bulk copy.)</p>
+<h3>Temporarily hide a section everywhere</h3>
+<p>Go to <strong>Page Builder</strong>, open each personality tab, and click the eye icon for that section. Or simply empty its content.</p>
+<h3>Reorder sections on the homepage</h3>
+<p><strong>Page Builder &rarr; Business tab</strong>, drag the sections into the order you want, then save.</p>
+
+<h1>9. Troubleshooting</h1>
+<table>
+<tr><th>Problem</th><th>Most likely cause &amp; fix</th></tr>
+<tr><td>A section is missing on a mini-site</td><td>That mini-site's tab is empty <em>and</em> Global is empty &mdash; so the section is hidden by design. Add content in that mini-site's tab.</td></tr>
+<tr><td>A section shows the same on all mini-sites</td><td>Content is in <span class="scope scope-g">Global</span> only, so every mini-site borrows it. Move it into the specific tab(s) instead.</td></tr>
+<tr><td>Text is blank for Spanish visitors</td><td>The ES language tab was left empty. Fill in the Spanish text.</td></tr>
+<tr><td>About section disappeared</td><td>Its Title is empty. A blank title hides the whole About section.</td></tr>
+<tr><td>A post or service isn't on the site</td><td>It is hidden (eye icon off) or, for blog posts, not "Published".</td></tr>
+<tr><td>I changed content but don't see it</td><td>Refresh the page (hold Shift and reload) to clear the browser cache.</td></tr>
+</table>
+
+<div class="info-box" style="margin-top:30px;">This manual reflects the Personal Brand template as configured in the CMS. For platform-wide tasks (members, settings, colours, backups) see the <strong>Operator Manual (CMS)</strong> in the Documentation list.</div>
+
+</div>
+</body></html>"""
+    return HTMLResponse(content=html)
+
+
 @router.get("/docs/user-guide", response_class=HTMLResponse)
 async def user_guide(user: dict = Depends(_doc_guard)):
     settings = await _get_settings()

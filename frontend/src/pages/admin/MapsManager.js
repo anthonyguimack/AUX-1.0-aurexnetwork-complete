@@ -12,6 +12,8 @@ import { MapContainer, TileLayer, Marker, useMapEvents } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import { useDataTable, DataTableToolbar, DataTablePagination, SortableTh } from '../../components/admin/useDataTable';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -36,6 +38,10 @@ const MAP_TYPES = [
 ];
 
 export default function MapsManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global — scopes Locations
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [maps, setMaps] = useState([]);
   const [locations, setLocations] = useState([]);
   const [editMap, setEditMap] = useState(null);
@@ -45,8 +51,20 @@ export default function MapsManager() {
   const [loading, setLoading] = useState(false);
 
   const loadMaps = () => adminAPI.getMaps().then(r => setMaps(r.data)).catch(console.error);
-  const loadLocs = () => adminAPI.getMapLocations().then(r => setLocations(r.data)).catch(console.error);
-  useEffect(() => { loadMaps(); loadLocs(); }, []);
+  // Locations (the homepage map pins) are personality-scoped; Map Pages are global.
+  const loadLocs = (personality = activeTab) => adminAPI.getMapLocations(personality).then(r => setLocations(r.data)).catch(console.error);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadMaps(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { loadLocs(activeTab); }, [activeTab]);
+
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getMapLocations(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const saveMap = async () => {
     setLoading(true);
@@ -61,7 +79,8 @@ export default function MapsManager() {
     setLoading(true);
     try {
       if (editLoc.id) await adminAPI.updateMapLocation(editLoc.id, editLoc);
-      else await adminAPI.createMapLocation(editLoc);
+      else await adminAPI.createMapLocation(editLoc, activeTab);
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved!'); setOpenLoc(false); loadLocs();
     } catch { toast.error('Error'); } finally { setLoading(false); }
   };
@@ -83,6 +102,7 @@ export default function MapsManager() {
       <Tabs defaultValue="locations">
         <TabsList className="mb-4"><TabsTrigger value="locations" data-testid="locations-tab">Locations</TabsTrigger><TabsTrigger value="maps" data-testid="maps-tab">Map Pages</TabsTrigger></TabsList>
         <TabsContent value="locations">
+          <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="Map locations scope" noun="map pins" />
           <div className="flex justify-end mb-4">
             <button onClick={() => { setEditLoc({ name: '', lat: 0, lng: 0, description: '', map_type: 'global_business', link: '', open_in_new_tab: false }); setOpenLoc(true); }} className="bg-[#0D9488] text-white px-4 py-2 rounded-sm text-sm font-medium flex items-center gap-2" data-testid="add-location-btn"><Plus className="w-4 h-4" /> New Location</button>
           </div>

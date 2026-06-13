@@ -12,6 +12,8 @@ import { adminText } from '../../lib/i18n';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { arrayMove, SortableContext, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
+import { useSettings } from '../../App';
+import PersonalityTabs, { PB_PERSONALITY_TABS } from '../../components/admin/PersonalityTabs';
 
 const API = process.env.REACT_APP_BACKEND_URL;
 const resolveSrc = (v) => v ? (v.startsWith('/api') ? `${API}${v}` : v) : null;
@@ -60,23 +62,37 @@ function TestimonialRow({ item, onEdit, onDelete, onToggleVisible }) {
 }
 
 export default function TestimonialsManager() {
+  const settings = useSettings();
+  const isPB = settings.active_theme === 'personalbrand';
+  const [activeTab, setActiveTab] = useState(null); // null = Global
+  const [savedTabs, setSavedTabs] = useState(new Set(['__global__']));
   const [items, setItems] = useState([]);
   const [editing, setEditing] = useState(null);
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 4 } }));
 
-  const load = () => adminAPI.getTestimonials().then(r => {
+  const load = (personality = activeTab) => adminAPI.getTestimonials(personality).then(r => {
     const data = (r.data || []).sort((a, b) => (a.order || 0) - (b.order || 0));
     setItems(data);
   }).catch(console.error);
-  useEffect(() => { load(); }, []);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => { load(activeTab); }, [activeTab]);
+
+  useEffect(() => {
+    if (!isPB) return;
+    PB_PERSONALITY_TABS.forEach(t => {
+      if (t.key === null) return;
+      adminAPI.getTestimonials(t.key).then(r => { if ((r.data || []).length) setSavedTabs(prev => new Set([...prev, t.key])); }).catch(() => {});
+    });
+  }, [isPB]);
 
   const handleSave = async () => {
     setLoading(true);
     try {
       if (editing.id) await adminAPI.updateTestimonial(editing.id, editing);
-      else await adminAPI.createTestimonial(editing);
+      else await adminAPI.createTestimonial(editing, activeTab);
+      if (activeTab) setSavedTabs(prev => new Set([...prev, activeTab]));
       toast.success('Saved'); setOpen(false); load();
     } catch (e) { toast.error(e.response?.data?.detail || 'Error'); }
     finally { setLoading(false); }
@@ -118,6 +134,8 @@ export default function TestimonialsManager() {
           <Plus className="w-4 h-4" /> Add Legend
         </button>
       </div>
+
+      <PersonalityTabs show={isPB} activeTab={activeTab} onChange={setActiveTab} savedTabs={savedTabs} label="Testimonials scope" noun="testimonials" />
 
       <div className="bg-white rounded-sm border border-slate-200">
         <div className="grid gap-3 p-4">

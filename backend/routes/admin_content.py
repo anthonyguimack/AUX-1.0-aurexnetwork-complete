@@ -1,5 +1,6 @@
 from fastapi import APIRouter, HTTPException, Request, Depends
 from models.database import db, require_admin, hash_password
+from utils.personality import pb_validate, scope_query, stamp
 from datetime import datetime, timezone
 from slugify import slugify
 import uuid
@@ -48,6 +49,19 @@ async def crud_update(col: str, item_id: str, data: dict):
 async def crud_delete(col: str, item_id: str):
     await db[col].delete_one({"id": item_id})
     return {"message": "Deleted"}
+
+# Personality-aware CRUD (PB mini-sites). Admin list = EXACT scope (no global
+# fallback) so each CMS tab shows precisely what is tagged to it. Create stamps
+# the active personality. Update/delete go by UUID and preserve the existing
+# pb_personality, so they need no personality argument.
+async def crud_list_scoped(col: str, personality, sort_field: str = None):
+    cur = db[col].find(scope_query({}, personality), {"_id": 0})
+    if sort_field:
+        cur = cur.sort(sort_field, 1)
+    return await cur.to_list(1000)
+
+async def crud_create_scoped(col: str, data: dict, personality):
+    return await crud_create(col, stamp(data, personality))
 
 # Hero Slides (CRUD)
 @router.get("/admin/hero-slides")
@@ -116,12 +130,12 @@ async def admin_update_about(request: Request, personality: str = None, user: di
 
 # Services
 @router.get("/admin/services")
-async def admin_list_services(user: dict = Depends(require_admin)):
-    return await crud_list("services")
+async def admin_list_services(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("services", personality, sort_field="order")
 
 @router.post("/admin/services")
-async def admin_create_service(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("services", await request.json())
+async def admin_create_service(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("services", await request.json(), personality)
 
 @router.put("/admin/services/{item_id}")
 async def admin_update_service(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -136,15 +150,15 @@ async def admin_delete_service(item_id: str, user: dict = Depends(require_admin)
 
 # Blog
 @router.get("/admin/blog")
-async def admin_list_blog(user: dict = Depends(require_admin)):
-    return await crud_list("blog_posts")
+async def admin_list_blog(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("blog_posts", personality, sort_field="created_at")
 
 @router.post("/admin/blog")
-async def admin_create_blog(request: Request, user: dict = Depends(require_admin)):
+async def admin_create_blog(request: Request, personality: str = None, user: dict = Depends(require_admin)):
     body = await request.json()
     body["slug"] = slugify(get_slug_text(body.get("title")))
     body.setdefault("published", True)
-    return await crud_create("blog_posts", body)
+    return await crud_create_scoped("blog_posts", body, personality)
 
 @router.put("/admin/blog/{item_id}")
 async def admin_update_blog(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -176,12 +190,12 @@ async def admin_delete_blog_category(item_id: str, user: dict = Depends(require_
 
 # Books
 @router.get("/admin/books")
-async def admin_list_books(user: dict = Depends(require_admin)):
-    return await crud_list("books")
+async def admin_list_books(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("books", personality)
 
 @router.post("/admin/books")
-async def admin_create_book(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("books", await request.json())
+async def admin_create_book(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("books", await request.json(), personality)
 
 @router.put("/admin/books/{item_id}")
 async def admin_update_book(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -216,12 +230,12 @@ async def admin_delete_map(item_id: str, user: dict = Depends(require_admin)):
 
 # Map Locations
 @router.get("/admin/map-locations")
-async def admin_list_map_locations(user: dict = Depends(require_admin)):
-    return await crud_list("map_locations")
+async def admin_list_map_locations(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("map_locations", personality)
 
 @router.post("/admin/map-locations")
-async def admin_create_map_location(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("map_locations", await request.json())
+async def admin_create_map_location(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("map_locations", await request.json(), personality)
 
 @router.put("/admin/map-locations/{item_id}")
 async def admin_update_map_location(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -233,13 +247,12 @@ async def admin_delete_map_location(item_id: str, user: dict = Depends(require_a
 
 # Gallery
 @router.get("/admin/gallery")
-async def admin_list_gallery(user: dict = Depends(require_admin)):
-    items = await db.gallery.find({}, {"_id": 0}).sort("order", 1).to_list(500)
-    return items
+async def admin_list_gallery(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("gallery", personality, sort_field="order")
 
 @router.post("/admin/gallery")
-async def admin_create_gallery(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("gallery", await request.json())
+async def admin_create_gallery(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("gallery", await request.json(), personality)
 
 @router.put("/admin/gallery/{item_id}")
 async def admin_update_gallery(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -275,12 +288,12 @@ async def admin_delete_gallery_category(item_id: str, user: dict = Depends(requi
 
 # Portfolio
 @router.get("/admin/portfolio")
-async def admin_list_portfolio(user: dict = Depends(require_admin)):
-    return await crud_list("portfolio")
+async def admin_list_portfolio(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("portfolio", personality)
 
 @router.post("/admin/portfolio")
-async def admin_create_portfolio(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("portfolio", await request.json())
+async def admin_create_portfolio(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("portfolio", await request.json(), personality)
 
 @router.put("/admin/portfolio/{item_id}")
 async def admin_update_portfolio(item_id: str, request: Request, user: dict = Depends(require_admin)):
@@ -292,12 +305,12 @@ async def admin_delete_portfolio(item_id: str, user: dict = Depends(require_admi
 
 # Testimonials
 @router.get("/admin/testimonials")
-async def admin_list_testimonials(user: dict = Depends(require_admin)):
-    return await crud_list("testimonials")
+async def admin_list_testimonials(personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_list_scoped("testimonials", personality, sort_field="order")
 
 @router.post("/admin/testimonials")
-async def admin_create_testimonial(request: Request, user: dict = Depends(require_admin)):
-    return await crud_create("testimonials", await request.json())
+async def admin_create_testimonial(request: Request, personality: str = None, user: dict = Depends(require_admin)):
+    return await crud_create_scoped("testimonials", await request.json(), personality)
 
 @router.put("/admin/testimonials/{item_id}")
 async def admin_update_testimonial(item_id: str, request: Request, user: dict = Depends(require_admin)):

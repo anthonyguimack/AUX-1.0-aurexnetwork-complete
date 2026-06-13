@@ -1,10 +1,16 @@
 from fastapi import APIRouter, HTTPException, Request, Query
 from models.database import db, send_email_smtp, logger
+from utils.personality import scoped_find, pb_validate, scope_query, has_content
 from datetime import datetime, timezone
 import uuid
 import httpx
 
 router = APIRouter()
+
+# Fields that count as "real" About content. An About doc with none of these set
+# is treated as empty so the global About is used as a fallback.
+_ABOUT_CONTENT_FIELDS = ["title", "description", "image", "signature_name",
+                         "signature_title", "button_text", "label"]
 
 @router.get("/public/settings")
 async def get_public_settings():
@@ -65,27 +71,33 @@ async def get_public_site_pages():
 async def get_public_about(personality: str = None):
     doc = None
     if personality:
-        doc = await db.about.find_one({"personality": personality}, {"_id": 0})
+        scoped = await db.about.find_one({"personality": personality}, {"_id": 0})
+        # Treat an EMPTY personality-scoped doc as missing so the global About
+        # still renders (fixes "empty Business About hides the global one").
+        if has_content(scoped, _ABOUT_CONTENT_FIELDS):
+            doc = scoped
     if not doc:
         doc = await db.about.find_one({"personality": None}, {"_id": 0}) or {}
     return doc
 
 @router.get("/public/services")
-async def get_public_services():
-    # Filter out services the admin flagged as hidden (visible=false),
-    # and sort by the admin-specified `order` so drag-and-drop reordering in
-    # the CMS shows up 1:1 on the public site. Legacy docs without either
-    # field are treated as visible / order 0 respectively.
-    return await db.services.find(
-        {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]},
-        {"_id": 0},
-    ).sort("order", 1).to_list(100)
+async def get_public_services(personality: str = None):
+    # Filter out services the admin flagged as hidden (visible=false), sorted by
+    # the admin `order`. `personality` returns that PB mini-site's services,
+    # falling back to the global catalogue when it has none of its own.
+    base = {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]}
+    return await scoped_find(db.services, base, personality, sort_field="order", limit=100)
 
 @router.get("/public/blog")
-async def get_public_blog(page: int = 1, limit: int = 9, category: str = ""):
-    query = {"published": True}
+async def get_public_blog(page: int = 1, limit: int = 9, category: str = "", personality: str = None):
+    base = {"published": True}
     if category:
-        query["category"] = category
+        base["category"] = category
+    # Prefer this PB mini-site's posts; fall back to global when it has none.
+    p = pb_validate(personality)
+    query = scope_query(base, p)
+    if p and await db.blog_posts.count_documents(query) == 0:
+        query = scope_query(base, None)
     total = await db.blog_posts.count_documents(query)
     posts = await db.blog_posts.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
     return {"posts": posts, "total": total, "page": page, "pages": (total + limit - 1) // limit}
@@ -98,8 +110,8 @@ async def get_public_blog_detail(slug: str):
     return post
 
 @router.get("/public/books")
-async def get_public_books():
-    return await db.books.find({}, {"_id": 0}).to_list(100)
+async def get_public_books(personality: str = None):
+    return await scoped_find(db.books, {}, personality, limit=100)
 
 @router.get("/public/maps")
 async def get_public_maps():
@@ -113,35 +125,33 @@ async def get_public_map_detail(slug: str):
     return m
 
 @router.get("/public/map-locations")
-async def get_public_map_locations(map_type: str = ""):
-    query = {}
+async def get_public_map_locations(map_type: str = "", personality: str = None):
+    base = {}
     if map_type:
-        query["map_type"] = map_type
-    return await db.map_locations.find(query, {"_id": 0}).to_list(500)
+        base["map_type"] = map_type
+    return await scoped_find(db.map_locations, base, personality, limit=500)
 
 @router.get("/public/gallery")
-async def get_public_gallery(category: str = ""):
-    query = {}
+async def get_public_gallery(category: str = "", personality: str = None):
+    base = {}
     if category:
-        query["category"] = category
-    return await db.gallery.find(query, {"_id": 0}).sort("order", 1).to_list(100)
+        base["category"] = category
+    return await scoped_find(db.gallery, base, personality, sort_field="order", limit=100)
 
 @router.get("/public/gallery-categories")
 async def get_public_gallery_categories():
     return await db.gallery_categories.find({}, {"_id": 0}).sort("name", 1).to_list(100)
 
 @router.get("/public/portfolio")
-async def get_public_portfolio():
-    return await db.portfolio.find({}, {"_id": 0}).to_list(100)
+async def get_public_portfolio(personality: str = None):
+    return await scoped_find(db.portfolio, {}, personality, limit=100)
 
 @router.get("/public/testimonials")
-async def get_public_testimonials():
-    # Hide testimonials the admin toggled off. Also sort by order so the
-    # CMS "Move up / Move down" buttons carry through to the site.
-    return await db.testimonials.find(
-        {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]},
-        {"_id": 0},
-    ).sort("order", 1).to_list(100)
+async def get_public_testimonials(personality: str = None):
+    # Hide testimonials the admin toggled off, sorted by `order`. `personality`
+    # returns that PB mini-site's set, falling back to global when it has none.
+    base = {"$or": [{"visible": {"$ne": False}}, {"visible": {"$exists": False}}]}
+    return await scoped_find(db.testimonials, base, personality, sort_field="order", limit=100)
 
 @router.get("/public/sections")
 async def get_public_sections():

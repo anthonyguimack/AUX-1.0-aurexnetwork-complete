@@ -34,9 +34,9 @@ const sectionLabels = {
   aurex_reading_cfg:      'Reading List — Section Config',
   aurex_portfolio_cfg:    'Portfolio — Section Config',
   aurex_gallery_cfg:      'Gallery — Section Config',
-  // Personal Brand modernisation
-  pb_stats:   'Stats / Numbers',
-  pb_marquee: 'Marquee Ticker Strip',
+  // NOTE: pb_stats / pb_marquee were removed — they had no renderer in HomePage
+  // (the marquee already lives inside PBHero). Re-add here + add a sectionMap
+  // entry in HomePage.js if they are ever built as real standalone sections.
 };
 
 function SortableItem({ id, label, enabled, loginRequired, config, onToggle, onToggleLogin, onConfigChange, showAurexControls, isPB }) {
@@ -189,8 +189,6 @@ const PB_KNOWN_SECTIONS = [
   'aurex_partners', 'aurex_clients',
   // Map sections
   'map', 'map_global', 'map_conferences', 'map_recommended',
-  // Meta / config-only entries
-  'pb_marquee', 'pb_stats',
 ];
 
 // Returns true when the order contains PB-specific section keys that are absent

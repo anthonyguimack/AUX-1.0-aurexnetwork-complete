@@ -5,7 +5,7 @@ import CaptchaWidget from '../components/CaptchaWidget';
 import { useSettings, useTheme } from '../App';
 import { useAuth } from '../lib/auth';
 import { getTileUrl, getTileAttribution } from '../lib/mapConfig';
-import { useT } from '../lib/i18n';
+import { useT, useLang, itemHasLocale } from '../lib/i18n';
 import { toast } from 'sonner';
 import {
   ArrowRight, Phone, Briefcase, TrendingUp, BarChart3, Monitor, Star,
@@ -608,6 +608,7 @@ export default function HomePage({ personality }) {
   const settings = useSettings();
   const theme = useTheme();
   const { user } = useAuth();
+  const { lang } = useLang();
   const [about, setAbout] = useState(null);
   const [services, setServices] = useState([]);
   const [posts, setPosts] = useState([]);
@@ -626,20 +627,25 @@ export default function HomePage({ personality }) {
     // mini-site can have independent content. The backend falls back to the
     // global About if no personality-specific document exists yet.
     const pbMode = settings.active_theme === 'personalbrand';
-    publicAPI.getAbout(pbMode ? pbPersonality : undefined)
+    // In Personal Brand mode every content section fetches its mini-site-specific
+    // data (`pp`). The backend falls back to the global catalogue when a mini-site
+    // has no content of its own, so un-customised sections still render.
+    const pp = pbMode ? pbPersonality : undefined;
+    publicAPI.getAbout(pp)
       .then(r => setAbout(r.data)).catch(() => {});
-    publicAPI.getServices().then(r => setServices(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getBlog().then(r => setPosts(Array.isArray(r.data?.posts) ? r.data.posts : Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getBooks().then(r => setBooks(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getServices(pp).then(r => setServices(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getBlog(1, 9, '', pp).then(r => setPosts(Array.isArray(r.data?.posts) ? r.data.posts : Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getBooks(pp).then(r => setBooks(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     publicAPI.getMaps().then(r => setMaps(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getMapLocations('global_business').then(r => setLocations(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getMapLocations('conferences').then(r => setLocConferences(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getMapLocations('recommended_sites').then(r => setLocRecommended(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getPortfolio().then(r => setPortfolio(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getGallery().then(r => setGallery(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-    publicAPI.getTestimonials().then(r => setTestimonials(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('global_business', pp).then(r => setLocations(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('conferences', pp).then(r => setLocConferences(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getMapLocations('recommended_sites', pp).then(r => setLocRecommended(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getPortfolio(pp).then(r => setPortfolio(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getGallery('', pp).then(r => setGallery(Array.isArray(r.data) ? r.data : [])).catch(() => {});
+    publicAPI.getTestimonials(pp).then(r => setTestimonials(Array.isArray(r.data) ? r.data : [])).catch(() => {});
     publicAPI.getHeroSlides().then(r => setHeroSlides(Array.isArray(r.data) ? r.data : [])).catch(() => {});
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [pbPersonality]);
 
   const sections = settings.sections || {};
   const activeTheme = settings.active_theme || 'default';
@@ -760,18 +766,60 @@ export default function HomePage({ personality }) {
     return { bg: cfg.bg_color, font, cmsConfig: override };
   };
 
+  // ── Will a PB section actually render content for this personality? ───────
+  // Mirrors each component's own empty-guard (the `return null` checks in
+  // PersonalBrandSections.js / AurexSections.js) so the numbering below skips a
+  // section that renders nothing — no gaps in the "01/ 02/ …" eyebrow sequence.
+  // Sections with no empty-guard (they always render a shell) default to true.
+  const pbHasContent = (key) => {
+    const mapHas = (locs) =>
+      (maps || []).some(m => m.lat && m.lng) || (locs || []).some(l => l.lat && l.lng);
+    switch (key) {
+      case 'about':           return itemHasLocale(about?.title, lang);
+      case 'services':        return (services || []).some(s => itemHasLocale(s.title, lang));
+      case 'portfolio':       return (portfolio || []).some(i => itemHasLocale(i.title, lang));
+      case 'testimonials':    return (testimonials || []).some(t => t.visible !== false && itemHasLocale(t.content, lang));
+      case 'reading_list':    return (books || []).some(b => b.title);
+      case 'gallery':         return (gallery || []).some(i => i.image);
+      case 'news':            return (posts || []).some(p => itemHasLocale(p.title, lang));
+      case 'blog':            return !!settings.blog_api_url;        // external source — best-effort
+      case 'aurex_video':     return !!(aurexData['aurex_video']?.config?.video_url);
+      case 'map':
+      case 'locations':
+      case 'map_global':      return mapHas(locations);
+      case 'map_conferences': return mapHas(locConferences);
+      case 'map_recommended': return mapHas(locRecommended);
+      // Aurex item sections now hide when empty too (return null guards).
+      case 'aurex_audience':
+      case 'aurex_process':
+      case 'aurex_events':    return (aurexData[key]?.items || []).some(i => itemHasLocale(i.title, lang));
+      case 'aurex_team':
+      case 'aurex_pricing':
+      case 'aurex_partners':
+      case 'aurex_clients':   return (aurexData[key]?.items || []).some(i => itemHasLocale(i.name, lang));
+      default:                return true; // contact always renders
+    }
+  };
+
   // ── Dynamic section numbers for Personal Brand Pro ────────────────────────
-  // Count each visible, non-hero section in order; skip hero. The number is
-  // passed as `sectionNumber` prop so all PB components show "NN/ eyebrow".
+  // Number each section that ACTUALLY renders, in order — skipping hero,
+  // disabled sections, per-personality auth-gated-hidden sections, and any
+  // section with no content for this personality. This keeps "01/ 02/ …"
+  // gapless and consistent with the render loop below. Passed as `sectionNumber`.
   const pbSectionNumbers = (() => {
     if (!isPersonalBrand) return {};
     const result = {};
     let counter = 0;
+    const loggedInNow = !!(user && (user.id || user.member_id || user.username || user.email));
+    const gates = settings.section_auth_gates?.[pbPersonality] || {};
     const skipKeys = new Set(['hero']);
     sectionOrder.forEach(key => {
       if (skipKeys.has(key)) return;
       const sec = sections[key];
       if (sec?.enabled === false) return;
+      // Mirror the render loop's per-personality auth gates.
+      if (gates[key] === 'hidden') return;
+      if (gates[key] === 'members' && !loggedInNow) return;
       // Only count keys that have a rendered component in the sectionMap.
       const knownKeys = [
         'about', 'services', 'aurex_audience', 'aurex_process', 'aurex_pricing',
@@ -781,6 +829,7 @@ export default function HomePage({ personality }) {
         'aurex_video',
       ];
       if (!knownKeys.includes(key)) return;
+      if (!pbHasContent(key)) return;   // skip sections that render nothing → no number gap
       counter++;
       result[key] = String(counter).padStart(2, '0');
     });

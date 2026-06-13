@@ -267,3 +267,8 @@ credentials.json
 *.pem
 *.key
 .credentials
+
+# Local-only client artifacts (never deploy)
+Observaciones/
+instrucciones.md
+aurex-server-credentials.html
